@@ -59,7 +59,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"grid min-h-[calc(100vh-4rem)] items-center gap-10 py-16 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-24\"><div class=\"max-w-3xl\"><p class=\"text-sm font-semibold uppercase tracking-normal text-primary\">Impressao 3D sob medida</p><h1 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl lg:text-6xl\">Impressao 3D feita para transformar ideias em objetos.</h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted\">A PrintLab prepara uma experiencia digital propria para apresentar possibilidades de fabricacao, materiais e projetos com clareza desde o primeiro contato.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"grid min-h-[calc(100vh-4rem)] items-center gap-10 py-14 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:py-20\"><div class=\"max-w-3xl\"><p class=\"brand-kicker\">Impressao 3D sob medida</p><h1 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl lg:text-6xl\">Ideias impressas com precisao, cor e criterio.</h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted\">A PrintLab une fabricacao digital e experimentacao para transformar conceitos em objetos bem definidos, com uma base online preparada para crescer com seguranca.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -71,7 +71,7 @@ func Home() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"hero-visual\" aria-label=\"Representacao visual de camadas de impressao 3D\"><div class=\"hero-visual-grid\"><div class=\"print-layer print-layer-primary\"></div><div class=\"print-layer print-layer-secondary\"></div><div class=\"print-layer print-layer-tertiary\"></div><div class=\"print-head\"><svg viewBox=\"0 0 48 48\" role=\"img\" aria-label=\"Cabecote de impressao 3D\"><path d=\"M14 8h20v12l-5 5H19l-5-5V8z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"></path> <path d=\"M20 25h8v6h-8v-6z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"></path> <path d=\"M16 39h16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"></path></svg></div></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"hero-visual\" aria-label=\"Identidade visual da PrintLab\"><div class=\"hero-brand-card\"><img class=\"hero-logo-image\" src=\"/static/images/branding/logo-printlab-primary.png\" width=\"1448\" height=\"1086\" alt=\"Logo da PrintLab com impressora 3D e frasco de laboratorio\"><div class=\"brand-dot brand-dot-blue\"></div><div class=\"brand-dot brand-dot-pink\"></div><div class=\"brand-dot brand-dot-teal\"></div><div class=\"brand-dot brand-dot-yellow\"></div><div class=\"brand-layer-stack\" aria-hidden=\"true\"><span class=\"brand-layer brand-layer-blue\"></span> <span class=\"brand-layer brand-layer-teal\"></span> <span class=\"brand-layer brand-layer-pink\"></span> <span class=\"brand-layer brand-layer-yellow\"></span></div></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -97,13 +97,13 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mt-10 grid gap-4 md:grid-cols-3\"><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Clareza</h3><p class=\"mt-3 text-sm leading-6 text-muted\">Conteudo direto para explicar possibilidades, materiais e proximos passos sem excesso de promessa.</p></div><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Seguranca</h3><p class=\"mt-3 text-sm leading-6 text-muted\">A arquitetura mantem regras sensiveis no backend e evita depender do navegador para decisoes importantes.</p></div><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Evolucao</h3><p class=\"mt-3 text-sm leading-6 text-muted\">Layout, componentes e tokens visuais foram preparados para receber catalogo e fluxos futuros.</p></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mt-10 grid gap-4 md:grid-cols-3\"><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Clareza</h3><p class=\"mt-3 text-sm leading-6 text-muted\">Conteudo direto para explicar possibilidades, materiais e proximos passos sem excesso de promessa.</p></div><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Seguranca</h3><p class=\"mt-3 text-sm leading-6 text-muted\">A arquitetura mantem regras sensiveis no backend e evita depender do navegador para decisoes importantes.</p></div><div class=\"info-card\"><h3 class=\"text-lg font-semibold text-foreground\">Evolucao</h3><p class=\"mt-3 text-sm leading-6 text-muted\">Layout, componentes e tokens visuais foram alinhados a marca para receber catalogo e fluxos futuros.</p></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				return nil
 			})
-			templ_7745c5c3_Err = components.Section("sobre", "Proposta", "Uma base simples para projetos bem definidos.", "A PrintLab combina fabricacao aditiva e atendimento objetivo. Esta primeira versao do site organiza a presenca digital sem antecipar funcionalidades comerciais que ainda serao desenvolvidas.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.Section("sobre", "Proposta", "Uma base visual para fabricacao digital.", "A PrintLab combina impressao 3D, criterio tecnico e uma linguagem acessivel. Esta versao organiza a presenca digital sem antecipar funcionalidades comerciais que ainda serao desenvolvidas.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

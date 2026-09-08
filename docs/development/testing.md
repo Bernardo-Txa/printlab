@@ -36,6 +36,7 @@ go build ./...
 - `GET /` retorna HTTP 200 com `Content-Type: text/html; charset=utf-8`.
 - A homepage contem identificacao da PrintLab e skip link.
 - `/static/css/app.css` e servido.
+- `/static/images/branding/logo-printlab-primary.png` e servido com `Content-Type` de PNG.
 - Diretorios de `/static/` nao sao listados.
 - Rotas desconhecidas retornam 404.
 

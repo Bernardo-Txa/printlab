@@ -17,6 +17,8 @@ IMPLEMENTADO:
 - Homepage server-side em `GET /` renderizada com `templ`.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
+- Logo oficial inicial integrada ao header e ao hero da homepage.
+- Design tokens refinados com base na identidade visual da marca.
 
 PLANEJADO:
 
@@ -52,6 +54,7 @@ Frontend implementado:
 - Design tokens iniciais em `web/assets/css/app.css`.
 - CSS compilado em `web/static/css/app.css`.
 - Assets estaticos embutidos no binario Go para compatibilidade com deploy na Vercel.
+- Logo de marca em `web/static/images/branding/logo-printlab-primary.png`.
 
 Banco planejado:
 
@@ -144,6 +147,12 @@ Validar CSS servido pela aplicacao:
 
 ```sh
 curl -I http://localhost:8080/static/css/app.css
+```
+
+Validar logo servida pela aplicacao:
+
+```sh
+curl -I http://localhost:8080/static/images/branding/logo-printlab-primary.png
 ```
 
 ## Como executar testes

@@ -42,12 +42,13 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 - Layout HTML base com `lang="pt-BR"`, metadados configuraveis, skip link, landmarks e CSS da aplicacao.
 - Header e footer responsivos.
 - Componentes visuais essenciais.
-- Design tokens iniciais.
+- Design tokens iniciais, refinados posteriormente com base na identidade visual da logo oficial.
 - Tailwind CSS 4 via CLI npm.
 - CSS fonte em `web/assets/css/app.css`.
 - CSS compilado em `web/static/css/app.css`.
 - Assets estaticos embutidos no binario Go para compatibilidade com Vercel.
 - Servico de assets estaticos em `/static/`.
+- Logo oficial inicial integrada ao header e ao hero, sem redesenho do asset.
 - Testes de homepage, health check, CSS estatico e rotas desconhecidas.
 
 ## Arquivos principais
@@ -58,6 +59,7 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 - `web/components/`
 - `web/assets/css/app.css`
 - `web/static/css/app.css`
+- `web/static/images/branding/logo-printlab-primary.png`
 - `package.json`
 - `package-lock.json`
 - `go.mod`
@@ -65,4 +67,4 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 
 ## Resultado final
 
-Fundacao visual implementada sem banco, catalogo real, carrinho, checkout, SuperFrete, InfinitePay, autenticacao ou Fase 3.
+Fundacao visual implementada e refinada com a identidade inicial da marca, sem banco, catalogo real, carrinho, checkout, SuperFrete, InfinitePay, autenticacao ou Fase 3.

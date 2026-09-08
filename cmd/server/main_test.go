@@ -29,6 +29,10 @@ func TestHomeHandler(t *testing.T) {
 	if !strings.Contains(body, "Pular para o conteúdo") {
 		t.Fatal("expected response to include the skip link")
 	}
+
+	if !strings.Contains(body, "/static/images/branding/logo-printlab-primary.png") {
+		t.Fatal("expected response to reference the PrintLab logo")
+	}
 }
 
 func TestHealthHandler(t *testing.T) {
@@ -58,6 +62,21 @@ func TestStaticCSSHandler(t *testing.T) {
 
 	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
 		t.Fatalf("expected CSS content type, got %q", got)
+	}
+}
+
+func TestStaticBrandLogoHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/static/images/branding/logo-printlab-primary.png", nil)
+	rec := httptest.NewRecorder()
+
+	newHandler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "image/png") {
+		t.Fatalf("expected PNG content type, got %q", got)
 	}
 }
 

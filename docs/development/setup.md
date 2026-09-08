@@ -73,6 +73,14 @@ curl -I http://localhost:8080/static/css/app.css
 
 Resposta esperada: HTTP 200 com `Content-Type` de CSS.
 
+Validar logo da marca:
+
+```sh
+curl -I http://localhost:8080/static/images/branding/logo-printlab-primary.png
+```
+
+Resposta esperada: HTTP 200 com `Content-Type` de imagem PNG.
+
 ## Comandos de validacao
 
 ```sh

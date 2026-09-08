@@ -45,7 +45,7 @@ func Footer() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-3 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between\"><p>PrintLab</p><p>Fundacao digital em desenvolvimento.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between\"><div><p class=\"text-base font-semibold text-foreground\">PrintLab</p><p class=\"mt-1\">Impressao 3D com base digital em desenvolvimento.</p></div><nav aria-label=\"Navegacao do rodape\"><ul class=\"flex flex-wrap gap-x-4 gap-y-2\"><li><a class=\"nav-link\" href=\"#inicio\">Inicio</a></li><li><a class=\"nav-link\" href=\"#sobre\">Sobre</a></li><li><a class=\"nav-link\" href=\"#contato\">Contato</a></li></ul></nav></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

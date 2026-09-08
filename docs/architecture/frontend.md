@@ -8,6 +8,8 @@ O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve s
 
 Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS compilado localmente.
 
+A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
+
 ## Limites
 
 - O frontend nao acessa diretamente tabelas sensiveis.
@@ -20,6 +22,7 @@ Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS
 - Usar `templ` v0.3.1020 para templates tipados.
 - Usar Tailwind CSS v4.3.3 via CLI, sem CDN.
 - Usar design tokens em `web/assets/css/app.css`.
+- Refinar tokens com base na paleta da logo: navy, azul vivo, teal, magenta e amarelo/laranja.
 - Servir CSS compilado por `/static/css/app.css` usando assets embutidos via `embed.FS`.
 - Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
@@ -31,6 +34,7 @@ web/components/          componentes templ reutilizaveis
 web/templates/           paginas templ
 web/assets/css/app.css   CSS fonte e design tokens
 web/static/css/app.css   CSS compilado, embutido no binario e servido pela aplicacao
+web/static/images/branding/logo-printlab-primary.png   logo oficial inicial da marca
 ```
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
@@ -48,6 +52,12 @@ Tokens iniciais cobrem conceitos semanticos:
 - border;
 - primary;
 - primary foreground;
+- accent;
+- accent foreground;
+- highlight blue;
+- highlight pink;
+- highlight teal;
+- highlight yellow;
 - secondary;
 - danger;
 - radius;
@@ -65,6 +75,7 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Skip link para o conteudo principal.
 - Apenas um H1 por pagina.
 - `focus-visible` perceptivel.
+- Alt adequado para imagens da marca quando a imagem comunica conteudo.
 
 ## Praticas proibidas
 
@@ -74,3 +85,5 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Expor tokens, chaves ou endpoints sensiveis no cliente.
 - Usar CDN do Tailwind.
 - Adicionar HTMX sem interacao que justifique sua presenca.
+- Redesenhar, alterar ou substituir a logo oficial sem decisao do responsavel pelo projeto.
+- Usar cores vibrantes da marca de forma aleatoria ou excessiva.

@@ -6,23 +6,29 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
-  --color-background: #f7f8fb;
+  --color-background: #f5f8fc;
   --color-surface: #ffffff;
-  --color-surface-muted: #eef3f5;
-  --color-foreground: #14202a;
-  --color-muted: #5e6b76;
-  --color-border: #d8e1e7;
-  --color-primary: #0f766e;
-  --color-primary-foreground: #f8fffd;
-  --color-secondary: #334155;
+  --color-surface-muted: #eef6fb;
+  --color-foreground: #071c36;
+  --color-muted: #5b6c7e;
+  --color-border: #d6e4ef;
+  --color-primary: #0b7ff3;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #071c36;
   --color-secondary-foreground: #f8fafc;
-  --color-secondary-light: #8fd6cf;
-  --color-danger: #c24141;
+  --color-secondary-light: #94e9df;
+  --color-accent: #e42b7b;
+  --color-accent-foreground: #ffffff;
+  --color-highlight-blue: #1187f4;
+  --color-highlight-pink: #e42b7b;
+  --color-highlight-teal: #10c5b7;
+  --color-highlight-yellow: #f6a313;
+  --color-danger: #c73939;
 
   --radius-control: 0.5rem;
   --radius-card: 0.75rem;
   --radius-section: 1rem;
-  --shadow-soft: 0 18px 50px -30px rgb(20 32 42 / 0.32);
+  --shadow-soft: 0 20px 55px -34px rgb(7 28 54 / 0.34);
 }
 
 :root {
@@ -40,7 +46,7 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-primary) 25%, transparent);
+    background: color-mix(in oklab, var(--color-highlight-teal) 28%, transparent);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -73,6 +79,14 @@
     @apply rounded-control px-1 py-2 text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
   }
 
+  .brand-link {
+    @apply flex min-w-0 items-center gap-3 text-base font-semibold tracking-normal text-foreground outline-none sm:text-lg;
+  }
+
+  .brand-header-logo {
+    @apply h-11 w-14 shrink-0 object-contain;
+  }
+
   .btn-base {
     @apply inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-semibold outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
   }
@@ -97,39 +111,75 @@
     @apply overflow-hidden bg-background;
   }
 
+  .brand-kicker {
+    @apply inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-sm font-semibold uppercase tracking-normal text-primary shadow-soft;
+  }
+
+  .brand-kicker::before {
+    content: "";
+    @apply size-2 rounded-full bg-highlight-teal;
+  }
+
   .hero-visual {
-    @apply relative min-h-80 overflow-hidden rounded-section border border-border bg-surface p-6 shadow-soft;
+    @apply relative min-h-80 overflow-hidden rounded-section border border-border bg-surface p-5 shadow-soft sm:p-6;
   }
 
-  .hero-visual-grid {
-    @apply relative h-full min-h-72 overflow-hidden rounded-card bg-surface-muted;
+  .hero-brand-card {
+    @apply relative flex min-h-72 items-center justify-center overflow-hidden rounded-card bg-surface-muted p-8;
     background-image:
-      linear-gradient(var(--color-border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
-    background-size: 28px 28px;
+      linear-gradient(color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 
-  .print-layer {
-    @apply absolute left-6 right-6 h-4 rounded-full border border-primary/25 bg-primary/15;
+  .hero-logo-image {
+    @apply relative z-10 mx-auto w-full max-w-72 rounded-card object-contain;
   }
 
-  .print-layer-primary {
-    @apply bottom-12;
+  .brand-dot {
+    @apply absolute rounded-full shadow-soft;
   }
 
-  .print-layer-secondary {
-    @apply bottom-20 left-12 right-12 bg-secondary/10;
+  .brand-dot-blue {
+    @apply right-10 top-10 size-5 bg-highlight-blue;
   }
 
-  .print-layer-tertiary {
-    @apply bottom-28 left-20 right-20;
+  .brand-dot-pink {
+    @apply bottom-20 right-14 size-4 bg-highlight-pink;
   }
 
-  .print-head {
-    @apply absolute left-1/2 top-12 flex size-28 -translate-x-1/2 items-center justify-center rounded-section border border-border bg-surface text-primary shadow-soft;
+  .brand-dot-teal {
+    @apply left-10 top-20 size-6 bg-highlight-teal;
   }
 
-  .print-head svg,
+  .brand-dot-yellow {
+    @apply bottom-10 left-16 size-4 bg-highlight-yellow;
+  }
+
+  .brand-layer-stack {
+    @apply absolute bottom-7 left-1/2 flex w-44 -translate-x-1/2 flex-col items-center gap-1.5;
+  }
+
+  .brand-layer {
+    @apply block h-2.5 rounded-full;
+  }
+
+  .brand-layer-blue {
+    @apply w-full bg-highlight-blue;
+  }
+
+  .brand-layer-teal {
+    @apply w-36 bg-highlight-teal;
+  }
+
+  .brand-layer-pink {
+    @apply w-28 bg-highlight-pink;
+  }
+
+  .brand-layer-yellow {
+    @apply w-20 bg-highlight-yellow;
+  }
+
   .empty-state-icon svg {
     @apply size-16;
   }
@@ -140,7 +190,7 @@
   }
 
   .step-number {
-    @apply inline-flex size-10 items-center justify-center rounded-control bg-primary text-sm font-semibold text-primary-foreground;
+    @apply inline-flex size-10 items-center justify-center rounded-control bg-secondary text-sm font-semibold text-secondary-foreground;
   }
 
   .empty-state {

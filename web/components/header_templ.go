@@ -29,7 +29,7 @@ func Header() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"border-b border-border bg-surface\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"border-b border-border bg-surface/95\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,7 +45,7 @@ func Header() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex min-h-16 items-center justify-between gap-4 py-3\"><a class=\"text-lg font-semibold tracking-normal text-foreground focus-ring\" href=\"#inicio\" aria-label=\"PrintLab - inicio\">PrintLab</a><nav aria-label=\"Navegacao principal\"><ul class=\"flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-medium text-muted sm:gap-x-6\"><li><a class=\"nav-link\" href=\"#inicio\">Inicio</a></li><li><a class=\"nav-link\" href=\"#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"#sobre\">Sobre</a></li><li><a class=\"nav-link\" href=\"#contato\">Contato</a></li></ul></nav></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex min-h-16 items-center justify-between gap-4 py-2.5\"><a class=\"brand-link focus-ring\" href=\"#inicio\" aria-label=\"PrintLab - inicio\"><img class=\"brand-header-logo\" src=\"/static/images/branding/logo-printlab-primary.png\" width=\"1448\" height=\"1086\" alt=\"\"> <span>PrintLab</span></a><nav aria-label=\"Navegacao principal\"><ul class=\"flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-medium text-muted sm:gap-x-6\"><li><a class=\"nav-link\" href=\"#inicio\">Inicio</a></li><li><a class=\"nav-link\" href=\"#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"#sobre\">Sobre</a></li><li><a class=\"nav-link\" href=\"#contato\">Contato</a></li></ul></nav></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
