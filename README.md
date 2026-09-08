@@ -12,7 +12,7 @@ IMPLEMENTADO:
 
 - Fundacao inicial do repositorio.
 - Documentacao de arquitetura, produto, banco, desenvolvimento, integracoes e roadmap.
-- Aplicacao Go em `cmd/web` usando `net/http`.
+- Aplicacao Go em `cmd/server` usando `net/http`.
 - Rota `GET /health` retornando HTTP 200.
 - Homepage server-side em `GET /` renderizada com `templ`.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
@@ -124,13 +124,13 @@ npm run css:watch
 Depois de gerar templates e CSS:
 
 ```sh
-go run ./cmd/web
+go run ./cmd/server
 ```
 
 Por padrao, o servidor usa a porta `8080`. Para mudar:
 
 ```sh
-PORT=3000 go run ./cmd/web
+PORT=3000 go run ./cmd/server
 ```
 
 Health check:
@@ -149,7 +149,7 @@ go vet ./...
 ## Estrutura geral
 
 ```text
-cmd/web/                 entrada HTTP da aplicacao
+cmd/server/              entrada HTTP da aplicacao
 internal/                pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

@@ -42,13 +42,13 @@ Se necessario, use terminais separados para `templ generate` ou watch, Tailwind 
 ## Executar aplicacao
 
 ```sh
-go run ./cmd/web
+go run ./cmd/server
 ```
 
 Porta customizada:
 
 ```sh
-PORT=3000 go run ./cmd/web
+PORT=3000 go run ./cmd/server
 ```
 
 ## Validar health check
@@ -68,7 +68,7 @@ ok
 ```sh
 templ generate
 npm run css:build
-gofmt -w cmd/web web/components web/templates
+gofmt -w cmd/server web/components web/templates
 go test ./...
 go vet ./...
 go build ./...

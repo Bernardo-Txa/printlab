@@ -30,6 +30,7 @@ Supabase PostgreSQL
 
 - Desenvolvimento inicial.
 - Vercel Hobby pode ser usado durante desenvolvimento.
+- Entrada Go compativel com zero-config da Vercel em `cmd/server/main.go`.
 - Sem operacao comercial.
 - Sem conexao com Supabase.
 - Sem secrets reais.

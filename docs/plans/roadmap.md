@@ -61,7 +61,7 @@ Objetivo: garantir que a aplicacao Go compila e inicia com infraestrutura HTTP m
 Principais entregas:
 
 - `go.mod`.
-- Entrada `cmd/web/main.go`.
+- Entrada `cmd/server/main.go`.
 - Health check `GET /health`.
 - Teste aplicavel do health check.
 

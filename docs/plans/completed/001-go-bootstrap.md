@@ -9,7 +9,7 @@ Criar uma aplicacao Go minima que compile, inicie e exponha um health check.
 ## O que foi implementado
 
 - `go.mod` com module path do GitHub.
-- Entrada HTTP em `cmd/web/main.go`.
+- Entrada HTTP em `cmd/server/main.go`.
 - Rota `GET /health`.
 - Teste automatizado do health check.
 
@@ -23,8 +23,8 @@ Criar uma aplicacao Go minima que compile, inicie e exponha um health check.
 ## Arquivos principais
 
 - `go.mod`
-- `cmd/web/main.go`
-- `cmd/web/main_test.go`
+- `cmd/server/main.go`
+- `cmd/server/main_test.go`
 
 ## Resultado final
 

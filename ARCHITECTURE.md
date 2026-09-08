@@ -6,7 +6,7 @@ Este e o documento principal de arquitetura do projeto PrintLab. Ele descreve a 
 
 IMPLEMENTADO:
 
-- Aplicacao Go em `cmd/web`.
+- Aplicacao Go em `cmd/server`.
 - Homepage server-side em `GET /`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Servico de assets estaticos em `/static/`.

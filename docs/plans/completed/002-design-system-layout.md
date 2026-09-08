@@ -51,8 +51,8 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 
 ## Arquivos principais
 
-- `cmd/web/main.go`
-- `cmd/web/main_test.go`
+- `cmd/server/main.go`
+- `cmd/server/main_test.go`
 - `web/templates/home.templ`
 - `web/components/`
 - `web/assets/css/app.css`
