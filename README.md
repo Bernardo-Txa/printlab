@@ -16,7 +16,7 @@ IMPLEMENTADO:
 - Rota `GET /health` retornando HTTP 200.
 - Homepage server-side em `GET /` renderizada com `templ`.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
-- Assets estaticos servidos em `/static/` a partir de `web/static/`.
+- Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 
 PLANEJADO:
 
@@ -51,6 +51,7 @@ Frontend implementado:
 - Tailwind CSS v4.3.3 via Tailwind CLI.
 - Design tokens iniciais em `web/assets/css/app.css`.
 - CSS compilado em `web/static/css/app.css`.
+- Assets estaticos embutidos no binario Go para compatibilidade com deploy na Vercel.
 
 Banco planejado:
 
@@ -139,6 +140,12 @@ Health check:
 curl http://localhost:8080/health
 ```
 
+Validar CSS servido pela aplicacao:
+
+```sh
+curl -I http://localhost:8080/static/css/app.css
+```
+
 ## Como executar testes
 
 ```sh
@@ -154,7 +161,7 @@ internal/                pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
 web/assets/              fontes de assets, incluindo CSS fonte
-web/static/              assets compilados e servidos em /static/
+web/static/              assets compilados, embutidos no binario e servidos em /static/
 migrations/              migrations futuras de banco
 tests/                   suporte futuro para testes de maior escopo
 docs/                    documentacao do projeto

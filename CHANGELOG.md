@@ -18,3 +18,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 ### Changed
 
 - Versao minima de Go atualizada para 1.26.0.
+- Assets estaticos passaram a ser servidos via `embed.FS` para melhorar compatibilidade com deploy na Vercel.

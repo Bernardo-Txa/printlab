@@ -13,7 +13,7 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 - Header, footer, container, botoes/link e empty state.
 - Pipeline de CSS com Tailwind CLI.
 - Design tokens iniciais.
-- Servico seguro de `/static/`.
+- Servico seguro de `/static/` via `embed.FS`.
 - Documentacao atualizada.
 
 ## Fora de escopo
@@ -46,6 +46,7 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 - Tailwind CSS 4 via CLI npm.
 - CSS fonte em `web/assets/css/app.css`.
 - CSS compilado em `web/static/css/app.css`.
+- Assets estaticos embutidos no binario Go para compatibilidade com Vercel.
 - Servico de assets estaticos em `/static/`.
 - Testes de homepage, health check, CSS estatico e rotas desconhecidas.
 

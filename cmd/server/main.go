@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
+	webfiles "github.com/Bernardo-Txa/printlab/web"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
@@ -30,7 +31,7 @@ func newHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
-	mux.Handle("GET /static/", staticFileHandler(staticRoot()))
+	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux
 }
@@ -53,37 +54,27 @@ func healthHandler(w http.ResponseWriter, _ *http.Request) {
 	_, _ = fmt.Fprintln(w, "ok")
 }
 
-func staticFileHandler(root string) http.Handler {
-	fileServer := http.StripPrefix("/static/", http.FileServer(http.Dir(root)))
+func staticFileHandler(staticFS fs.FS) http.Handler {
+	fileServer := http.StripPrefix("/static/", http.FileServer(http.FS(staticFS)))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rel := strings.TrimPrefix(r.URL.Path, "/static/")
 		clean := path.Clean("/" + rel)
+		name := strings.TrimPrefix(clean, "/")
 
 		if rel == "" || strings.HasSuffix(rel, "/") || strings.Contains(clean, "/.") {
 			http.NotFound(w, r)
 			return
 		}
 
-		fileServer.ServeHTTP(w, r)
+		info, err := fs.Stat(staticFS, name)
+		if err != nil || info.IsDir() {
+			http.NotFound(w, r)
+			return
+		}
+
+		request := r.Clone(r.Context())
+		request.URL.Path = "/static/" + name
+		fileServer.ServeHTTP(w, request)
 	})
-}
-
-func staticRoot() string {
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return filepath.Join("web", "static")
-	}
-
-	for dir := workingDir; ; dir = filepath.Dir(dir) {
-		candidate := filepath.Join(dir, "web", "static")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return filepath.Join("web", "static")
-		}
-	}
 }

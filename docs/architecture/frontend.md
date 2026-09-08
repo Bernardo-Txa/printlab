@@ -20,7 +20,7 @@ Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS
 - Usar `templ` v0.3.1020 para templates tipados.
 - Usar Tailwind CSS v4.3.3 via CLI, sem CDN.
 - Usar design tokens em `web/assets/css/app.css`.
-- Servir CSS compilado por `/static/css/app.css`.
+- Servir CSS compilado por `/static/css/app.css` usando assets embutidos via `embed.FS`.
 - Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
 
@@ -30,10 +30,12 @@ Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS
 web/components/          componentes templ reutilizaveis
 web/templates/           paginas templ
 web/assets/css/app.css   CSS fonte e design tokens
-web/static/css/app.css   CSS compilado servido pela aplicacao
+web/static/css/app.css   CSS compilado, embutido no binario e servido pela aplicacao
 ```
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
+
+Arquivos em `web/static/` sao embutidos no binario Go. Essa estrategia deixa o servidor autossuficiente para entregar CSS, imagens e JavaScript futuro sem depender de caminhos de filesystem no runtime da Vercel.
 
 ## Design tokens
 

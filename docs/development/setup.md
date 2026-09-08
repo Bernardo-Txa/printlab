@@ -63,6 +63,16 @@ Resposta esperada:
 ok
 ```
 
+## Validar assets estaticos
+
+O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
+
+```sh
+curl -I http://localhost:8080/static/css/app.css
+```
+
+Resposta esperada: HTTP 200 com `Content-Type` de CSS.
+
 ## Comandos de validacao
 
 ```sh

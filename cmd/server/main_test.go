@@ -55,10 +55,25 @@ func TestStaticCSSHandler(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
+
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
+		t.Fatalf("expected CSS content type, got %q", got)
+	}
 }
 
 func TestStaticDirectoryListingIsNotServed(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/css/", nil)
+	rec := httptest.NewRecorder()
+
+	newHandler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
+
+func TestMissingStaticFile(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/static/css/missing.css", nil)
 	rec := httptest.NewRecorder()
 
 	newHandler().ServeHTTP(rec, req)

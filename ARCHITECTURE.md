@@ -9,7 +9,7 @@ IMPLEMENTADO:
 - Aplicacao Go em `cmd/server`.
 - Homepage server-side em `GET /`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
-- Servico de assets estaticos em `/static/`.
+- Servico de assets estaticos em `/static/` via `embed.FS`.
 - Frontend server-side com `templ`.
 - Tailwind CSS via CLI npm.
 - Estrutura inicial de diretorios e documentacao.
@@ -109,7 +109,7 @@ Fluxo atual:
 ```text
 GET / -> homepage HTML renderizada com templ
 GET /health -> HTTP 200
-GET /static/... -> assets em web/static/
+GET /static/... -> assets embutidos a partir de web/static/
 ```
 
 Fluxo planejado para funcionalidades de negocio:
@@ -131,6 +131,8 @@ PostgreSQL
 ```
 
 Handlers devem validar entrada, chamar regras de dominio e devolver HTML ou respostas HTTP. Regras financeiras e mudancas de estado devem ser centralizadas no backend.
+
+Assets estaticos compilados em `web/static/` sao embutidos no binario Go com `embed.FS` e expostos por `http.FileServer` sobre `http.FS`. Isso evita depender da presenca do diretorio `web/static/` no filesystem do runtime da Vercel.
 
 ## Filosofia de dependencias
 
