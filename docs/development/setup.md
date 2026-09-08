@@ -81,6 +81,8 @@ curl -I http://localhost:8080/static/images/branding/logo-printlab-primary.png
 
 Resposta esperada: HTTP 200 com `Content-Type` de imagem PNG.
 
+A homepage tambem deve ser validada visualmente em celular, tablet e desktop para conferir logo, hero, blocos coloridos, CTA e ausencia de overflow horizontal.
+
 ## Comandos de validacao
 
 ```sh

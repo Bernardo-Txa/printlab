@@ -49,6 +49,7 @@ Criar a fundacao visual server-side da aplicacao PrintLab, com `templ`, Tailwind
 - Assets estaticos embutidos no binario Go para compatibilidade com Vercel.
 - Servico de assets estaticos em `/static/`.
 - Logo oficial inicial integrada ao header e ao hero, sem redesenho do asset.
+- Fase 2.1 refinou a experiencia de marca com hero editorial, DNA PrintLab, processo visual, catalogo futuro abstrato, storytelling e CTA.
 - Testes de homepage, health check, CSS estatico e rotas desconhecidas.
 
 ## Arquivos principais

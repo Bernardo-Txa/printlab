@@ -6,89 +6,141 @@ templ Home() {
 	@components.Layout("PrintLab | Impressao 3D", "Impressao 3D feita para transformar ideias em objetos.") {
 		<section id="inicio" class="hero-section">
 			@components.Container() {
-				<div class="grid min-h-[calc(100vh-4rem)] items-center gap-10 py-14 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
+				<div class="hero-grid">
 					<div class="max-w-3xl">
-						<p class="brand-kicker">Impressao 3D sob medida</p>
-						<h1 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl lg:text-6xl">
-							Ideias impressas com precisao, cor e criterio.
+						<p class="brand-kicker">Laboratorio de impressao 3D</p>
+						<h1 class="hero-title">
+							<span>Imprimimos <span class="text-highlight-blue">ideias.</span></span>
+							<span>Experimentamos <span class="text-highlight-pink">possibilidades.</span></span>
+							<span>Criamos em <span class="text-highlight-teal">3D.</span></span>
 						</h1>
 						<p class="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted">
-							A PrintLab une fabricacao digital e experimentacao para transformar conceitos em objetos bem definidos, com uma base online preparada para crescer com seguranca.
+							Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.
 						</p>
 						<div class="mt-8 flex flex-col gap-3 sm:flex-row">
-							@components.LinkButton("#contato", "Falar sobre uma ideia")
-							@components.LinkButtonSecondary("#como-funciona", "Entender o processo")
+							@components.LinkButton("#contato", "Falar com a PrintLab")
+							@components.LinkButtonSecondary("#como-funciona", "Ver o processo")
 						</div>
 					</div>
-					<div class="hero-visual" aria-label="Identidade visual da PrintLab">
-						<div class="hero-brand-card">
+					<div class="hero-brand-stage" aria-label="Identidade visual da PrintLab">
+						@components.MoleculeGraphic("molecule-mark hero-molecule")
+						<div class="hero-logo-shell">
 							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-primary.png" width="1448" height="1086" alt="Logo da PrintLab com impressora 3D e frasco de laboratorio"/>
-							<div class="brand-dot brand-dot-blue"></div>
-							<div class="brand-dot brand-dot-pink"></div>
-							<div class="brand-dot brand-dot-teal"></div>
-							<div class="brand-dot brand-dot-yellow"></div>
-							<div class="brand-layer-stack" aria-hidden="true">
-								<span class="brand-layer brand-layer-blue"></span>
-								<span class="brand-layer brand-layer-teal"></span>
-								<span class="brand-layer brand-layer-pink"></span>
-								<span class="brand-layer brand-layer-yellow"></span>
-							</div>
 						</div>
+						@components.LayerStackGraphic()
 					</div>
 				</div>
 			}
 		</section>
-		@components.Section("sobre", "Proposta", "Uma base visual para fabricacao digital.", "A PrintLab combina impressao 3D, criterio tecnico e uma linguagem acessivel. Esta versao organiza a presenca digital sem antecipar funcionalidades comerciais que ainda serao desenvolvidas.") {
-			<div class="mt-10 grid gap-4 md:grid-cols-3">
-				<div class="info-card">
-					<h3 class="text-lg font-semibold text-foreground">Clareza</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">Conteudo direto para explicar possibilidades, materiais e proximos passos sem excesso de promessa.</p>
-				</div>
-				<div class="info-card">
-					<h3 class="text-lg font-semibold text-foreground">Seguranca</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">A arquitetura mantem regras sensiveis no backend e evita depender do navegador para decisoes importantes.</p>
-				</div>
-				<div class="info-card">
-					<h3 class="text-lg font-semibold text-foreground">Evolucao</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">Layout, componentes e tokens visuais foram alinhados a marca para receber catalogo e fluxos futuros.</p>
-				</div>
-			</div>
-		}
-		@components.Section("como-funciona", "Como funciona", "Da ideia ao objeto, com etapas transparentes.", "O fluxo comercial completo ainda sera definido nas proximas fases. Por enquanto, esta area apresenta a direcao visual para explicar o processo futuramente.") {
-			<div class="mt-10 grid gap-4 lg:grid-cols-3">
-				<div class="process-card">
-					<span class="step-number">01</span>
-					<h3 class="mt-5 text-lg font-semibold text-foreground">Entendimento</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">Coleta das necessidades do projeto e dos criterios que vao orientar a producao.</p>
-				</div>
-				<div class="process-card">
-					<span class="step-number">02</span>
-					<h3 class="mt-5 text-lg font-semibold text-foreground">Preparacao</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">Avaliacao de materiais, geometria e parametros de impressao quando a funcionalidade for implementada.</p>
-				</div>
-				<div class="process-card">
-					<span class="step-number">03</span>
-					<h3 class="mt-5 text-lg font-semibold text-foreground">Producao</h3>
-					<p class="mt-3 text-sm leading-6 text-muted">Execucao e acompanhamento deverao aparecer em fases futuras, depois das regras de pedido.</p>
-				</div>
-			</div>
-		}
-		@components.Section("produtos", "Catalogo futuro", "Espaco preparado para produtos da PrintLab.", "A listagem real sera implementada somente depois da fase de banco e catalogo. Nenhum produto, preco ou estoque esta publicado nesta versao.") {
-			<div class="mt-10">
-				@components.EmptyState("Catalogo em preparacao", "Os produtos serao exibidos aqui quando o cadastro, o banco de dados e as regras de publicacao estiverem aprovados.")
-			</div>
-		}
-		<section id="contato" class="section-block bg-foreground text-primary-foreground">
+		<section id="dna" class="dna-section">
 			@components.Container() {
-				<div class="grid gap-8 py-16 md:grid-cols-[1fr_auto] md:items-center">
+				<div class="section-heading">
+					<p class="brand-kicker">DNA PrintLab</p>
+					<h2 class="mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl">Uma marca feita de tecnica, teste e imaginacao.</h2>
+				</div>
+				<div class="dna-grid">
+					<div class="dna-card dna-card-blue">
+						<span class="dna-word">Impressao</span>
+						<p>Camadas, formas e detalhes tratados como parte do projeto.</p>
+					</div>
+					<div class="dna-card dna-card-teal">
+						<span class="dna-word">Experimento</span>
+						<p>Ideias passam por tentativa, ajuste e descoberta ate ganhar forma.</p>
+					</div>
+					<div class="dna-card dna-card-pink">
+						<span class="dna-word">Precisao</span>
+						<p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p>
+					</div>
+					<div class="dna-card dna-card-yellow">
+						<span class="dna-word">Criacao</span>
+						<p>Cor, material e desenho abrem espaco para projetos mais autorais.</p>
+					</div>
+				</div>
+			}
+		</section>
+		@components.Section("como-funciona", "Como funciona", "Da ideia ao objeto, com etapas transparentes.", "O processo completo sera apresentado com mais detalhes em breve. A base visual ja mostra como a PrintLab pretende organizar cada conversa criativa.") {
+			<ol class="process-flow">
+				<li class="process-step">
+					<span class="step-number">01</span>
 					<div>
-						<p class="text-sm font-semibold uppercase tracking-normal text-secondary-light">Contato</p>
-						<h2 class="mt-3 text-balance text-3xl font-semibold sm:text-4xl">Tem uma ideia para imprimir?</h2>
-						<p class="mt-4 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80">
-							Esta area sera conectada a um canal oficial quando o fluxo de atendimento for definido. Por enquanto, ela marca o espaco de contato da homepage.
+						<h3>Voce traz a ideia</h3>
+						<p>Um objeto, uma peca, um presente ou uma solucao que precisa sair do papel.</p>
+					</div>
+				</li>
+				<li class="process-step">
+					<span class="step-number">02</span>
+					<div>
+						<h3>Nos definimos a solucao</h3>
+						<p>O projeto ganha criterios de forma, acabamento e viabilidade antes da producao.</p>
+					</div>
+				</li>
+				<li class="process-step">
+					<span class="step-number">03</span>
+					<div>
+						<h3>A impressao ganha forma</h3>
+						<p>Camada por camada, a ideia se aproxima do mundo fisico.</p>
+					</div>
+				</li>
+			</ol>
+		}
+		<section id="produtos" class="catalog-section">
+			@components.Container() {
+				<div class="catalog-layout">
+					<div>
+						<p class="brand-kicker">Catalogo futuro</p>
+						<h2 class="mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl">Experimentos que voce vai poder levar para casa.</h2>
+						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg">
+							A vitrine ainda esta em preparacao. Esta area foi desenhada para receber objetos reais quando eles estiverem prontos para apresentacao.
 						</p>
 					</div>
-					@components.LinkButtonSecondary("#inicio", "Voltar ao inicio")
+					<div class="catalog-preview" aria-label="Espaco visual reservado para catalogo futuro">
+						<span class="catalog-shape catalog-shape-blue"></span>
+						<span class="catalog-shape catalog-shape-teal"></span>
+						<span class="catalog-shape catalog-shape-pink"></span>
+						<span class="catalog-shape catalog-shape-yellow"></span>
+					</div>
+				</div>
+			}
+		</section>
+		<section id="lab" class="lab-story-section">
+			@components.Container() {
+				<div class="lab-story-grid">
+					<div>
+						<p class="brand-kicker">Por que Lab?</p>
+						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Porque criar tambem e testar.</h2>
+						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg">
+							A PrintLab mistura fabricacao digital, experimentacao e criatividade. Cada projeto comeca como uma ideia e passa por ajustes ate ganhar forma fisica.
+						</p>
+					</div>
+					<div class="lab-graphic" aria-hidden="true">
+						@components.MoleculeGraphic("molecule-mark lab-molecule")
+						<div class="lab-flask-outline"></div>
+					</div>
+				</div>
+			}
+		</section>
+		<section class="brand-impact-section">
+			@components.Container() {
+				<h2 class="brand-impact-title">
+					<span>Da ideia</span>
+					<span>para o mundo</span>
+					<span>fisico.</span>
+				</h2>
+			}
+		</section>
+		<section id="contato" class="cta-section">
+			@components.Container() {
+				<div class="cta-layout">
+					<div>
+						<p class="brand-kicker">Contato</p>
+						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Tem uma ideia? Vamos experimentar.</h2>
+						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg">
+							O canal oficial de atendimento sera definido em breve. Enquanto isso, este espaco aproxima a marca de quem quer tirar uma ideia do papel.
+						</p>
+					</div>
+					<div class="cta-badge" aria-label="Falar com a PrintLab">
+						Falar com a PrintLab
+					</div>
 				</div>
 			}
 		</section>

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1 e 2 concluidas. Fases 3 a 17 planejadas.
+Status: Fases 0, 1, 2 e 2.1 concluidas. Fases 3 a 17 planejadas.
 
 ## Status das fases
 
@@ -9,6 +9,7 @@ Status: Fases 0, 1 e 2 concluidas. Fases 3 a 17 planejadas.
 | Fase 0 — Fundacao e documentacao | Concluida |
 | Fase 1 — Bootstrap da aplicacao Go | Concluida |
 | Fase 2 — Design system e layout | Concluida |
+| Fase 2.1 — Brand Experience | Concluida |
 | Fase 3 — Banco de dados | Planejada |
 | Fase 4 — Catalogo | Planejada |
 | Fase 5 — Produtos e variantes | Planejada |

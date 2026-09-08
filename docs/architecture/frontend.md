@@ -10,6 +10,8 @@ Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
+A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editorial, blocos de DNA PrintLab, processo visual, catalogo futuro abstrato, storytelling e CTA final. Isso continua dentro do escopo visual da Fase 2.
+
 ## Limites
 
 - O frontend nao acessa diretamente tabelas sensiveis.
@@ -23,6 +25,7 @@ A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage
 - Usar Tailwind CSS v4.3.3 via CLI, sem CDN.
 - Usar design tokens em `web/assets/css/app.css`.
 - Refinar tokens com base na paleta da logo: navy, azul vivo, teal, magenta e amarelo/laranja.
+- Usar cores vibrantes estruturalmente por secao, mantendo navy como ancora visual.
 - Servir CSS compilado por `/static/css/app.css` usando assets embutidos via `embed.FS`.
 - Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
@@ -76,6 +79,7 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Apenas um H1 por pagina.
 - `focus-visible` perceptivel.
 - Alt adequado para imagens da marca quando a imagem comunica conteudo.
+- Homepage sem copy de implementacao tecnica voltada a desenvolvedores.
 
 ## Praticas proibidas
 

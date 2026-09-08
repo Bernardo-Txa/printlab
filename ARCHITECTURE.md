@@ -12,6 +12,7 @@ IMPLEMENTADO:
 - Servico de assets estaticos em `/static/` via `embed.FS`.
 - Frontend server-side com `templ`.
 - Tailwind CSS via CLI npm.
+- Identidade visual da homepage refinada na Fase 2.1.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:

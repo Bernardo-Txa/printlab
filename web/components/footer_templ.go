@@ -45,7 +45,7 @@ func Footer() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between\"><div><p class=\"text-base font-semibold text-foreground\">PrintLab</p><p class=\"mt-1\">Impressao 3D com base digital em desenvolvimento.</p></div><nav aria-label=\"Navegacao do rodape\"><ul class=\"flex flex-wrap gap-x-4 gap-y-2\"><li><a class=\"nav-link\" href=\"#inicio\">Inicio</a></li><li><a class=\"nav-link\" href=\"#sobre\">Sobre</a></li><li><a class=\"nav-link\" href=\"#contato\">Contato</a></li></ul></nav></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between\"><div class=\"flex items-center gap-3\"><img class=\"footer-logo\" src=\"/static/images/branding/logo-printlab-primary.png\" width=\"1448\" height=\"1086\" alt=\"\"><div><p class=\"text-base font-semibold text-foreground\">PrintLab</p><p class=\"mt-1\">Impressao 3D, experimentacao e criatividade.</p></div></div><nav aria-label=\"Navegacao do rodape\"><ul class=\"flex flex-wrap gap-x-4 gap-y-2\"><li><a class=\"nav-link\" href=\"#inicio\">Inicio</a></li><li><a class=\"nav-link\" href=\"#dna\">DNA</a></li><li><a class=\"nav-link\" href=\"#contato\">Contato</a></li></ul></nav></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

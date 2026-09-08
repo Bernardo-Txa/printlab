@@ -19,6 +19,7 @@ IMPLEMENTADO:
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
 - Design tokens refinados com base na identidade visual da marca.
+- Fase 2.1 de Brand Experience aplicada na homepage.
 
 PLANEJADO:
 
@@ -55,6 +56,7 @@ Frontend implementado:
 - CSS compilado em `web/static/css/app.css`.
 - Assets estaticos embutidos no binario Go para compatibilidade com deploy na Vercel.
 - Logo de marca em `web/static/images/branding/logo-printlab-primary.png`.
+- Linguagem visual com blocos coloridos, grid tecnico, camadas de impressao e elementos inspirados em laboratorio.
 
 Banco planejado:
 

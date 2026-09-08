@@ -33,6 +33,24 @@ func TestHomeHandler(t *testing.T) {
 	if !strings.Contains(body, "/static/images/branding/logo-printlab-primary.png") {
 		t.Fatal("expected response to reference the PrintLab logo")
 	}
+
+	if !strings.Contains(body, "Imprimimos") || !strings.Contains(body, "Por que Lab?") {
+		t.Fatal("expected response to include the brand experience sections")
+	}
+}
+
+func TestHomeCopyDoesNotExposeTechnicalImplementation(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+
+	newHandler().ServeHTTP(rec, req)
+
+	body := strings.ToLower(rec.Body.String())
+	for _, term := range []string{"backend", "server-side", "banco", "go:embed"} {
+		if strings.Contains(body, term) {
+			t.Fatalf("expected homepage copy not to expose technical term %q", term)
+		}
+	}
 }
 
 func TestHealthHandler(t *testing.T) {

@@ -12,12 +12,12 @@
   --color-foreground: #071c36;
   --color-muted: #5b6c7e;
   --color-border: #d6e4ef;
-  --color-primary: #0b7ff3;
+  --color-primary: #006de0;
   --color-primary-foreground: #ffffff;
   --color-secondary: #071c36;
   --color-secondary-foreground: #f8fafc;
   --color-secondary-light: #94e9df;
-  --color-accent: #e42b7b;
+  --color-accent: #d81b70;
   --color-accent-foreground: #ffffff;
   --color-highlight-blue: #1187f4;
   --color-highlight-pink: #e42b7b;
@@ -80,27 +80,31 @@
   }
 
   .brand-link {
-    @apply flex min-w-0 items-center gap-3 text-base font-semibold tracking-normal text-foreground outline-none sm:text-lg;
+    @apply flex min-w-0 items-center tracking-normal text-foreground outline-none;
   }
 
   .brand-header-logo {
-    @apply h-11 w-14 shrink-0 object-contain;
+    @apply h-16 w-24 shrink-0 object-contain sm:h-[4.5rem] sm:w-28;
+  }
+
+  .footer-logo {
+    @apply h-12 w-16 shrink-0 rounded-control object-contain;
   }
 
   .btn-base {
-    @apply inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-semibold outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+    @apply inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-secondary;
+    @apply bg-primary text-primary-foreground shadow-soft hover:bg-highlight-teal;
   }
 
   .btn-secondary {
-    @apply border border-border bg-surface text-foreground hover:border-primary hover:text-primary;
+    @apply border border-border bg-surface text-foreground hover:border-highlight-pink hover:text-primary;
   }
 
   .section-block {
-    @apply scroll-mt-20 py-16 sm:py-20;
+    @apply scroll-mt-20 py-14 sm:py-18;
   }
 
   .section-heading {
@@ -108,7 +112,7 @@
   }
 
   .hero-section {
-    @apply overflow-hidden bg-background;
+    @apply overflow-hidden bg-secondary text-secondary-foreground;
   }
 
   .brand-kicker {
@@ -120,48 +124,61 @@
     @apply size-2 rounded-full bg-highlight-teal;
   }
 
-  .hero-visual {
-    @apply relative min-h-80 overflow-hidden rounded-section border border-border bg-surface p-5 shadow-soft sm:p-6;
+  .hero-section .brand-kicker {
+    @apply border-white/15 bg-white/10 text-secondary-foreground shadow-none;
   }
 
-  .hero-brand-card {
-    @apply relative flex min-h-72 items-center justify-center overflow-hidden rounded-card bg-surface-muted p-8;
+  .hero-grid {
+    @apply grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:py-18;
+  }
+
+  .hero-title {
+    @apply mt-5 flex flex-col text-balance text-5xl font-semibold leading-none tracking-normal text-secondary-foreground sm:text-6xl lg:text-7xl;
+  }
+
+  .hero-brand-stage {
+    @apply relative min-h-96 overflow-hidden rounded-section border border-white/15 p-5 sm:min-h-[28rem] sm:p-8;
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 30%, transparent), transparent 34%),
+      linear-gradient(315deg, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 36%),
+      var(--color-secondary);
+  }
+
+  .hero-brand-stage::before {
+    content: "";
+    @apply absolute inset-0 opacity-25;
     background-image:
-      linear-gradient(color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px);
-    background-size: 30px 30px;
+      linear-gradient(color-mix(in oklab, white 28%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, white 28%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .hero-logo-shell {
+    @apply absolute inset-x-5 top-7 z-10 mx-auto flex max-w-md items-center justify-center rounded-section bg-surface p-5 shadow-soft sm:inset-x-8 sm:top-8 sm:p-6;
   }
 
   .hero-logo-image {
-    @apply relative z-10 mx-auto w-full max-w-72 rounded-card object-contain;
+    @apply w-full max-w-80 object-contain;
   }
 
-  .brand-dot {
-    @apply absolute rounded-full shadow-soft;
+  .molecule-mark {
+    @apply pointer-events-none absolute text-highlight-teal;
   }
 
-  .brand-dot-blue {
-    @apply right-10 top-10 size-5 bg-highlight-blue;
+  .hero-molecule {
+    @apply bottom-12 right-3 z-0 h-36 w-48 opacity-80 sm:right-8;
   }
 
-  .brand-dot-pink {
-    @apply bottom-20 right-14 size-4 bg-highlight-pink;
-  }
-
-  .brand-dot-teal {
-    @apply left-10 top-20 size-6 bg-highlight-teal;
-  }
-
-  .brand-dot-yellow {
-    @apply bottom-10 left-16 size-4 bg-highlight-yellow;
+  .lab-molecule {
+    @apply right-3 top-4 h-36 w-48 opacity-80 sm:right-8;
   }
 
   .brand-layer-stack {
-    @apply absolute bottom-7 left-1/2 flex w-44 -translate-x-1/2 flex-col items-center gap-1.5;
+    @apply absolute bottom-7 left-6 z-10 flex w-52 flex-col items-start gap-2 sm:left-8;
   }
 
   .brand-layer {
-    @apply block h-2.5 rounded-full;
+    @apply block h-3 rounded-full;
   }
 
   .brand-layer-blue {
@@ -169,15 +186,67 @@
   }
 
   .brand-layer-teal {
-    @apply w-36 bg-highlight-teal;
+    @apply w-44 bg-highlight-teal;
   }
 
   .brand-layer-pink {
-    @apply w-28 bg-highlight-pink;
+    @apply w-36 bg-highlight-pink;
   }
 
   .brand-layer-yellow {
-    @apply w-20 bg-highlight-yellow;
+    @apply w-24 bg-highlight-yellow;
+  }
+
+  .dna-section {
+    @apply bg-background py-14 sm:py-18;
+  }
+
+  .dna-grid {
+    @apply mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .dna-card {
+    @apply min-h-52 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
+  }
+
+  .dna-word {
+    @apply block text-3xl font-semibold leading-none tracking-normal sm:text-4xl;
+  }
+
+  .dna-card p {
+    @apply mt-6 text-sm leading-6 text-primary-foreground/85;
+  }
+
+  .dna-card-blue {
+    @apply bg-highlight-blue text-foreground;
+  }
+
+  .dna-card-blue p {
+    @apply text-foreground/75;
+  }
+
+  .dna-card-teal {
+    @apply bg-highlight-teal text-foreground;
+  }
+
+  .dna-card-teal p {
+    @apply text-foreground/75;
+  }
+
+  .dna-card-pink {
+    @apply bg-highlight-pink text-foreground;
+  }
+
+  .dna-card-pink p {
+    @apply text-foreground/75;
+  }
+
+  .dna-card-yellow {
+    @apply bg-highlight-yellow text-foreground;
+  }
+
+  .dna-card-yellow p {
+    @apply text-foreground/75;
   }
 
   .empty-state-icon svg {
@@ -190,7 +259,122 @@
   }
 
   .step-number {
-    @apply inline-flex size-10 items-center justify-center rounded-control bg-secondary text-sm font-semibold text-secondary-foreground;
+    @apply inline-flex size-12 shrink-0 items-center justify-center rounded-control bg-secondary text-sm font-semibold text-secondary-foreground;
+  }
+
+  .process-flow {
+    @apply relative mt-10 grid gap-5 lg:grid-cols-3;
+  }
+
+  .process-flow::before {
+    content: "";
+    @apply absolute left-6 top-6 hidden h-1 w-[calc(100%-3rem)] rounded-full bg-highlight-teal/45 lg:block;
+  }
+
+  .process-step {
+    @apply relative z-10 flex gap-4 rounded-card border border-border bg-surface p-5 shadow-soft transition-transform duration-200 hover:-translate-y-1 lg:flex-col;
+  }
+
+  .process-step h3 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .process-step p {
+    @apply mt-3 text-sm leading-6 text-muted;
+  }
+
+  .catalog-section {
+    @apply overflow-hidden bg-secondary py-14 text-primary-foreground sm:py-18;
+  }
+
+  .catalog-section .brand-kicker {
+    @apply border-white/15 bg-white/10 text-primary-foreground shadow-none;
+  }
+
+  .catalog-layout {
+    @apply grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center;
+  }
+
+  .catalog-preview {
+    @apply relative min-h-80 overflow-hidden rounded-section border border-white/15 bg-white/10 p-6;
+  }
+
+  .catalog-preview::before {
+    content: "";
+    @apply absolute inset-0 opacity-20;
+    background-image:
+      linear-gradient(color-mix(in oklab, white 30%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, white 30%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .catalog-shape {
+    @apply absolute rounded-card border border-white/25 shadow-soft;
+  }
+
+  .catalog-shape-blue {
+    @apply bottom-8 left-8 h-28 w-44 bg-highlight-blue;
+  }
+
+  .catalog-shape-teal {
+    @apply bottom-28 left-16 h-24 w-36 bg-highlight-teal;
+  }
+
+  .catalog-shape-pink {
+    @apply bottom-44 left-24 h-20 w-28 bg-highlight-pink;
+  }
+
+  .catalog-shape-yellow {
+    @apply right-10 top-10 h-16 w-16 rounded-control bg-highlight-yellow;
+  }
+
+  .lab-story-section {
+    @apply bg-surface py-14 sm:py-18;
+  }
+
+  .lab-story-grid {
+    @apply grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center;
+  }
+
+  .lab-graphic {
+    @apply relative min-h-72 overflow-hidden rounded-section border border-border bg-surface-muted shadow-soft;
+  }
+
+  .lab-flask-outline {
+    @apply absolute bottom-8 left-1/2 h-44 w-40 -translate-x-1/2 rounded-b-[5rem] rounded-t-control border-[10px] border-secondary;
+  }
+
+  .lab-flask-outline::before {
+    content: "";
+    @apply absolute -top-14 left-1/2 h-16 w-20 -translate-x-1/2 rounded-t-control border-[10px] border-b-0 border-secondary;
+  }
+
+  .brand-impact-section {
+    @apply bg-secondary py-14 text-primary-foreground sm:py-18;
+  }
+
+  .brand-impact-title {
+    @apply flex flex-col text-balance text-5xl font-semibold leading-none tracking-normal sm:text-6xl lg:text-7xl;
+  }
+
+  .brand-impact-title span:nth-child(2) {
+    @apply text-highlight-teal;
+  }
+
+  .brand-impact-title span:nth-child(3) {
+    @apply text-highlight-yellow;
+  }
+
+  .cta-section {
+    @apply bg-background py-14 sm:py-18;
+  }
+
+  .cta-layout {
+    @apply grid gap-8 rounded-section border border-border bg-surface p-6 shadow-soft sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center;
+  }
+
+  .cta-badge {
+    @apply inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-soft;
   }
 
   .empty-state {
