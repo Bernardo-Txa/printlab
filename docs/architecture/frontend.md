@@ -1,10 +1,12 @@
 # Frontend
 
-Status: PLANEJADO.
+Status: fundacao visual IMPLEMENTADA; interacoes HTMX e funcionalidades comerciais PLANEJADAS.
 
 ## Responsabilidade
 
-O frontend devera apresentar paginas HTML renderizadas no servidor, formularios e interacoes progressivas. A experiencia deve ser simples, rapida e acessivel.
+O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
+
+Nesta fase, a homepage em `GET /` e renderizada com `templ`, usando Tailwind CSS compilado localmente.
 
 ## Limites
 
@@ -15,10 +17,41 @@ O frontend devera apresentar paginas HTML renderizadas no servidor, formularios 
 ## Decisoes
 
 - Usar renderizacao server-side.
-- Usar `templ` para templates tipados.
-- Usar HTMX para atualizacoes parciais baseadas em HTTP.
-- Usar Tailwind CSS quando a etapa de design system comecar.
+- Usar `templ` v0.3.1020 para templates tipados.
+- Usar Tailwind CSS v4.3.3 via CLI, sem CDN.
+- Usar design tokens em `web/assets/css/app.css`.
+- Servir CSS compilado por `/static/css/app.css`.
+- Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
+
+## Estrutura implementada
+
+```text
+web/components/          componentes templ reutilizaveis
+web/templates/           paginas templ
+web/assets/css/app.css   CSS fonte e design tokens
+web/static/css/app.css   CSS compilado servido pela aplicacao
+```
+
+Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
+
+## Design tokens
+
+Tokens iniciais cobrem conceitos semanticos:
+
+- background;
+- surface;
+- foreground;
+- muted;
+- border;
+- primary;
+- primary foreground;
+- secondary;
+- danger;
+- radius;
+- container width.
+
+Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrarias espalhadas por templates.
 
 ## Praticas recomendadas
 
@@ -27,6 +60,9 @@ O frontend devera apresentar paginas HTML renderizadas no servidor, formularios 
 - Componentes reutilizaveis apenas quando reduzirem duplicacao real.
 - Estados de erro claros vindos do backend.
 - Acessibilidade considerada desde os primeiros layouts.
+- Skip link para o conteudo principal.
+- Apenas um H1 por pagina.
+- `focus-visible` perceptivel.
 
 ## Praticas proibidas
 
@@ -34,3 +70,5 @@ O frontend devera apresentar paginas HTML renderizadas no servidor, formularios 
 - Criar SPA pesada sem decisao arquitetural registrada.
 - Usar JavaScript para contornar validacao server-side.
 - Expor tokens, chaves ou endpoints sensiveis no cliente.
+- Usar CDN do Tailwind.
+- Adicionar HTMX sem interacao que justifique sua presenca.

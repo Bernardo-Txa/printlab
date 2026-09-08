@@ -1,0 +1,18 @@
+package components
+
+templ Section(id string, eyebrow string, title string, description string) {
+	<section id={ id } class="section-block">
+		@Container() {
+			<div class="section-heading">
+				if eyebrow != "" {
+					<p class="text-sm font-semibold uppercase tracking-normal text-primary">{ eyebrow }</p>
+				}
+				<h2 class="mt-3 text-balance text-3xl font-semibold text-foreground sm:text-4xl">{ title }</h2>
+				if description != "" {
+					<p class="mt-4 max-w-3xl text-pretty text-base leading-7 text-muted sm:text-lg">{ description }</p>
+				}
+			</div>
+			{ children... }
+		}
+	</section>
+}

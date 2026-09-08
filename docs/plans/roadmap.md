@@ -1,6 +1,29 @@
 # Roadmap
 
-Status: PLANEJADO. Este roadmap organiza as fases, mas nao autoriza avancar automaticamente entre elas.
+Status: Fases 0, 1 e 2 concluidas. Fases 3 a 17 planejadas.
+
+## Status das fases
+
+| Fase | Status |
+| --- | --- |
+| Fase 0 — Fundacao e documentacao | Concluida |
+| Fase 1 — Bootstrap da aplicacao Go | Concluida |
+| Fase 2 — Design system e layout | Concluida |
+| Fase 3 — Banco de dados | Planejada |
+| Fase 4 — Catalogo | Planejada |
+| Fase 5 — Produtos e variantes | Planejada |
+| Fase 6 — Carrinho | Planejada |
+| Fase 7 — Dados do cliente e endereco | Planejada |
+| Fase 8 — Integracao SuperFrete | Planejada |
+| Fase 9 — Pedidos | Planejada |
+| Fase 10 — Integracao InfinitePay | Planejada |
+| Fase 11 — Webhooks de pagamento | Planejada |
+| Fase 12 — Acompanhamento do pedido | Planejada |
+| Fase 13 — Painel administrativo | Planejada |
+| Fase 14 — Seguranca | Planejada |
+| Fase 15 — Testes e observabilidade | Planejada |
+| Fase 16 — SEO e performance | Planejada |
+| Fase 17 — Preparacao para producao | Planejada |
 
 ## Processo de planos
 

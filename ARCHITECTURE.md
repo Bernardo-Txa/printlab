@@ -6,15 +6,19 @@ Este e o documento principal de arquitetura do projeto PrintLab. Ele descreve a 
 
 IMPLEMENTADO:
 
-- Aplicacao Go minima em `cmd/web`.
+- Aplicacao Go em `cmd/web`.
+- Homepage server-side em `GET /`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
+- Servico de assets estaticos em `/static/`.
+- Frontend server-side com `templ`.
+- Tailwind CSS via CLI npm.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:
 
 - Catalogo, carrinho, checkout, pedidos, painel administrativo e integracoes externas.
 - Acesso ao PostgreSQL via `pgx`.
-- Frontend server-side com `templ`, HTMX e Tailwind CSS.
+- HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
 
@@ -44,12 +48,12 @@ O navegador nao deve acessar diretamente tabelas sensiveis nem enviar valores fi
 
 ## Responsabilidades do frontend
 
-O frontend sera responsavel por apresentar HTML, formularios e interacoes progressivas. A stack planejada e:
+O frontend e responsavel por apresentar HTML, formularios e interacoes progressivas. A stack atual e planejada e:
 
-- `templ` para templates tipados em Go;
-- HTMX para interacoes HTTP parciais;
-- Tailwind CSS para estilos utilitarios;
-- o minimo possivel de JavaScript proprio.
+- IMPLEMENTADO: `templ` para templates tipados em Go.
+- IMPLEMENTADO: Tailwind CSS para estilos utilitarios e design tokens.
+- PLANEJADO: HTMX para interacoes HTTP parciais quando houver necessidade real.
+- PLANEJADO: minimo possivel de JavaScript proprio.
 
 O frontend pode melhorar a experiencia do usuario, mas nao decide regras financeiras, disponibilidade final, status de pedido ou confirmacao de pagamento.
 
@@ -103,7 +107,9 @@ Diretorios sem implementacao permanecem vazios com `.gitkeep`. Nao devem receber
 Fluxo atual:
 
 ```text
+GET / -> homepage HTML renderizada com templ
 GET /health -> HTTP 200
+GET /static/... -> assets em web/static/
 ```
 
 Fluxo planejado para funcionalidades de negocio:
@@ -130,11 +136,15 @@ Handlers devem validar entrada, chamar regras de dominio e devolver HTML ou resp
 
 A biblioteca padrao do Go e a primeira escolha. Dependencias externas so devem ser adicionadas quando resolverem uma necessidade real, com justificativa clara em documentacao ou ADR quando a decisao for arquitetural.
 
+Dependencias implementadas:
+
+- `github.com/a-h/templ` para templates server-side;
+- `tailwindcss` e `@tailwindcss/cli` para CSS.
+
 Dependencias planejadas, mas ainda nao adicionadas:
 
 - `pgx` para PostgreSQL;
-- `templ` para templates server-side;
-- ferramentas de Tailwind CSS quando o design system for iniciado.
+- HTMX quando houver interacao real.
 
 ## Seguranca
 

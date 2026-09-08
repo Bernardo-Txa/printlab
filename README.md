@@ -12,11 +12,15 @@ IMPLEMENTADO:
 
 - Fundacao inicial do repositorio.
 - Documentacao de arquitetura, produto, banco, desenvolvimento, integracoes e roadmap.
-- Aplicacao Go minima em `cmd/web`.
+- Aplicacao Go em `cmd/web` usando `net/http`.
 - Rota `GET /health` retornando HTTP 200.
+- Homepage server-side em `GET /` renderizada com `templ`.
+- Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
+- Assets estaticos servidos em `/static/` a partir de `web/static/`.
 
 PLANEJADO:
 
+- HTMX quando houver interacao real que justifique sua presenca.
 - Catalogo de produtos.
 - Produtos com variantes, cores e materiais.
 - Carrinho e checkout sem obrigatoriedade de conta.
@@ -37,11 +41,16 @@ Backend:
 
 Frontend planejado:
 
-- Renderizacao server-side.
-- `templ`.
 - HTMX.
-- Tailwind CSS.
 - Minimo possivel de JavaScript.
+
+Frontend implementado:
+
+- Renderizacao server-side.
+- `templ` v0.3.1020.
+- Tailwind CSS v4.3.3 via Tailwind CLI.
+- Design tokens iniciais em `web/assets/css/app.css`.
+- CSS compilado em `web/static/css/app.css`.
 
 Banco planejado:
 
@@ -76,10 +85,43 @@ O module path Go esta definido como `github.com/Bernardo-Txa/printlab`.
 
 ## Requisitos locais
 
-- Go 1.22.2 ou versao compativel disponivel no ambiente.
+- Go 1.26.0 ou versao compativel.
+- Node.js e npm para tooling frontend.
+- CLI do `templ` v0.3.1020.
 - Nenhuma conta externa e necessaria nesta fase.
 
+Instalacao local do tooling:
+
+```sh
+npm install
+go install github.com/a-h/templ/cmd/templ@v0.3.1020
+```
+
+Garanta que o diretorio de binarios do Go, normalmente `$(go env GOPATH)/bin`, esteja no `PATH`.
+
+## Como gerar frontend
+
+Gerar templates Go a partir dos arquivos `.templ`:
+
+```sh
+templ generate
+```
+
+Compilar CSS de producao:
+
+```sh
+npm run css:build
+```
+
+Modo watch do CSS:
+
+```sh
+npm run css:watch
+```
+
 ## Como executar
+
+Depois de gerar templates e CSS:
 
 ```sh
 go run ./cmd/web
@@ -109,7 +151,10 @@ go vet ./...
 ```text
 cmd/web/                 entrada HTTP da aplicacao
 internal/                pacotes internos futuros por area de dominio
-web/                     templates, componentes, assets e arquivos estaticos futuros
+web/templates/           templates server-side em templ
+web/components/          componentes visuais reutilizaveis em templ
+web/assets/              fontes de assets, incluindo CSS fonte
+web/static/              assets compilados e servidos em /static/
 migrations/              migrations futuras de banco
 tests/                   suporte futuro para testes de maior escopo
 docs/                    documentacao do projeto

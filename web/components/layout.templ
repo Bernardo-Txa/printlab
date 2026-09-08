@@ -1,0 +1,22 @@
+package components
+
+templ Layout(title string, description string) {
+	<!doctype html>
+	<html lang="pt-BR">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<meta name="description" content={ description }/>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+		</head>
+		<body class="min-h-screen bg-background font-sans text-foreground antialiased">
+			<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+			@Header()
+			<main id="conteudo" tabindex="-1">
+				{ children... }
+			</main>
+			@Footer()
+		</body>
+	</html>
+}

@@ -1,0 +1,15 @@
+package components
+
+templ EmptyState(title string, description string) {
+	<div class="empty-state">
+		<div class="empty-state-icon" aria-hidden="true">
+			<svg viewBox="0 0 48 48" role="img" focusable="false">
+				<path d="M12 18l12-7 12 7-12 7-12-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+				<path d="M12 25l12 7 12-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+				<path d="M12 32l12 7 12-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+			</svg>
+		</div>
+		<h3 class="text-xl font-semibold text-foreground">{ title }</h3>
+		<p class="mt-3 max-w-2xl text-pretty text-base leading-7 text-muted">{ description }</p>
+	</div>
+}

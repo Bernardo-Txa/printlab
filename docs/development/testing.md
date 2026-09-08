@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; teste minimo de health check IMPLEMENTADO.
+Status: estrategia PLANEJADA; testes de health check, homepage e static CSS IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -23,9 +23,21 @@ Valores monetarios nunca deverao utilizar `float32` ou `float64` como representa
 ## Comandos atuais
 
 ```sh
+templ generate
+npm run css:build
 go test ./...
 go vet ./...
+go build ./...
 ```
+
+## Testes implementados nesta fase
+
+- `GET /health` retorna HTTP 200 e corpo `ok`.
+- `GET /` retorna HTTP 200 com `Content-Type: text/html; charset=utf-8`.
+- A homepage contem identificacao da PrintLab e skip link.
+- `/static/css/app.css` e servido.
+- Diretorios de `/static/` nao sao listados.
+- Rotas desconhecidas retornam 404.
 
 ## Praticas recomendadas
 

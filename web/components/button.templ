@@ -1,0 +1,13 @@
+package components
+
+templ LinkButton(href string, label string) {
+	<a class="btn-base btn-primary" href={ templ.URL(href) }>
+		{ label }
+	</a>
+}
+
+templ LinkButtonSecondary(href string, label string) {
+	<a class="btn-base btn-secondary" href={ templ.URL(href) }>
+		{ label }
+	</a>
+}
