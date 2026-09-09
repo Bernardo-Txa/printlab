@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fase 3.1 ativa. Fases 4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fases 4 a 17 planejadas.
 
 ## Status das fases
 
@@ -11,7 +11,7 @@ Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fase 3.1 ativa. Fases 4 a 17 planejad
 | Fase 2 — Design system e layout | Concluida |
 | Fase 2.1 — Brand Experience | Concluida |
 | Fase 3 — Banco de dados | Concluida |
-| Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Ativa |
+| Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Concluida |
 | Fase 4 — Catalogo | Planejada |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
@@ -130,7 +130,7 @@ Principais entregas:
 - Verificacao por nome dos GitHub Secrets exigidos para Supabase.
 - Execucao segura do workflow `Supabase Migrations` sem migration ficticia.
 - Validacao da URL publica da Vercel em `/`, `/health`, `/ready` e `/static/css/app.css`.
-- Registro explicito de pendencias sem expor secrets.
+- Registro explicito dos resultados sem expor secrets.
 
 Dependencias: Fase 3.
 

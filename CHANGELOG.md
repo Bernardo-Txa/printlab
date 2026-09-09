@@ -21,7 +21,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 3 — Fundacao do Banco de Dados, com `pgx/v5`, `pgxpool`, `internal/config`, `internal/database`, `GET /ready`, Supabase CLI local e `supabase/config.toml`.
 - `vercel.json` minimo configurando a regiao `gru1`.
 - Politica permanente de Git do projeto com fluxo implementar, validar, commit e push.
-- Plano ativo da Fase 3.1 para validacao do ambiente remoto de desenvolvimento.
+- Fase 3.1 — Remote Environment Validation concluida, validando GitHub Actions -> Supabase DEV e Vercel -> PostgreSQL.
 
 ### Changed
 
@@ -33,3 +33,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Workflow Supabase atualizado para usar CLI `2.117.0`.
 - Definition of Done atualizada para commit e push automaticos apos validacoes aplicaveis.
 - GitHub Actions -> Supabase DEV validado por `workflow_dispatch` sem migration de negocio.
+- `/ready` remoto validado com HTTP 200 apos configuracao segura de `DATABASE_URL` e `DB_MAX_CONNS` na Vercel.

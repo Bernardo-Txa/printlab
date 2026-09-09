@@ -57,7 +57,7 @@ Supabase de desenvolvimento
 
 ## Validacao remota de desenvolvimento
 
-Status da Fase 3.1: ATIVA.
+Status da Fase 3.1: CONCLUIDA.
 
 Validacoes feitas em 2026-09-09:
 
@@ -66,19 +66,11 @@ Validacoes feitas em 2026-09-09:
 - Workflow `Supabase Migrations` ativo.
 - Run manual `34302139793` por `workflow_dispatch` passou, incluindo `supabase link`, `supabase db push --dry-run` e `supabase db push`.
 - Nenhuma migration de negocio foi criada para essa validacao.
-- Deploy publico `https://printlab-pied.vercel.app` respondeu HTTP 200 em `/`, `/health` e `/static/css/app.css`.
-- `/ready` remoto respondeu HTTP 503 com texto generico.
+- Deploy publico `https://printlab-pied.vercel.app` respondeu HTTP 200 em `/`, `/health`, `/ready` e `/static/css/app.css`.
+- O responsavel do projeto confirmou manualmente que `DATABASE_URL` do Supabase Transaction Pooler e `DB_MAX_CONNS` estao configuradas na Vercel.
+- A resposta HTTP 200 de `/ready` valida a conectividade Vercel -> Go -> `pgxpool` -> Supabase Transaction Pooler -> PostgreSQL.
 
-A Vercel CLI esta disponivel via `npx vercel@latest`, mas o ambiente atual esta deslogado. Portanto, `DATABASE_URL` e `DB_MAX_CONNS` ainda nao foram configuradas ou validadas pelo agente na Vercel.
-
-Pendencia para concluir a validacao runtime:
-
-- autenticar Vercel de forma segura;
-- confirmar o projeto PrintLab conectado a `Bernardo-Txa/printlab`;
-- configurar `DATABASE_URL` como secret do Supabase Transaction Pooler;
-- configurar `DB_MAX_CONNS=4`;
-- redeployar;
-- validar `/ready` remoto com HTTP 200.
+Nenhum valor secreto ou connection string foi registrado na documentacao.
 
 ## Assets estaticos
 
@@ -135,7 +127,7 @@ Secrets de runtime no ambiente de hosting:
 
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
 
-Na validacao remota da Fase 3.1, a URL publica retornou HTTP 503 em `/ready`; isso deve permanecer como pendencia ate a configuracao segura de `DATABASE_URL` e a verificacao de conectividade com o Supabase Transaction Pooler.
+Na validacao final da Fase 3.1, a URL publica retornou HTTP 200 em `/ready`, confirmando a conexao runtime com o Supabase Transaction Pooler sem expor detalhes internos.
 
 ## Vercel
 

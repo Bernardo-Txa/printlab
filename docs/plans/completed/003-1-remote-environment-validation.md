@@ -1,6 +1,6 @@
 # Fase 3.1 — Remote Environment Validation
 
-Status: ATIVA.
+Status: CONCLUIDA.
 
 ## Objetivo
 
@@ -28,7 +28,6 @@ Vercel -> Go -> Supabase Transaction Pooler -> PostgreSQL
 - Remote Git: `origin` apontando para `https://github.com/Bernardo-Txa/printlab.git`.
 - GitHub CLI: disponivel e autenticado.
 - Supabase CLI: `2.117.0`.
-- Vercel CLI: disponivel via `npx vercel@latest`, mas sem autenticacao no ambiente atual.
 - `vercel.json`: preservado com configuracao minima de `gru1`.
 
 ## Validacoes executadas
@@ -59,14 +58,14 @@ URL validada:
 https://printlab-pied.vercel.app
 ```
 
-Resultados:
+Resultados finais:
 
 - `GET /`: HTTP 200.
 - `GET /health`: HTTP 200 com body `ok`.
 - `GET /static/css/app.css`: HTTP 200 com `Content-Type` de CSS.
-- `GET /ready`: HTTP 503 com texto generico.
+- `GET /ready`: HTTP 200 com body `ok`.
 
-O resultado de `/ready` indica que a conexao runtime da Vercel com o PostgreSQL ainda nao esta validada neste ambiente.
+O responsavel do projeto confirmou manualmente que `DATABASE_URL` do Supabase Transaction Pooler e `DB_MAX_CONNS` estao configuradas na Vercel. O retorno HTTP 200 de `/ready` valida a conectividade Vercel -> Go -> `pgxpool` -> Supabase Transaction Pooler -> PostgreSQL.
 
 ### Local sem banco
 
@@ -85,26 +84,23 @@ Sem `DATABASE_URL`, o comportamento esperado permanece:
 | GitHub Secrets Supabase | VALIDADO | Presenca confirmada por nome. |
 | GitHub Actions -> Supabase DEV | VALIDADO | Run `34302139793` passou. |
 | Supabase CLI local | VALIDADO | Versao `2.117.0`. |
-| Supabase direto pelo ambiente local | PENDENTE | Secrets Supabase nao estao disponiveis como environment variables locais. |
-| Vercel CLI | CONFIGURADO PARCIALMENTE | CLI executa via `npx`, mas esta deslogada. |
+| Vercel deployment | VALIDADO | URL publica responde. |
 | Vercel region | VALIDADO | `vercel.json` contem somente `gru1`. |
-| Vercel `DATABASE_URL` | PENDENTE | Nao foi possivel configurar ou listar env vars sem autenticacao Vercel; `/ready` remoto retorna 503. |
-| Vercel `DB_MAX_CONNS` | PENDENTE | Nao foi possivel configurar ou listar env vars sem autenticacao Vercel. |
-| Vercel `/ready` com banco | PENDENTE | Precisa retornar 200 depois de `DATABASE_URL` correta e redeploy. |
+| Vercel `DATABASE_URL` | VALIDADO | Confirmada pelo responsavel, sem registrar valor. |
+| Vercel `DB_MAX_CONNS` | VALIDADO | Confirmada pelo responsavel. |
+| Vercel `/health` | VALIDADO | HTTP 200 com body `ok`. |
+| Vercel `/ready` com banco | VALIDADO | HTTP 200 com body `ok`. |
+| Conectividade PostgreSQL runtime | VALIDADO | Validada por `/ready` remoto. |
 
 ## Pendencias
 
-- Autenticar a Vercel CLI ou disponibilizar autenticacao segura por ambiente, sem expor token.
-- Confirmar que o projeto Vercel alvo e a PrintLab conectada ao repositorio `Bernardo-Txa/printlab`.
-- Configurar `DATABASE_URL` na Vercel com a connection string real do Supabase Transaction Pooler.
-- Configurar `DB_MAX_CONNS=4` nos ambientes Vercel relevantes.
-- Fazer redeploy da aplicacao apos configurar env vars.
-- Validar `GET /ready` remoto retornando HTTP 200.
-- Se for necessario teste direto local com banco, disponibilizar `DATABASE_URL` ou `TEST_DATABASE_URL` apenas por mecanismo seguro de environment variable, sem registrar valor.
+- Nenhuma pendencia bloqueante da Fase 3.1.
+- A Fase 4 continua planejada e nao foi iniciada nesta tarefa.
 
 ## Seguranca
 
 - Nenhum valor secreto foi lido, impresso, documentado ou versionado.
 - Nenhuma tabela foi criada.
+- Nenhuma migration de negocio foi criada.
 - Nenhum `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE`, `db reset` ou seed foi executado.
 - A resposta publica de `/ready` continua generica e nao expoe host, usuario, project ref, nome do banco ou erro interno do `pgx`.

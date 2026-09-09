@@ -82,15 +82,17 @@ Antes da operacao comercial, deve existir separacao explicita entre ambientes de
 
 ## Validacao remota Fase 3.1
 
-Em 2026-09-09, a integracao GitHub Actions -> Supabase DEV foi validada sem expor valores de secrets:
+Em 2026-09-09, a integracao remota da Fase 3.1 foi concluida sem expor valores de secrets:
 
 - `gh secret list` confirmou por nome `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` e `SUPABASE_PROJECT_ID`.
 - O workflow `Supabase Migrations` foi executado manualmente por `workflow_dispatch` no run `34302139793`.
 - O run passou pelas etapas de setup da CLI, checagem de secrets, `supabase link`, `supabase db push --dry-run` e `supabase db push`.
+- O responsavel do projeto confirmou `DATABASE_URL` do Supabase Transaction Pooler e `DB_MAX_CONNS` configuradas na Vercel.
+- `GET /ready` remoto retornou HTTP 200 com body `ok`, validando Vercel -> Go -> `pgxpool` -> Supabase Transaction Pooler -> PostgreSQL.
 - Nenhuma migration de negocio foi criada para acionar a validacao.
 - Nenhum schema de negocio foi criado ou alterado por esta tarefa.
 
-A validacao direta via Supabase CLI local permanece pendente porque os secrets Supabase nao estao disponiveis como environment variables locais neste ambiente. Essa pendencia nao deve ser contornada com valores em arquivos, logs ou documentacao.
+Nenhum valor de `DATABASE_URL`, senha, token, project ref ou connection string foi registrado.
 
 ## Estrutura local
 
