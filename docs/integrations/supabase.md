@@ -80,6 +80,18 @@ O workflow aponta para o projeto Supabase de desenvolvimento da PrintLab identif
 
 Antes da operacao comercial, deve existir separacao explicita entre ambientes de desenvolvimento/staging e producao. O banco de producao nao deve receber migrations automaticas sem uma politica de aprovacao propria.
 
+## Validacao remota Fase 3.1
+
+Em 2026-09-09, a integracao GitHub Actions -> Supabase DEV foi validada sem expor valores de secrets:
+
+- `gh secret list` confirmou por nome `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` e `SUPABASE_PROJECT_ID`.
+- O workflow `Supabase Migrations` foi executado manualmente por `workflow_dispatch` no run `34302139793`.
+- O run passou pelas etapas de setup da CLI, checagem de secrets, `supabase link`, `supabase db push --dry-run` e `supabase db push`.
+- Nenhuma migration de negocio foi criada para acionar a validacao.
+- Nenhum schema de negocio foi criado ou alterado por esta tarefa.
+
+A validacao direta via Supabase CLI local permanece pendente porque os secrets Supabase nao estao disponiveis como environment variables locais neste ambiente. Essa pendencia nao deve ser contornada com valores em arquivos, logs ou documentacao.
+
 ## Estrutura local
 
 ```text

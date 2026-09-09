@@ -55,6 +55,31 @@ Supabase de desenvolvimento
 
 `gru1` foi escolhida porque o projeto Supabase da PrintLab esta em South America (Sao Paulo). Isso reduz a latencia entre o runtime Go na Vercel e o PostgreSQL no Supabase.
 
+## Validacao remota de desenvolvimento
+
+Status da Fase 3.1: ATIVA.
+
+Validacoes feitas em 2026-09-09:
+
+- GitHub CLI autenticada sem leitura de token.
+- Secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` e `SUPABASE_PROJECT_ID` presentes por nome no repositorio.
+- Workflow `Supabase Migrations` ativo.
+- Run manual `34302139793` por `workflow_dispatch` passou, incluindo `supabase link`, `supabase db push --dry-run` e `supabase db push`.
+- Nenhuma migration de negocio foi criada para essa validacao.
+- Deploy publico `https://printlab-pied.vercel.app` respondeu HTTP 200 em `/`, `/health` e `/static/css/app.css`.
+- `/ready` remoto respondeu HTTP 503 com texto generico.
+
+A Vercel CLI esta disponivel via `npx vercel@latest`, mas o ambiente atual esta deslogado. Portanto, `DATABASE_URL` e `DB_MAX_CONNS` ainda nao foram configuradas ou validadas pelo agente na Vercel.
+
+Pendencia para concluir a validacao runtime:
+
+- autenticar Vercel de forma segura;
+- confirmar o projeto PrintLab conectado a `Bernardo-Txa/printlab`;
+- configurar `DATABASE_URL` como secret do Supabase Transaction Pooler;
+- configurar `DB_MAX_CONNS=4`;
+- redeployar;
+- validar `/ready` remoto com HTTP 200.
+
 ## Assets estaticos
 
 O CSS compilado em `web/static/css/app.css` e embutido no binario Go e servido em `/static/css/app.css`. Essa abordagem evita falhas em deploys onde o runtime nao encontra o diretorio `web/static/` no filesystem local.
@@ -109,6 +134,8 @@ Secrets de runtime no ambiente de hosting:
 - `DB_MAX_CONNS`, opcional, default `4`
 
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
+
+Na validacao remota da Fase 3.1, a URL publica retornou HTTP 503 em `/ready`; isso deve permanecer como pendencia ate a configuracao segura de `DATABASE_URL` e a verificacao de conectividade com o Supabase Transaction Pooler.
 
 ## Vercel
 

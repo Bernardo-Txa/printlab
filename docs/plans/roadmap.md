@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fases 4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fase 3.1 ativa. Fases 4 a 17 planejadas.
 
 ## Status das fases
 
@@ -11,6 +11,7 @@ Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fases 4 a 17 planejadas.
 | Fase 2 — Design system e layout | Concluida |
 | Fase 2.1 — Brand Experience | Concluida |
 | Fase 3 — Banco de dados | Concluida |
+| Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Ativa |
 | Fase 4 — Catalogo | Planejada |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
@@ -118,6 +119,29 @@ Definition of Done:
 - Testes aplicaveis de config, database e HTTP executados.
 - Nenhuma alteracao manual sem registro.
 - Nenhuma tabela de negocio criada.
+
+## Fase 3.1 — Validacao do ambiente remoto de desenvolvimento
+
+Objetivo: validar as conexoes operacionais entre GitHub Actions, Supabase DEV, Vercel e runtime Go sem criar schema de negocio.
+
+Principais entregas:
+
+- Preflight de Git, GitHub CLI, Supabase CLI, Vercel CLI e `vercel.json`.
+- Verificacao por nome dos GitHub Secrets exigidos para Supabase.
+- Execucao segura do workflow `Supabase Migrations` sem migration ficticia.
+- Validacao da URL publica da Vercel em `/`, `/health`, `/ready` e `/static/css/app.css`.
+- Registro explicito de pendencias sem expor secrets.
+
+Dependencias: Fase 3.
+
+Definition of Done:
+
+- GitHub Actions -> Supabase DEV validado.
+- Vercel autenticada e projeto PrintLab confirmado.
+- `DATABASE_URL` configurada com o Supabase Transaction Pooler sem versionar valor.
+- `DB_MAX_CONNS=4` configurado nos ambientes Vercel relevantes.
+- `/ready` remoto retorna HTTP 200.
+- Nenhuma migration de teste ou tabela ficticia criada.
 
 ## Fase 4 — Catalogo
 

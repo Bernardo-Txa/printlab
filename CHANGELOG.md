@@ -21,6 +21,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 3 — Fundacao do Banco de Dados, com `pgx/v5`, `pgxpool`, `internal/config`, `internal/database`, `GET /ready`, Supabase CLI local e `supabase/config.toml`.
 - `vercel.json` minimo configurando a regiao `gru1`.
 - Politica permanente de Git do projeto com fluxo implementar, validar, commit e push.
+- Plano ativo da Fase 3.1 para validacao do ambiente remoto de desenvolvimento.
 
 ### Changed
 
@@ -31,3 +32,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fonte oficial de migrations alterada de `migrations/` para `supabase/migrations/`.
 - Workflow Supabase atualizado para usar CLI `2.117.0`.
 - Definition of Done atualizada para commit e push automaticos apos validacoes aplicaveis.
+- GitHub Actions -> Supabase DEV validado por `workflow_dispatch` sem migration de negocio.
