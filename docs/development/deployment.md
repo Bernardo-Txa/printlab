@@ -51,6 +51,7 @@ Supabase de desenvolvimento
 - Sem operacao comercial.
 - Conexao PostgreSQL da aplicacao via `DATABASE_URL` quando configurada.
 - Catalogo publico depende do PostgreSQL e retorna indisponibilidade generica quando o banco ou schema nao estiverem acessiveis.
+- Variantes e imagens de catalogo dependem do PostgreSQL e do bucket `product-images`.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -106,7 +107,7 @@ O workflow nao usa `--include-seed`, nao executa reset remoto e nao deve imprimi
 
 Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Antes da operacao comercial sera necessario separar development/staging e production, com politica de aprovacao propria para producao.
 
-A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. Ela deve ser aplicada pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios.
+A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo.
 
 ## Runtime PostgreSQL
 
@@ -127,8 +128,11 @@ Secrets de runtime no ambiente de hosting:
 
 - `DATABASE_URL`
 - `DB_MAX_CONNS`, opcional, default `4`
+- `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
 
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
+
+`SUPABASE_URL` pode ficar ausente enquanto nao houver imagens reais cadastradas. Nesse caso, catalogo e detalhe continuam funcionando com placeholder visual. Bucket/schema implementados nao significam imagem real validada.
 
 Na validacao final da Fase 3.1, a URL publica retornou HTTP 200 em `/ready`, confirmando a conexao runtime com o Supabase Transaction Pooler sem expor detalhes internos.
 
@@ -138,6 +142,14 @@ Na validacao remota da Fase 4, tambem foram validados:
 - `GET /produtos/nao-existe`: HTTP 404.
 
 O catalogo pode estar vazio e ainda assim responder HTTP 200. Produto inexistente responde HTTP 404.
+
+Depois da Fase 5, validar tambem:
+
+```sh
+curl -i https://printlab-pied.vercel.app/produtos
+```
+
+O catalogo remoto pode continuar vazio. Nao inserir produto, variante ou imagem ficticia apenas para testar UI de variante em producao/desenvolvimento remoto.
 
 ## Vercel
 

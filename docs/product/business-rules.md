@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo basico IMPLEMENTADO; demais regras comerciais PLANEJADAS.
+Status: catalogo com variantes e receita de producao IMPLEMENTADO; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -8,7 +8,6 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 
 - Produtos sao itens fisicos.
 - Muitos produtos poderao ser produzidos sob demanda.
-- Variantes poderao representar cor, material, tamanho ou outras opcoes aprovadas.
 - Checkout podera funcionar sem conta obrigatoria.
 - Backend e autoridade sobre precos.
 - Backend e autoridade sobre pedidos.
@@ -28,6 +27,12 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 - Dinheiro nao usa `float32` ou `float64`.
 - Produtos ficticios ou seeds demonstrativos nao devem ser inseridos apenas para testar catalogo.
 - Slugs sao os identificadores publicos de categorias e produtos.
+- Produtos podem possuir varias variantes ativas.
+- Uma variante inativa responde publicamente como inexistente.
+- O slug de variante e unico dentro do produto e pode ser usado em `?variante=<slug>`.
+- A ausencia de variante em um produto continua valida.
+- Variante default ativa e escolhida automaticamente quando existir.
+- Sem variante default, a primeira variante ativa pela ordenacao publica e escolhida.
 
 ## Autoridade do backend
 
@@ -47,14 +52,59 @@ Antes de finalizar uma compra, o backend devera futuramente:
 
 Valores monetarios nunca devem usar `float32` ou `float64` como representacao canonica.
 
-Na Fase 4, `products.price_cents` e o preco-base comercial do produto e usa inteiro em centavos:
+`products.price_cents` e o preco-base comercial do produto e usa inteiro em centavos:
 
 ```text
 R$ 39,90 -> 3990
+```
+
+`product_variants.price_cents` pode sobrescrever o preco-base. Quando estiver `null`, o preco efetivo da variante usa `products.price_cents`.
+
+```text
+Produto base: 3990
+Variante sem preco proprio: 3990
+Variante com price_cents = 5990: 5990
+Variante com price_cents = 0: 0
 ```
 
 Carrinho, checkout, descontos, frete, total e pedidos continuam planejados e deverao recalcular valores no backend.
 
 ## Producao 3D
 
-O sistema podera armazenar informacoes de producao, como material, cor, peso estimado de filamento, tempo estimado de impressao e custos estimados. Essas informacoes ainda nao possuem schema aprovado.
+O catalogo representa receita estimada de producao por variante:
+
+```text
+Produto
+  -> Variante
+      -> componente: material + cor + peso estimado
+      -> componente: material + cor + peso estimado
+```
+
+Essa estrutura suporta impressao multicolorida e multimaterial sem gravar `color_id`, `material_id` ou peso diretamente em `product_variants`.
+
+`variant_filaments.estimated_weight_mg` armazena peso em miligramas como inteiro:
+
+```text
+42 g = 42000 mg
+3,25 g = 3250 mg
+```
+
+`product_variants.print_time_minutes` armazena tempo estimado de maquina em minutos. Esse tempo nao e prazo de entrega e nao deve ser exibido ao cliente como promessa de envio.
+
+Custos derivados como `production_cost`, `material_cost`, `machine_cost`, `profit` e `margin` nao sao persistidos nesta fase. Futuramente eles poderao ser calculados a partir de peso estimado, tempo de maquina, filamento fisico, preco por kg e outros custos aprovados.
+
+## Estoque e filamento fisico
+
+Nao ha controle de estoque unitario de produtos nesta fase. A disponibilidade publica depende de `products.is_active` e `product_variants.is_active`.
+
+`materials` e `colors` sao conceitos logicos de catalogo/producao. Eles nao representam marca de filamento, carretel fisico, lote, preco de compra ou peso disponivel.
+
+Filamento fisico, inventario, lotes, custo por kg e reserva de material permanecem planejados para modulo operacional futuro.
+
+## Imagens
+
+Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_path` e arquivos no bucket `product-images` do Supabase Storage.
+
+Imagens podem ser gerais do produto ou especificas de uma variante. A pagina de produto prioriza imagens da variante selecionada; se nao existirem, usa imagens gerais do produto; se nenhuma imagem publica estiver disponivel, usa placeholder visual da PrintLab.
+
+Upload de imagens, admin e policies de escrita permanecem fora do escopo desta fase.

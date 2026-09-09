@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco e catalogo IMPLEMENTADA.
+Status: fundacao visual, banco, catalogo e variantes IMPLEMENTADA.
 
 ## Requisitos
 
@@ -25,8 +25,11 @@ Variaveis de runtime:
 - `SITE_URL`: URL publica da aplicacao quando necessaria.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
+- `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada somente para montar URLs publicas de imagens do bucket `product-images`.
 
 Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200 e `GET /ready` retorna 503. Esse comportamento e temporario enquanto a homepage nao depende do banco.
+
+Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
 Secrets exigidos no GitHub Actions para migrations:
 
@@ -112,6 +115,14 @@ Resposta esperada: HTTP 404.
 
 Sem banco configurado ou com banco indisponivel, as rotas de catalogo retornam resposta generica de indisponibilidade.
 
+Selecao de variante por SSR:
+
+```sh
+curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
+```
+
+O slug de variante e opcional. Variante invalida, inexistente, inativa ou de outro produto retorna HTTP 404. Produto sem variantes continua valido.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -137,6 +148,8 @@ A homepage tambem deve ser validada visualmente em celular, tablet e desktop par
 O fluxo normal de schema deve ser: criar migration SQL em `supabase/migrations/`, revisar, versionar no Git e enviar para `main`. O GitHub Actions executara `supabase link`, `supabase db push --dry-run` e, se passar, `supabase db push` contra o projeto Supabase de desenvolvimento.
 
 A primeira migration real e `create_catalog`, criando `categories` e `products` sem inserir dados ficticios.
+
+A segunda migration real e `create_product_variants`, criando `materials`, `colors`, `product_variants`, `variant_filaments`, `product_images` e o bucket publico `product-images`. Ela nao insere produtos, materiais, cores, variantes ou imagens ficticias.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 
@@ -165,4 +178,5 @@ go test ./...
 go vet ./...
 go build ./...
 npx supabase --version
+npx supabase db reset
 ```

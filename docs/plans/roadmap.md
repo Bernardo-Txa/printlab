@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1 e 4 concluidas. Fases 5 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1 e 4 concluidas. Fase 5 ativa. Fases 6 a 17 planejadas.
 
 ## Status das fases
 
@@ -13,7 +13,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1 e 4 concluidas. Fases 5 a 17 planejadas.
 | Fase 3 — Banco de dados | Concluida |
 | Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Concluida |
 | Fase 4 — Catalogo | Concluida |
-| Fase 5 — Produtos e variantes | Planejada |
+| Fase 5 — Produtos e variantes | Ativa |
 | Fase 6 — Carrinho | Planejada |
 | Fase 7 — Dados do cliente e endereco | Planejada |
 | Fase 8 — Integracao SuperFrete | Planejada |
@@ -172,22 +172,29 @@ Definition of Done:
 
 ## Fase 5 — Produtos e variantes
 
-Objetivo: modelar variantes como cor, material, tamanho ou atributos aprovados.
+Objetivo: modelar variantes, imagens e receita estimada de producao 3D.
 
 Principais entregas:
 
-- Modelo de variantes.
-- Regras de disponibilidade.
-- Imagens por produto ou variante, se aprovado.
-- Documentacao de regras de produto.
+- Migration `create_product_variants`.
+- Materiais logicos e cores logicas.
+- Variantes com preco opcional, default e tempo estimado de maquina.
+- Receita estimada por `variant_filaments` para multicolor e multimaterial.
+- Imagens gerais de produto e especificas de variante.
+- Bucket publico `product-images` para imagens de catalogo.
+- Selecao SSR de variante por query string.
+- Regras de preco efetivo no backend.
 
 Dependencias: Fases 3 e 4.
 
 Definition of Done:
 
 - Variantes persistidas por schema aprovado.
-- Regras testadas.
+- Receita de producao persistida por peso em miligramas e tempo em minutos.
+- Imagens associadas por caminho relativo no Storage.
+- Regras de preco, variante default, peso, tempo e imagem testadas.
 - Sem precos autoritativos no cliente.
+- Sem estoque, carrinho, checkout, upload ou admin.
 - Documentacao atualizada.
 
 ## Fase 6 — Carrinho

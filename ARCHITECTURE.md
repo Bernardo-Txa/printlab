@@ -21,13 +21,16 @@ IMPLEMENTADO:
 - Acesso PostgreSQL com `pgx/v5` e `pgxpool` em `internal/database`.
 - Primeiro schema de negocio com `public.categories` e `public.products`.
 - Vertical slice de catalogo em `internal/products`.
+- Fase 5 com `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images`.
+- Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
+- Selecao publica de variante por query string em `GET /produtos/{slug}?variante=<variant-slug>`.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:
 
-- Variantes, carrinho, checkout, pedidos, painel administrativo e integracoes externas.
+- Carrinho, checkout, pedidos, painel administrativo e integracoes externas.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -104,13 +107,20 @@ O banco planejado e PostgreSQL hospedado no Supabase. O acesso principal e feito
 
 Para compatibilidade com Supabase Transaction Pooler, `pgxpool.Config.ConnConfig.DefaultQueryExecMode` e configurado como `pgx.QueryExecModeExec`. A aplicacao nao depende de cache de prepared statements e nao executa `SQL PREPARE` explicito.
 
-O Supabase Data API nao sera a interface primaria da aplicacao. O uso futuro de Supabase Storage para imagens podera ser avaliado quando catalogo e midia de produto forem implementados.
+O Supabase Data API nao sera a interface primaria da aplicacao. Supabase Storage e usado para imagens publicas de catalogo no bucket `product-images`; metadados e relacoes continuam no PostgreSQL.
 
 Migrations Supabase devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. A aplicacao Go nao executa migrations no startup.
 
 O primeiro schema de negocio cria `public.categories` e `public.products`. Produtos publicos dependem de `products.is_active = true`, usam slug como URL publica e armazenam preco-base em `price_cents` como inteiro em centavos.
 
-Ainda nao existem tabelas de variantes, imagens, carrinho, pedidos, pagamentos, frete, clientes ou admin.
+A Fase 5 adiciona variantes, materiais, cores, receitas estimadas de producao e imagens:
+
+- `product_variants.price_cents` pode sobrescrever `products.price_cents`.
+- `variant_filaments.estimated_weight_mg` usa inteiro em miligramas.
+- `product_variants.print_time_minutes` usa inteiro em minutos e nao representa prazo de entrega.
+- `product_images.storage_path` guarda caminho relativo no bucket `product-images`.
+
+Ainda nao existem tabelas de carrinho, pedidos, pagamentos, frete, clientes ou admin.
 
 ## Comunicacao com servicos externos
 
@@ -145,6 +155,7 @@ GET /health -> HTTP 200
 GET /ready -> HTTP 200 quando banco configurado e acessivel; HTTP 503 quando ausente ou indisponivel
 GET /produtos -> catalogo publico SSR; HTTP 503 quando banco estiver indisponivel
 GET /produtos/{slug} -> detalhe publico de produto ativo; HTTP 404 para inexistente, inativo ou slug invalido
+GET /produtos/{slug}?variante={variant-slug} -> detalhe com variante ativa selecionada; HTTP 404 para variante invalida ou indisponivel
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 
@@ -211,6 +222,7 @@ Dependencias planejadas, mas ainda nao adicionadas:
 Regras obrigatorias:
 
 - Nunca confiar em dados financeiros recebidos do navegador.
+- Preco efetivo de variante deve ser calculado no backend a partir de `product_variants.price_cents` ou `products.price_cents`.
 - Preco, desconto, subtotal, total, frete, status de pagamento e status de pedido devem ser definidos ou validados pelo backend.
 - Pagamento so pode ser considerado confirmado apos validacao server-side.
 - Redirect do navegador apos pagamento nunca e prova suficiente de pagamento.

@@ -34,3 +34,4 @@ Data:
 - [ADR-0002 — Frontend server-side com templ e HTMX](0002-frontend-server-side-com-templ-e-htmx.md)
 - [ADR-0003 — PostgreSQL/Supabase com pgx e Transaction Pooler](0003-postgresql-supabase-via-pgx.md)
 - [ADR-0004 — Catalogo basico com categories e products](0004-catalogo-basico-com-categories-products.md)
+- [ADR-0005 — Modelagem de variantes e receita de producao 3D](0005-modelagem-de-variantes-e-receita-de-producao-3d.md)

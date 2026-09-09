@@ -80,6 +80,19 @@ func TestLoadAcceptsPostgresDatabaseURL(t *testing.T) {
 	}
 }
 
+func TestLoadTrimsOptionalSupabaseURL(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPABASE_URL": " https://example.supabase.co/ ",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.SupabaseURL != "https://example.supabase.co" {
+		t.Fatalf("expected trimmed Supabase URL, got %q", cfg.SupabaseURL)
+	}
+}
+
 func mapLookup(values map[string]string) envLookup {
 	return func(key string) (string, bool) {
 		value, ok := values[key]

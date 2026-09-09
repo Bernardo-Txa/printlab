@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase e catalogo IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes e producao IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories` e `public.products`.
-- A primeira migration funcional cria o catalogo basico.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments` e `public.product_images`.
+- As migrations funcionais criam o catalogo basico e a modelagem de variantes/producao.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -30,6 +30,11 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Manter migrations separadas do startup da aplicacao.
 - Criar `categories` e `products` com UUID, slug unico, RLS habilitado e sem policies publicas nesta fase.
 - Usar `products.price_cents` como preco-base em centavos.
+- Criar `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images` com UUID, constraints declarativas, FKs explicitas, RLS habilitado e sem policies publicas do Data API.
+- Usar `product_variants.price_cents` como override opcional de preco em centavos.
+- Usar `variant_filaments.estimated_weight_mg` como peso estimado em miligramas.
+- Usar `product_variants.print_time_minutes` como tempo estimado de maquina em minutos, sem representar prazo de entrega.
+- Usar Supabase Storage apenas para imagens publicas de catalogo no bucket `product-images`.
 
 ## Runtime de conexao
 
@@ -63,6 +68,12 @@ Pool padrao por instancia:
 - Produtos inativos se comportam como inexistentes nas rotas publicas.
 - `products.is_featured` participa da ordenacao inicial.
 - `products.price_cents` e `bigint` com constraint `>= 0`.
+- `product_variants` guarda variantes ativas/inativas por produto.
+- `product_variants.price_cents` pode sobrescrever o preco-base.
+- `materials` e `colors` sao catalogo logico de producao, nao estoque fisico.
+- `variant_filaments` permite multicolor e multimaterial por variante.
+- `product_images` guarda metadados e caminhos relativos no bucket `product-images`.
+- O bucket `product-images` e publico para leitura de imagens de catalogo e nao possui policy publica de upload.
 
 ## Convencoes de schema futuras
 
@@ -80,7 +91,28 @@ Pool padrao por instancia:
 
 Valores financeiros futuros nao devem usar `float32` ou `float64` como representacao canonica. A preferencia inicial e armazenar valores inteiros em centavos, por exemplo `R$ 39,90` como `3990`.
 
-O preco-base de produto foi implementado em `products.price_cents`. Variantes, frete, descontos, totais, pedidos e pagamentos continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Variantes podem sobrescrever esse valor com `product_variants.price_cents`; `null` significa fallback para o preco-base, enquanto `0` e override explicito.
+
+Frete, descontos, totais, pedidos e pagamentos continuam planejados.
+
+## Producao 3D
+
+Peso estimado de componente usa `variant_filaments.estimated_weight_mg` como `bigint`, por exemplo:
+
+```text
+42 g = 42000 mg
+3,25 g = 3250 mg
+```
+
+Tempo estimado de maquina usa `product_variants.print_time_minutes` como `integer`. Esse tempo e dado operacional e nao representa prazo de entrega.
+
+Custos derivados como material, maquina, lucro e margem nao sao persistidos nesta fase. Eles deverao ser calculados futuramente a partir de peso, tempo e dados de filamento fisico.
+
+## Filamento fisico
+
+`materials` e `colors` nao representam carretel, marca, lote, preco de compra ou peso disponivel.
+
+Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purchase_price` e `remaining_weight` continuam fora do escopo e pertencem a um modulo operacional futuro.
 
 ## IDs
 

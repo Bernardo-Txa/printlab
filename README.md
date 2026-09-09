@@ -30,16 +30,16 @@ IMPLEMENTADO:
 - Supabase CLI local via npm e estrutura `supabase/`.
 - Vercel configurada para a regiao `gru1`.
 - Primeiro schema de negocio com `categories` e `products`.
+- Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada, imagens e bucket publico de catalogo.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Produtos com variantes, cores e materiais.
 - Carrinho e checkout sem obrigatoriedade de conta.
 - Enderecos, frete e integracao com SuperFrete.
 - Pedidos, pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
-- Informacoes de producao 3D, custos estimados, peso de filamento e tempo de impressao.
+- Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
 Este projeto ainda esta em desenvolvimento e nao deve ser usado em operacao comercial.
 
@@ -68,7 +68,9 @@ Frontend implementado:
 - Logo de marca em `web/static/images/branding/logo-printlab-primary.png`.
 - Linguagem visual com blocos coloridos, grid tecnico, camadas de impressao e elementos inspirados em laboratorio.
 - Catalogo publico e detalhe de produto renderizados no servidor, sem JavaScript obrigatorio.
-- Card de produto com placeholder visual de marca enquanto imagens reais nao existem.
+- Selecao de variante por links SSR via `?variante=<slug>`, sem JavaScript obrigatorio.
+- Galeria SSR simples com imagem publica de produto/variante quando existir.
+- Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
 
 Banco planejado:
 
@@ -89,13 +91,18 @@ Banco implementado:
 - `products.price_cents` armazena o preco-base em centavos.
 - `products.is_active` controla exibicao publica.
 - `products.is_featured` participa da ordenacao inicial.
+- `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images` modelam variantes, receita estimada de producao 3D e imagens.
+- `product_variants.price_cents` pode sobrescrever o preco-base; quando `null`, usa `products.price_cents`.
+- `variant_filaments.estimated_weight_mg` armazena peso em miligramas como inteiro.
+- `product_variants.print_time_minutes` armazena tempo estimado de maquina, sem representar prazo de entrega.
+- RLS esta habilitado nas tabelas de catalogo/variantes sem policies publicas do Data API.
 
 Infraestrutura planejada:
 
 - Vercel durante desenvolvimento.
 - Vercel Pro antes da operacao comercial.
 - Supabase para PostgreSQL.
-- Supabase Storage podera ser avaliado futuramente para imagens.
+- Supabase Storage para imagens publicas de catalogo no bucket `product-images`.
 
 Infraestrutura implementada para desenvolvimento:
 
@@ -140,8 +147,9 @@ Configuracao local ou de hosting para runtime:
 
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
+- `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
 
-`SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
 Instalacao local do tooling:
 
@@ -219,6 +227,14 @@ curl -i http://localhost:8080/produtos
 ```
 
 Com banco configurado e migrations aplicadas, a resposta esperada e HTTP 200. Com catalogo vazio, a pagina mostra um empty state honesto. Sem banco ou sem schema aplicado, a rota retorna indisponibilidade generica.
+
+Detalhe de produto com variante:
+
+```sh
+curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
+```
+
+O slug de variante e opcional e unico dentro do produto. Produto sem variantes continua usando o preco-base.
 
 ## Supabase local
 

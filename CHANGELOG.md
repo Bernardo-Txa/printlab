@@ -25,6 +25,12 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 4 — Catalogo, com primeiro schema de negocio, categorias, produtos, listagem SSR, filtro por categoria, detalhe de produto e empty state.
 - Migration `create_catalog` para `public.categories` e `public.products`.
 - Testes de service, handlers de catalogo, slug e formatacao BRL.
+- Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada de producao, imagens e bucket publico `product-images`.
+- Migration `create_product_variants` para `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments` e `public.product_images`.
+- Supabase Storage para imagens publicas de catalogo, sem policy publica de upload.
+- Selecao publica de variante por `?variante=<slug>` sem JavaScript obrigatorio.
+- Preco efetivo de variante com override opcional e fallback para `products.price_cents`.
+- Helpers de dominio para peso em miligramas, apresentacao em gramas, tempo de maquina e URL publica de imagem.
 
 ### Changed
 
@@ -39,3 +45,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - `/ready` remoto validado com HTTP 200 apos configuracao segura de `DATABASE_URL` e `DB_MAX_CONNS` na Vercel.
 - Navegacao principal atualizada com link real para `/produtos`.
 - Migration de catalogo aplicada ao Supabase DEV e `/produtos` validado na Vercel com empty state.
+- Catalogo e detalhe de produto atualizados para exibir menor preco efetivo, texto "A partir de", galeria SSR e imagem de produto/variante quando existir.
+- `supabase/config.toml` passou a habilitar Storage local para validacao do bucket de imagens de catalogo.

@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico basico IMPLEMENTADO.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes IMPLEMENTADO.
 
 ## Responsabilidade
 
@@ -69,7 +69,13 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Queries de catalogo usam parametros PostgreSQL.
 - Erros de PostgreSQL nao sao retornados ao usuario.
 - Preco-base e definido pelo backend a partir de `products.price_cents`.
+- Preco efetivo de variante e definido pelo backend a partir de `product_variants.price_cents` ou fallback para `products.price_cents`.
+- Variante inativa, inexistente, invalida ou pertencente a outro produto retorna publicamente como inexistente.
 - Templates recebem preco formatado e nao fazem calculo financeiro.
+- `product_images.storage_path` deve ser caminho relativo de bucket, nunca URL absoluta.
+- URLs publicas de imagens sao montadas centralizadamente no backend a partir de `SUPABASE_URL` e do bucket `product-images`.
+- O bucket `product-images` e publico para leitura de imagens de catalogo, mas nao existe policy publica de upload, update ou delete.
+- `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
 ## Limites
 
@@ -77,8 +83,9 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- As unicas tabelas de negocio implementadas sao `categories` e `products`.
+- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao e imagens.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
+- Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
 
 ## Praticas recomendadas
 
@@ -88,6 +95,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Projetar idempotencia antes de processar webhooks.
 - Revisar dependencias antes de adiciona-las.
 - Usar `TEST_DATABASE_URL` para testes opcionais de integracao com banco, nunca `DATABASE_URL` de producao.
+- Validar paths de Storage antes de montar URL publica de imagem.
 
 ## Praticas proibidas
 
@@ -97,3 +105,5 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Processar webhook sem validacao e protecao contra duplicidade.
 - Executar migrations automaticamente no startup do servidor web.
 - Usar Table Editor ou SQL Editor remoto como workflow normal de mudanca de schema.
+- Criar policy publica de `INSERT`, `UPDATE` ou `DELETE` em `storage.objects` para imagens de produto.
+- Armazenar URL externa em `product_images.storage_path`.

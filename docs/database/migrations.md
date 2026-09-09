@@ -1,12 +1,18 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; primeira migration de negocio IMPLEMENTADA.
+Status: fundacao IMPLEMENTADA; migrations de catalogo e variantes IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
 - `supabase/migrations/20260909153625_create_catalog.sql`
 
 Ela cria `public.categories`, `public.products`, constraints, foreign key, indice `products_category_id_idx` e habilita RLS sem policies publicas. Nao insere dados.
+
+A segunda migration funcional evolui produtos, variantes e producao 3D:
+
+- `supabase/migrations/20260909162227_create_product_variants.sql`
+
+Ela cria `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, constraints, foreign keys, indices parciais, RLS sem policies publicas e configura o bucket `product-images` em `storage.buckets`. Nao insere produtos, materiais, cores, variantes ou imagens ficticias.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
@@ -57,6 +63,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - Alteracoes de banco nao devem ser feitas manualmente em producao sem registro.
 - Table Editor e SQL Editor remoto nao devem ser usados como workflow normal para mudancas de schema.
 - A primeira migration real foi criada junto da Fase 4 de catalogo.
+- A segunda migration real foi criada junto da Fase 5 de produtos, variantes e producao.
 
 ## Praticas recomendadas
 
@@ -69,6 +76,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - O workflow de CI nao usa `--include-seed`.
 - O workflow de CI nao executa reset remoto.
 - `supabase/config.toml` mantem seed desabilitado nesta fase.
+- Configuracao de bucket em `storage.buckets` pode fazer parte de migration quando for infraestrutura aprovada e sem dados ficticios de negocio.
 
 ## Antes de aprovar uma migration
 

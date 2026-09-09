@@ -6,7 +6,7 @@ import (
 )
 
 templ Catalog(catalog products.Catalog) {
-	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.") {
+	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "") {
 		<section class="catalog-page-hero">
 			@components.Container() {
 				<div class="catalog-page-hero-grid">
@@ -79,31 +79,66 @@ templ Catalog(catalog products.Catalog) {
 	}
 }
 
-templ ProductDetail(product products.Product, metaDescription string) {
-	@components.Layout(product.Name + " | PrintLab", metaDescription) {
+templ ProductDetail(detail products.ProductDetail, metaDescription string) {
+	@components.Layout(detail.Product.Name + " | PrintLab", metaDescription, detail.CanonicalPath) {
 		<section class="product-detail-section">
 			@components.Container() {
 				<a class="back-link" href="/produtos">Voltar ao catalogo</a>
 				<div class="product-detail-grid">
 					<div class="product-detail-visual">
-						@components.ProductVisual()
+						@components.ProductGallery(detail.Images, detail.Product.Name)
 					</div>
 					<div class="product-detail-content">
-						if product.Category != nil {
-							<p class="product-category">{ product.Category.Name }</p>
+						if detail.Product.Category != nil {
+							<p class="product-category">{ detail.Product.Category.Name }</p>
 						}
-						<h1>{ product.Name }</h1>
-						if product.ShortDescription != "" {
-							<p class="product-detail-summary">{ product.ShortDescription }</p>
+						<h1>{ detail.Product.Name }</h1>
+						if detail.Product.ShortDescription != "" {
+							<p class="product-detail-summary">{ detail.Product.ShortDescription }</p>
 						}
 						<div class="product-price-panel">
-							<span>Preco-base</span>
-							<strong>{ product.PriceBRL }</strong>
+							<span>{ detail.DisplayPriceLabel }</span>
+							<strong>{ detail.DisplayPriceBRL }</strong>
 						</div>
-						if product.Description != "" {
+						if len(detail.Variants) > 1 {
+							<div class="variant-selector-block">
+								<h2>Escolha uma variante</h2>
+								<nav class="variant-selector" aria-label="Selecionar variante">
+									for _, variant := range detail.Variants {
+										if detail.SelectedVariant != nil && detail.SelectedVariant.Slug == variant.Slug {
+											<a class="variant-option variant-option-active focus-ring" href={ templ.URL("/produtos/" + detail.Product.Slug + "?variante=" + variant.Slug) } aria-current="true">
+												<span>{ variant.Name }</span>
+												<strong>{ variant.EffectivePriceBRL }</strong>
+											</a>
+										} else {
+											<a class="variant-option focus-ring" href={ templ.URL("/produtos/" + detail.Product.Slug + "?variante=" + variant.Slug) }>
+												<span>{ variant.Name }</span>
+												<strong>{ variant.EffectivePriceBRL }</strong>
+											</a>
+										}
+									}
+								</nav>
+							</div>
+						} else if detail.SelectedVariant != nil {
+							<div class="variant-summary">
+								<span>Variante</span>
+								<strong>{ detail.SelectedVariant.Name }</strong>
+							</div>
+						}
+						if detail.SelectedVariant != nil && (detail.SelectedVariant.MaterialNames != "" || detail.SelectedVariant.ColorNames != "") {
+							<div class="production-summary">
+								if detail.SelectedVariant.MaterialNames != "" {
+									<p><span>Materiais</span>{ detail.SelectedVariant.MaterialNames }</p>
+								}
+								if detail.SelectedVariant.ColorNames != "" {
+									<p><span>Cores</span>{ detail.SelectedVariant.ColorNames }</p>
+								}
+							</div>
+						}
+						if detail.Product.Description != "" {
 							<div class="product-description">
 								<h2>Sobre o produto</h2>
-								<p>{ product.Description }</p>
+								<p>{ detail.Product.Description }</p>
 							</div>
 						}
 						<div class="product-detail-actions">
@@ -118,7 +153,7 @@ templ ProductDetail(product products.Product, metaDescription string) {
 }
 
 templ CatalogUnavailable() {
-	@components.Layout("Catalogo indisponivel | PrintLab", "Catalogo temporariamente indisponivel.") {
+	@components.Layout("Catalogo indisponivel | PrintLab", "Catalogo temporariamente indisponivel.", "") {
 		<section class="section-block">
 			@components.Container() {
 				@components.EmptyState("Catalogo temporariamente indisponivel.", "Nao foi possivel carregar os produtos agora. Tente novamente em alguns instantes.")
@@ -128,7 +163,7 @@ templ CatalogUnavailable() {
 }
 
 templ ProductNotFound() {
-	@components.Layout("Produto nao encontrado | PrintLab", "Produto nao encontrado no catalogo da PrintLab.") {
+	@components.Layout("Produto nao encontrado | PrintLab", "Produto nao encontrado no catalogo da PrintLab.", "") {
 		<section class="section-block">
 			@components.Container() {
 				@components.EmptyState("Produto nao encontrado.", "Esse experimento ainda nao esta disponivel no catalogo publico da PrintLab.")

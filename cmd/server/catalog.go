@@ -13,7 +13,7 @@ import (
 
 type catalogService interface {
 	Catalog(ctx context.Context, filter products.ListFilter) (products.Catalog, error)
-	Product(ctx context.Context, slug string) (products.Product, error)
+	Product(ctx context.Context, slug string, variantSlug string) (products.ProductDetail, error)
 }
 
 func catalogHandler(service catalogService) http.HandlerFunc {
@@ -49,12 +49,18 @@ func productHandler(service catalogService) http.HandlerFunc {
 			return
 		}
 
+		variantSlug := r.URL.Query().Get("variante")
+		if variantSlug != "" && !products.ValidSlug(variantSlug) {
+			renderHTML(w, r, http.StatusNotFound, templates.ProductNotFound())
+			return
+		}
+
 		if service == nil {
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.CatalogUnavailable())
 			return
 		}
 
-		product, err := service.Product(r.Context(), slug)
+		detail, err := service.Product(r.Context(), slug, variantSlug)
 		if err != nil {
 			if errors.Is(err, products.ErrInvalidSlug) || errors.Is(err, products.ErrNotFound) {
 				renderHTML(w, r, http.StatusNotFound, templates.ProductNotFound())
@@ -66,7 +72,7 @@ func productHandler(service catalogService) http.HandlerFunc {
 			return
 		}
 
-		renderHTML(w, r, http.StatusOK, templates.ProductDetail(product, productDescription(product)))
+		renderHTML(w, r, http.StatusOK, templates.ProductDetail(detail, productDescription(detail.Product)))
 	}
 }
 

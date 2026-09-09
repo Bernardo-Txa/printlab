@@ -40,7 +40,7 @@ enabled = false
 port = 54324
 
 [storage]
-enabled = false
+enabled = true
 
 [storage.s3_protocol]
 enabled = false

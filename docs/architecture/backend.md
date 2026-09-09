@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco e catalogo IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
+Status: fundacao HTTP, banco, catalogo, variantes e producao IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
 
 ## Responsabilidade
 
@@ -11,19 +11,21 @@ Nesta fase, o backend implementa:
 - `GET /` para homepage server-side.
 - `GET /produtos` para catalogo publico.
 - `GET /produtos/{slug}` para detalhe publico de produto ativo.
+- `GET /produtos/{slug}?variante=<slug>` para detalhe com variante selecionada por slug.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
 - `internal/config` para ler configuracao.
 - `internal/database` para criar `pgxpool.Pool`.
-- `internal/products` para modelos, service e repository PostgreSQL do catalogo.
+- `internal/products` para modelos, service e repository PostgreSQL do catalogo, variantes, receita estimada e imagens.
 
 ## Limites
 
-- O schema de negocio implementado cobre apenas categorias e produtos basicos.
-- Nao ha variantes, imagens, carrinho, checkout, pedidos, pagamentos ou admin.
-- Nao ha integracoes externas.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao e imagens.
+- Nao ha carrinho, checkout, pedidos, pagamentos ou admin.
+- Nao ha integracoes comerciais externas como frete ou pagamento.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
+- Nao ha upload de imagens pelo app.
 
 ## Decisoes
 
@@ -39,12 +41,23 @@ Nesta fase, o backend implementa:
 - Exibir publicamente apenas produtos ativos.
 - Tratar produto inativo como inexistente.
 - Representar preco-base como inteiro em centavos.
+- Representar override de preco de variante como inteiro em centavos opcional.
+- Calcular preco efetivo no service, usando `product_variants.price_cents` quando preenchido e `products.price_cents` como fallback.
+- Representar peso estimado de filamento em miligramas como inteiro.
+- Representar tempo estimado de maquina em minutos como inteiro.
+- Construir URL publica de imagem em um helper de dominio a partir de `SUPABASE_URL`, bucket `product-images` e `storage_path`.
 
 ## Catalogo
 
 `GET /produtos` lista produtos ativos e aceita filtro opcional `categoria=<slug>`. O filtro e validado antes da consulta ao banco e usa slug publico.
 
 `GET /produtos/{slug}` valida o slug e busca apenas produto ativo. Slug invalido, produto inexistente e produto inativo retornam HTTP 404.
+
+`GET /produtos/{slug}?variante=<slug>` valida o slug da variante antes de chamar o service. Variante invalida, inexistente, inativa ou pertencente a outro produto retorna HTTP 404.
+
+Quando um produto possui variantes ativas, o service escolhe automaticamente a variante default ativa; se nao existir, usa a primeira variante ativa pela ordenacao publica. Produto sem variantes continua valido e usa o preco-base.
+
+As consultas de catalogo evitam N+1 em Go. A listagem calcula o menor preco efetivo e busca imagem geral primaria em uma consulta. O detalhe carrega produto, variantes, receitas e imagens em consultas separadas e coesas.
 
 Se o banco estiver indisponivel, rotas de catalogo retornam HTTP 503 com resposta generica, sem detalhes do PostgreSQL.
 

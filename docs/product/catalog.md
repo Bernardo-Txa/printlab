@@ -1,8 +1,8 @@
 # Catalogo
 
-Status: Fase 4 IMPLEMENTADA; variantes e operacao comercial PLANEJADAS.
+Status: Fase 5 IMPLEMENTADA; operacao comercial PLANEJADA.
 
-O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados e preco-base.
+O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de variantes.
 
 ## Implementado
 
@@ -18,7 +18,14 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Suporte a produto destacado por `is_featured`.
 - Categoria opcional por `category_id`.
 - Empty state honesto quando nao ha produtos publicados.
-- Placeholder visual de marca enquanto imagens reais nao existem.
+- Variantes ativas por produto em `public.product_variants`.
+- Materiais logicos em `public.materials`.
+- Cores logicas em `public.colors`.
+- Receita estimada de producao em `public.variant_filaments`.
+- Imagens gerais de produto e especificas de variante em `public.product_images`.
+- Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
+- Placeholder visual de marca quando nao existe imagem renderizavel.
+- Selecao publica de variante por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio.
 
 ## Regras publicas
 
@@ -29,39 +36,92 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Produto associado a categoria inativa continua podendo aparecer, mas sem exibir a categoria.
 - O filtro de categoria usa slug, nunca UUID.
 - Slug invalido em rota publica retorna 404.
+- Variante inativa, inexistente, invalida ou pertencente a outro produto retorna 404 quando solicitada explicitamente.
+- Produto sem variantes continua valido e usa o preco-base.
 - Erros de banco retornam mensagem generica e nao expoem detalhes internos.
 
 ## Preco-base
 
-`products.price_cents` representa o preco-base comercial do produto nesta fase.
+`products.price_cents` representa o preco-base comercial do produto.
 
 ```text
 R$ 39,90 -> 3990
 ```
 
-Variantes poderao futuramente ter preco proprio ou override na Fase 5. A Fase 4 nao modela essa regra.
+`product_variants.price_cents` e opcional. Quando preenchido, ele sobrescreve o preco-base para aquela variante. Quando `null`, o preco efetivo da variante usa `products.price_cents`.
+
+No catalogo, quando um produto possui variantes ativas, o card usa o menor preco efetivo. Se houver variacao de preco entre variantes ativas, o texto publico usa "A partir de". Se todas as variantes efetivas tiverem o mesmo preco, o card mostra apenas o valor.
+
+O frontend nunca envia preco autoritativo e nao calcula o preco efetivo.
+
+## Variantes
+
+Ordenacao publica de variantes:
+
+```text
+is_default desc
+sort_order asc
+name asc
+```
+
+Quando `?variante=` nao e fornecido:
+
+1. seleciona a variante ativa marcada como default;
+2. se nao houver default, seleciona a primeira variante ativa pela ordenacao publica;
+3. se nao houver variantes ativas, o produto continua sem variante selecionada.
+
+O slug da variante e unico dentro do produto e nao substitui o slug do produto como URL canonica. A canonical da pagina continua sendo `/produtos/{slug}`.
+
+## Receita de producao
+
+Uma variante pode possuir varios componentes em `variant_filaments`, cada um com material, cor, peso estimado em miligramas, rotulo opcional e ordenacao.
+
+Essa modelagem suporta:
+
+- impressao multicolorida;
+- impressao multimaterial;
+- AMS Lite com multiplos componentes;
+- calculos futuros de custo sem persistir valores derivados.
+
+Peso e armazenado como inteiro em `estimated_weight_mg`, evitando `float`.
+
+Tempo estimado de maquina fica em `product_variants.print_time_minutes`. Ele nao representa prazo de entrega e nao deve ser apresentado ao cliente como promessa de envio.
+
+## Imagens
+
+`product_images.storage_path` guarda caminho relativo no bucket `product-images`; URLs absolutas nao sao armazenadas no banco.
+
+Estrategia publica:
+
+1. card de catalogo usa imagem geral primaria do produto quando existir e houver `SUPABASE_URL`;
+2. detalhe de produto prioriza imagens da variante selecionada;
+3. se a variante nao tiver imagem, usa imagens gerais do produto;
+4. se nao houver imagem renderizavel, usa placeholder visual da PrintLab.
+
+Formatos preferidos para operacao:
+
+- WebP como formato inicial preferencial;
+- AVIF quando apropriado;
+- JPEG;
+- PNG quando transparencia for necessaria.
 
 ## Planejado
 
-- Variantes.
-- Cores.
-- Materiais.
-- Tamanhos.
-- Imagens reais de produto.
-- `product_images`.
-- Supabase Storage.
-- Estoque.
-- Estrategia de produto sob demanda.
 - Admin para cadastro.
 - Busca.
 - Avaliacoes.
 - Paginacao complexa.
+- Upload de imagens.
+- Estoque fisico e inventario de filamento.
+- Custos de producao calculados.
 
 ## Limites
 
 - Nao ha seed ficticio.
 - Nao ha produto demonstrativo.
 - Nao ha carrinho ou checkout.
-- Nao ha selecao de quantidade, cor, material ou tamanho.
 - Nao ha upload de imagem.
-- Nao ha estoque ou metricas de producao.
+- Nao ha selecao de quantidade.
+- Nao ha estoque unitario de produtos.
+- Nao ha filamento fisico, marca, lote, carretel, preco por kg ou peso disponivel.
+- Nao ha custos derivados persistidos.

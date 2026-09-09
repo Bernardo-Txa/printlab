@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco e catalogo IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo e variantes IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -10,7 +10,7 @@ Status: estrategia PLANEJADA; testes de fundacao, banco e catalogo IMPLEMENTADOS
 - Database tests para consultas e migrations.
 - Testes opcionais de integracao PostgreSQL usando `TEST_DATABASE_URL`.
 - Handler tests de catalogo e detalhe de produto sem rede.
-- Unit tests de service, slug e formatacao de dinheiro.
+- Unit tests de service, slug, formatacao de dinheiro, preco efetivo, peso, tempo e URLs de imagem.
 - Integration contract tests para SuperFrete e InfinitePay quando contratos oficiais forem usados.
 - Testes criticos de checkout.
 - Testes de idempotencia.
@@ -54,10 +54,20 @@ npx supabase --version
 - `GET /produtos` com produtos retorna HTTP 200.
 - Filtro `categoria=<slug>` e encaminhado ao service.
 - `GET /produtos/{slug}` retorna HTTP 200 para produto encontrado.
+- `GET /produtos/{slug}?variante=<slug>` encaminha a variante ao service.
+- Slug invalido de variante retorna HTTP 404 antes de consultar o service.
+- Produto com variante selecionada renderiza preco efetivo e canonical do produto sem query string.
 - Produto inexistente retorna HTTP 404.
 - Slug invalido nao consulta service/repository.
 - Erro de repository/database retorna HTTP 503 sem detalhes internos.
 - Formatacao BRL cobre centavos, centenas e milhares sem `float`.
+- Preco efetivo cobre fallback para preco-base, override de variante e override zero.
+- Peso de filamento soma componentes em miligramas.
+- Formatacao de peso cobre `42000 -> 42 g`, `3250 -> 3,25 g` e `125500 -> 125,5 g`.
+- Formatacao de tempo cobre `60 -> 1h`, `275 -> 4h 35min` e `45 -> 45min`.
+- Selecao de variante cobre default ativa, primeira ativa sem default, explicita valida, inexistente, inativa, de outro produto e produto sem variantes.
+- Fallback de imagem cobre imagem de variante, imagem geral de produto e placeholder quando `SUPABASE_URL` nao esta disponivel.
+- URL publica de Storage e testada sem baixar arquivos do Supabase.
 
 ## Teste de integracao PostgreSQL opcional
 

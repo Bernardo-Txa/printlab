@@ -5,7 +5,7 @@ import "github.com/Bernardo-Txa/printlab/internal/products"
 templ ProductCard(product products.Product) {
 	<article class="product-card">
 		<a class="product-card-link focus-ring" href={ templ.URL("/produtos/" + product.Slug) }>
-			@ProductVisual()
+			@ProductMedia(product.PrimaryImage, product.Name)
 			<div class="product-card-body">
 				if product.Category != nil {
 					<p class="product-category">{ product.Category.Name }</p>
@@ -15,7 +15,12 @@ templ ProductCard(product products.Product) {
 					<p class="product-summary">{ product.ShortDescription }</p>
 				}
 				<div class="product-card-footer">
-					<span class="product-price">{ product.PriceBRL }</span>
+					<span class="product-price">
+						if product.PriceFrom {
+							<span>A partir de</span>
+						}
+						<strong>{ product.PriceBRL }</strong>
+					</span>
 					if product.IsFeatured {
 						<span class="product-featured">Destaque</span>
 					}
@@ -23,6 +28,31 @@ templ ProductCard(product products.Product) {
 			</div>
 		</a>
 	</article>
+}
+
+templ ProductGallery(images []products.ProductImage, fallbackLabel string) {
+	if firstRenderableImage(images) == nil {
+		@ProductVisual()
+	} else {
+		<div class="product-gallery">
+			@ProductMedia(firstRenderableImage(images), fallbackLabel)
+			if len(renderableImages(images)) > 1 {
+				<div class="product-gallery-thumbs" aria-label="Imagens do produto">
+					for _, image := range renderableImages(images) {
+						@ProductMedia(&image, fallbackLabel)
+					}
+				</div>
+			}
+		</div>
+	}
+}
+
+templ ProductMedia(image *products.ProductImage, fallbackLabel string) {
+	if image != nil && image.URL != "" {
+		<img class="product-media" src={ image.URL } alt={ imageAlt(*image, fallbackLabel) } loading="lazy"/>
+	} else {
+		@ProductVisual()
+	}
 }
 
 templ ProductVisual() {
@@ -34,4 +64,33 @@ templ ProductVisual() {
 		<span class="product-visual-dot"></span>
 		<span class="product-visual-label">Imagem em preparo</span>
 	</div>
+}
+
+func renderableImages(images []products.ProductImage) []products.ProductImage {
+	renderable := make([]products.ProductImage, 0, len(images))
+	for _, image := range images {
+		if image.URL != "" {
+			renderable = append(renderable, image)
+		}
+	}
+
+	return renderable
+}
+
+func firstRenderableImage(images []products.ProductImage) *products.ProductImage {
+	for _, image := range images {
+		if image.URL != "" {
+			return &image
+		}
+	}
+
+	return nil
+}
+
+func imageAlt(image products.ProductImage, fallbackLabel string) string {
+	if image.AltText != "" {
+		return image.AltText
+	}
+
+	return fallbackLabel
 }

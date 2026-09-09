@@ -22,7 +22,7 @@ const readyTimeout = 3 * time.Second
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("database configuration error")
+		log.Fatal("application configuration error")
 	}
 
 	db, err := database.New(context.Background(), database.Config{
@@ -41,15 +41,18 @@ func main() {
 	addr := ":" + cfg.Port
 	log.Printf("printlab web listening on %s", addr)
 
-	if err := http.ListenAndServe(addr, newHandler(db)); err != nil {
+	if err := http.ListenAndServe(addr, newHandler(db, cfg.SupabaseURL)); err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
 
-func newHandler(db *database.Database) http.Handler {
+func newHandler(db *database.Database, supabaseURL string) http.Handler {
 	var catalog catalogService
 	if db != nil && db.Configured() {
-		catalog = products.NewService(products.NewPostgresRepository(db.Pool()))
+		catalog = products.NewService(
+			products.NewPostgresRepository(db.Pool()),
+			products.WithSupabaseURL(supabaseURL),
+		)
 	}
 
 	return newHandlerWithCatalog(db, catalog)

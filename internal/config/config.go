@@ -26,6 +26,7 @@ type Config struct {
 	DatabaseURL        string
 	DatabaseConfigured bool
 	DBMaxConns         int32
+	SupabaseURL        string
 }
 
 type envLookup func(string) (string, bool)
@@ -58,6 +59,7 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		DatabaseURL:        databaseURL,
 		DatabaseConfigured: databaseConfigured,
 		DBMaxConns:         dbMaxConns,
+		SupabaseURL:        strings.TrimRight(strings.TrimSpace(value(lookup, "SUPABASE_URL")), "/"),
 	}, nil
 }
 
