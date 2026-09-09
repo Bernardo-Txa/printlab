@@ -1,6 +1,6 @@
 # Integracoes
 
-Status: PLANEJADO.
+Status: SuperFrete IMPLEMENTADO para cotacao de frete; demais integracoes comerciais PLANEJADAS.
 
 ## Responsabilidade
 
@@ -8,13 +8,15 @@ Integracoes externas devem permitir calculo de frete, pagamentos e outros servic
 
 ## Limites
 
-- Nenhuma integracao real foi implementada.
-- Nenhuma chamada HTTP externa foi criada.
-- Nenhum endpoint, payload ou contrato de API foi assumido.
+- SuperFrete foi implementado apenas para cotacao server-side de frete.
+- Sandbox SuperFrete real ainda depende de token, CEP de origem, produto com perfil logistico e caixa real cadastrada.
+- Nenhuma etiqueta, postagem, rastreio, pagamento ou webhook foi implementado.
 
 ## Decisoes
 
-- SuperFrete sera avaliado para frete.
+- SuperFrete e usado para cotacao de frete via backend Go.
+- A cotacao SuperFrete usa `POST /api/v0/calculator`, Bearer token e `User-Agent` operacional conforme documentacao oficial.
+- O backend envia `products` primeiro para obter pacote ideal e depois `package` com caixa real para cotacao final.
 - InfinitePay sera avaliado para checkout/pagamentos.
 - Supabase hospedara PostgreSQL.
 - O backend Go fara chamadas para servicos externos quando necessario.

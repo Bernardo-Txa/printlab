@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Fase 5.1 IMPLEMENTADA; operacao comercial PLANEJADA.
+Status: Catalogo e perfis logisticos IMPLEMENTADOS; operacao comercial PLANEJADA.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de variantes.
 
@@ -27,6 +27,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Placeholder visual de marca quando nao existe imagem renderizavel.
 - Selecao publica de variante por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio.
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
+- Perfil logistico opcional em produtos e variantes para cotacao de frete.
 
 ## Regras publicas
 
@@ -95,6 +96,21 @@ O peso total estimado soma todos os componentes carregados da receita, inclusive
 
 Tempo estimado de maquina fica em `product_variants.print_time_minutes`. Ele nao representa prazo de entrega e nao deve ser apresentado ao cliente como promessa de envio.
 
+## Perfil logistico
+
+Produtos e variantes podem possuir perfil logistico para frete:
+
+- `shipping_weight_g`;
+- `shipping_height_mm`;
+- `shipping_width_mm`;
+- `shipping_length_mm`.
+
+Esse perfil representa uma unidade preparada para acondicionamento, nao necessariamente a geometria crua da peca 3D nem a receita de filamento. Exemplo: uma peca pode medir `190 x 85 x 70 mm`, mas seu perfil protegido para envio ser `210 x 105 x 90 mm`.
+
+A variante pode possuir override completo. Se nao possuir, a cotacao usa o perfil completo do produto. Campos parciais nao sao misturados.
+
+Produto ou variante sem perfil logistico efetivo nao recebe estimativa ficticia no checkout de frete.
+
 ## Imagens
 
 `product_images.storage_path` guarda caminho relativo no bucket `product-images`; URLs absolutas nao sao armazenadas no banco.
@@ -131,4 +147,4 @@ Formatos preferidos para operacao:
 - Nao ha estoque unitario de produtos.
 - Nao ha filamento fisico, marca, lote, carretel, preco por kg ou peso disponivel.
 - Nao ha custos derivados persistidos.
-- Nao ha frete, pedido ou pagamento.
+- Nao ha pedido ou pagamento.

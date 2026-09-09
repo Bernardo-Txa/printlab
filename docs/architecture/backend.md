@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho e dados de checkout IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout e frete IMPLEMENTADOS; pedidos, pagamentos e admin PLANEJADOS.
 
 ## Responsabilidade
 
@@ -18,6 +18,8 @@ Nesta fase, o backend implementa:
 - `POST /carrinho/itens/{id}/remover` para remover item.
 - `GET /checkout/dados` para formulario SSR de contato e endereco.
 - `POST /checkout/dados` para validar e salvar dados temporarios de checkout.
+- `GET /checkout/frete` para calcular e renderizar cotacoes atuais de frete.
+- `POST /checkout/frete` para revalidar e persistir a selecao de frete por carrinho.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -26,12 +28,13 @@ Nesta fase, o backend implementa:
 - `internal/products` para modelos, service e repository PostgreSQL do catalogo, variantes, receita estimada e imagens.
 - `internal/cart` para token/cookie, service e repository PostgreSQL do carrinho.
 - `internal/customers` para dados temporarios de checkout, validacoes brasileiras e repository PostgreSQL transacional.
+- `internal/shipping` para perfis logisticos, caixas fisicas, cotacao SuperFrete, selecao de frete e repository PostgreSQL.
 
 ## Limites
 
-- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho e dados temporarios de checkout.
-- Nao ha frete, pedidos, pagamentos ou admin.
-- Nao ha integracoes comerciais externas como frete ou pagamento.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas e selecao de frete.
+- Nao ha pedidos, pagamentos ou admin.
+- A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
 
@@ -60,6 +63,10 @@ Nesta fase, o backend implementa:
 - Persistir dados temporarios de contato e endereco vinculados ao carrinho, sem entidade permanente de cliente.
 - Validar CPF, telefone, CEP, UF e pais no backend.
 - Salvar contato e endereco em transacao PostgreSQL.
+- Calcular frete no backend, nunca a partir de preco enviado pelo navegador.
+- Usar duas chamadas ao calculator da SuperFrete: `products` para obter pacote ideal e `package` com caixa fisica real para cotacao final.
+- Escolher a menor caixa real ativa que comporte o pacote ideal usando dimensoes internas e rotacao.
+- Persistir selecao de frete com snapshot do pacote real, preco em centavos, validade de 30 minutos e `input_hash`.
 
 ## Catalogo
 
@@ -99,7 +106,22 @@ Mutacoes bem-sucedidas renovam a expiracao do carrinho e do cookie para 30 dias.
 
 O backend aceita entradas humanas de CPF, telefone e CEP com mascara, mas persiste valores canonicos. O pais e limitado a `BR`. Contato e endereco sao salvos por `INSERT ... ON CONFLICT (cart_id) DO UPDATE` dentro de uma transacao.
 
-Salvamento bem-sucedido renova a validade do carrinho e do cookie. Se houver erro de validacao, o formulario e renderizado novamente com mensagens por campo. Se houver erro de infraestrutura, a resposta e generica e nao expoe CPF, e-mail, telefone, endereco ou detalhes PostgreSQL.
+Salvamento bem-sucedido renova a validade do carrinho e do cookie e redireciona para `/checkout/frete`. Se houver erro de validacao, o formulario e renderizado novamente com mensagens por campo. Se houver erro de infraestrutura, a resposta e generica e nao expoe CPF, e-mail, telefone, endereco ou detalhes PostgreSQL.
+
+## Frete
+
+`GET /checkout/frete` exige cookie de carrinho valido, carrinho ativo, pelo menos um item, nenhum item indisponivel e dados de checkout ja salvos. Sem carrinho valido, redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`.
+
+O service resolve o perfil logistico efetivo de cada linha: variante com perfil completo sobrescreve o produto; caso contrario usa o perfil completo do produto. Campos parciais nao sao misturados. Produto sem perfil efetivo torna a cotacao indisponivel sem estimativa ficticia.
+
+A cotacao usa duas chamadas SuperFrete:
+
+1. Planejamento com `products`, usando peso em kg e dimensoes em cm convertidos a partir dos valores internos em gramas e milimetros.
+2. Cotacao final com `package`, usando peso dos produtos somado a `shipping_boxes.packaging_weight_g` e dimensoes externas da menor caixa real compativel.
+
+Somente o resultado da segunda chamada e apresentado ao cliente. O POST recebe apenas `service_code`, reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
+
+Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` atual diverge por mudanca de carrinho, variante, perfil logistico, CEP, servicos ou caixa.
 
 ## Health e readiness
 

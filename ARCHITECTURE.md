@@ -13,6 +13,7 @@ IMPLEMENTADO:
 - Carrinho anonimo em `GET /carrinho`.
 - Mutacoes de carrinho por POST com redirects 303.
 - Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, vinculados ao carrinho anonimo.
+- Frete em `GET /checkout/frete` e `POST /checkout/frete`, com cotacao server-side pela SuperFrete quando configurada.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -27,15 +28,20 @@ IMPLEMENTADO:
 - Fase 5 com `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images`.
 - Fase 6 com `carts` e `cart_items`.
 - Fase 7 com `cart_customer_details` e `cart_shipping_addresses`.
+- Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
 - Selecao publica de variante por query string em `GET /produtos/{slug}?variante=<variant-slug>`.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
 
+IMPLEMENTADO, COM VALIDACAO EXTERNA PENDENTE:
+
+- Cotacao Sandbox real da SuperFrete com token, CEP de origem, produto real com perfil logistico e caixa real cadastrada.
+
 PLANEJADO:
 
-- Frete, pedidos, painel administrativo e integracoes externas.
+- Pedidos, painel administrativo e integracoes externas de pagamento.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -65,7 +71,7 @@ Supabase Transaction Pooler
    v
 PostgreSQL
 
-Servicos externos planejados:
+Servicos externos:
 
 Go Backend -> SuperFrete API
 Go Backend -> InfinitePay Checkout/Webhooks
@@ -80,6 +86,8 @@ O navegador nao deve acessar diretamente tabelas sensiveis nem enviar valores fi
 O carrinho anonimo usa cookie opaco no navegador e persistencia server-side. O banco armazena somente o hash SHA-256 do token do cookie, enquanto itens armazenam produto, variante opcional e quantidade.
 
 A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side, leitura consistente, `Cache-Control: private, no-store` em respostas HTML que possam conter PII e erros genericos.
+
+A etapa de frete tambem e server-side. O navegador envia somente a escolha da opcao de frete, por `service_code`. O backend recalcula a cotacao no POST, escolhe a menor caixa fisica real compativel por dimensoes internas com rotacao, persiste somente a cotacao final usando dimensoes externas e peso final, e invalida selecoes antigas por expiracao ou `input_hash`.
 
 ## Responsabilidades do frontend
 
@@ -148,13 +156,24 @@ A Fase 7 adiciona dados temporarios de checkout vinculados ao carrinho:
 - Contato e endereco sao lidos por uma unica consulta SQL com `JOIN`; estados parciais anomalos sao tratados como dados ausentes.
 - Nao ha indice ou unique em CPF; uma pessoa pode ter carrinhos diferentes.
 
-Ainda nao existem tabelas de pedidos, pagamentos, frete, clientes permanentes ou admin.
+A Fase 8 adiciona frete:
+
+- `products` e `product_variants` possuem perfil logistico opcional em gramas e milimetros.
+- O perfil logistico e atomico: variante completa sobrescreve produto; campos parciais nao sao misturados.
+- `shipping_boxes` guarda caixas fisicas reais, com medidas internas para encaixe, medidas externas para transportadora e `packaging_weight_g` para embalagem/protecao padrao.
+- `cart_shipping_selections` guarda selecao de frete 1:1 por carrinho, com provider, servico, preco em centavos, prazo, snapshot do pacote real, `input_hash`, `quoted_at` e `expires_at`.
+- A escolha da menor caixa valida usa menor volume interno, menor peso de embalagem, menor `sort_order`, `name` e `id`.
+- Multi-volume permanece fora do escopo.
+
+Ainda nao existem tabelas de pedidos, pagamentos, clientes permanentes ou admin.
 
 ## Comunicacao com servicos externos
 
 Integracoes externas serao chamadas pelo backend, nunca diretamente pelo navegador quando houver credenciais, valores financeiros ou estados sensiveis envolvidos.
 
-SuperFrete e InfinitePay estao planejados. Esta fundacao nao implementa chamadas HTTP reais, endpoints, payloads ou webhooks.
+A integracao SuperFrete usa `net/http`, timeout explicito, `Authorization: Bearer <token>` e `User-Agent` operacional. O backend mapeia internamente `sandbox` para `https://sandbox.superfrete.com` e `production` para `https://api.superfrete.com`; nao ha base URL arbitraria por environment variable. Primeiro envia `products` ao calculator para obter pacote ideal, depois escolhe uma caixa real cadastrada e envia `package` com dimensoes externas e peso final para obter o preco apresentado ao cliente.
+
+InfinitePay continua planejado. Webhooks ainda nao existem.
 
 ## Boundaries
 
@@ -190,6 +209,8 @@ POST /carrinho/itens/{id}/quantidade -> atualiza quantidade e redireciona 303
 POST /carrinho/itens/{id}/remover -> remove item e redireciona 303
 GET /checkout/dados -> formulario SSR de contato/endereco; exige carrinho com itens disponiveis
 POST /checkout/dados -> valida e salva dados do carrinho em transacao; redireciona 303
+GET /checkout/frete -> calcula cotacoes atuais e renderiza opcoes de frete; exige carrinho, dados, perfis logisticos e caixas reais
+POST /checkout/frete -> revalida cotacao atual e persiste selecao de frete por service_code; redireciona 303
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 
@@ -254,6 +275,24 @@ pgxpool
    |
    v
 PostgreSQL
+```
+
+Vertical slice implementada para frete:
+
+```text
+HTTP
+   |
+   v
+shipping handler
+   |
+   v
+shipping service
+   |
+   v
+shipping repository + SuperFrete client
+   |
+   v
+PostgreSQL + SuperFrete API
 ```
 
 Fluxo planejado para funcionalidades de negocio:

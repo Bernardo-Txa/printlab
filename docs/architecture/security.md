@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho e dados de checkout IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout e frete IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -60,6 +60,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
 
+`SUPERFRETE_API_TOKEN` e secret operacional. Ele deve existir somente em `.env` local ignorado pelo Git ou nas variaveis de ambiente do hosting. O token nao deve ser logado, renderizado, armazenado no banco, enviado ao navegador, colocado em URL ou exposto em mensagens de erro.
+
 ## Catalogo publico
 
 - Produtos publicos exigem `products.is_active = true`.
@@ -108,13 +110,30 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Dados temporarios sao removidos por `ON DELETE CASCADE` quando o carrinho for removido.
 - Limpeza programada de carrinhos expirados e PII associada e requisito obrigatorio antes do go-live comercial.
 
+## Frete
+
+- Cotacao de frete e autoritativa no backend.
+- O frontend envia apenas `service_code`; preco, prazo, transportadora, peso e dimensoes vindos do navegador sao ignorados.
+- O backend reexecuta a cotacao no POST antes de persistir uma selecao.
+- A integracao SuperFrete usa `Authorization: Bearer <token>` apenas server-side.
+- O `User-Agent` da SuperFrete usa identificacao operacional da aplicacao e `SUPERFRETE_CONTACT_EMAIL`, nunca e-mail do cliente.
+- `SUPERFRETE_ENV` aceita somente `sandbox` ou `production`.
+- A base URL e mapeada internamente para `https://sandbox.superfrete.com` ou `https://api.superfrete.com`; environment variable nao pode redirecionar Authorization para host arbitrario.
+- O cliente HTTP possui timeout explicito e respeita cancelamento de contexto.
+- Erros publicos de frete sao genericos e nao expoem token, payload externo, CEP, CPF, e-mail, telefone ou endereco.
+- Logs comuns nao devem registrar token, CPF, e-mail completo, telefone, endereco, connection strings ou payloads completos de cotacao.
+- `GET /checkout/frete` e re-renderizacoes de POST usam `Cache-Control: private, no-store`.
+- Selecoes de frete expiram em 30 minutos.
+- `input_hash` invalida selecoes quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam, sem incluir PII desnecessaria.
+- Caixas fisicas reais sao obrigatorias para cotacao final; o sistema nao inventa caixas nem divide em multi-volume nesta fase.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho e dados temporarios de checkout.
+- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout e frete.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
 
@@ -133,6 +152,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Confirmar pagamento por parametro de URL ou redirect.
 - Salvar secrets em codigo, fixtures, logs, documentacao ou exemplos.
 - Aceitar preco, desconto ou frete do cliente como valor final.
+- Enviar token SuperFrete para o navegador ou para base URL configuravel por usuario/env.
+- Inserir caixa ficticia ou dimensao ficticia para forcar cotacao.
 - Processar webhook sem validacao e protecao contra duplicidade.
 - Executar migrations automaticamente no startup do servidor web.
 - Usar Table Editor ou SQL Editor remoto como workflow normal de mudanca de schema.

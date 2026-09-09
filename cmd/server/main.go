@@ -15,6 +15,7 @@ import (
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	"github.com/Bernardo-Txa/printlab/internal/products"
+	shippingdomain "github.com/Bernardo-Txa/printlab/internal/shipping"
 	webfiles "github.com/Bernardo-Txa/printlab/web"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
@@ -52,8 +53,10 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var catalog catalogService
 	var shoppingCart cartService
 	var checkoutDetails checkoutDetailsService
+	var checkoutShipping checkoutShippingService
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
+		customerRepository := customers.NewPostgresRepository(db.Pool())
 		catalog = products.NewService(
 			products.NewPostgresRepository(db.Pool()),
 			products.WithSupabaseURL(supabaseURL),
@@ -63,21 +66,41 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			cartdomain.WithSupabaseURL(supabaseURL),
 		)
 		checkoutDetails = customers.NewService(
-			customers.NewPostgresRepository(db.Pool()),
+			customerRepository,
 			shoppingCart,
+		)
+		var calculator shippingdomain.Calculator
+		if cfg.SuperFreteConfigured {
+			client, err := shippingdomain.NewSuperFreteClient(shippingdomain.SuperFreteClientConfig{
+				Environment:  cfg.SuperFreteEnv,
+				APIToken:     cfg.SuperFreteAPIToken,
+				ContactEmail: cfg.SuperFreteContactEmail,
+			})
+			if err != nil {
+				log.Fatal("shipping configuration error")
+			}
+			calculator = client
+		}
+		checkoutShipping = shippingdomain.NewService(
+			shippingdomain.NewPostgresRepository(db.Pool()),
+			shoppingCart,
+			customerRepository,
+			calculator,
+			cfg.SuperFreteOriginPostalCode,
+			cfg.SuperFreteServiceCodes,
 		)
 	}
 
-	return newHandlerWithServices(db, catalog, shoppingCart, checkoutDetails, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+	return newHandlerWithServices(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
 	}), cfg.SiteURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
-	return newHandlerWithServices(db, catalog, nil, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
+	return newHandlerWithServices(db, catalog, nil, nil, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
 }
 
-func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
+func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -90,6 +113,8 @@ func newHandlerWithServices(db *database.Database, catalog catalogService, shopp
 	mux.HandleFunc("POST /carrinho/itens/{id}/remover", removeCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("GET /checkout/dados", checkoutDetailsPageHandler(checkoutDetails, cartCookies))
 	mux.HandleFunc("POST /checkout/dados", saveCheckoutDetailsHandler(checkoutDetails, cartCookies, siteURL))
+	mux.HandleFunc("GET /checkout/frete", checkoutShippingPageHandler(checkoutShipping, cartCookies))
+	mux.HandleFunc("POST /checkout/frete", selectShippingHandler(checkoutShipping, cartCookies, siteURL))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

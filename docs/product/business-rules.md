@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho e dados de checkout IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout e frete IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -67,7 +67,7 @@ Antes de finalizar uma compra, o backend devera futuramente:
 - Produto e variante sao revalidados ao adicionar e ao renderizar.
 - Item indisponivel nao some silenciosamente.
 - Item indisponivel nao entra no subtotal.
-- Frete, pedido e pagamento permanecem planejados.
+- Pedido e pagamento permanecem planejados.
 
 ## Dados de checkout implementados
 
@@ -102,7 +102,29 @@ Variante com price_cents = 5990: 5990
 Variante com price_cents = 0: 0
 ```
 
-Carrinho recalcula precos e subtotais no backend. Checkout, descontos, frete, total final e pedidos continuam planejados e deverao recalcular valores no backend novamente.
+Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Checkout final, descontos, total definitivo e pedidos continuam planejados e deverao recalcular valores no backend novamente.
+
+## Frete implementado
+
+- Frete e sempre calculado no backend.
+- O navegador nunca determina preco de frete, prazo, transportadora, peso ou dimensoes.
+- `POST /checkout/frete` recebe somente `service_code` como escolha do cliente e revalida a cotacao atual antes de persistir.
+- Produtos e variantes possuem perfil logistico em gramas e milimetros, separado da receita de producao 3D.
+- Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
+- Se a variante possui perfil logistico completo, ela substitui o perfil do produto.
+- Se a variante nao possui perfil logistico completo, o frete usa o perfil completo do produto.
+- Campos parciais nao sao misturados entre produto e variante.
+- Produto sem perfil logistico efetivo nao recebe estimativa ficticia de peso ou dimensoes.
+- A PrintLab so deve cotar com caixas fisicas reais cadastradas em `shipping_boxes`.
+- A caixa menor compativel e escolhida por dimensoes internas considerando rotacao, nunca somente por volume.
+- Medidas internas da caixa sao usadas para encaixe; medidas externas sao enviadas a transportadora.
+- `packaging_weight_g` representa caixa/protecao/enchimento padrao e e somado ao peso dos produtos.
+- A cotacao SuperFrete acontece em duas etapas: `products` para obter pacote ideal e `package` com caixa real para obter preco final.
+- Somente a cotacao final com a caixa fisica real e apresentada ao cliente.
+- Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
+- A selecao de frete expira em 30 minutos.
+- A selecao e invalidada por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
+- Multi-volume, etiqueta/postagem, rastreio e pedido permanecem planejados.
 
 ## Producao 3D
 

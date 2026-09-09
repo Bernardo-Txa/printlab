@@ -108,6 +108,90 @@ func TestLoadReadsOptionalSiteAndRuntimeEnvironment(t *testing.T) {
 	}
 }
 
+func TestLoadAllowsMissingSuperFreteConfig(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.SuperFreteConfigured {
+		t.Fatal("expected SuperFrete to be unconfigured")
+	}
+}
+
+func TestLoadReadsSuperFreteConfig(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPERFRETE_ENV":                " sandbox ",
+		"SUPERFRETE_API_TOKEN":          " token-value ",
+		"SUPERFRETE_ORIGIN_POSTAL_CODE": "01153-000",
+		"SUPERFRETE_CONTACT_EMAIL":      " INTEGRACAO@example.com ",
+		"SUPERFRETE_SERVICES":           "1, 2,17,3,33",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !cfg.SuperFreteConfigured {
+		t.Fatal("expected SuperFrete to be configured")
+	}
+	if cfg.SuperFreteEnv != "sandbox" || cfg.SuperFreteOriginPostalCode != "01153000" {
+		t.Fatalf("expected normalized SuperFrete env and origin, got %#v", cfg)
+	}
+	if cfg.SuperFreteContactEmail != "integracao@example.com" {
+		t.Fatalf("expected normalized contact email, got %q", cfg.SuperFreteContactEmail)
+	}
+	if strings.Join(cfg.SuperFreteServiceCodes, ",") != "1,2,17,3,33" || cfg.SuperFreteServiceCodesValue != "1,2,17,3,33" {
+		t.Fatalf("expected normalized SuperFrete services, got %#v", cfg.SuperFreteServiceCodes)
+	}
+}
+
+func TestLoadRejectsIncompleteSuperFreteConfig(t *testing.T) {
+	_, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPERFRETE_ENV": "sandbox",
+	}))
+	if !errors.Is(err, ErrIncompleteSuperFreteConfig) {
+		t.Fatalf("expected ErrIncompleteSuperFreteConfig, got %v", err)
+	}
+}
+
+func TestLoadRejectsInvalidSuperFreteConfig(t *testing.T) {
+	base := map[string]string{
+		"SUPERFRETE_ENV":                "sandbox",
+		"SUPERFRETE_API_TOKEN":          "token-value",
+		"SUPERFRETE_ORIGIN_POSTAL_CODE": "01153000",
+		"SUPERFRETE_CONTACT_EMAIL":      "integracao@example.com",
+		"SUPERFRETE_SERVICES":           "1,2",
+	}
+
+	tests := []struct {
+		name string
+		key  string
+		val  string
+		want error
+	}{
+		{name: "env", key: "SUPERFRETE_ENV", val: "staging", want: ErrInvalidSuperFreteEnv},
+		{name: "origin postal code", key: "SUPERFRETE_ORIGIN_POSTAL_CODE", val: "0115A000", want: ErrInvalidSuperFreteOriginPostalCode},
+		{name: "contact email", key: "SUPERFRETE_CONTACT_EMAIL", val: "not-an-email", want: ErrInvalidSuperFreteContactEmail},
+		{name: "unknown service", key: "SUPERFRETE_SERVICES", val: "1,31", want: ErrInvalidSuperFreteServices},
+		{name: "duplicate service", key: "SUPERFRETE_SERVICES", val: "1,1", want: ErrInvalidSuperFreteServices},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values := map[string]string{}
+			for key, value := range base {
+				values[key] = value
+			}
+			values[tt.key] = tt.val
+
+			_, err := loadFromEnv(mapLookup(values))
+			if !errors.Is(err, tt.want) {
+				t.Fatalf("expected %v, got %v", tt.want, err)
+			}
+		})
+	}
+}
+
 func mapLookup(values map[string]string) envLookup {
 	return func(key string) (string, bool) {
 		value, ok := values[key]

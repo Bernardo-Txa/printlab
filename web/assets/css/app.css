@@ -782,6 +782,10 @@
     @apply border-primary bg-primary text-primary-foreground;
   }
 
+  .checkout-step-done {
+    @apply border-highlight-teal/40 bg-highlight-teal/10 text-foreground;
+  }
+
   .checkout-alert {
     @apply mt-5 rounded-control border px-4 py-3 text-sm font-semibold;
   }
@@ -840,6 +844,30 @@
 
   .checkout-form-actions {
     @apply flex flex-col gap-3 sm:flex-row;
+  }
+
+  .shipping-options {
+    @apply mt-5 grid gap-3;
+  }
+
+  .shipping-option {
+    @apply grid cursor-pointer grid-cols-[auto_1fr] gap-4 rounded-card border border-border bg-background p-4 transition hover:border-primary/40 hover:bg-surface-muted sm:grid-cols-[auto_1fr_auto] sm:items-center;
+  }
+
+  .shipping-option input {
+    @apply mt-1 h-5 w-5 accent-primary sm:mt-0;
+  }
+
+  .shipping-option span {
+    @apply flex min-w-0 flex-col gap-1;
+  }
+
+  .shipping-option strong {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .shipping-option small {
+    @apply text-sm leading-5 text-muted;
   }
 
   .checkout-summary {

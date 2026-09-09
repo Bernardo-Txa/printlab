@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fases 8 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fase 8 com implementacao concluida e validacao Sandbox SuperFrete pendente. Fases 9 a 17 planejadas.
 
 ## Status das fases
 
@@ -18,7 +18,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fases 8 a 
 | Fase 6 — Carrinho | Concluida |
 | Fase 7 — Dados do cliente e endereco | Concluida |
 | Fase 7.1 — Hardening de privacidade e consistencia do checkout | Concluida |
-| Fase 8 — Integracao SuperFrete | Planejada |
+| Fase 8 — Embalagem real e integracao SuperFrete | Implementacao concluida; Sandbox pendente |
 | Fase 9 — Pedidos | Planejada |
 | Fase 10 — Integracao InfinitePay | Planejada |
 | Fase 11 — Webhooks de pagamento | Planejada |
@@ -271,7 +271,7 @@ Definition of Done:
 - Privacidade e seguranca revisadas.
 - Migration `create_cart_customer_details` criada.
 - RLS habilitado sem policies publicas.
-- Fase 8 permanece planejada.
+- Fase 8 foi iniciada posteriormente.
 
 ## Fase 7.1 — Hardening de privacidade e consistencia do checkout
 
@@ -292,18 +292,24 @@ Definition of Done:
 - Sem mudanca na escrita transacional existente.
 - Testes, vet e build executados.
 - Documentacao de checkout, seguranca e schema atualizada.
-- Fase 8 permanece planejada.
+- Fase 8 foi iniciada posteriormente.
 
-## Fase 8 — Integracao SuperFrete
+## Fase 8 — Embalagem real e integracao SuperFrete
 
-Objetivo: calcular opcoes de frete usando SuperFrete.
+Objetivo: calcular opcoes de frete usando perfis logisticos, caixas fisicas reais e SuperFrete.
 
 Principais entregas:
 
-- Cliente HTTP server-side.
+- Perfis logisticos opcionais em produtos e variantes.
+- Tabela `shipping_boxes` para caixas fisicas reais, sem seed ficticio.
+- Tabela `cart_shipping_selections` para selecao de frete por carrinho.
+- Cliente HTTP server-side da SuperFrete.
 - Configuracao por environment variables.
-- Validacao de CEP e parametros.
-- Revalidacao no checkout.
+- Estrategia de duas chamadas: `products` para pacote ideal e `package` com caixa real para preco final.
+- Escolha da menor caixa real compativel por dimensoes internas e rotacao.
+- Rotas `GET /checkout/frete` e `POST /checkout/frete`.
+- Revalidacao server-side no POST.
+- `input_hash` e validade de 30 minutos para selecao de frete.
 
 Dependencias: Fases 6 e 7; confirmacao da documentacao oficial da SuperFrete.
 
@@ -313,6 +319,8 @@ Definition of Done:
 - Timeouts e erros tratados.
 - Testes de contrato ou mocks deterministico.
 - Valor de frete validado server-side.
+- Migration criada sem seed ficticio.
+- Sandbox real validado com token, CEP de origem, produto real com perfil logistico e caixa real cadastrada.
 
 ## Fase 9 — Pedidos
 

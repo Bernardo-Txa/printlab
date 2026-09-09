@@ -46,6 +46,14 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Testes de dados de checkout para validacao, normalizacao, service, handlers, migration e transacao.
 - Fase 7.1 — Hardening de Privacidade e Consistencia do Checkout.
 - Testes de regressao para cache privado de checkout e estado parcial de contato/endereco.
+- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete, com implementacao e testes concluidos e validacao Sandbox real pendente.
+- Perfis logisticos opcionais em `products` e `product_variants`, com peso em gramas, dimensoes em milimetros e constraints all-or-none.
+- Migration `add_shipping_profiles_and_selections` para `shipping_boxes` e `cart_shipping_selections`, sem seed de caixas ficticias.
+- Escolha da menor caixa fisica real compativel com pacote ideal, usando dimensoes internas, rotacao e desempates deterministicos.
+- Cliente SuperFrete server-side com Bearer token, `User-Agent`, timeout, base URLs controladas e DTOs isolados.
+- Estrategia de duas cotacoes: `products` para pacote ideal e `package` com caixa real para preco final.
+- Rotas `GET /checkout/frete` e `POST /checkout/frete` para cotacao e selecao de frete sem JavaScript obrigatorio.
+- `input_hash` e validade de 30 minutos para invalidar selecoes de frete obsoletas.
 
 ### Changed
 
@@ -70,3 +78,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Carrinho com itens disponiveis passa a apontar para a etapa real de dados em `/checkout/dados`.
 - Respostas HTML de checkout com PII passam a usar `Cache-Control: private, no-store`.
 - Leitura de contato e endereco de checkout consolidada em uma unica consulta SQL consistente.
+- Salvamento de dados de checkout passa a redirecionar para a etapa real de frete.

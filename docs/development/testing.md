@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho e dados de checkout IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, dados de checkout e frete IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -11,7 +11,8 @@ Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, ca
 - Testes opcionais de integracao PostgreSQL usando `TEST_DATABASE_URL`.
 - Handler tests de catalogo e detalhe de produto sem rede.
 - Unit tests de service, slug, formatacao de dinheiro, preco efetivo, peso, tempo e URLs de imagem.
-- Integration contract tests para SuperFrete e InfinitePay quando contratos oficiais forem usados.
+- Testes de cliente SuperFrete com `httptest`, sem chamada real de internet em `go test ./...`.
+- Integration contract tests reais para SuperFrete e InfinitePay somente como opt-in controlado, com credenciais de sandbox.
 - Testes criticos de checkout.
 - Testes de idempotencia.
 - Testes de pagamento.
@@ -82,6 +83,11 @@ npx supabase --version
 - Service de dados de checkout cobre carrinho ausente, carrinho vazio, item indisponivel, validacao completa, normalizacao, dados validos, erro de repository e ausencia de persistencia em entrada invalida.
 - Repository de dados de checkout cobre uso de transacao, upserts 1:1 por `cart_id`, colunas explicitas e teste opcional de rollback com `TEST_DATABASE_URL`.
 - Handlers de `/checkout/dados` cobrem redirect sem carrinho, GET com carrinho, POST valido, CPF invalido, endereco invalido, origem cross-site invalida e resposta generica sem detalhes internos.
+- Packaging de frete cobre rotacao, eixo incompativel apesar de volume suficiente, menor caixa, desempates deterministicos, ausencia de caixa, fallback de perfil produto/variante, conversoes de unidade, arredondamento conservador cm -> mm, dinheiro em centavos, peso final e overflow.
+- Cliente SuperFrete cobre Authorization Bearer, `User-Agent`, `Content-Type`, endpoint `/api/v0/calculator`, payload `products`, payload `package`, parsing 200, erros HTTP, timeout, JSON invalido e ausencia de token em mensagens de erro.
+- Service de frete cobre pre-condicoes de carrinho/dados, ausencia de perfil logistico, ausencia de caixa, caixa sem encaixe, duas chamadas SuperFrete, uso de caixa real na cotacao final, preco revalidado, persistencia de selecao, selecao expirada, hash divergente e servico indisponivel.
+- Repository de frete cobre queries explicitamente escopadas por carrinho e teste opcional com `TEST_DATABASE_URL` para perfis, caixas ativas, upsert de selecao e ignorar caixa inativa.
+- Handlers de `/checkout/frete` cobrem redirect sem carrinho, redirect sem dados, estados sem perfil/caixa, cotacao valida, `Cache-Control: private, no-store`, POST cross-site rejeitado, selecao valida e POST que ignora preco malicioso do navegador.
 
 ## Teste de integracao PostgreSQL opcional
 

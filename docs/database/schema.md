@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho e dados de checkout IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout e frete IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -9,6 +9,8 @@ A Fase 5.1 nao alterou schema. Ela corrigiu a leitura de receitas para preservar
 A Fase 6 adiciona carrinho anonimo persistido server-side em `public.carts` e `public.cart_items`.
 
 A Fase 7 adiciona dados temporarios de contato e endereco vinculados ao carrinho em `public.cart_customer_details` e `public.cart_shipping_addresses`.
+
+A Fase 8 adiciona perfis logisticos em produtos/variantes, caixas fisicas reais em `public.shipping_boxes` e selecoes de frete por carrinho em `public.cart_shipping_selections`.
 
 ## Convencoes futuras
 
@@ -63,6 +65,10 @@ Campos:
 | `short_description` | `text` | sim | - | Resumo opcional para listagem e SEO. |
 | `description` | `text` | sim | - | Descricao opcional para detalhe. |
 | `price_cents` | `bigint` | nao | - | Preco-base comercial em centavos. |
+| `shipping_weight_g` | `bigint` | sim | - | Peso logistico protegido de uma unidade, em gramas. |
+| `shipping_height_mm` | `integer` | sim | - | Altura logistica protegida de uma unidade, em milimetros. |
+| `shipping_width_mm` | `integer` | sim | - | Largura logistica protegida de uma unidade, em milimetros. |
+| `shipping_length_mm` | `integer` | sim | - | Comprimento logistico protegido de uma unidade, em milimetros. |
 | `is_active` | `boolean` | nao | `false` | Controla exibicao publica. |
 | `is_featured` | `boolean` | nao | `false` | Permite destaque e ordenacao inicial. |
 | `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
@@ -79,12 +85,20 @@ Constraints:
 - `products_name_not_blank`: `btrim(name) <> ''`.
 - `products_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
 - `products_price_cents_non_negative`: `price_cents >= 0`.
+- `products_shipping_profile_all_or_none`: os quatro campos logisticos ficam todos `null` ou todos preenchidos.
+- `products_shipping_profile_positive`: quando preenchidos, peso e dimensoes logisticos sao maiores que zero.
 - `products_short_description_not_blank`: `short_description is null or btrim(short_description) <> ''`.
 - `products_description_not_blank`: `description is null or btrim(description) <> ''`.
 
 Indices:
 
 - `products_category_id_idx` em `products(category_id)`.
+
+Semantica:
+
+- O perfil logistico do produto representa uma unidade preparada para acondicionamento, nao necessariamente a geometria crua da peca 3D.
+- Peso logistico usa gramas inteiras e dimensoes usam milimetros inteiros.
+- Produto sem perfil logistico completo nao recebe estimativa ficticia de frete.
 
 RLS:
 
@@ -174,6 +188,10 @@ Campos:
 | `slug` | `text` | nao | - | Slug unico dentro do produto. |
 | `sku` | `text` | sim | - | Codigo interno opcional. |
 | `price_cents` | `bigint` | sim | - | Override opcional de preco em centavos. |
+| `shipping_weight_g` | `bigint` | sim | - | Override completo do peso logistico da variante, em gramas. |
+| `shipping_height_mm` | `integer` | sim | - | Override completo da altura logistica da variante, em milimetros. |
+| `shipping_width_mm` | `integer` | sim | - | Override completo da largura logistica da variante, em milimetros. |
+| `shipping_length_mm` | `integer` | sim | - | Override completo do comprimento logistico da variante, em milimetros. |
 | `is_active` | `boolean` | nao | `false` | Controla exibicao publica da variante. |
 | `is_default` | `boolean` | nao | `false` | Variante inicial preferencial. |
 | `sort_order` | `integer` | nao | `0` | Ordenacao publica/operacional. |
@@ -195,6 +213,8 @@ Constraints:
 - `product_variants_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
 - `product_variants_sku_not_blank`: `sku is null or btrim(sku) <> ''`.
 - `product_variants_price_cents_non_negative`: `price_cents is null or price_cents >= 0`.
+- `product_variants_shipping_profile_all_or_none`: os quatro campos logisticos ficam todos `null` ou todos preenchidos.
+- `product_variants_shipping_profile_positive`: quando preenchidos, peso e dimensoes logisticos sao maiores que zero.
 - `product_variants_sort_order_non_negative`: `sort_order >= 0`.
 - `product_variants_print_time_minutes_positive`: `print_time_minutes is null or print_time_minutes > 0`.
 - `product_variants_default_is_active`: `not is_default or is_active`.
@@ -213,6 +233,8 @@ Semantica:
 - Variante default deve estar ativa.
 - `sku` e opcional e nao e identificador publico principal.
 - Ordenacao publica: `is_default desc`, `sort_order asc`, `name asc`.
+- O perfil logistico da variante e um override atomico. Se estiver completo, substitui o perfil do produto; se estiver ausente, o frete usa o perfil completo do produto.
+- Campos logisticos parciais nao sao permitidos e nao devem ser misturados com campos do produto.
 
 RLS:
 
@@ -439,7 +461,7 @@ Semantica:
 - CEP e UF sao normalizados e validados no backend.
 - Nao ha ViaCEP, BrasilAPI, Google Maps ou autocomplete externo nesta fase.
 - O registro e removido junto com o carrinho por cascade.
-- Frete sera calculado na Fase 8 a partir desses dados revalidados.
+- Frete e calculado a partir desses dados revalidados na etapa `/checkout/frete`.
 
 RLS:
 
@@ -451,6 +473,121 @@ RLS:
 `cart_customer_details` e `cart_shipping_addresses` devem ser lidas como uma unidade logica. O repository Go usa uma unica consulta SQL com `JOIN` por `cart_id`, evitando que duas queries separadas observem estados diferentes em requests concorrentes.
 
 Como a escrita e transacional, os dois registros devem existir juntos. Se houver estado parcial anomalo, como contato sem endereco ou endereco sem contato, a aplicacao trata como dados ausentes e nao retorna PII parcial para o formulario de checkout.
+
+## Tabela `public.shipping_boxes`
+
+Caixas fisicas reais disponiveis para cotacao de frete. A migration cria a tabela vazia; caixas ficticias nao devem ser inseridas apenas para teste.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `name` | `text` | nao | - | Nome operacional da caixa. |
+| `slug` | `text` | nao | - | Identificador canonico unico. |
+| `internal_height_mm` | `integer` | nao | - | Altura util interna, usada para validar encaixe. |
+| `internal_width_mm` | `integer` | nao | - | Largura util interna, usada para validar encaixe. |
+| `internal_length_mm` | `integer` | nao | - | Comprimento util interno, usado para validar encaixe. |
+| `external_height_mm` | `integer` | nao | - | Altura externa enviada a transportadora. |
+| `external_width_mm` | `integer` | nao | - | Largura externa enviada a transportadora. |
+| `external_length_mm` | `integer` | nao | - | Comprimento externo enviado a transportadora. |
+| `packaging_weight_g` | `integer` | nao | - | Peso da caixa/protecao/enchimento padrao, em gramas. |
+| `is_active` | `boolean` | nao | `true` | Controla uso em cotacoes. |
+| `sort_order` | `integer` | nao | `0` | Desempate operacional. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente em updates futuros. |
+
+Constraints:
+
+- `shipping_boxes_pkey`: chave primaria em `id`.
+- `shipping_boxes_slug_unique`: `slug` unico.
+- `shipping_boxes_name_not_blank`: `btrim(name) <> ''`.
+- `shipping_boxes_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
+- `shipping_boxes_internal_dimensions_positive`: medidas internas maiores que zero.
+- `shipping_boxes_external_dimensions_positive`: medidas externas maiores que zero.
+- `shipping_boxes_external_dimensions_fit_internal`: cada medida externa deve ser maior ou igual a medida interna correspondente.
+- `shipping_boxes_packaging_weight_positive`: `packaging_weight_g > 0`.
+- `shipping_boxes_sort_order_non_negative`: `sort_order >= 0`.
+
+Indices:
+
+- `shipping_boxes_active_selection_idx` em `(is_active, sort_order, name, id)`.
+
+Semantica:
+
+- Medidas internas determinam se o pacote ideal cabe na caixa, considerando rotacao.
+- Medidas externas sao enviadas a SuperFrete na cotacao final.
+- `packaging_weight_g` e somado ao peso logistico dos produtos para formar o peso real cotado.
+- A menor caixa compativel e escolhida por volume interno, peso de embalagem, `sort_order`, `name` e `id`.
+- Multi-volume nao existe nesta fase.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.cart_shipping_selections`
+
+Selecao de frete atual do carrinho anonimo. O registro pertence ao carrinho e e removido por cascade quando o carrinho for removido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `cart_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.carts(id)`. |
+| `shipping_box_id` | `uuid` | nao | - | Caixa real usada na cotacao final. |
+| `provider` | `text` | nao | - | Provedor da cotacao, inicialmente `superfrete`. |
+| `service_code` | `text` | nao | - | Codigo do servico retornado pela integracao. |
+| `service_name` | `text` | nao | - | Nome do servico retornado pela integracao. |
+| `carrier_name` | `text` | sim | - | Transportadora, quando retornada. |
+| `price_cents` | `bigint` | nao | - | Preco final de frete em centavos. |
+| `delivery_time_days` | `integer` | sim | - | Prazo retornado, quando existir. |
+| `package_weight_g` | `bigint` | nao | - | Peso real cotado: produtos + embalagem. |
+| `package_height_mm` | `integer` | nao | - | Altura externa da caixa real cotada. |
+| `package_width_mm` | `integer` | nao | - | Largura externa da caixa real cotada. |
+| `package_length_mm` | `integer` | nao | - | Comprimento externo da caixa real cotada. |
+| `input_hash` | `bytea` | nao | - | SHA-256 canonico dos dados que influenciam a cotacao. |
+| `quoted_at` | `timestamptz` | nao | - | Momento da cotacao persistida. |
+| `expires_at` | `timestamptz` | nao | - | Validade operacional da cotacao, inicialmente 30 minutos. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente no upsert. |
+
+Foreign keys:
+
+- `cart_shipping_selections_cart_id_fkey`: `cart_id` referencia `public.carts(id)` com `on delete cascade`.
+- `cart_shipping_selections_shipping_box_id_fkey`: `shipping_box_id` referencia `public.shipping_boxes(id)`.
+
+Constraints:
+
+- `cart_shipping_selections_pkey`: chave primaria em `cart_id`.
+- `cart_shipping_selections_provider_not_blank`: `btrim(provider) <> ''`.
+- `cart_shipping_selections_service_code_not_blank`: `btrim(service_code) <> ''`.
+- `cart_shipping_selections_service_name_not_blank`: `btrim(service_name) <> ''`.
+- `cart_shipping_selections_carrier_name_not_blank`: `carrier_name is null or btrim(carrier_name) <> ''`.
+- `cart_shipping_selections_price_cents_non_negative`: `price_cents >= 0`.
+- `cart_shipping_selections_delivery_time_days_non_negative`: `delivery_time_days is null or delivery_time_days >= 0`.
+- `cart_shipping_selections_package_weight_positive`: `package_weight_g > 0`.
+- `cart_shipping_selections_package_dimensions_positive`: dimensoes do pacote maiores que zero.
+- `cart_shipping_selections_input_hash_length`: `octet_length(input_hash) = 32`.
+- `cart_shipping_selections_expires_after_quoted`: `expires_at > quoted_at`.
+
+Indices:
+
+- `cart_shipping_selections_shipping_box_id_idx` em `shipping_box_id`.
+- `cart_shipping_selections_expires_at_idx` em `expires_at`.
+
+Semantica:
+
+- O snapshot `package_*` guarda o pacote real cotado, com dimensoes externas da caixa escolhida.
+- `input_hash` inclui CEP de origem, CEP de destino, produtos, variantes, quantidades, perfil logistico efetivo, caixa real, dimensoes externas, peso de embalagem e configuracao de servicos/opcoes.
+- Nome, CPF, e-mail, telefone, rua e demais PII desnecessaria nao entram no hash.
+- Se o hash atual divergir ou `expires_at` estiver no passado, a selecao e ignorada.
+- O pedido futuro devera revalidar a cotacao antes de congelar valores.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
 
 ## Tabela `public.product_images`
 
@@ -559,7 +696,7 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete, pedidos, descontos, pagamentos e total final de checkout continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedidos, descontos, pagamentos e total final definitivo de checkout continuam planejados.
 
 ## IDs
 
@@ -582,3 +719,4 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 - Definir estoque fisico e inventario de filamento.
 - Definir calculo de custos de producao a partir de insumos e tempo.
 - Implementar limpeza programada de carrinhos expirados e PII associada antes do go-live comercial.
+- Cadastrar caixas reais e perfis logisticos reais em desenvolvimento antes de validar Sandbox SuperFrete.

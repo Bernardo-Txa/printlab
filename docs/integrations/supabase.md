@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho, dados de checkout e Storage de catalogo IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete e Storage de catalogo IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -35,6 +35,7 @@ Supabase PostgreSQL
 - A segunda migration de negocio cria materiais, cores, variantes, receita estimada de producao, imagens e o bucket `product-images`, sem seed ficticio.
 - A terceira migration de negocio cria `carts` e `cart_items`, sem seed ficticio.
 - A quarta migration de negocio cria `cart_customer_details` e `cart_shipping_addresses`, sem seed ficticio e sem PII.
+- A quinta migration de negocio adiciona perfis logisticos, `shipping_boxes` e `cart_shipping_selections`, sem seed ficticio.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
 
 ## Variaveis previstas
@@ -147,6 +148,20 @@ Dados temporarios de checkout usam PostgreSQL via backend Go. O frontend nao ace
 - Remocao do carrinho remove os dados por `ON DELETE CASCADE`.
 
 A migration `20260909203845_create_cart_customer_details.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere contato, endereco, CPF, PII ou dados ficticios.
+
+## Frete
+
+Frete usa PostgreSQL via backend Go. O frontend nao acessa `shipping_boxes` ou `cart_shipping_selections` diretamente.
+
+- Perfis logisticos ficam em `products` e `product_variants`.
+- `shipping_boxes` fica no schema `public` e deve conter apenas caixas fisicas reais.
+- `cart_shipping_selections` fica no schema `public` e usa `cart_id` como chave primaria e FK para `carts`.
+- RLS fica habilitado sem policies publicas.
+- `cart_shipping_selections.price_cents` armazena o preco final de frete em centavos.
+- `package_*` armazena o snapshot do pacote real cotado, com dimensoes externas da caixa.
+- `input_hash` permite invalidar cotacoes obsoletas sem incluir PII desnecessaria.
+
+A migration `20260909220454_add_shipping_profiles_and_selections.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere caixas, produtos, cotacoes ou dados ficticios.
 
 ## Storage
 

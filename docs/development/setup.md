@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho e dados de checkout IMPLEMENTADA.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout e frete IMPLEMENTADA.
 
 ## Requisitos
 
@@ -10,7 +10,7 @@ Status: fundacao visual, banco, catalogo, variantes, carrinho e dados de checkou
 - Terminal com acesso ao diretorio do projeto.
 - Supabase CLI instalada via npm (`supabase` v2.117.0).
 
-Nenhuma conta externa e necessaria para executar a aplicacao local atual. Nao conecte SuperFrete ou InfinitePay durante esta fase.
+Nenhuma conta externa e necessaria para executar a aplicacao local basica. A cotacao real de frete exige configuracao SuperFrete opcional de desenvolvimento; sem ela, a rota de frete apresenta indisponibilidade segura.
 
 Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve configurar secrets diretamente no GitHub Actions. Nao coloque credenciais em `.env`, documentacao ou codigo.
 
@@ -26,10 +26,17 @@ Variaveis de runtime:
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
 - `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada somente para montar URLs publicas de imagens do bucket `product-images`.
+- `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
+- `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
+- `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab.
+- `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional do `User-Agent` da SuperFrete.
+- `SUPERFRETE_SERVICES`: codigos de servico solicitados, separados por virgula.
 
 Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e `/checkout/dados` redireciona para `/carrinho` sem carrinho valido.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
+
+Sem configuracao SuperFrete, a rota `/checkout/frete` nao faz chamada externa e exibe estado de indisponibilidade depois que carrinho e dados forem resolvidos. Se qualquer variavel SuperFrete for preenchida, todas as variaveis obrigatorias precisam estar validas para evitar configuracao parcial.
 
 Na Vercel, `VERCEL_ENV=production` tambem e considerado para marcar o cookie do carrinho como `Secure`. Localmente, `SITE_URL=http://localhost:8080` permite validar formularios sem exigir HTTPS.
 
@@ -158,6 +165,29 @@ curl -i http://localhost:8080/checkout/dados
 
 Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao inserir PII ficticia em migration nem criar carrinho/produto falso apenas para validar a rota. O formulario aceita preenchimento manual de contato e endereco, sem ViaCEP, BrasilAPI, Google Maps ou autocomplete externo.
 
+Depois de salvar dados validos, o fluxo normal redireciona para `/checkout/frete`.
+
+## Validar frete
+
+Com `DATABASE_URL`, migrations aplicadas, carrinho real com itens disponiveis, dados de checkout salvos, perfis logisticos completos, caixas reais cadastradas e SuperFrete configurada:
+
+```sh
+curl -i http://localhost:8080/checkout/frete
+```
+
+A resposta esperada e HTTP 200 com opcoes de frete cotadas server-side. O POST envia somente `service_code`:
+
+```sh
+curl -i \
+  -X POST \
+  -H "Origin: http://localhost:8080" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data "service_code=1" \
+  http://localhost:8080/checkout/frete
+```
+
+Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Sem perfil logistico, caixa real ou configuracao SuperFrete, a rota mostra indisponibilidade honesta, sem inventar peso, caixa ou preco.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -190,6 +220,8 @@ A terceira migration real e `create_carts`, criando `carts` e `cart_items`. Ela 
 
 A quarta migration real e `create_cart_customer_details`, criando `cart_customer_details` e `cart_shipping_addresses`. Ela nao insere contato, endereco, CPF, PII ou dados ficticios.
 
+A quinta migration real e `add_shipping_profiles_and_selections`, adicionando perfis logisticos, `shipping_boxes` e `cart_shipping_selections`. Ela nao insere caixas, produtos, cotacoes ou dados ficticios.
+
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 
 Enquanto o workflow estiver configurado, o desenvolvedor nao precisa executar manualmente `supabase login`, `supabase link` e `supabase db push` para migrations normais de desenvolvimento.
@@ -212,7 +244,7 @@ npm run db:push
 ```sh
 templ generate
 npm run css:build
-gofmt -w cmd/server web/components web/templates
+gofmt -w .
 go test ./...
 go vet ./...
 go build ./...

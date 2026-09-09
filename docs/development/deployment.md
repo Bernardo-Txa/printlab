@@ -54,6 +54,7 @@ Supabase de desenvolvimento
 - Variantes e imagens de catalogo dependem do PostgreSQL e do bucket `product-images`.
 - Carrinho anonimo depende do PostgreSQL para persistencia e usa cookie host-only `printlab_cart`.
 - Dados de checkout dependem do carrinho e do PostgreSQL, sem criar conta permanente de cliente.
+- Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -111,6 +112,8 @@ Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Ant
 
 A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. A Fase 6 cria `create_carts`, com `carts` e `cart_items`. A Fase 7 cria `create_cart_customer_details`, com contato e endereco temporarios por carrinho. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo, carrinho ou PII.
 
+A Fase 8 cria `add_shipping_profiles_and_selections`, com perfis logisticos em produtos/variantes, `shipping_boxes` e `cart_shipping_selections`. Ela deve ser aplicada pelo workflow sem seed de caixas, produtos, cotacoes ou dados ficticios.
+
 ## Runtime PostgreSQL
 
 ```text
@@ -132,8 +135,15 @@ Secrets de runtime no ambiente de hosting:
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
 - `SITE_URL`, opcional e nao secret, usada como origem permitida para mutacoes de carrinho
+- `SUPERFRETE_ENV`, opcional ate habilitar cotacao real, aceitando `sandbox` ou `production`
+- `SUPERFRETE_API_TOKEN`, secret da SuperFrete
+- `SUPERFRETE_ORIGIN_POSTAL_CODE`, CEP operacional de origem da PrintLab
+- `SUPERFRETE_CONTACT_EMAIL`, e-mail operacional usado no `User-Agent`
+- `SUPERFRETE_SERVICES`, lista de codigos de servico solicitados
 
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
+
+Se a configuracao SuperFrete estiver ausente, a aplicacao continua iniciando e as rotas publicas existentes continuam funcionando. A etapa `/checkout/frete`, quando acessada com carrinho e dados validos, apresenta indisponibilidade segura em vez de panic ou exposicao de erro interno. Se qualquer variavel SuperFrete for preenchida, a configuracao precisa estar completa e valida.
 
 O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
@@ -184,6 +194,25 @@ curl -i https://printlab-pied.vercel.app/checkout/dados
 ```
 
 Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao criar carrinho/produto fake nem enviar PII ficticia em ambiente remoto apenas para testar checkout.
+
+Depois da Fase 8, validar tambem:
+
+```sh
+curl -i https://printlab-pied.vercel.app/checkout/frete
+```
+
+Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao criar produto, caixa, carrinho, endereco ou cotacao ficticia em ambiente remoto apenas para validar frete.
+
+Quando existirem dados reais de desenvolvimento:
+
+- configurar `SUPERFRETE_ENV=sandbox`;
+- configurar `SUPERFRETE_API_TOKEN` como secret;
+- configurar `SUPERFRETE_ORIGIN_POSTAL_CODE`;
+- configurar `SUPERFRETE_CONTACT_EMAIL`;
+- configurar `SUPERFRETE_SERVICES`;
+- cadastrar pelo menos um produto real com perfil logistico;
+- cadastrar pelo menos uma caixa fisica real ativa;
+- validar uma cotacao Sandbox real sem criar etiqueta/postagem.
 
 ## Vercel
 

@@ -76,7 +76,7 @@ func TestCheckoutDetailsPostValidRedirects(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
 	}
-	if rec.Header().Get("Location") != "/checkout/dados?salvo=1" {
+	if rec.Header().Get("Location") != "/checkout/frete" {
 		t.Fatalf("expected saved redirect, got %q", rec.Header().Get("Location"))
 	}
 	if len(rec.Result().Cookies()) != 1 || rec.Result().Cookies()[0].Name != cartdomain.CookieName {
@@ -271,7 +271,7 @@ func newTestHandlerWithCheckout(t *testing.T, service checkoutDetailsService, co
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServices(db, nil, nil, service, cookies, siteURL)
+	return newHandlerWithServices(db, nil, nil, service, nil, cookies, siteURL)
 }
 
 type fakeCheckoutDetailsService struct {

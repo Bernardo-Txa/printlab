@@ -1,12 +1,12 @@
 # Frontend
 
-Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR e dados de checkout SSR IMPLEMENTADOS; interacoes HTMX e funcionalidades comerciais futuras PLANEJADAS.
+Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, dados de checkout SSR e frete SSR IMPLEMENTADOS; interacoes HTMX e funcionalidades comerciais futuras PLANEJADAS.
 
 ## Responsabilidade
 
 O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
 
-Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho` e a etapa de dados em `GET /checkout/dados` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
+Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, a etapa de dados em `GET /checkout/dados` e a etapa de frete em `GET /checkout/frete` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
@@ -19,7 +19,9 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - O frontend nao armazena credenciais de integracoes.
 - O frontend nao calcula preco de produto ou variante; recebe o preco efetivo ja formatado pelo backend.
 - O frontend do carrinho nao envia preco, subtotal, total ou nome de produto como fonte de verdade.
-- O frontend de checkout nao envia preco, subtotal, total, frete ou decisao financeira como fonte de verdade.
+- O frontend de checkout nao envia preco, subtotal, total, frete, prazo, peso, dimensoes ou decisao financeira como fonte de verdade.
+- A etapa de frete envia somente `service_code`; o backend revalida a cotacao e persiste o valor atual.
+- A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
 - O formulario de dados nao usa busca externa de CEP nem autocomplete externo nesta fase.
 
 ## Decisoes
@@ -37,6 +39,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir seletor de variantes como links navegaveis por teclado.
 - Exibir carrinho com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Exibir a etapa de dados com formulario HTML, autocomplete nativo e redirects 303, sem JavaScript obrigatorio.
+- Exibir a etapa de frete com radios HTML, POST tradicional e redirects 303, sem JavaScript obrigatorio.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
 - Priorizar imagens da variante selecionada no detalhe; quando nao existirem, usar imagens gerais do produto.
@@ -58,6 +61,7 @@ Templates de catalogo implementados:
 - `web/templates/catalog.templ` para catalogo, detalhe, indisponibilidade e 404 de produto.
 - `web/templates/cart.templ` para carrinho vazio, linhas, resumo e indisponibilidade.
 - `web/templates/checkout.templ` para etapa de dados, contato, entrega, mensagens de validacao e resumo compacto do carrinho.
+- `web/templates/shipping.templ` para etapa de frete, opcoes cotadas, estado indisponivel e resumo parcial.
 - `web/components/product_card.templ` para card reutilizavel, media de produto, galeria SSR e placeholder visual de produto.
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
@@ -105,6 +109,7 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Slug de variante como query parameter opcional em links server-side.
 - Galeria sem carousel, slider ou dependencia JavaScript.
 - Inputs de contato e endereco devem usar `autocomplete`, `inputmode` e labels claros como melhoria nativa, sem mascaras obrigatorias.
+- Opcoes de frete devem usar controles nativos de radio, labels clicaveis, preco e prazo vindos do backend.
 
 ## Praticas proibidas
 
@@ -117,5 +122,6 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Redesenhar, alterar ou substituir a logo oficial sem decisao do responsavel pelo projeto.
 - Usar cores vibrantes da marca de forma aleatoria ou excessiva.
 - Criar controles falsos de quantidade, estoque, carrinho ou checkout antes das fases aprovadas.
-- Criar botao falso de frete, pagamento ou pedido antes das fases aprovadas.
+- Criar botao falso de pagamento ou pedido antes das fases aprovadas.
+- Enviar preco, prazo, transportadora, peso ou dimensoes de frete como campos autoritativos do formulario.
 - Usar imagens falsas, stock photo ou placeholders externos para produtos.

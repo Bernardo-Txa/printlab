@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho e dados de checkout IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho, dados de checkout e frete IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -25,6 +25,12 @@ A quarta migration funcional cria os dados temporarios de checkout vinculados ao
 - `supabase/migrations/20260909203845_create_cart_customer_details.sql`
 
 Ela cria `public.cart_customer_details` e `public.cart_shipping_addresses`, constraints estruturais para CPF, telefone, CEP, UF e pais `BR`, foreign keys 1:1 para `public.carts(id)` com `on delete cascade`, e RLS sem policies publicas. Nao insere contato, endereco, CPF, PII ou dados ficticios.
+
+A quinta migration funcional adiciona a base de frete real:
+
+- `supabase/migrations/20260909220454_add_shipping_profiles_and_selections.sql`
+
+Ela adiciona perfis logisticos opcionais em `public.products` e `public.product_variants`, cria `public.shipping_boxes` e `public.cart_shipping_selections`, constraints all-or-none/positivas, foreign keys, indices uteis e RLS sem policies publicas. Nao insere caixas, produtos, cotacoes, selecoes ou dados ficticios.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
@@ -78,6 +84,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A segunda migration real foi criada junto da Fase 5 de produtos, variantes e producao.
 - A terceira migration real foi criada junto da Fase 6 de carrinho.
 - A quarta migration real foi criada junto da Fase 7 de dados do cliente e endereco.
+- A quinta migration real foi criada junto da Fase 8 de frete SuperFrete.
 
 ## Praticas recomendadas
 

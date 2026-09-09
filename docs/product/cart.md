@@ -21,7 +21,7 @@ O carrinho permite que visitantes anonimos escolham produtos e quantidades antes
 
 ## Regras de seguranca
 
-O carrinho no navegador nao e fonte autoritativa de preco, subtotal, desconto, frete ou total. O backend recalcula valores usando dados persistidos e regras aprovadas.
+O carrinho no navegador nao e fonte autoritativa de preco, subtotal, desconto, frete ou total. O backend recalcula valores usando dados persistidos e regras aprovadas. Uma selecao de frete anterior fica invalida quando o `input_hash` atual muda por alteracao de item, quantidade, variante, perfil logistico, CEP, servicos ou caixa.
 
 O navegador pode enviar:
 
@@ -95,7 +95,7 @@ product_variants.price_cents != null -> preco da variante
 caso contrario -> products.price_cents
 ```
 
-Se o preco mudar enquanto o item estiver no carrinho, o carrinho exibe o preco atual. O checkout futuro devera revalidar tudo novamente antes de criar pedido.
+Se o preco mudar enquanto o item estiver no carrinho, o carrinho exibe o preco atual. O checkout de frete revalida sua propria cotacao, e o pedido futuro devera revalidar tudo novamente antes de congelar valores.
 
 Subtotal da linha:
 
@@ -135,7 +135,6 @@ Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras
 ## Limites
 
 - Nao ha login.
-- Nao ha frete.
 - Nao ha pedido.
 - Nao ha pagamento.
 - Nao ha cupom ou desconto.

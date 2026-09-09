@@ -37,3 +37,4 @@ Data:
 - [ADR-0005 — Modelagem de variantes e receita de producao 3D](0005-modelagem-de-variantes-e-receita-de-producao-3d.md)
 - [ADR-0006 — Carrinho anonimo persistido server-side](0006-carrinho-anonimo-persistido-server-side.md)
 - [ADR-0007 — Dados temporarios de checkout vinculados ao carrinho](0007-dados-temporarios-checkout-vinculados-ao-carrinho.md)
+- [ADR-0008 — Selecao de embalagem fisica para frete](0008-selecao-de-embalagem-fisica-para-frete.md)

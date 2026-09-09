@@ -72,7 +72,7 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 		}
 
 		ensureCartCookies(cookies).SetCookie(w, token, result.ExpiresAt)
-		http.Redirect(w, r, "/checkout/dados?salvo=1", http.StatusSeeOther)
+		http.Redirect(w, r, "/checkout/frete", http.StatusSeeOther)
 	}
 }
 

@@ -20,6 +20,7 @@ IMPLEMENTADO:
 - Carrinho anonimo SSR em `GET /carrinho`.
 - Mutacoes de carrinho por POST para adicionar, atualizar quantidade e remover item.
 - Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, com contato e endereco vinculados ao carrinho.
+- Frete em `GET /checkout/frete` e `POST /checkout/frete`, com cotacao server-side via SuperFrete quando configurada.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -36,11 +37,11 @@ IMPLEMENTADO:
 - Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada, imagens e bucket publico de catalogo.
 - Fase 6 — Carrinho, com persistencia PostgreSQL, token opaco em cookie e subtotal recalculado no backend.
 - Fase 7 — Dados do Cliente e Endereco, com PII minimizada, validacoes brasileiras e persistencia transacional por carrinho.
+- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete: implementacao e testes concluidos, com validacao Sandbox real pendente.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Frete e integracao com SuperFrete.
 - Pedidos, pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
@@ -77,6 +78,7 @@ Frontend implementado:
 - Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo e sem JavaScript obrigatorio.
+- Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
 
 Banco planejado:
 
@@ -108,7 +110,10 @@ Banco implementado:
 - `cart_customer_details` e `cart_shipping_addresses` persistem contato e endereco do checkout vinculados ao carrinho anonimo.
 - CPF e CEP sao armazenados como digitos ASCII normalizados; telefone e armazenado em formato canonico brasileiro E.164.
 - Dados de contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
-- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho e dados temporarios de checkout sem policies publicas do Data API.
+- `products` e `product_variants` possuem perfil logistico opcional em gramas e milimetros, com constraint all-or-none.
+- `shipping_boxes` guarda caixas fisicas reais com medidas internas, externas, peso de embalagem, status ativo e ordenacao.
+- `cart_shipping_selections` guarda a escolha de frete por carrinho com snapshot do pacote real, preco em centavos, prazo, validade de 30 minutos e `input_hash`.
+- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout e frete sem policies publicas do Data API.
 
 Infraestrutura planejada:
 
@@ -148,7 +153,7 @@ O module path Go esta definido como `github.com/Bernardo-Txa/printlab`.
 - Go 1.26.0 ou versao compativel.
 - Node.js e npm para tooling frontend.
 - CLI do `templ` v0.3.1020.
-- Nenhuma conta externa e necessaria para executar a aplicacao local atual.
+- Nenhuma conta externa e necessaria para executar a aplicacao local basica. Cotacao real de frete exige configuracao SuperFrete de desenvolvimento.
 
 Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve configurar estes GitHub Actions Secrets, sem incluir valores no repositorio:
 
@@ -162,6 +167,11 @@ Configuracao local ou de hosting para runtime:
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
+- `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
+- `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
+- `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab, normalizado pelo backend.
+- `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional usado no `User-Agent` exigido pela SuperFrete.
+- `SUPERFRETE_SERVICES`: lista de codigos de servico solicitados, por exemplo `1,2,17`.
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
@@ -266,7 +276,15 @@ Dados de checkout:
 curl -i http://localhost:8080/checkout/dados
 ```
 
-Sem carrinho valido com itens disponiveis, a resposta redireciona para `/carrinho`. Com carrinho valido, a rota renderiza formulario SSR de contato e endereco. O POST salva dados normalizados do carrinho atual e redireciona para `/checkout/dados?salvo=1`; frete, pedido e pagamento continuam planejados.
+Sem carrinho valido com itens disponiveis, a resposta redireciona para `/carrinho`. Com carrinho valido, a rota renderiza formulario SSR de contato e endereco. O POST salva dados normalizados do carrinho atual e redireciona para `/checkout/frete`.
+
+Frete:
+
+```sh
+curl -i http://localhost:8080/checkout/frete
+```
+
+Sem carrinho valido, a resposta redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Com carrinho, dados, perfis logisticos, caixas reais e SuperFrete configurados, a rota calcula cotacoes atuais e apresenta somente o preco da cotacao final usando a caixa fisica real. Pedido e pagamento continuam planejados.
 
 ## Supabase local
 
@@ -306,6 +324,7 @@ internal/database/       pool PostgreSQL via pgxpool
 internal/products/       catalogo, service e repository PostgreSQL
 internal/cart/           carrinho anonimo, token, service e repository PostgreSQL
 internal/customers/      dados temporarios de checkout, validacao e repository PostgreSQL
+internal/shipping/       embalagem real, cotacao SuperFrete e selecao de frete
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
