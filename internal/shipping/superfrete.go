@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,6 +21,26 @@ const (
 	superFreteCalculatorPath    = "/api/v0/calculator"
 	defaultHTTPTimeout          = 8 * time.Second
 )
+
+type SuperFreteClientError struct {
+	Category   string
+	StatusCode int
+}
+
+func (e *SuperFreteClientError) Error() string {
+	if e == nil {
+		return ErrUnavailable.Error()
+	}
+	if e.StatusCode > 0 {
+		return fmt.Sprintf("%s: superfrete category=%s status=%d", ErrUnavailable, e.Category, e.StatusCode)
+	}
+
+	return fmt.Sprintf("%s: superfrete category=%s", ErrUnavailable, e.Category)
+}
+
+func (e *SuperFreteClientError) Unwrap() error {
+	return ErrUnavailable
+}
 
 type SuperFreteClientConfig struct {
 	Environment  string
@@ -127,22 +149,26 @@ func (c *SuperFreteClient) Calculate(ctx context.Context, request SuperFreteCalc
 
 	response, err := c.httpClient.Do(httpRequest)
 	if err != nil {
-		return nil, safeSuperFreteError("request failed")
+		if isSuperFreteTimeout(err) {
+			return nil, safeSuperFreteError("timeout", 0)
+		}
+
+		return nil, safeSuperFreteError("request_failed", 0)
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
 	if err != nil {
-		return nil, safeSuperFreteError("response read failed")
+		return nil, safeSuperFreteError("response_read_failed", 0)
 	}
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return nil, safeSuperFreteError(fmt.Sprintf("status %d", response.StatusCode))
+		return nil, safeSuperFreteError(superFreteStatusCategory(response.StatusCode), response.StatusCode)
 	}
 
 	var externalQuotes []superFreteQuoteDTO
 	if err := json.Unmarshal(body, &externalQuotes); err != nil {
-		return nil, safeSuperFreteError("invalid json")
+		return nil, safeSuperFreteError("invalid_json", 0)
 	}
 
 	return mapSuperFreteQuotes(externalQuotes), nil
@@ -168,8 +194,32 @@ func superFreteBaseURL(environment string, testBaseURL string) (string, error) {
 	}
 }
 
-func safeSuperFreteError(detail string) error {
-	return fmt.Errorf("%w: superfrete %s", ErrUnavailable, detail)
+func safeSuperFreteError(category string, statusCode int) error {
+	return &SuperFreteClientError{Category: category, StatusCode: statusCode}
+}
+
+func superFreteStatusCategory(statusCode int) string {
+	switch {
+	case statusCode == http.StatusBadRequest:
+		return "400"
+	case statusCode == http.StatusUnauthorized:
+		return "401"
+	case statusCode == http.StatusTooManyRequests:
+		return "429"
+	case statusCode >= http.StatusInternalServerError:
+		return "500"
+	default:
+		return "http_status"
+	}
+}
+
+func isSuperFreteTimeout(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }
 
 type superFretePayload struct {
@@ -297,7 +347,11 @@ func (d *flexibleSuperFreteDimension) UnmarshalJSON(data []byte) error {
 func mapSuperFreteQuotes(externalQuotes []superFreteQuoteDTO) []SuperFreteQuote {
 	quotes := make([]SuperFreteQuote, 0, len(externalQuotes))
 	for _, external := range externalQuotes {
-		if external.HasError || external.ID == 0 || strings.TrimSpace(external.Name) == "" {
+		if external.HasError {
+			logSuperFreteServiceError(external)
+			continue
+		}
+		if external.ID == 0 || strings.TrimSpace(external.Name) == "" {
 			continue
 		}
 
@@ -325,6 +379,37 @@ func mapSuperFreteQuotes(externalQuotes []superFreteQuoteDTO) []SuperFreteQuote 
 	}
 
 	return quotes
+}
+
+func logSuperFreteServiceError(external superFreteQuoteDTO) {
+	serviceName := safeSuperFreteLogValue(external.Name)
+	switch {
+	case external.ID != 0 && serviceName != "":
+		log.Printf("shipping quote service unavailable service_code=%d service_name=%q reason=service_error", external.ID, serviceName)
+	case external.ID != 0:
+		log.Printf("shipping quote service unavailable service_code=%d reason=service_error", external.ID)
+	case serviceName != "":
+		log.Printf("shipping quote service unavailable service_name=%q reason=service_error", serviceName)
+	default:
+		log.Print("shipping quote service unavailable reason=service_error")
+	}
+}
+
+func safeSuperFreteLogValue(value string) string {
+	value = strings.TrimSpace(strings.Map(func(char rune) rune {
+		switch char {
+		case '\r', '\n', '\t':
+			return -1
+		default:
+			return char
+		}
+	}, value))
+	runes := []rune(value)
+	if len(runes) > 80 {
+		return string(runes[:80])
+	}
+
+	return value
 }
 
 func mapSuperFretePackage(external superFretePackageIn) (SuperFreteReturnedPackage, error) {

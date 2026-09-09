@@ -239,7 +239,7 @@ func newTestHandlerWithShipping(t *testing.T, service checkoutShippingService, c
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServices(db, nil, nil, nil, service, cookies, siteURL)
+	return newHandlerWithServices(db, nil, nil, nil, service, cookies, nil, siteURL)
 }
 
 type fakeCheckoutShippingService struct {

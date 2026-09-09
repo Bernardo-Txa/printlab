@@ -59,6 +59,19 @@ O calculator e chamado por `POST /api/v0/calculator`.
 
 O cliente HTTP usa `net/http`, timeout explicito de 8 segundos e contexto da request original. Nao ha retry automatico nesta fase.
 
+Erros do cliente preservam classificacao segura para diagnostico operacional:
+
+- `400`;
+- `401`;
+- `429`;
+- `500`;
+- `timeout`;
+- `invalid_json`;
+- `request_failed`;
+- `response_read_failed`.
+
+O `Error()` nao inclui token, corpo bruto da SuperFrete, payload de cotacao, CEP ou dados do cliente.
+
 ## Estrategia de cotacao
 
 A PrintLab nao implementa bin packing 3D proprio nesta fase.
@@ -82,6 +95,7 @@ Primeira chamada:
 - envia `options` com adicionais desabilitados;
 - envia `products`, um item por linha logistica do carrinho;
 - usa peso em kg e dimensoes em cm somente no DTO externo.
+- registra diagnostico seguro da quantidade de pacotes validos retornados e se diferentes modalidades retornaram dimensoes diferentes.
 
 Segunda chamada:
 
@@ -116,6 +130,21 @@ A escolha da caixa permite rotacao por comparacao dos tres eixos ordenados. Volu
 ## Erros e limites
 
 Servicos com erro especifico na resposta da SuperFrete sao ignorados quando outros servicos validos existem. Se nenhuma cotacao valida existir, o checkout mostra indisponibilidade generica.
+
+Quando a resposta HTTP 200 contem servico com `has_error=true`, a aplicacao ignora esse servico no resultado publico e registra somente `service_code`, `service_name` quando disponivel e categoria generica de indisponibilidade. A mensagem bruta externa do campo `error` nao deve ser logada.
+
+Falhas de frete sao classificadas internamente por estagio e motivo seguro:
+
+- `shipping_not_configured`;
+- `no_active_boxes`;
+- `planning_request_failed`;
+- `planning_no_valid_quotes`;
+- `planning_no_package`;
+- `no_fitting_box`;
+- `final_request_failed`;
+- `final_no_valid_quotes`.
+
+Mensagens publicas continuam genericas e nao devem revelar CEP, CPF, telefone, e-mail, endereco, token, corpo externo ou detalhes de configuracao.
 
 Nao ha nesta fase:
 

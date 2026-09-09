@@ -32,7 +32,7 @@ Variaveis de runtime:
 - `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional do `User-Agent` da SuperFrete.
 - `SUPERFRETE_SERVICES`: codigos de servico solicitados, separados por virgula.
 
-Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e `/checkout/dados` redireciona para `/carrinho` sem carrinho valido.
+Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e `/checkout/dados` redireciona para `/carrinho` sem carrinho valido. O endpoint interno de CEP nao depende do banco.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
@@ -163,7 +163,17 @@ Com `DATABASE_URL` configurada, migrations aplicadas e um carrinho real com iten
 curl -i http://localhost:8080/checkout/dados
 ```
 
-Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao inserir PII ficticia em migration nem criar carrinho/produto falso apenas para validar a rota. O formulario aceita preenchimento manual de contato e endereco, sem ViaCEP, BrasilAPI, Google Maps ou autocomplete externo.
+Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao inserir PII ficticia em migration nem criar carrinho/produto falso apenas para validar a rota. O formulario aceita preenchimento manual de contato e endereco.
+
+Quando JavaScript esta disponivel, a pagina carrega `/static/js/checkout.js` para aplicar mascaras visuais de CPF, telefone e CEP e consultar CEP via backend. Essas mascaras nao substituem a validacao server-side.
+
+Validar consulta interna de CEP:
+
+```sh
+curl -i http://localhost:8080/api/cep/01001000
+```
+
+Resposta esperada para CEP valido: HTTP 200 com JSON contendo somente `street`, `district`, `city` e `state`. CEP inexistente retorna HTTP 404 e deve permitir preenchimento manual no navegador.
 
 Depois de salvar dados validos, o fluxo normal redireciona para `/checkout/frete`.
 
@@ -205,6 +215,14 @@ curl -I http://localhost:8080/static/images/branding/logo-printlab-primary.png
 ```
 
 Resposta esperada: HTTP 200 com `Content-Type` de imagem PNG.
+
+Validar JavaScript progressivo do checkout:
+
+```sh
+curl -I http://localhost:8080/static/js/checkout.js
+```
+
+Resposta esperada: HTTP 200 com `Content-Type` de JavaScript.
 
 A homepage tambem deve ser validada visualmente em celular, tablet e desktop para conferir logo, hero, blocos coloridos, CTA e ausencia de overflow horizontal.
 

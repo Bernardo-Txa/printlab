@@ -1,8 +1,11 @@
 package shipping
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -156,6 +159,209 @@ func TestServicePageUnavailableWhenNoBoxFitsPlanningPackage(t *testing.T) {
 	}
 }
 
+func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
+	genericMessage := "Nao conseguimos calcular automaticamente o frete para este carrinho."
+	tests := []struct {
+		name        string
+		repository  *fakeShippingRepository
+		calculator  *fakeShippingCalculator
+		wantMessage string
+		wantLogs    []string
+	}{
+		{
+			name: "no active boxes",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: nil,
+			},
+			calculator: shippingCalculatorFixture(),
+			wantLogs:   []string{"stage=packaging reason=no_active_boxes"},
+		},
+		{
+			name: "planning request error",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: shippingBoxesFixture(),
+			},
+			calculator: &fakeShippingCalculator{
+				errs: []error{&SuperFreteClientError{Category: "400", StatusCode: 400}},
+			},
+			wantLogs: []string{"stage=planning reason=planning_request_failed category=400 status=400"},
+		},
+		{
+			name: "planning no package",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: shippingBoxesFixture(),
+			},
+			calculator: &fakeShippingCalculator{
+				responses: [][]SuperFreteQuote{{
+					{ServiceCode: "1", ServiceName: "PAC", PriceCents: 999},
+				}},
+			},
+			wantLogs: []string{"stage=planning reason=planning_no_package"},
+		},
+		{
+			name: "no fitting box",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: []ShippingBox{{
+					ID:               "box-small",
+					Name:             "Caixa Pequena",
+					Internal:         DimensionsMM{Height: 120, Width: 160, Length: 240},
+					External:         DimensionsMM{Height: 130, Width: 170, Length: 250},
+					PackagingWeightG: 100,
+				}},
+			},
+			calculator: &fakeShippingCalculator{
+				responses: [][]SuperFreteQuote{{
+					{
+						ServiceCode: "1",
+						ServiceName: "PAC",
+						PriceCents:  999,
+						Package:     &SuperFreteReturnedPackage{HeightMM: 200, WidthMM: 300, LengthMM: 400},
+					},
+				}},
+			},
+			wantLogs: []string{
+				"shipping package planning packages=1 dimension_variants=1",
+				"stage=packaging reason=no_fitting_box",
+			},
+		},
+		{
+			name: "final request error",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: shippingBoxesFixture(),
+			},
+			calculator: &fakeShippingCalculator{
+				responses: [][]SuperFreteQuote{planningSuperFreteQuotesFixture()},
+				errs:      []error{nil, &SuperFreteClientError{Category: "timeout"}},
+			},
+			wantLogs: []string{"stage=final reason=final_request_failed category=timeout"},
+		},
+		{
+			name: "zero final quotes",
+			repository: &fakeShippingRepository{
+				items: shippingCartItemsFixture(),
+				boxes: shippingBoxesFixture(),
+			},
+			calculator: &fakeShippingCalculator{
+				responses: [][]SuperFreteQuote{
+					planningSuperFreteQuotesFixture(),
+					{},
+				},
+			},
+			wantLogs: []string{"stage=final reason=final_no_valid_quotes"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := shippingServiceFixture(t, tt.repository, tt.calculator)
+			var page CheckoutShippingPage
+			var err error
+			logs := captureShippingLogs(t, func() {
+				page, err = service.Page(context.Background(), []byte("token-hash"), false)
+			})
+
+			if err != nil {
+				t.Fatalf("expected unavailable page without error, got %v", err)
+			}
+			wantMessage := tt.wantMessage
+			if wantMessage == "" {
+				wantMessage = genericMessage
+			}
+			if !page.Unavailable || page.Message != wantMessage {
+				t.Fatalf("expected safe unavailable message, got %#v", page)
+			}
+			for _, want := range tt.wantLogs {
+				if !strings.Contains(logs, want) {
+					t.Fatalf("expected log %q, got %q", want, logs)
+				}
+			}
+			for _, forbidden := range []string{"20020050", "52998224725", "joao@example.com", "27999999999", "Rua Um"} {
+				if strings.Contains(logs, forbidden) {
+					t.Fatalf("expected shipping logs not to include %q: %q", forbidden, logs)
+				}
+			}
+		})
+	}
+}
+
+func TestServicePageLogsShippingNotConfigured(t *testing.T) {
+	repository := &fakeShippingRepository{
+		items: shippingCartItemsFixture(),
+		boxes: shippingBoxesFixture(),
+	}
+	service := NewService(
+		repository,
+		&fakeShippingCartService{cart: shippingCartFixture(), view: shippingCartViewFixture()},
+		&fakeShippingCustomerRepository{details: shippingDetailsFixture(), found: true},
+		nil,
+		"01153000",
+		[]string{"1", "2"},
+	)
+
+	var page CheckoutShippingPage
+	var err error
+	logs := captureShippingLogs(t, func() {
+		page, err = service.Page(context.Background(), []byte("token-hash"), false)
+	})
+
+	if err != nil {
+		t.Fatalf("expected unavailable page without error, got %v", err)
+	}
+	if !page.Unavailable || page.Message != "Cotacao de frete temporariamente indisponivel." {
+		t.Fatalf("expected safe not configured message, got %#v", page)
+	}
+	if !strings.Contains(logs, "stage=config reason=shipping_not_configured") {
+		t.Fatalf("expected not configured diagnostic, got %q", logs)
+	}
+}
+
+func TestServicePageLogsPlanningDimensionVariants(t *testing.T) {
+	calculator := &fakeShippingCalculator{
+		responses: [][]SuperFreteQuote{
+			{
+				{
+					ServiceCode: "1",
+					ServiceName: "PAC",
+					PriceCents:  999,
+					Package:     &SuperFreteReturnedPackage{HeightMM: 120, WidthMM: 160, LengthMM: 240},
+				},
+				{
+					ServiceCode: "2",
+					ServiceName: "SEDEX",
+					PriceCents:  1299,
+					Package:     &SuperFreteReturnedPackage{HeightMM: 130, WidthMM: 170, LengthMM: 250},
+				},
+			},
+			finalSuperFreteQuotesFixture(),
+		},
+	}
+	service := shippingServiceFixture(t, &fakeShippingRepository{
+		items: shippingCartItemsFixture(),
+		boxes: shippingBoxesFixture(),
+	}, calculator)
+
+	var page CheckoutShippingPage
+	var err error
+	logs := captureShippingLogs(t, func() {
+		page, err = service.Page(context.Background(), []byte("token-hash"), false)
+	})
+
+	if err != nil {
+		t.Fatalf("expected shipping page, got %v", err)
+	}
+	if page.Unavailable {
+		t.Fatalf("expected available page, got %#v", page)
+	}
+	if !strings.Contains(logs, "shipping package planning packages=2 dimension_variants=2 dimensions_differ=true") {
+		t.Fatalf("expected planning dimension diagnostic, got %q", logs)
+	}
+}
+
 func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
@@ -202,6 +408,24 @@ func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
 	if page.ProductsSubtotalBRL != "R$ 79,80" || page.ShippingPriceBRL != "" || page.PartialTotalBRL != "" {
 		t.Fatalf("expected products subtotal only before selection, got %#v", page)
 	}
+}
+
+func captureShippingLogs(t *testing.T, run func()) string {
+	t.Helper()
+
+	var buffer bytes.Buffer
+	previousWriter := log.Writer()
+	previousFlags := log.Flags()
+	log.SetOutput(&buffer)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(previousWriter)
+		log.SetFlags(previousFlags)
+	})
+
+	run()
+
+	return buffer.String()
 }
 
 func TestServiceSelectRevalidatesAndPersistsCurrentQuote(t *testing.T) {

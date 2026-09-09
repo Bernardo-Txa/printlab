@@ -838,6 +838,18 @@
     @apply text-xs leading-5 text-muted;
   }
 
+  .checkout-field-help[data-cep-status="true"]:empty {
+    @apply hidden;
+  }
+
+  .checkout-field-help[data-cep-status="true"][data-state="loading"] {
+    @apply text-primary;
+  }
+
+  .checkout-field-help[data-cep-status="true"][data-state="error"] {
+    @apply font-semibold text-danger;
+  }
+
   .checkout-field-error {
     @apply text-sm font-semibold text-danger;
   }

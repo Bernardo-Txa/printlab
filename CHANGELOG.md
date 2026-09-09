@@ -54,6 +54,11 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Estrategia de duas cotacoes: `products` para pacote ideal e `package` com caixa real para preco final.
 - Rotas `GET /checkout/frete` e `POST /checkout/frete` para cotacao e selecao de frete sem JavaScript obrigatorio.
 - `input_hash` e validade de 30 minutos para invalidar selecoes de frete obsoletas.
+- Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete.
+- JavaScript progressivo em `/static/js/checkout.js` para mascaras de CPF, telefone brasileiro e CEP.
+- Endpoint interno `GET /api/cep/{cep}` com consulta server-side ao ViaCEP e resposta limitada a rua, bairro, cidade e UF.
+- Diagnosticos seguros de frete por estagio e motivo, sem PII, secrets ou corpo bruto externo.
+- Categorias seguras de erro do cliente SuperFrete para status HTTP, timeout e JSON invalido.
 
 ### Changed
 
@@ -79,3 +84,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Respostas HTML de checkout com PII passam a usar `Cache-Control: private, no-store`.
 - Leitura de contato e endereco de checkout consolidada em uma unica consulta SQL consistente.
 - Salvamento de dados de checkout passa a redirecionar para a etapa real de frete.
+- Etapa de dados passa a oferecer consulta opcional de CEP via backend, mantendo preenchimento manual e validacao server-side como fonte autoritativa.

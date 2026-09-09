@@ -114,17 +114,21 @@ func TestSuperFreteClientSkipsServiceErrors(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`[
 			{"id":1,"name":"PAC","price":"18.90","delivery_time":5,"company":{"name":"Correios"},"packages":[{"dimensions":{"height":"12","width":"16","length":"24"},"weight":"0.47"}],"has_error":false},
-			{"id":2,"name":"SEDEX","price":"31.40","delivery_time":2,"company":{"name":"Correios"},"packages":[],"has_error":true}
+			{"id":2,"name":"SEDEX","price":"31.40","delivery_time":2,"company":{"name":"Correios"},"packages":[],"has_error":true,"error":"raw carrier failure 20020050 superfrete-test-token"}
 		]`))
 	}))
 	defer server.Close()
 
 	client := newTestSuperFreteClient(t, server.URL, "superfrete-test-token")
-	quotes, err := client.Calculate(context.Background(), SuperFreteCalculatorRequest{
-		FromPostalCode: "01153000",
-		ToPostalCode:   "20020050",
-		Services:       "1,2",
-		Package:        &SuperFretePackage{WeightKG: 0.47, HeightCM: 12, WidthCM: 16, LengthCM: 24},
+	var quotes []SuperFreteQuote
+	var err error
+	logs := captureShippingLogs(t, func() {
+		quotes, err = client.Calculate(context.Background(), SuperFreteCalculatorRequest{
+			FromPostalCode: "01153000",
+			ToPostalCode:   "20020050",
+			Services:       "1,2",
+			Package:        &SuperFretePackage{WeightKG: 0.47, HeightCM: 12, WidthCM: 16, LengthCM: 24},
+		})
 	})
 	if err != nil {
 		t.Fatalf("expected quote response, got %v", err)
@@ -132,18 +136,29 @@ func TestSuperFreteClientSkipsServiceErrors(t *testing.T) {
 	if len(quotes) != 1 || quotes[0].ServiceCode != "1" {
 		t.Fatalf("expected only valid service, got %#v", quotes)
 	}
+	if !strings.Contains(logs, `shipping quote service unavailable service_code=2 service_name="SEDEX" reason=service_error`) {
+		t.Fatalf("expected safe service error log, got %q", logs)
+	}
+	for _, forbidden := range []string{"raw carrier failure", "20020050", "superfrete-test-token"} {
+		if strings.Contains(logs, forbidden) {
+			t.Fatalf("expected service error log not to include %q: %q", forbidden, logs)
+		}
+	}
 }
 
 func TestSuperFreteClientHandlesHTTPAndJSONErrorsSafely(t *testing.T) {
 	tests := []struct {
-		name   string
-		status int
-		body   string
+		name         string
+		status       int
+		body         string
+		wantCategory string
+		wantStatus   int
 	}{
-		{name: "bad request", status: http.StatusBadRequest, body: `{"error":"invalid"}`},
-		{name: "unauthorized", status: http.StatusUnauthorized, body: `{"error":"unauthorized"}`},
-		{name: "server error", status: http.StatusServiceUnavailable, body: `{"error":"unavailable"}`},
-		{name: "invalid json", status: http.StatusOK, body: `{`},
+		{name: "bad request", status: http.StatusBadRequest, body: `{"error":"invalid"}`, wantCategory: "400", wantStatus: http.StatusBadRequest},
+		{name: "unauthorized", status: http.StatusUnauthorized, body: `{"error":"unauthorized"}`, wantCategory: "401", wantStatus: http.StatusUnauthorized},
+		{name: "too many requests", status: http.StatusTooManyRequests, body: `{"error":"limited"}`, wantCategory: "429", wantStatus: http.StatusTooManyRequests},
+		{name: "server error", status: http.StatusServiceUnavailable, body: `{"error":"unavailable"}`, wantCategory: "500", wantStatus: http.StatusServiceUnavailable},
+		{name: "invalid json", status: http.StatusOK, body: `{`, wantCategory: "invalid_json"},
 	}
 
 	for _, tt := range tests {
@@ -165,8 +180,20 @@ func TestSuperFreteClientHandlesHTTPAndJSONErrorsSafely(t *testing.T) {
 			if !errors.Is(err, ErrUnavailable) {
 				t.Fatalf("expected ErrUnavailable, got %v", err)
 			}
+			var clientErr *SuperFreteClientError
+			if !errors.As(err, &clientErr) {
+				t.Fatalf("expected SuperFreteClientError, got %v", err)
+			}
+			if clientErr.Category != tt.wantCategory || clientErr.StatusCode != tt.wantStatus {
+				t.Fatalf("expected category=%s status=%d, got %#v", tt.wantCategory, tt.wantStatus, clientErr)
+			}
 			if strings.Contains(err.Error(), secretToken) {
 				t.Fatal("expected error not to expose token")
+			}
+			for _, forbidden := range []string{"unauthorized", "limited"} {
+				if strings.Contains(err.Error(), forbidden) {
+					t.Fatalf("expected error not to expose raw body term %q: %v", forbidden, err)
+				}
 			}
 		})
 	}
@@ -191,6 +218,10 @@ func TestSuperFreteClientTimeoutDoesNotExposeToken(t *testing.T) {
 	})
 	if !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("expected ErrUnavailable, got %v", err)
+	}
+	var clientErr *SuperFreteClientError
+	if !errors.As(err, &clientErr) || clientErr.Category != "timeout" {
+		t.Fatalf("expected timeout category, got %v", err)
 	}
 	if strings.Contains(err.Error(), secretToken) {
 		t.Fatal("expected timeout error not to expose token")

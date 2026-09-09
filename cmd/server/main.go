@@ -54,6 +54,7 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var shoppingCart cartService
 	var checkoutDetails checkoutDetailsService
 	var checkoutShipping checkoutShippingService
+	postalCodeLookup := customers.NewViaCEPClient()
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
 		customerRepository := customers.NewPostgresRepository(db.Pool())
@@ -93,14 +94,14 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 
 	return newHandlerWithServices(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
-	}), cfg.SiteURL)
+	}), postalCodeLookup, cfg.SiteURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
-	return newHandlerWithServices(db, catalog, nil, nil, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
+	return newHandlerWithServices(db, catalog, nil, nil, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), nil, "")
 }
 
-func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
+func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -113,6 +114,7 @@ func newHandlerWithServices(db *database.Database, catalog catalogService, shopp
 	mux.HandleFunc("POST /carrinho/itens/{id}/remover", removeCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("GET /checkout/dados", checkoutDetailsPageHandler(checkoutDetails, cartCookies))
 	mux.HandleFunc("POST /checkout/dados", saveCheckoutDetailsHandler(checkoutDetails, cartCookies, siteURL))
+	mux.HandleFunc("GET /api/cep/{cep}", postalCodeLookupHandler(postalCodeLookup))
 	mux.HandleFunc("GET /checkout/frete", checkoutShippingPageHandler(checkoutShipping, cartCookies))
 	mux.HandleFunc("POST /checkout/frete", selectShippingHandler(checkoutShipping, cartCookies, siteURL))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))

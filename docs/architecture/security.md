@@ -107,6 +107,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Respostas HTML de checkout que podem conter PII usam `Cache-Control: private, no-store`.
 - Erros publicos devem ser genericos e nao conter CPF, e-mail completo, telefone, endereco, token de carrinho ou detalhes PostgreSQL.
 - Logs nao devem registrar CPF, e-mail completo, telefone, endereco, token de carrinho, `DATABASE_URL` ou connection strings.
+- A consulta progressiva de CEP deve ser server-side. O navegador chama apenas endpoint interno, e logs nao devem registrar CEP consultado nem endereco retornado.
+- O endpoint interno de CEP deve retornar somente rua, bairro, cidade e UF, sem repassar codigos administrativos do provedor externo.
 - Dados temporarios sao removidos por `ON DELETE CASCADE` quando o carrinho for removido.
 - Limpeza programada de carrinhos expirados e PII associada e requisito obrigatorio antes do go-live comercial.
 
@@ -122,6 +124,9 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - O cliente HTTP possui timeout explicito e respeita cancelamento de contexto.
 - Erros publicos de frete sao genericos e nao expoem token, payload externo, CEP, CPF, e-mail, telefone ou endereco.
 - Logs comuns nao devem registrar token, CPF, e-mail completo, telefone, endereco, connection strings ou payloads completos de cotacao.
+- Logs operacionais de frete podem registrar somente estagio, motivo seguro, status HTTP seguro e identificacao generica de servico externo.
+- Categorias internas de indisponibilidade de frete incluem configuracao ausente, ausencia de caixas ativas, falha de planejamento, ausencia de pacote retornado, ausencia de caixa compativel, falha de cotacao final e ausencia de cotacoes finais validas.
+- Erros do cliente SuperFrete preservam categoria segura como `400`, `401`, `429`, `500`, `timeout` ou `invalid_json`, sem corpo bruto, token ou payload externo em `Error()`.
 - `GET /checkout/frete` e re-renderizacoes de POST usam `Cache-Control: private, no-store`.
 - Selecoes de frete expiram em 30 minutos.
 - `input_hash` invalida selecoes quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam, sem incluir PII desnecessaria.

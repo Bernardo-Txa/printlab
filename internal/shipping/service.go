@@ -3,6 +3,7 @@ package shipping
 import (
 	"context"
 	"errors"
+	"log"
 	"slices"
 	"time"
 
@@ -163,12 +164,14 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		return PreparedQuote{}, page, ErrUnavailable
 	}
 	if len(boxes) == 0 {
+		logShippingQuoteUnavailable("packaging", "no_active_boxes", nil)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
 	if s.calculator == nil || s.originCEP == "" || s.serviceList == "" {
+		logShippingQuoteUnavailable("config", "shipping_not_configured", nil)
 		page.Unavailable = true
 		page.Message = "Cotacao de frete temporariamente indisponivel."
 		return PreparedQuote{}, page, nil
@@ -181,13 +184,23 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		Products:       superFreteProducts(preparedItems),
 	})
 	if err != nil {
+		logShippingQuoteUnavailable("planning", "planning_request_failed", err)
+		page.Unavailable = true
+		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		return PreparedQuote{}, page, nil
+	}
+	if len(planningQuotes) == 0 {
+		logShippingQuoteUnavailable("planning", "planning_no_valid_quotes", nil)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
+	logPlanningPackageDiagnostics(planningQuotes)
+
 	idealPackage, ok := firstReturnedPackage(planningQuotes)
 	if !ok {
+		logShippingQuoteUnavailable("planning", "planning_no_package", nil)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
@@ -199,6 +212,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		Length: idealPackage.LengthMM,
 	}, boxes)
 	if err != nil {
+		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
@@ -232,6 +246,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		},
 	})
 	if err != nil {
+		logShippingQuoteUnavailable("final", "final_request_failed", err)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
@@ -239,6 +254,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 
 	quotes := shippingQuotes(finalQuotes)
 	if len(quotes) == 0 {
+		logShippingQuoteUnavailable("final", "final_no_valid_quotes", nil)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
@@ -346,6 +362,58 @@ func firstReturnedPackage(quotes []SuperFreteQuote) (SuperFreteReturnedPackage, 
 	}
 
 	return SuperFreteReturnedPackage{}, false
+}
+
+func logShippingQuoteUnavailable(stage string, reason string, err error) {
+	if err == nil {
+		log.Printf("shipping quote unavailable stage=%s reason=%s", stage, reason)
+		return
+	}
+
+	var clientErr *SuperFreteClientError
+	if errors.As(err, &clientErr) {
+		if clientErr.StatusCode > 0 {
+			log.Printf("shipping quote unavailable stage=%s reason=%s category=%s status=%d", stage, reason, clientErr.Category, clientErr.StatusCode)
+			return
+		}
+
+		log.Printf("shipping quote unavailable stage=%s reason=%s category=%s", stage, reason, clientErr.Category)
+		return
+	}
+
+	log.Printf("shipping quote unavailable stage=%s reason=%s", stage, reason)
+}
+
+func logPlanningPackageDiagnostics(quotes []SuperFreteQuote) {
+	type packageDimensions struct {
+		height int
+		width  int
+		length int
+	}
+
+	packages := 0
+	variants := map[packageDimensions]struct{}{}
+	for _, quote := range quotes {
+		if quote.Package == nil {
+			continue
+		}
+
+		packages++
+		variants[packageDimensions{
+			height: quote.Package.HeightMM,
+			width:  quote.Package.WidthMM,
+			length: quote.Package.LengthMM,
+		}] = struct{}{}
+	}
+	if packages == 0 {
+		return
+	}
+	if len(variants) > 1 {
+		log.Printf("shipping package planning packages=%d dimension_variants=%d dimensions_differ=true", packages, len(variants))
+		return
+	}
+
+	log.Printf("shipping package planning packages=%d dimension_variants=%d", packages, len(variants))
 }
 
 func shippingQuotes(superFreteQuotes []SuperFreteQuote) []ShippingQuote {

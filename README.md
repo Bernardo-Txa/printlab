@@ -38,6 +38,7 @@ IMPLEMENTADO:
 - Fase 6 — Carrinho, com persistencia PostgreSQL, token opaco em cookie e subtotal recalculado no backend.
 - Fase 7 — Dados do Cliente e Endereco, com PII minimizada, validacoes brasileiras e persistencia transacional por carrinho.
 - Fase 8 — Embalagem Real e Integracao de Frete SuperFrete: implementacao e testes concluidos, com validacao Sandbox real pendente.
+- Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete concluida.
 
 PLANEJADO:
 
@@ -77,7 +78,7 @@ Frontend implementado:
 - Galeria SSR simples com imagem publica de produto/variante quando existir.
 - Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
-- Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo e sem JavaScript obrigatorio.
+- Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
 
 Banco planejado:
@@ -278,6 +279,14 @@ curl -i http://localhost:8080/checkout/dados
 
 Sem carrinho valido com itens disponiveis, a resposta redireciona para `/carrinho`. Com carrinho valido, a rota renderiza formulario SSR de contato e endereco. O POST salva dados normalizados do carrinho atual e redireciona para `/checkout/frete`.
 
+O JavaScript progressivo da etapa de dados aplica mascaras visuais de CPF, telefone brasileiro e CEP, sem substituir a validacao server-side. A busca de CEP usa somente o endpoint interno da aplicacao e preserva preenchimento manual como fallback:
+
+```sh
+curl -i http://localhost:8080/api/cep/01001000
+```
+
+Resposta esperada para CEP valido: HTTP 200 com `street`, `district`, `city` e `state`. CEP invalido retorna 400, CEP nao encontrado retorna 404 e falhas externas retornam indisponibilidade sem expor dados sensiveis.
+
 Frete:
 
 ```sh
@@ -329,7 +338,7 @@ internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
 web/assets/              fontes de assets, incluindo CSS fonte
-web/static/              assets compilados, embutidos no binario e servidos em /static/
+web/static/              assets compilados, JS progressivo, imagens, embutidos no binario e servidos em /static/
 supabase/migrations/     migrations futuras do Supabase
 tests/                   suporte futuro para testes de maior escopo
 docs/                    documentacao do projeto

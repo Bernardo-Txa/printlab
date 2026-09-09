@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fase 8 com implementacao concluida e validacao Sandbox SuperFrete pendente. Fases 9 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1 e 8.1 concluidas. Fase 8 com implementacao concluida e validacao Sandbox SuperFrete pendente. Fases 9 a 17 planejadas.
 
 ## Status das fases
 
@@ -19,6 +19,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fase 8 com
 | Fase 7 — Dados do cliente e endereco | Concluida |
 | Fase 7.1 — Hardening de privacidade e consistencia do checkout | Concluida |
 | Fase 8 — Embalagem real e integracao SuperFrete | Implementacao concluida; Sandbox pendente |
+| Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete | Concluida |
 | Fase 9 — Pedidos | Planejada |
 | Fase 10 — Integracao InfinitePay | Planejada |
 | Fase 11 — Webhooks de pagamento | Planejada |
@@ -321,6 +322,28 @@ Definition of Done:
 - Valor de frete validado server-side.
 - Migration criada sem seed ficticio.
 - Sandbox real validado com token, CEP de origem, produto real com perfil logistico e caixa real cadastrada.
+
+## Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete
+
+Objetivo: melhorar a experiencia da etapa de dados e a observabilidade segura do frete sem avancar para pedidos ou pagamentos.
+
+Principais entregas:
+
+- Mascaras progressivas de CPF, telefone brasileiro e CEP.
+- Endpoint interno de consulta de CEP com chamada server-side ao ViaCEP.
+- Fallback manual de endereco preservado.
+- Diagnosticos seguros de frete por estagio e motivo.
+- Categorias seguras para erros do cliente SuperFrete.
+
+Dependencias: Fases 7, 7.1 e implementacao local da Fase 8.
+
+Definition of Done:
+
+- Checkout continua funcionando sem JavaScript obrigatorio.
+- Endpoint de CEP retorna apenas rua, bairro, cidade e UF.
+- Testes de ViaCEP usam `httptest`, sem chamada real em `go test`.
+- Logs de CEP e frete nao registram CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto externo.
+- Fase 8 permanece com validacao Sandbox SuperFrete pendente.
 
 ## Fase 9 — Pedidos
 

@@ -13,6 +13,7 @@ IMPLEMENTADO:
 - Carrinho anonimo em `GET /carrinho`.
 - Mutacoes de carrinho por POST com redirects 303.
 - Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, vinculados ao carrinho anonimo.
+- Consulta interna de CEP em `GET /api/cep/{cep}` para melhoria progressiva da etapa de dados.
 - Frete em `GET /checkout/frete` e `POST /checkout/frete`, com cotacao server-side pela SuperFrete quando configurada.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
@@ -74,6 +75,7 @@ PostgreSQL
 Servicos externos:
 
 Go Backend -> SuperFrete API
+Go Backend -> ViaCEP API
 Go Backend -> InfinitePay Checkout/Webhooks
 ```
 
@@ -85,7 +87,7 @@ O navegador nao deve acessar diretamente tabelas sensiveis nem enviar valores fi
 
 O carrinho anonimo usa cookie opaco no navegador e persistencia server-side. O banco armazena somente o hash SHA-256 do token do cookie, enquanto itens armazenam produto, variante opcional e quantidade.
 
-A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side, leitura consistente, `Cache-Control: private, no-store` em respostas HTML que possam conter PII e erros genericos.
+A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side, leitura consistente, `Cache-Control: private, no-store` em respostas HTML que possam conter PII e erros genericos. A consulta de CEP e uma melhoria progressiva feita pelo backend contra ViaCEP; o navegador nao chama ViaCEP diretamente e o preenchimento manual continua valido.
 
 A etapa de frete tambem e server-side. O navegador envia somente a escolha da opcao de frete, por `service_code`. O backend recalcula a cotacao no POST, escolhe a menor caixa fisica real compativel por dimensoes internas com rotacao, persiste somente a cotacao final usando dimensoes externas e peso final, e invalida selecoes antigas por expiracao ou `input_hash`.
 
@@ -96,7 +98,7 @@ O frontend e responsavel por apresentar HTML, formularios e interacoes progressi
 - IMPLEMENTADO: `templ` para templates tipados em Go.
 - IMPLEMENTADO: Tailwind CSS para estilos utilitarios e design tokens.
 - PLANEJADO: HTMX para interacoes HTTP parciais quando houver necessidade real.
-- PLANEJADO: minimo possivel de JavaScript proprio.
+- IMPLEMENTADO: JavaScript proprio minimo para mascaras progressivas e consulta interna de CEP na etapa de dados.
 
 O frontend pode melhorar a experiencia do usuario, mas nao decide regras financeiras, disponibilidade final, status de pedido ou confirmacao de pagamento.
 
@@ -171,7 +173,9 @@ Ainda nao existem tabelas de pedidos, pagamentos, clientes permanentes ou admin.
 
 Integracoes externas serao chamadas pelo backend, nunca diretamente pelo navegador quando houver credenciais, valores financeiros ou estados sensiveis envolvidos.
 
-A integracao SuperFrete usa `net/http`, timeout explicito, `Authorization: Bearer <token>` e `User-Agent` operacional. O backend mapeia internamente `sandbox` para `https://sandbox.superfrete.com` e `production` para `https://api.superfrete.com`; nao ha base URL arbitraria por environment variable. Primeiro envia `products` ao calculator para obter pacote ideal, depois escolhe uma caixa real cadastrada e envia `package` com dimensoes externas e peso final para obter o preco apresentado ao cliente.
+A integracao SuperFrete usa `net/http`, timeout explicito, `Authorization: Bearer <token>` e `User-Agent` operacional. O backend mapeia internamente `sandbox` para `https://sandbox.superfrete.com` e `production` para `https://api.superfrete.com`; nao ha base URL arbitraria por environment variable. Primeiro envia `products` ao calculator para obter pacote ideal, depois escolhe uma caixa real cadastrada e envia `package` com dimensoes externas e peso final para obter o preco apresentado ao cliente. Falhas de cotacao sao classificadas internamente por estagio e motivo seguro, sem registrar CEP, CPF, e-mail, telefone, endereco, token ou corpo bruto externo.
+
+A integracao ViaCEP usa `net/http`, timeout explicito de aproximadamente 3 segundos e contexto da request original. O backend consulta `https://viacep.com.br/ws/{cep}/json/` apos normalizar CEP com exatamente 8 digitos e responde ao navegador somente `street`, `district`, `city` e `state`.
 
 InfinitePay continua planejado. Webhooks ainda nao existem.
 
@@ -209,6 +213,7 @@ POST /carrinho/itens/{id}/quantidade -> atualiza quantidade e redireciona 303
 POST /carrinho/itens/{id}/remover -> remove item e redireciona 303
 GET /checkout/dados -> formulario SSR de contato/endereco; exige carrinho com itens disponiveis
 POST /checkout/dados -> valida e salva dados do carrinho em transacao; redireciona 303
+GET /api/cep/{cep} -> consulta CEP via backend; retorna street, district, city e state sem dados extras do provedor
 GET /checkout/frete -> calcula cotacoes atuais e renderiza opcoes de frete; exige carrinho, dados, perfis logisticos e caixas reais
 POST /checkout/frete -> revalida cotacao atual e persiste selecao de frete por service_code; redireciona 303
 GET /static/... -> assets embutidos a partir de web/static/

@@ -27,6 +27,7 @@ Implementar a primeira etapa real de frete da PrintLab:
 - Revalidacao server-side no POST.
 - `input_hash` para invalidar selecao por mudanca de carrinho, CEP, perfil, caixa ou servicos.
 - Validade operacional de 30 minutos para cotacoes selecionadas.
+- Diagnosticos seguros de indisponibilidade de frete por estagio e motivo, sem PII ou secrets.
 
 ## Fora de escopo
 
@@ -52,6 +53,7 @@ Implementar a primeira etapa real de frete da PrintLab:
 - [x] Rotas e templates de frete implementados sem JavaScript obrigatorio.
 - [x] POST revalida cotacao atual e persiste preco server-side.
 - [x] Testes automatizados cobrem embalagem, cliente, service, repository, migration e handlers.
+- [x] Fase 8.1 adicionou diagnosticos seguros para configuracao, caixas, planejamento, pacote retornado, encaixe em caixa real, chamada final e cotacoes finais vazias.
 
 ### B. Migration
 
@@ -96,3 +98,4 @@ Nao criar esses dados em migration e nao registrar secrets.
 - Caixa fisica real e obrigatoria para cotacao final.
 - O preco exibido vem somente da segunda chamada SuperFrete com `package`.
 - Multi-volume fica adiado.
+- Erros publicos de frete permanecem genericos; diagnosticos internos nao podem registrar CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto externo.

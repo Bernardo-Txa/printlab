@@ -13,7 +13,9 @@ O checkout devera transformar uma intencao de compra em pedido, com validacao se
 - Dados salvos sao pre-preenchidos para edicao posterior.
 - Salvamento bem-sucedido renova a validade do carrinho e do cookie.
 - Salvamento bem-sucedido redireciona para `/checkout/frete`.
-- O formulario funciona sem JavaScript e sem busca externa de CEP.
+- O formulario funciona sem JavaScript e aceita preenchimento manual de endereco.
+- Quando JavaScript esta disponivel, a etapa de dados aplica mascaras progressivas de CPF, telefone brasileiro e CEP.
+- Quando JavaScript esta disponivel, a etapa de dados consulta CEP via endpoint interno do backend e preenche rua, bairro, cidade e UF.
 - Respostas HTML que podem conter PII usam `Cache-Control: private, no-store`.
 - `GET /checkout/frete` renderiza opcoes de frete SSR quando a cotacao esta disponivel.
 - `POST /checkout/frete` recebe somente `service_code`, revalida a cotacao atual e persiste a selecao.
@@ -62,6 +64,23 @@ Nao sao coletados senha, login, data de nascimento, genero, redes sociais, profi
 - `state`: normalizado para uppercase e validado contra UFs brasileiras oficiais, incluindo DF.
 - `country_code`: somente `BR` nesta fase.
 
+As mascaras de CPF, telefone e CEP sao apenas melhoria visual no navegador. A fonte autoritativa continua sendo a normalizacao e validacao server-side no `POST /checkout/dados`.
+
+## Consulta de CEP
+
+O navegador nao chama ViaCEP diretamente. A pagina de dados usa `/api/cep/{cep}` como endpoint interno da aplicacao, e o backend consulta `https://viacep.com.br/ws/{cep}/json/` com timeout explicito.
+
+O endpoint interno normaliza CEP para exatamente 8 digitos e responde apenas:
+
+- `street`;
+- `district`;
+- `city`;
+- `state`.
+
+Campos como IBGE, DDD, SIAFI, GIA ou regiao do provedor externo nao sao repassados ao navegador.
+
+Se o CEP nao for encontrado ou a consulta estiver indisponivel, a compra nao e bloqueada. A interface informa o erro de forma acessivel e o cliente pode preencher ou corrigir o endereco manualmente. Numero e complemento nunca sao preenchidos pela consulta.
+
 ## Privacidade e retencao
 
 Os dados desta etapa sao PII e pertencem ao carrinho anonimo atual. A PrintLab nao cria entidade permanente de cliente nesta fase.
@@ -89,6 +108,8 @@ Se nao houver carrinho valido, a rota redireciona para `/carrinho`. Se os dados 
 O backend calcula frete em duas etapas: envia `products` para a SuperFrete obter pacote ideal, escolhe a menor caixa fisica real compativel usando medidas internas e rotacao, soma `packaging_weight_g` ao peso dos produtos e faz a cotacao final com `package` usando medidas externas da caixa. Apenas o resultado final e apresentado ao cliente.
 
 Frete selecionado expira em 30 minutos e e invalidado por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
+
+Falhas de frete mantem mensagem publica generica. Internamente, a aplicacao diferencia indisponibilidade de configuracao, ausencia de caixas, falha na chamada de planejamento, ausencia de pacote retornado, caixa inexistente para o pacote, falha na chamada final e ausencia de cotacoes finais validas, sem logar PII ou secrets.
 
 ## Snapshot futuro
 

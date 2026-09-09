@@ -121,6 +121,21 @@ func TestStaticBrandLogoHandler(t *testing.T) {
 	}
 }
 
+func TestStaticCheckoutJSHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/static/js/checkout.js", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandler(t).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/javascript") && !strings.HasPrefix(got, "application/javascript") {
+		t.Fatalf("expected JavaScript content type, got %q", got)
+	}
+}
+
 func TestStaticDirectoryListingIsNotServed(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/css/", nil)
 	rec := httptest.NewRecorder()

@@ -230,7 +230,7 @@ func newTestHandlerWithCart(t *testing.T, service cartService, cookies *cartdoma
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServices(db, nil, service, nil, nil, cookies, siteURL)
+	return newHandlerWithServices(db, nil, service, nil, nil, cookies, nil, siteURL)
 }
 
 type fakeCartService struct {

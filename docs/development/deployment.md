@@ -54,6 +54,7 @@ Supabase de desenvolvimento
 - Variantes e imagens de catalogo dependem do PostgreSQL e do bucket `product-images`.
 - Carrinho anonimo depende do PostgreSQL para persistencia e usa cookie host-only `printlab_cart`.
 - Dados de checkout dependem do carrinho e do PostgreSQL, sem criar conta permanente de cliente.
+- Consulta de CEP usa endpoint interno no Go e chamada server-side ao ViaCEP, sem depender do banco.
 - Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
@@ -82,6 +83,8 @@ Nenhum valor secreto ou connection string foi registrado na documentacao.
 O CSS compilado em `web/static/css/app.css` e embutido no binario Go e servido em `/static/css/app.css`. Essa abordagem evita falhas em deploys onde o runtime nao encontra o diretorio `web/static/` no filesystem local.
 
 A logo em `web/static/images/branding/logo-printlab-primary.png` tambem e embutida e deve ser validada no deploy pela rota `/static/images/branding/logo-printlab-primary.png`.
+
+O JavaScript progressivo do checkout em `web/static/js/checkout.js` tambem e embutido no binario e deve ser servido por `/static/js/checkout.js`.
 
 Validacao local:
 
@@ -213,6 +216,17 @@ Quando existirem dados reais de desenvolvimento:
 - cadastrar pelo menos um produto real com perfil logistico;
 - cadastrar pelo menos uma caixa fisica real ativa;
 - validar uma cotacao Sandbox real sem criar etiqueta/postagem.
+
+A Fase 8.1 adiciona diagnosticos seguros para diferenciar falhas de configuracao, caixas, planejamento, pacote retornado, encaixe em caixa real, chamada final e cotacoes finais vazias. Esses logs nao devem registrar CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto da SuperFrete.
+
+Validar consulta de CEP no deploy:
+
+```sh
+curl -i https://printlab-pied.vercel.app/api/cep/01001000
+curl -I https://printlab-pied.vercel.app/static/js/checkout.js
+```
+
+A resposta do endpoint de CEP deve conter somente `street`, `district`, `city` e `state`. CEP inexistente deve retornar 404 e a interface deve permitir preenchimento manual.
 
 ## Vercel
 

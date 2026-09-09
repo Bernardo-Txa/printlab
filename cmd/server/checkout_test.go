@@ -56,6 +56,19 @@ func TestCheckoutDetailsGetWithCartReturnsOK(t *testing.T) {
 	if !strings.Contains(body, "Usamos estes dados somente para preparar sua compra") {
 		t.Fatal("expected privacy copy")
 	}
+	for _, expected := range []string{
+		`data-checkout-form="true"`,
+		`data-cep-lookup-endpoint="/api/cep"`,
+		`data-checkout-mask="cpf"`,
+		`data-checkout-mask="phone"`,
+		`data-checkout-mask="cep"`,
+		`data-cep-status="true"`,
+		`/static/js/checkout.js`,
+	} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected checkout UX enhancement marker %q", expected)
+		}
+	}
 	for _, forbiddenField := range []string{`name="unit_price"`, `name="subtotal"`, `name="total"`, `name="product_name"`} {
 		if strings.Contains(body, forbiddenField) {
 			t.Fatalf("expected checkout form not to include authoritative field %s", forbiddenField)
@@ -271,7 +284,7 @@ func newTestHandlerWithCheckout(t *testing.T, service checkoutDetailsService, co
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServices(db, nil, nil, service, nil, cookies, siteURL)
+	return newHandlerWithServices(db, nil, nil, service, nil, cookies, nil, siteURL)
 }
 
 type fakeCheckoutDetailsService struct {

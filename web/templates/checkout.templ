@@ -29,21 +29,21 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
 				}
 				<div class="checkout-layout">
-					<form class="checkout-form" method="post" action="/checkout/dados">
+					<form class="checkout-form" method="post" action="/checkout/dados" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
 						<input type="hidden" name="country_code" value="BR"/>
 						<section class="checkout-form-section" aria-labelledby="checkout-contact">
 							<h2 id="checkout-contact">Contato</h2>
 							<div class="checkout-fields">
 								@CheckoutField("full_name", "Nome completo", "text", "name", "", page.Form.Values.FullName, page.Form.Errors.Message("full_name"), false)
 								@CheckoutField("email", "E-mail", "email", "email", "", page.Form.Values.Email, page.Form.Errors.Message("email"), false)
-								@CheckoutField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), false)
-								@CheckoutFieldWithHelp("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessario para a documentacao do envio.", false)
+								@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), "", false, "phone", "15")
+								@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessario para a documentacao do envio.", false, "cpf", "14")
 							</div>
 						</section>
 						<section class="checkout-form-section" aria-labelledby="checkout-shipping">
 							<h2 id="checkout-shipping">Entrega</h2>
 							<div class="checkout-fields">
-								@CheckoutField("postal_code", "CEP", "text", "postal-code", "numeric", page.Form.Values.PostalCode, page.Form.Errors.Message("postal_code"), false)
+								@CheckoutPostalCodeField(page.Form.Values.PostalCode, page.Form.Errors.Message("postal_code"))
 								@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", page.Form.Values.Street, page.Form.Errors.Message("street"), false)
 								@CheckoutField("number", "Numero", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false)
 								@CheckoutField("complement", "Complemento", "text", "address-line3", "", page.Form.Values.Complement, page.Form.Errors.Message("complement"), true)
@@ -84,6 +84,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 				</div>
 			}
 		</section>
+		<script src="/static/js/checkout.js" defer></script>
 	}
 }
 
@@ -103,6 +104,35 @@ templ CheckoutFieldWithHelp(id string, label string, inputType string, autocompl
 		if help != "" {
 			<p class="checkout-field-help">{ help }</p>
 		}
+		if message != "" {
+			<p class="checkout-field-error">{ message }</p>
+		}
+	</div>
+}
+
+templ CheckoutMaskedField(id string, label string, inputType string, autocomplete string, inputMode string, value string, message string, help string, optional bool, mask string, maxLength string) {
+	<div class="checkout-field">
+		<label for={ id }>
+			{ label }
+			if optional {
+				<span>Opcional</span>
+			}
+		</label>
+		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional }/>
+		if help != "" {
+			<p class="checkout-field-help">{ help }</p>
+		}
+		if message != "" {
+			<p class="checkout-field-error">{ message }</p>
+		}
+	</div>
+}
+
+templ CheckoutPostalCodeField(value string, message string) {
+	<div class="checkout-field">
+		<label for="postal_code">CEP</label>
+		<input id="postal_code" type="text" name="postal_code" value={ value } autocomplete="postal-code" inputmode="numeric" maxlength="9" data-checkout-mask="cep" data-cep-input="true" aria-describedby="postal_code_lookup_status" required/>
+		<p id="postal_code_lookup_status" class="checkout-field-help" data-cep-status="true" aria-live="polite"></p>
 		if message != "" {
 			<p class="checkout-field-error">{ message }</p>
 		}

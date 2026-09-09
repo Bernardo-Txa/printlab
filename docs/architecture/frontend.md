@@ -1,6 +1,6 @@
 # Frontend
 
-Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, dados de checkout SSR e frete SSR IMPLEMENTADOS; interacoes HTMX e funcionalidades comerciais futuras PLANEJADAS.
+Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, dados de checkout SSR com UX progressiva e frete SSR IMPLEMENTADOS; interacoes HTMX e funcionalidades comerciais futuras PLANEJADAS.
 
 ## Responsabilidade
 
@@ -22,7 +22,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - O frontend de checkout nao envia preco, subtotal, total, frete, prazo, peso, dimensoes ou decisao financeira como fonte de verdade.
 - A etapa de frete envia somente `service_code`; o backend revalida a cotacao e persiste o valor atual.
 - A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
-- O formulario de dados nao usa busca externa de CEP nem autocomplete externo nesta fase.
+- O formulario de dados usa mascaras progressivas e consulta CEP por endpoint interno da aplicacao; sem JavaScript, o preenchimento manual continua funcionando.
 
 ## Decisoes
 
@@ -38,7 +38,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir catalogo e detalhe de produto sem JavaScript obrigatorio.
 - Exibir seletor de variantes como links navegaveis por teclado.
 - Exibir carrinho com forms HTML e redirects 303, sem JavaScript obrigatorio.
-- Exibir a etapa de dados com formulario HTML, autocomplete nativo e redirects 303, sem JavaScript obrigatorio.
+- Exibir a etapa de dados com formulario HTML, autocomplete nativo, mascaras progressivas, consulta interna de CEP e redirects 303, sem JavaScript obrigatorio.
 - Exibir a etapa de frete com radios HTML, POST tradicional e redirects 303, sem JavaScript obrigatorio.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
@@ -53,6 +53,7 @@ web/components/          componentes templ reutilizaveis
 web/templates/           paginas templ
 web/assets/css/app.css   CSS fonte e design tokens
 web/static/css/app.css   CSS compilado, embutido no binario e servido pela aplicacao
+web/static/js/checkout.js   melhoria progressiva de mascaras e consulta CEP para checkout
 web/static/images/branding/logo-printlab-primary.png   logo oficial inicial da marca
 ```
 
@@ -66,7 +67,7 @@ Templates de catalogo implementados:
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
 
-Arquivos em `web/static/` sao embutidos no binario Go. Essa estrategia deixa o servidor autossuficiente para entregar CSS, imagens e JavaScript futuro sem depender de caminhos de filesystem no runtime da Vercel.
+Arquivos em `web/static/` sao embutidos no binario Go. Essa estrategia deixa o servidor autossuficiente para entregar CSS, imagens e JavaScript progressivo sem depender de caminhos de filesystem no runtime da Vercel.
 
 ## Design tokens
 
@@ -108,7 +109,8 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Slug de categoria como filtro publico em links server-side.
 - Slug de variante como query parameter opcional em links server-side.
 - Galeria sem carousel, slider ou dependencia JavaScript.
-- Inputs de contato e endereco devem usar `autocomplete`, `inputmode` e labels claros como melhoria nativa, sem mascaras obrigatorias.
+- Inputs de contato e endereco devem usar `autocomplete`, `inputmode` e labels claros. Mascaras de CPF, telefone e CEP sao melhoria de UX, nao validacao autoritativa.
+- Consulta de CEP deve chamar apenas endpoint interno do backend e preservar campos editaveis e fallback manual.
 - Opcoes de frete devem usar controles nativos de radio, labels clicaveis, preco e prazo vindos do backend.
 
 ## Praticas proibidas
@@ -119,6 +121,7 @@ Componentes devem usar tokens e classes semanticas, evitando hex colors arbitrar
 - Expor tokens, chaves ou endpoints sensiveis no cliente.
 - Usar CDN do Tailwind.
 - Adicionar HTMX sem interacao que justifique sua presenca.
+- Chamar ViaCEP, SuperFrete ou outras integracoes diretamente do navegador.
 - Redesenhar, alterar ou substituir a logo oficial sem decisao do responsavel pelo projeto.
 - Usar cores vibrantes da marca de forma aleatoria ou excessiva.
 - Criar controles falsos de quantidade, estoque, carrinho ou checkout antes das fases aprovadas.
