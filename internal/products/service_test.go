@@ -292,6 +292,62 @@ func TestProductPreparesVariantMaterialsAndColors(t *testing.T) {
 	}
 }
 
+func TestProductPreservesLoadedRecipeComponentsForRetiredMaterialOrColor(t *testing.T) {
+	service := NewService(&fakeRepository{
+		detail: productDetailFixture([]ProductVariant{
+			{
+				ID:        "variant-1",
+				ProductID: "prod-1",
+				Name:      "Padrao",
+				Slug:      "padrao",
+				IsActive:  true,
+				IsDefault: true,
+				Filaments: []VariantFilament{
+					{
+						ID:                "filament-active",
+						VariantID:         "variant-1",
+						Material:          Material{ID: "mat-pla", Name: "PLA", Slug: "pla"},
+						Color:             Color{ID: "cor-azul", Name: "Azul", Slug: "azul", HexColor: "#0066FF"},
+						EstimatedWeightMg: 180000,
+					},
+					{
+						ID:                "filament-retired",
+						VariantID:         "variant-1",
+						Material:          Material{ID: "mat-legado", Name: "Material legado", Slug: "material-legado"},
+						Color:             Color{ID: "cor-retirada", Name: "Cor retirada", Slug: "cor-retirada", HexColor: "#CCCCCC"},
+						EstimatedWeightMg: 30000,
+					},
+				},
+			},
+		}),
+	})
+
+	detail, err := service.Product(context.Background(), "produto-real", "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if detail.SelectedVariant == nil {
+		t.Fatal("expected selected variant")
+	}
+
+	if got := len(detail.SelectedVariant.Filaments); got != 2 {
+		t.Fatalf("expected both recipe components to remain loaded, got %d", got)
+	}
+
+	if detail.SelectedVariant.TotalWeightMg != 210000 || detail.SelectedVariant.TotalWeightGrams != "210 g" {
+		t.Fatalf("expected all recipe components in total weight, got %d %q", detail.SelectedVariant.TotalWeightMg, detail.SelectedVariant.TotalWeightGrams)
+	}
+
+	if detail.SelectedVariant.MaterialNames != "PLA, Material legado" {
+		t.Fatalf("expected material names to include retired reference, got %q", detail.SelectedVariant.MaterialNames)
+	}
+
+	if detail.SelectedVariant.ColorNames != "Azul, Cor retirada" {
+		t.Fatalf("expected color names to include retired reference, got %q", detail.SelectedVariant.ColorNames)
+	}
+}
+
 func TestProductImageSelectionPrefersVariantImage(t *testing.T) {
 	service := NewService(&fakeRepository{
 		detail: productDetailFixture([]ProductVariant{

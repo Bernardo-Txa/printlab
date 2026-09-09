@@ -1,8 +1,10 @@
 # Schema de banco
 
-Status: catalogo com variantes e receita de producao IMPLEMENTADO; demais entidades de negocio PLANEJADAS.
+Status: catalogo com variantes e receita de producao IMPLEMENTADO; semantica de receita da Fase 5.1 IMPLEMENTADA; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
+
+A Fase 5.1 nao alterou schema. Ela corrigiu a leitura de receitas para preservar referencias a materiais e cores inativos em `variant_filaments`.
 
 ## Convencoes futuras
 
@@ -97,7 +99,7 @@ Campos:
 | `name` | `text` | nao | - | Nome do material logico. |
 | `slug` | `text` | nao | - | Identificador canonico unico. |
 | `description` | `text` | sim | - | Descricao opcional. |
-| `is_active` | `boolean` | nao | `true` | Controla uso publico/operacional. |
+| `is_active` | `boolean` | nao | `true` | Controla oferta para novas escolhas operacionais futuras. |
 | `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
 | `updated_at` | `timestamptz` | nao | `now()` | Deve ser atualizado explicitamente em updates futuros. |
 
@@ -108,6 +110,11 @@ Constraints:
 - `materials_name_not_blank`: `btrim(name) <> ''`.
 - `materials_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
 - `materials_description_not_blank`: `description is null or btrim(description) <> ''`.
+
+Semantica:
+
+- `materials.is_active = false` nao remove nem oculta receitas existentes que referenciem o material.
+- O material inativo deve deixar de ser oferecido para novas configuracoes futuras.
 
 RLS:
 
@@ -126,7 +133,7 @@ Campos:
 | `name` | `text` | nao | - | Nome da cor. |
 | `slug` | `text` | nao | - | Identificador canonico unico. |
 | `hex_color` | `text` | sim | - | Cor em hexadecimal canonico `#RRGGBB`. |
-| `is_active` | `boolean` | nao | `true` | Controla uso publico/operacional. |
+| `is_active` | `boolean` | nao | `true` | Controla oferta para novas escolhas operacionais futuras. |
 | `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
 | `updated_at` | `timestamptz` | nao | `now()` | Deve ser atualizado explicitamente em updates futuros. |
 
@@ -141,6 +148,8 @@ Constraints:
 Semantica:
 
 - `hex_color`, quando preenchido, deve ser armazenado em formato canonico com `#`, seis caracteres e letras maiusculas.
+- `colors.is_active = false` nao remove nem oculta receitas existentes que referenciem a cor.
+- A cor inativa deve deixar de ser oferecida para novas configuracoes futuras.
 
 RLS:
 
@@ -246,6 +255,8 @@ Semantica:
 
 - Peso usa miligramas para evitar `float` e permitir pecas pequenas.
 - Uma variante pode ter varios componentes, materiais e cores.
+- Componentes devem ser carregados mesmo quando `material_id` ou `color_id` referenciam registros inativos.
+- O peso total estimado da variante soma todos os componentes carregados.
 - Essa tabela nao representa estoque fisico nem consumo real executado.
 
 RLS:

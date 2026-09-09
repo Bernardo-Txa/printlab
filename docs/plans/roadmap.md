@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4 e 5 concluidas. Fases 6 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5 e 5.1 concluidas. Fases 6 a 17 planejadas.
 
 ## Status das fases
 
@@ -14,6 +14,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4 e 5 concluidas. Fases 6 a 17 planejadas.
 | Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Concluida |
 | Fase 4 — Catalogo | Concluida |
 | Fase 5 — Produtos e variantes | Concluida |
+| Fase 5.1 — Semantica da receita de producao | Concluida |
 | Fase 6 — Carrinho | Planejada |
 | Fase 7 — Dados do cliente e endereco | Planejada |
 | Fase 8 — Integracao SuperFrete | Planejada |
@@ -197,6 +198,27 @@ Definition of Done:
 - Sem estoque, carrinho, checkout, upload ou admin.
 - Documentacao atualizada.
 
+## Fase 5.1 — Semantica da receita de producao
+
+Objetivo: corrigir a leitura de receitas para preservar componentes que referenciem material ou cor inativos.
+
+Principais entregas:
+
+- Query de `variant_filaments` sem filtro por `materials.is_active` ou `colors.is_active`.
+- Preservacao de nomes de material/cor em receitas existentes.
+- Peso total estimado somando todos os componentes carregados.
+- Documentacao da semantica final de `materials.is_active` e `colors.is_active`.
+
+Dependencias: Fase 5.
+
+Definition of Done:
+
+- Receitas existentes nao perdem componentes por material ou cor inativos.
+- Produto e variante ativos continuam controlando visibilidade publica.
+- Sem migration ou alteracao de schema.
+- Testes de regressao executados.
+- Fase 6 permanece planejada.
+
 ## Fase 6 — Carrinho
 
 Objetivo: permitir selecao de itens antes do checkout.
@@ -208,7 +230,7 @@ Principais entregas:
 - Recalculo server-side.
 - Testes de quantidades e erros.
 
-Dependencias: Fases 4 e 5.
+Dependencias: Fases 4, 5 e 5.1.
 
 Definition of Done:
 

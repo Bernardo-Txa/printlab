@@ -31,6 +31,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Selecao publica de variante por `?variante=<slug>` sem JavaScript obrigatorio.
 - Preco efetivo de variante com override opcional e fallback para `products.price_cents`.
 - Helpers de dominio para peso em miligramas, apresentacao em gramas, tempo de maquina e URL publica de imagem.
+- Fase 5.1 — Correcao semantica da receita de producao.
+- Testes de regressao para preservar componentes de receita com material ou cor inativos.
 
 ### Changed
 
@@ -48,3 +50,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Catalogo e detalhe de produto atualizados para exibir menor preco efetivo, texto "A partir de", galeria SSR e imagem de produto/variante quando existir.
 - `supabase/config.toml` passou a habilitar Storage local para validacao do bucket de imagens de catalogo.
 - Migration de variantes/producao aplicada ao Supabase DEV e `/produtos` validado na Vercel com catalogo vazio.
+- Receita de producao passou a carregar `variant_filaments` mesmo quando material ou cor referenciados estiverem inativos.
+- `materials.is_active` e `colors.is_active` agora documentam somente a oferta para novas escolhas futuras, sem alterar receitas existentes.

@@ -34,6 +34,8 @@ materials colors
 
 `materials` e `colors` representam catalogo/producao logica, nao filamento fisico comprado, lote, carretel ou estoque.
 
+`materials.is_active` e `colors.is_active` controlam a oferta de novas escolhas operacionais futuras. Eles nao controlam a exibicao de receitas ja cadastradas: `variant_filaments` deve continuar carregando material e cor por referencia mesmo quando esses registros estiverem inativos.
+
 `product_images` referencia imagens publicas no bucket `product-images` do Supabase Storage por caminho relativo. Imagens podem ser gerais do produto ou especificas de uma variante. Upload permanece futuro e nao ha policy publica de escrita.
 
 ## Alternativas consideradas
@@ -51,6 +53,7 @@ materials colors
 - O backend consegue calcular preco efetivo sem confiar no navegador.
 - O catalogo pode exibir produtos sem variantes, preservando compatibilidade com a Fase 4.
 - A pagina de produto pode selecionar variante por slug via query string, sem JavaScript obrigatorio.
+- Receitas existentes permanecem intactas quando uma cor ou material deixa de estar ativo para novas escolhas.
 - Custos futuros poderao ser calculados a partir de peso, tempo de maquina e filamento fisico quando esse modulo existir.
 - A estrutura adiciona tabelas e joins, mas evita um modelo artificialmente generico antes de haver necessidade real.
 - Estoque fisico, upload/admin, carrinho e checkout continuam separados para fases futuras.

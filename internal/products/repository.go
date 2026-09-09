@@ -399,10 +399,8 @@ func (r *PostgresRepository) listVariantFilaments(ctx context.Context, productID
 			on v.id = vf.variant_id
 		join public.materials m
 			on m.id = vf.material_id
-			and m.is_active = true
 		join public.colors c
 			on c.id = vf.color_id
-			and c.is_active = true
 		where v.product_id = $1::uuid
 			and v.is_active = true
 		order by v.is_default desc, v.sort_order asc, v.name asc, vf.sort_order asc, vf.created_at asc, vf.id asc

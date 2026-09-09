@@ -33,6 +33,8 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 - A ausencia de variante em um produto continua valida.
 - Variante default ativa e escolhida automaticamente quando existir.
 - Sem variante default, a primeira variante ativa pela ordenacao publica e escolhida.
+- `materials.is_active` nao controla exibicao publica de receitas existentes.
+- `colors.is_active` nao controla exibicao publica de receitas existentes.
 
 ## Autoridade do backend
 
@@ -91,6 +93,10 @@ Essa estrutura suporta impressao multicolorida e multimaterial sem gravar `color
 
 `product_variants.print_time_minutes` armazena tempo estimado de maquina em minutos. Esse tempo nao e prazo de entrega e nao deve ser exibido ao cliente como promessa de envio.
 
+Receitas ja cadastradas preservam os nomes de material e cor referenciados em `variant_filaments`, mesmo quando o material ou a cor estiverem inativos. Inativar material ou cor significa retirar a opcao de novas configuracoes operacionais futuras, nao remover componentes de receitas historicas.
+
+O peso total estimado de uma variante deve somar todos os componentes carregados de `variant_filaments`, incluindo componentes que referenciem material ou cor inativos.
+
 Custos derivados como `production_cost`, `material_cost`, `machine_cost`, `profit` e `margin` nao sao persistidos nesta fase. Futuramente eles poderao ser calculados a partir de peso estimado, tempo de maquina, filamento fisico, preco por kg e outros custos aprovados.
 
 ## Estoque e filamento fisico
@@ -98,6 +104,8 @@ Custos derivados como `production_cost`, `material_cost`, `machine_cost`, `profi
 Nao ha controle de estoque unitario de produtos nesta fase. A disponibilidade publica depende de `products.is_active` e `product_variants.is_active`.
 
 `materials` e `colors` sao conceitos logicos de catalogo/producao. Eles nao representam marca de filamento, carretel fisico, lote, preco de compra ou peso disponivel.
+
+`materials.is_active = false` e `colors.is_active = false` devem ser tratados como indisponibilidade para novas escolhas futuras. A pagina publica de produto nao deve ocultar, renomear ou marcar como inativo um componente ja usado por uma receita existente.
 
 Filamento fisico, inventario, lotes, custo por kg e reserva de material permanecem planejados para modulo operacional futuro.
 

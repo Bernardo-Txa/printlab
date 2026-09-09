@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Fase 5 IMPLEMENTADA; operacao comercial PLANEJADA.
+Status: Fase 5.1 IMPLEMENTADA; operacao comercial PLANEJADA.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de variantes.
 
@@ -26,6 +26,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
 - Placeholder visual de marca quando nao existe imagem renderizavel.
 - Selecao publica de variante por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio.
+- Preservacao de componentes de receita que referenciem material ou cor inativos.
 
 ## Regras publicas
 
@@ -38,6 +39,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Slug invalido em rota publica retorna 404.
 - Variante inativa, inexistente, invalida ou pertencente a outro produto retorna 404 quando solicitada explicitamente.
 - Produto sem variantes continua valido e usa o preco-base.
+- Material ou cor inativos nao tornam uma receita existente invisivel.
 - Erros de banco retornam mensagem generica e nao expoem detalhes internos.
 
 ## Preco-base
@@ -76,6 +78,10 @@ O slug da variante e unico dentro do produto e nao substitui o slug do produto c
 
 Uma variante pode possuir varios componentes em `variant_filaments`, cada um com material, cor, peso estimado em miligramas, rotulo opcional e ordenacao.
 
+Receitas existentes sao lidas por referencia. `materials.is_active = false` e `colors.is_active = false` nao removem componentes de `variant_filaments` nem escondem os nomes de material/cor na pagina publica do produto.
+
+O status ativo de material e cor deve ser usado para novas escolhas operacionais futuras. Como ainda nao ha admin ou formulario de configuracao nesta fase, nao existe listagem publica de novas opcoes de material/cor.
+
 Essa modelagem suporta:
 
 - impressao multicolorida;
@@ -84,6 +90,8 @@ Essa modelagem suporta:
 - calculos futuros de custo sem persistir valores derivados.
 
 Peso e armazenado como inteiro em `estimated_weight_mg`, evitando `float`.
+
+O peso total estimado soma todos os componentes carregados da receita, inclusive componentes que referenciem material ou cor inativos.
 
 Tempo estimado de maquina fica em `product_variants.print_time_minutes`. Ele nao representa prazo de entrega e nao deve ser apresentado ao cliente como promessa de envio.
 
