@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes e carrinho IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho e dados de checkout IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -75,6 +75,13 @@ npx supabase --version
 - Dinheiro no carrinho cobre `price * quantity`, subtotal apenas de itens disponiveis e protecao contra overflow.
 - Mutacoes de item cobrem escopo por `cart_id + item_id`.
 - Handlers de carrinho cobrem `GET /carrinho` vazio, `POST /carrinho/adicionar`, quantidade invalida, produto inexistente, variante invalida, update, remove e origem cross-site invalida.
+- CPF cobre valor valido formatado, valor valido sem mascara, primeiro digito incorreto, segundo digito incorreto, comprimento invalido, letras, whitespace e todas as sequencias repetidas.
+- Telefone cobre formatos brasileiros com DDD, com `+55` opcional e rejeicoes conservadoras.
+- CEP cobre formato com hifen, sem hifen, letras e comprimento invalido.
+- UF cobre normalizacao para uppercase, UFs validas e rejeicao de valores inexistentes.
+- Service de dados de checkout cobre carrinho ausente, carrinho vazio, item indisponivel, validacao completa, normalizacao, dados validos, erro de repository e ausencia de persistencia em entrada invalida.
+- Repository de dados de checkout cobre uso de transacao, upserts 1:1 por `cart_id`, colunas explicitas e teste opcional de rollback com `TEST_DATABASE_URL`.
+- Handlers de `/checkout/dados` cobrem redirect sem carrinho, GET com carrinho, POST valido, CPF invalido, endereco invalido, origem cross-site invalida e resposta generica sem detalhes internos.
 
 ## Teste de integracao PostgreSQL opcional
 
@@ -85,6 +92,8 @@ Nunca use `DATABASE_URL` de producao automaticamente em testes.
 O teste opcional faz apenas `Ping` com timeout curto e nao altera dados.
 
 Repository tests que consultem PostgreSQL real devem usar somente ambiente explicito de teste, como `TEST_DATABASE_URL`, e nunca a `DATABASE_URL` de producao automaticamente.
+
+O teste opcional de transacao de `internal/customers` usa `TEST_DATABASE_URL` para confirmar que falha no upsert de endereco nao deixa contato persistido parcialmente.
 
 ## Praticas recomendadas
 

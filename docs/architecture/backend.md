@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao e carrinho IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho e dados de checkout IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
 
 ## Responsabilidade
 
@@ -16,6 +16,8 @@ Nesta fase, o backend implementa:
 - `POST /carrinho/adicionar` para adicionar ou incrementar item.
 - `POST /carrinho/itens/{id}/quantidade` para alterar quantidade.
 - `POST /carrinho/itens/{id}/remover` para remover item.
+- `GET /checkout/dados` para formulario SSR de contato e endereco.
+- `POST /checkout/dados` para validar e salvar dados temporarios de checkout.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -23,11 +25,12 @@ Nesta fase, o backend implementa:
 - `internal/database` para criar `pgxpool.Pool`.
 - `internal/products` para modelos, service e repository PostgreSQL do catalogo, variantes, receita estimada e imagens.
 - `internal/cart` para token/cookie, service e repository PostgreSQL do carrinho.
+- `internal/customers` para dados temporarios de checkout, validacoes brasileiras e repository PostgreSQL transacional.
 
 ## Limites
 
-- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens e carrinho.
-- Nao ha checkout, pedidos, pagamentos ou admin.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho e dados temporarios de checkout.
+- Nao ha frete, pedidos, pagamentos ou admin.
 - Nao ha integracoes comerciais externas como frete ou pagamento.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -54,6 +57,9 @@ Nesta fase, o backend implementa:
 - Persistir carrinho anonimo server-side, usando cookie opaco e `SHA-256` no banco.
 - Recalcular preco e subtotal do carrinho a partir do catalogo atual.
 - Manter mutacoes de item limitadas por `cart_id` e `item_id`.
+- Persistir dados temporarios de contato e endereco vinculados ao carrinho, sem entidade permanente de cliente.
+- Validar CPF, telefone, CEP, UF e pais no backend.
+- Salvar contato e endereco em transacao PostgreSQL.
 
 ## Catalogo
 
@@ -84,6 +90,16 @@ Adicionar produto/variante ja existente incrementa a linha de forma atomica no S
 Itens que ficam indisponiveis continuam aparecendo no carrinho, podem ser removidos e nao entram no subtotal.
 
 Mutacoes bem-sucedidas renovam a expiracao do carrinho e do cookie para 30 dias.
+
+## Dados de checkout
+
+`GET /checkout/dados` exige cookie de carrinho valido, carrinho ativo, pelo menos um item e nenhum item indisponivel. Sem essa condicao, a rota redireciona para `/carrinho` e nao coleta PII.
+
+`POST /checkout/dados` reutiliza a validacao centralizada de `Origin`/`Referer`, valida o carrinho atual e normaliza os campos em `internal/customers`.
+
+O backend aceita entradas humanas de CPF, telefone e CEP com mascara, mas persiste valores canonicos. O pais e limitado a `BR`. Contato e endereco sao salvos por `INSERT ... ON CONFLICT (cart_id) DO UPDATE` dentro de uma transacao.
+
+Salvamento bem-sucedido renova a validade do carrinho e do cookie. Se houver erro de validacao, o formulario e renderizado novamente com mensagens por campo. Se houver erro de infraestrutura, a resposta e generica e nao expoe CPF, e-mail, telefone, endereco ou detalhes PostgreSQL.
 
 ## Health e readiness
 

@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao e carrinho IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho e dados de checkout IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -67,7 +67,21 @@ Antes de finalizar uma compra, o backend devera futuramente:
 - Produto e variante sao revalidados ao adicionar e ao renderizar.
 - Item indisponivel nao some silenciosamente.
 - Item indisponivel nao entra no subtotal.
-- Checkout, frete, pedido e pagamento permanecem planejados.
+- Frete, pedido e pagamento permanecem planejados.
+
+## Dados de checkout implementados
+
+- Checkout continua sem conta obrigatoria.
+- Dados de contato e endereco pertencem ao carrinho anonimo atual.
+- Nao ha entidade permanente de cliente nesta fase.
+- Cada carrinho pode possuir um conjunto de contato e um endereco de entrega atual.
+- A coleta de PII so ocorre quando ha carrinho existente, nao vazio e sem itens indisponiveis.
+- Contato e endereco sao persistidos juntos em transacao.
+- O backend valida e normaliza nome, e-mail, telefone brasileiro, CPF, CEP, UF e pais.
+- CPF e necessario para documentacao futura de envio/DC-e e nao e identificador publico.
+- Nao ha coleta de senha, conta, newsletter, marketing consent, data de nascimento, genero ou dados nao necessarios a compra.
+- O pedido futuro devera copiar contato e endereco para snapshots definitivos antes de pagamento/envio.
+- Limpeza programada de carrinhos expirados e PII associada e requisito antes do go-live comercial.
 
 ## Dinheiro
 

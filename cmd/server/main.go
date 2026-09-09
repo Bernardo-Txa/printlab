@@ -12,6 +12,7 @@ import (
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
+	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	"github.com/Bernardo-Txa/printlab/internal/products"
 	webfiles "github.com/Bernardo-Txa/printlab/web"
@@ -50,6 +51,7 @@ func main() {
 func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var catalog catalogService
 	var shoppingCart cartService
+	var checkoutDetails checkoutDetailsService
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
 		catalog = products.NewService(
@@ -60,18 +62,22 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			cartdomain.NewPostgresRepository(db.Pool()),
 			cartdomain.WithSupabaseURL(supabaseURL),
 		)
+		checkoutDetails = customers.NewService(
+			customers.NewPostgresRepository(db.Pool()),
+			shoppingCart,
+		)
 	}
 
-	return newHandlerWithServices(db, catalog, shoppingCart, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+	return newHandlerWithServices(db, catalog, shoppingCart, checkoutDetails, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
 	}), cfg.SiteURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
-	return newHandlerWithServices(db, catalog, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
+	return newHandlerWithServices(db, catalog, nil, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
 }
 
-func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
+func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -82,6 +88,8 @@ func newHandlerWithServices(db *database.Database, catalog catalogService, shopp
 	mux.HandleFunc("POST /carrinho/adicionar", addCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("POST /carrinho/itens/{id}/quantidade", updateCartItemQuantityHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("POST /carrinho/itens/{id}/remover", removeCartItemHandler(shoppingCart, cartCookies, siteURL))
+	mux.HandleFunc("GET /checkout/dados", checkoutDetailsPageHandler(checkoutDetails, cartCookies))
+	mux.HandleFunc("POST /checkout/dados", saveCheckoutDetailsHandler(checkoutDetails, cartCookies, siteURL))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

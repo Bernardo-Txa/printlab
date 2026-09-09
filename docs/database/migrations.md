@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes e carrinho IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho e dados de checkout IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -19,6 +19,12 @@ A terceira migration funcional cria o carrinho anonimo persistido:
 - `supabase/migrations/20260909194855_create_carts.sql`
 
 Ela cria `public.carts` e `public.cart_items`, constraints, foreign keys, indices unique parciais para evitar linhas duplicadas, limite de quantidade `1..99` e RLS sem policies publicas. Nao insere carrinhos, itens ou dados ficticios.
+
+A quarta migration funcional cria os dados temporarios de checkout vinculados ao carrinho:
+
+- `supabase/migrations/20260909203845_create_cart_customer_details.sql`
+
+Ela cria `public.cart_customer_details` e `public.cart_shipping_addresses`, constraints estruturais para CPF, telefone, CEP, UF e pais `BR`, foreign keys 1:1 para `public.carts(id)` com `on delete cascade`, e RLS sem policies publicas. Nao insere contato, endereco, CPF, PII ou dados ficticios.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
@@ -71,6 +77,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A primeira migration real foi criada junto da Fase 4 de catalogo.
 - A segunda migration real foi criada junto da Fase 5 de produtos, variantes e producao.
 - A terceira migration real foi criada junto da Fase 6 de carrinho.
+- A quarta migration real foi criada junto da Fase 7 de dados do cliente e endereco.
 
 ## Praticas recomendadas
 

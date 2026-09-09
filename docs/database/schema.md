@@ -1,12 +1,14 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao e carrinho IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho e dados de checkout IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
 A Fase 5.1 nao alterou schema. Ela corrigiu a leitura de receitas para preservar referencias a materiais e cores inativos em `variant_filaments`.
 
 A Fase 6 adiciona carrinho anonimo persistido server-side em `public.carts` e `public.cart_items`.
+
+A Fase 7 adiciona dados temporarios de contato e endereco vinculados ao carrinho em `public.cart_customer_details` e `public.cart_shipping_addresses`.
 
 ## Convencoes futuras
 
@@ -348,6 +350,102 @@ RLS:
 - RLS habilitado.
 - Nenhuma policy publica criada.
 
+## Tabela `public.cart_customer_details`
+
+Dados temporarios de contato do checkout vinculados ao carrinho anonimo. Esta tabela nao representa uma identidade permanente de cliente.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `cart_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.carts(id)`. |
+| `full_name` | `text` | nao | - | Nome completo normalizado por trim. |
+| `email` | `text` | nao | - | E-mail normalizado por trim e lowercase. |
+| `phone` | `text` | nao | - | Telefone brasileiro canonico, preferencialmente E.164. |
+| `cpf` | `text` | nao | - | CPF normalizado com 11 digitos ASCII. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente em upserts. |
+
+Foreign keys:
+
+- `cart_customer_details_cart_id_fkey`: `cart_id` referencia `public.carts(id)` com `on delete cascade`.
+
+Constraints:
+
+- `cart_customer_details_pkey`: chave primaria em `cart_id`.
+- `cart_customer_details_full_name_length`: `char_length(full_name) between 1 and 120`.
+- `cart_customer_details_full_name_trimmed`: `full_name = btrim(full_name)`.
+- `cart_customer_details_email_length`: `char_length(email) between 3 and 254`.
+- `cart_customer_details_email_lower_trimmed`: `email = lower(btrim(email))`.
+- `cart_customer_details_phone_format`: `phone ~ '^\+55[0-9]{10,11}$'`.
+- `cart_customer_details_cpf_format`: `cpf ~ '^[0-9]{11}$'`.
+
+Semantica:
+
+- O backend valida os digitos verificadores do CPF no Go.
+- Nao ha indice ou unique em CPF nesta fase.
+- Uma mesma pessoa pode possuir carrinhos diferentes.
+- O browser nao acessa esta tabela diretamente.
+- O registro e removido junto com o carrinho por cascade.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.cart_shipping_addresses`
+
+Endereco temporario de entrega vinculado ao carrinho anonimo atual. Nesta fase, somente Brasil esta em escopo.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `cart_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.carts(id)`. |
+| `postal_code` | `text` | nao | - | CEP normalizado com 8 digitos ASCII. |
+| `street` | `text` | nao | - | Rua/logradouro. |
+| `number` | `text` | nao | - | Numero textual, aceitando valores como `12A` ou `s/n`. |
+| `complement` | `text` | sim | - | Complemento opcional; vazio e persistido como `null`. |
+| `district` | `text` | nao | - | Bairro. |
+| `city` | `text` | nao | - | Cidade. |
+| `state` | `text` | nao | - | UF brasileira em uppercase. |
+| `country_code` | `text` | nao | `'BR'` | Pais fixo Brasil nesta fase. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente em upserts. |
+
+Foreign keys:
+
+- `cart_shipping_addresses_cart_id_fkey`: `cart_id` referencia `public.carts(id)` com `on delete cascade`.
+
+Constraints:
+
+- `cart_shipping_addresses_pkey`: chave primaria em `cart_id`.
+- `cart_shipping_addresses_postal_code_format`: `postal_code ~ '^[0-9]{8}$'`.
+- `cart_shipping_addresses_street_length`: `char_length(street) between 1 and 160`.
+- `cart_shipping_addresses_street_trimmed`: `street = btrim(street)`.
+- `cart_shipping_addresses_number_length`: `char_length(number) between 1 and 30`.
+- `cart_shipping_addresses_number_trimmed`: `number = btrim(number)`.
+- `cart_shipping_addresses_complement_length`: `complement is null or char_length(complement) between 1 and 120`.
+- `cart_shipping_addresses_complement_trimmed`: `complement is null or complement = btrim(complement)`.
+- `cart_shipping_addresses_district_length`: `char_length(district) between 1 and 100`.
+- `cart_shipping_addresses_district_trimmed`: `district = btrim(district)`.
+- `cart_shipping_addresses_city_length`: `char_length(city) between 1 and 100`.
+- `cart_shipping_addresses_city_trimmed`: `city = btrim(city)`.
+- `cart_shipping_addresses_state_allowed`: UF deve pertencer ao conjunto oficial brasileiro, incluindo DF.
+- `cart_shipping_addresses_country_code_br`: `country_code = 'BR'`.
+
+Semantica:
+
+- CEP e UF sao normalizados e validados no backend.
+- Nao ha ViaCEP, BrasilAPI, Google Maps ou autocomplete externo nesta fase.
+- O registro e removido junto com o carrinho por cascade.
+- Frete sera calculado na Fase 8 a partir desses dados revalidados.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
 ## Tabela `public.product_images`
 
 Metadados de imagens publicas de catalogo armazenadas no Supabase Storage.
@@ -429,8 +527,8 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 
 ## Entidades candidatas
 
-- `customers`: dados minimos de clientes.
-- `addresses`: enderecos de entrega ou cobranca quando necessario.
+- `customers`: identidade permanente de clientes somente se houver login ou conta futura.
+- `addresses`: enderecos permanentes ou de cobranca somente se houver necessidade futura.
 - `orders`: pedidos criados pelo backend.
 - `order_items`: itens persistidos de pedido com valores calculados pelo backend.
 - `payments`: registros de pagamento, tentativas e status validados.
@@ -474,7 +572,7 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 - Definir status de pedido.
 - Definir status de pagamento.
 - Refinar operacao de produtos sob demanda quando houver modulo de producao.
-- Definir dados minimos de cliente e endereco.
 - Definir upload/admin de imagens.
 - Definir estoque fisico e inventario de filamento.
 - Definir calculo de custos de producao a partir de insumos e tempo.
+- Implementar limpeza programada de carrinhos expirados e PII associada antes do go-live comercial.

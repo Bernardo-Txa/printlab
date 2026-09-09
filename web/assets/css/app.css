@@ -754,6 +754,142 @@
     @apply mt-3 w-full;
   }
 
+  .checkout-section {
+    @apply bg-background py-10 sm:py-14;
+  }
+
+  .checkout-heading {
+    @apply max-w-3xl;
+  }
+
+  .checkout-heading h1 {
+    @apply mt-5 text-balance text-5xl font-semibold leading-none tracking-normal text-foreground sm:text-6xl;
+  }
+
+  .checkout-heading p:not(.brand-kicker) {
+    @apply mt-5 text-pretty text-base leading-7 text-muted sm:text-lg;
+  }
+
+  .checkout-stepper {
+    @apply mt-8 grid gap-2 sm:grid-cols-4;
+  }
+
+  .checkout-step {
+    @apply flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted;
+  }
+
+  .checkout-step-active {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .checkout-alert {
+    @apply mt-5 rounded-control border px-4 py-3 text-sm font-semibold;
+  }
+
+  .checkout-alert-success {
+    @apply border-highlight-teal/40 bg-highlight-teal/10 text-foreground;
+  }
+
+  .checkout-alert-error {
+    @apply border-danger/25 bg-danger/10 text-danger;
+  }
+
+  .checkout-layout {
+    @apply mt-8 grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start;
+  }
+
+  .checkout-form {
+    @apply grid gap-5;
+  }
+
+  .checkout-form-section {
+    @apply rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6;
+  }
+
+  .checkout-form-section h2 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .checkout-fields {
+    @apply mt-5 grid gap-4 sm:grid-cols-2;
+  }
+
+  .checkout-field {
+    @apply flex min-w-0 flex-col gap-2;
+  }
+
+  .checkout-field label {
+    @apply flex min-h-6 items-center justify-between gap-2 text-sm font-semibold text-foreground;
+  }
+
+  .checkout-field label span {
+    @apply text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .checkout-field input {
+    @apply min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-base text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .checkout-field-help {
+    @apply text-xs leading-5 text-muted;
+  }
+
+  .checkout-field-error {
+    @apply text-sm font-semibold text-danger;
+  }
+
+  .checkout-form-actions {
+    @apply flex flex-col gap-3 sm:flex-row;
+  }
+
+  .checkout-summary {
+    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+  }
+
+  .checkout-summary h2 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .checkout-summary-lines {
+    @apply mt-5 grid gap-3;
+  }
+
+  .checkout-summary-line {
+    @apply flex items-start justify-between gap-4 border-b border-border pb-3;
+  }
+
+  .checkout-summary-line div {
+    @apply flex min-w-0 flex-col gap-1;
+  }
+
+  .checkout-summary-line strong {
+    @apply text-sm font-semibold leading-5 text-foreground;
+  }
+
+  .checkout-summary-line span {
+    @apply text-xs leading-5 text-muted;
+  }
+
+  .checkout-summary-line p {
+    @apply shrink-0 text-sm font-semibold text-foreground;
+  }
+
+  .checkout-summary-total {
+    @apply mt-5 flex items-center justify-between gap-4 border-b border-border pb-4;
+  }
+
+  .checkout-summary-total span {
+    @apply text-sm font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .checkout-summary-total strong {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .checkout-summary > p {
+    @apply mt-4 text-sm leading-6 text-muted;
+  }
+
   .lab-story-section {
     @apply bg-surface py-14 sm:py-18;
   }

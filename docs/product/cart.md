@@ -11,6 +11,8 @@ O carrinho permite que visitantes anonimos escolham produtos e quantidades antes
 - `POST /carrinho/itens/{id}/quantidade` atualiza quantidade e redireciona com 303.
 - `POST /carrinho/itens/{id}/remover` remove item de forma idempotente na experiencia publica e redireciona com 303.
 - O detalhe de produto envia formulario real de adicionar com `product_slug`, `variant_slug` opcional e `quantity`.
+- Carrinho com itens disponiveis mostra CTA real para `/checkout/dados`.
+- Carrinho com item indisponivel nao permite continuar para dados ate revisao/remocao.
 - Produto com variantes ativas exige variante valida.
 - Produto sem variantes ativas pode ser adicionado com `variant_id = null`.
 - Quantidade valida: `1..99`.
@@ -133,7 +135,6 @@ Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras
 ## Limites
 
 - Nao ha login.
-- Nao ha checkout.
 - Nao ha frete.
 - Nao ha pedido.
 - Nao ha pagamento.

@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao e carrinho IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho e dados de checkout IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts` e `public.cart_items`.
-- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao e o carrinho anonimo.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details` e `public.cart_shipping_addresses`.
+- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo e os dados temporarios de checkout.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -38,6 +38,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Criar `carts` e `cart_items` para carrinho anonimo persistido server-side.
 - Persistir somente `SHA-256` do token de carrinho no banco.
 - Nao persistir preco em `cart_items`.
+- Criar `cart_customer_details` e `cart_shipping_addresses` como dados temporarios 1:1 do carrinho, sem entidade permanente de cliente nesta fase.
+- Salvar contato e endereco em transacao e remover por `ON DELETE CASCADE` quando o carrinho for removido.
 
 ## Runtime de conexao
 
@@ -80,7 +82,9 @@ Pool padrao por instancia:
 - `carts` guarda `token_hash`, timestamps e `expires_at`.
 - `cart_items` guarda produto, variante opcional e quantidade `1..99`.
 - Indices unique parciais impedem linhas duplicadas por produto sem variante e produto com variante.
-- RLS esta habilitado em `carts` e `cart_items` sem policies publicas.
+- `cart_customer_details` guarda nome, e-mail, telefone e CPF normalizados para a etapa de dados.
+- `cart_shipping_addresses` guarda endereco brasileiro normalizado para frete futuro.
+- RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details` e `cart_shipping_addresses` sem policies publicas.
 
 ## Convencoes de schema futuras
 
@@ -100,7 +104,7 @@ Valores financeiros futuros nao devem usar `float32` ou `float64` como represent
 
 O preco-base de produto foi implementado em `products.price_cents`. Variantes podem sobrescrever esse valor com `product_variants.price_cents`; `null` significa fallback para o preco-base, enquanto `0` e override explicito.
 
-Carrinho calcula subtotal atual em leitura. Frete, descontos, total final, pedidos e pagamentos continuam planejados.
+Carrinho calcula subtotal atual em leitura. Dados de contato/endereco pertencem ao carrinho e nao congelam pedido. Frete, descontos, total final, pedidos e pagamentos continuam planejados.
 
 ## Producao 3D
 
@@ -123,7 +127,7 @@ Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purch
 
 ## IDs
 
-`categories`, `products`, `product_variants`, `carts` e `cart_items` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories`, `products`, `product_variants`, `carts` e `cart_items` usam UUID. `cart_customer_details` e `cart_shipping_addresses` usam `cart_id` como chave primaria por serem relacoes 1:1 com carrinho. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
 ## RLS e Data API
 
@@ -145,6 +149,7 @@ RLS continua util como camada complementar futura, mas regras financeiras nunca 
 - Criar ou alterar tabelas manualmente em producao sem registro.
 - Versionar credenciais de banco.
 - Permitir que o navegador escreva diretamente em tabelas sensiveis.
+- Criar indice ou unique em CPF sem necessidade aprovada.
 - Gerar schema antes de aprovacao das entidades e regras.
 - Executar reset remoto automatico.
 - Aplicar seed automaticamente no workflow de migrations.

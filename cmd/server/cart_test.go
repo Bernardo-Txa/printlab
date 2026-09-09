@@ -230,7 +230,7 @@ func newTestHandlerWithCart(t *testing.T, service cartService, cookies *cartdoma
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServices(db, nil, service, cookies, siteURL)
+	return newHandlerWithServices(db, nil, service, nil, cookies, siteURL)
 }
 
 type fakeCartService struct {
@@ -258,6 +258,22 @@ func (s *fakeCartService) View(_ context.Context, _ []byte) (cartdomain.CartView
 	}
 
 	return s.view, nil
+}
+
+func (s *fakeCartService) CheckoutCart(_ context.Context, _ []byte) (cartdomain.Cart, cartdomain.CartView, error) {
+	if s.viewErr != nil {
+		return cartdomain.Cart{}, cartdomain.CartView{}, s.viewErr
+	}
+
+	return s.cart, s.view, nil
+}
+
+func (s *fakeCartService) Renew(_ context.Context, _ string) (cartdomain.Cart, error) {
+	if s.cart.ID == "" {
+		s.cart = cartdomain.Cart{ID: "cart-1", ExpiresAt: time.Now().Add(cartdomain.TTL)}
+	}
+
+	return s.cart, nil
 }
 
 func (s *fakeCartService) Add(_ context.Context, _ []byte, input cartdomain.AddItemInput) (cartdomain.Cart, error) {

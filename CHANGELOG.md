@@ -39,6 +39,11 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Rotas `GET /carrinho`, `POST /carrinho/adicionar`, `POST /carrinho/itens/{id}/quantidade` e `POST /carrinho/itens/{id}/remover`.
 - Formulario real de adicionar ao carrinho no detalhe de produto, sem campos de preco enviados pelo frontend.
 - Testes de carrinho para token, cookie, service, disponibilidade, subtotal, overflow, escopo de item e handlers HTTP.
+- Fase 7 — Dados do Cliente e Endereco, com contato e endereco vinculados ao carrinho anonimo.
+- Migration `create_cart_customer_details` para `public.cart_customer_details` e `public.cart_shipping_addresses`.
+- Validacoes brasileiras de CPF, telefone, CEP, UF e pais `BR`, sem dependencia externa.
+- Rotas `GET /checkout/dados` e `POST /checkout/dados` para salvar dados temporarios de checkout em transacao.
+- Testes de dados de checkout para validacao, normalizacao, service, handlers, migration e transacao.
 
 ### Changed
 
@@ -60,3 +65,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - `materials.is_active` e `colors.is_active` agora documentam somente a oferta para novas escolhas futuras, sem alterar receitas existentes.
 - Navegacao principal atualizada com link real para `/carrinho`.
 - Carrinho recalcula preco atual e subtotal no backend, preservando itens indisponiveis sem inclui-los no subtotal.
+- Carrinho com itens disponiveis passa a apontar para a etapa real de dados em `/checkout/dados`.

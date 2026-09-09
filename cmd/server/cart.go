@@ -16,6 +16,8 @@ import (
 
 type cartService interface {
 	View(ctx context.Context, tokenHash []byte) (cartdomain.CartView, error)
+	CheckoutCart(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, error)
+	Renew(ctx context.Context, cartID string) (cartdomain.Cart, error)
 	Add(ctx context.Context, tokenHash []byte, input cartdomain.AddItemInput) (cartdomain.Cart, error)
 	UpdateQuantity(ctx context.Context, tokenHash []byte, itemID string, quantity int) (*cartdomain.Cart, error)
 	RemoveItem(ctx context.Context, tokenHash []byte, itemID string) (*cartdomain.Cart, error)

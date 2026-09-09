@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes e carrinho IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho e dados de checkout IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -91,13 +91,28 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Requests cross-site com origem conhecida e incompatibil devem ser rejeitados.
 - Checkout futuro devera revalidar todos os itens antes de criar pedido.
 
+## Dados pessoais de checkout
+
+- A etapa `GET/POST /checkout/dados` coleta somente dados necessarios para compra, entrega e contato relacionado ao pedido.
+- Dados de contato e endereco pertencem ao carrinho anonimo atual.
+- Nao ha conta, senha, username, data de nascimento, genero, newsletter ou marketing consent nesta fase.
+- CPF e necessario para documentacao futura de envio/DC-e, mas nao e identificador publico e nao possui indice ou unique.
+- CPF e CEP sao armazenados como digitos ASCII normalizados.
+- Telefone brasileiro e armazenado em formato canonico E.164.
+- E-mail e normalizado com trim e lowercase para uso operacional atual.
+- Contato e endereco sao persistidos em transacao para evitar estado parcial.
+- Erros publicos devem ser genericos e nao conter CPF, e-mail completo, telefone, endereco, token de carrinho ou detalhes PostgreSQL.
+- Logs nao devem registrar CPF, e-mail completo, telefone, endereco, token de carrinho, `DATABASE_URL` ou connection strings.
+- Dados temporarios sao removidos por `ON DELETE CASCADE` quando o carrinho for removido.
+- Limpeza programada de carrinhos expirados e PII associada e requisito obrigatorio antes do go-live comercial.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens e carrinho.
+- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho e dados temporarios de checkout.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
 

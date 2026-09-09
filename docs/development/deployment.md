@@ -53,6 +53,7 @@ Supabase de desenvolvimento
 - Catalogo publico depende do PostgreSQL e retorna indisponibilidade generica quando o banco ou schema nao estiverem acessiveis.
 - Variantes e imagens de catalogo dependem do PostgreSQL e do bucket `product-images`.
 - Carrinho anonimo depende do PostgreSQL para persistencia e usa cookie host-only `printlab_cart`.
+- Dados de checkout dependem do carrinho e do PostgreSQL, sem criar conta permanente de cliente.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -108,7 +109,7 @@ O workflow nao usa `--include-seed`, nao executa reset remoto e nao deve imprimi
 
 Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Antes da operacao comercial sera necessario separar development/staging e production, com politica de aprovacao propria para producao.
 
-A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. A Fase 6 cria `create_carts`, com `carts` e `cart_items`. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo ou carrinho.
+A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. A Fase 6 cria `create_carts`, com `carts` e `cart_items`. A Fase 7 cria `create_cart_customer_details`, com contato e endereco temporarios por carrinho. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo, carrinho ou PII.
 
 ## Runtime PostgreSQL
 
@@ -176,6 +177,14 @@ curl -i https://printlab-pied.vercel.app/carrinho
 
 Sem cookie, a resposta esperada e HTTP 200 com carrinho vazio. Nao inserir produto, variante, carrinho ou item ficticio apenas para validar POST remoto.
 
+Depois da Fase 7, validar tambem:
+
+```sh
+curl -i https://printlab-pied.vercel.app/checkout/dados
+```
+
+Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao criar carrinho/produto fake nem enviar PII ficticia em ambiente remoto apenas para testar checkout.
+
 ## Vercel
 
 `vercel.json` contem apenas:
@@ -203,6 +212,7 @@ Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker custo
 - Revisar observabilidade.
 - Revisar backups.
 - Revisar seguranca.
+- Implementar limpeza programada de carrinhos expirados e PII associada.
 
 ## Praticas proibidas
 

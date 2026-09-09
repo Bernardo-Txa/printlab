@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes e carrinho IMPLEMENTADA.
+Status: fundacao visual, banco, catalogo, variantes, carrinho e dados de checkout IMPLEMENTADA.
 
 ## Requisitos
 
@@ -27,7 +27,7 @@ Variaveis de runtime:
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
 - `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada somente para montar URLs publicas de imagens do bucket `product-images`.
 
-Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel e `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie.
+Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e `/checkout/dados` redireciona para `/carrinho` sem carrinho valido.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
@@ -148,6 +148,16 @@ curl -i \
 
 Nao inserir produto, variante, carrinho ou item ficticio apenas para validar UI local. Use dados reais de desenvolvimento quando existirem.
 
+## Validar dados de checkout
+
+Com `DATABASE_URL` configurada, migrations aplicadas e um carrinho real com itens disponiveis:
+
+```sh
+curl -i http://localhost:8080/checkout/dados
+```
+
+Sem carrinho valido, a resposta esperada e redirect para `/carrinho`. Nao inserir PII ficticia em migration nem criar carrinho/produto falso apenas para validar a rota. O formulario aceita preenchimento manual de contato e endereco, sem ViaCEP, BrasilAPI, Google Maps ou autocomplete externo.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -177,6 +187,8 @@ A primeira migration real e `create_catalog`, criando `categories` e `products` 
 A segunda migration real e `create_product_variants`, criando `materials`, `colors`, `product_variants`, `variant_filaments`, `product_images` e o bucket publico `product-images`. Ela nao insere produtos, materiais, cores, variantes ou imagens ficticias.
 
 A terceira migration real e `create_carts`, criando `carts` e `cart_items`. Ela nao insere carrinhos, itens ou dados ficticios.
+
+A quarta migration real e `create_cart_customer_details`, criando `cart_customer_details` e `cart_shipping_addresses`. Ela nao insere contato, endereco, CPF, PII ou dados ficticios.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 

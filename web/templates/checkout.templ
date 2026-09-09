@@ -1,0 +1,120 @@
+package templates
+
+import (
+	"strconv"
+
+	"github.com/Bernardo-Txa/printlab/internal/customers"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ CheckoutDetails(page customers.CheckoutPage) {
+	@components.Layout("Dados | PrintLab", "Dados de contato e entrega para compra na PrintLab.", "") {
+		<section class="checkout-section">
+			@components.Container() {
+				<div class="checkout-heading">
+					<p class="brand-kicker">Checkout</p>
+					<h1>Etapa 1 - Seus dados</h1>
+					<p>Usamos estes dados somente para preparar sua compra, entrega e contato relacionado ao pedido.</p>
+				</div>
+				<div class="checkout-stepper" aria-label="Etapas do checkout">
+					<span class="checkout-step checkout-step-active">1 Dados</span>
+					<span class="checkout-step">2 Frete</span>
+					<span class="checkout-step">3 Revisao</span>
+					<span class="checkout-step">4 Pagamento</span>
+				</div>
+				if page.Form.Saved {
+					<p class="checkout-alert checkout-alert-success">Dados salvos. O frete sera escolhido na proxima etapa.</p>
+				}
+				if page.Form.HasErrors() {
+					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
+				}
+				<div class="checkout-layout">
+					<form class="checkout-form" method="post" action="/checkout/dados">
+						<input type="hidden" name="country_code" value="BR"/>
+						<section class="checkout-form-section" aria-labelledby="checkout-contact">
+							<h2 id="checkout-contact">Contato</h2>
+							<div class="checkout-fields">
+								@CheckoutField("full_name", "Nome completo", "text", "name", "", page.Form.Values.FullName, page.Form.Errors.Message("full_name"), false)
+								@CheckoutField("email", "E-mail", "email", "email", "", page.Form.Values.Email, page.Form.Errors.Message("email"), false)
+								@CheckoutField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), false)
+								@CheckoutFieldWithHelp("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessario para a documentacao do envio.", false)
+							</div>
+						</section>
+						<section class="checkout-form-section" aria-labelledby="checkout-shipping">
+							<h2 id="checkout-shipping">Entrega</h2>
+							<div class="checkout-fields">
+								@CheckoutField("postal_code", "CEP", "text", "postal-code", "numeric", page.Form.Values.PostalCode, page.Form.Errors.Message("postal_code"), false)
+								@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", page.Form.Values.Street, page.Form.Errors.Message("street"), false)
+								@CheckoutField("number", "Numero", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false)
+								@CheckoutField("complement", "Complemento", "text", "address-line3", "", page.Form.Values.Complement, page.Form.Errors.Message("complement"), true)
+								@CheckoutField("district", "Bairro", "text", "address-level3", "", page.Form.Values.District, page.Form.Errors.Message("district"), false)
+								@CheckoutField("city", "Cidade", "text", "address-level2", "", page.Form.Values.City, page.Form.Errors.Message("city"), false)
+								@CheckoutField("state", "UF", "text", "address-level1", "", page.Form.Values.State, page.Form.Errors.Message("state"), false)
+							</div>
+						</section>
+						<div class="checkout-form-actions">
+							<button class="btn-base btn-primary" type="submit">Salvar dados</button>
+							<a class="btn-base btn-secondary" href="/carrinho">Voltar ao carrinho</a>
+						</div>
+					</form>
+					<aside class="checkout-summary" aria-label="Resumo do carrinho">
+						<h2>Resumo do carrinho</h2>
+						<div class="checkout-summary-lines">
+							for _, line := range page.Cart.Lines {
+								if line.Available {
+									<div class="checkout-summary-line">
+										<div>
+											<strong>{ line.ProductName }</strong>
+											if line.HasVariant {
+												<span>{ line.VariantName }</span>
+											}
+											<span>Quantidade: { strconv.Itoa(line.Quantity) }</span>
+										</div>
+										<p>{ line.SubtotalBRL }</p>
+									</div>
+								}
+							}
+						</div>
+						<div class="checkout-summary-total">
+							<span>Total atual dos produtos</span>
+							<strong>{ page.Cart.SubtotalBRL }</strong>
+						</div>
+						<p>Frete sera calculado na proxima etapa.</p>
+					</aside>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ CheckoutField(id string, label string, inputType string, autocomplete string, inputMode string, value string, message string, optional bool) {
+	@CheckoutFieldWithHelp(id, label, inputType, autocomplete, inputMode, value, message, "", optional)
+}
+
+templ CheckoutFieldWithHelp(id string, label string, inputType string, autocomplete string, inputMode string, value string, message string, help string, optional bool) {
+	<div class="checkout-field">
+		<label for={ id }>
+			{ label }
+			if optional {
+				<span>Opcional</span>
+			}
+		</label>
+		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional }/>
+		if help != "" {
+			<p class="checkout-field-help">{ help }</p>
+		}
+		if message != "" {
+			<p class="checkout-field-error">{ message }</p>
+		}
+	</div>
+}
+
+templ CheckoutDetailsUnavailable() {
+	@components.Layout("Dados indisponiveis | PrintLab", "Dados de checkout temporariamente indisponiveis.", "") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Dados temporariamente indisponiveis.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}

@@ -72,7 +72,11 @@ templ CartPage(view cartdomain.CartView) {
 								<p class="cart-summary-alert">Itens indisponiveis permanecem no carrinho para revisao, mas nao entram no subtotal.</p>
 							}
 							<p class="cart-summary-note">Frete sera calculado posteriormente no checkout.</p>
-							<span class="cart-checkout-soon">Checkout em breve</span>
+							if view.HasUnavailableItems {
+								<span class="cart-checkout-soon">Remova ou ajuste os itens indisponiveis para continuar.</span>
+							} else {
+								<a class="btn-base btn-primary" href="/checkout/dados">Continuar para os dados</a>
+							}
 							<a class="btn-base btn-secondary" href="/produtos">Continuar comprando</a>
 						</aside>
 					</div>

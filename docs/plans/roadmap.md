@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1 e 6 concluidas. Fases 7 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6 e 7 concluidas. Fases 8 a 17 planejadas.
 
 ## Status das fases
 
@@ -16,7 +16,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1 e 6 concluidas. Fases 7 a 17 plane
 | Fase 5 — Produtos e variantes | Concluida |
 | Fase 5.1 — Semantica da receita de producao | Concluida |
 | Fase 6 — Carrinho | Concluida |
-| Fase 7 — Dados do cliente e endereco | Planejada |
+| Fase 7 — Dados do cliente e endereco | Concluida |
 | Fase 8 — Integracao SuperFrete | Planejada |
 | Fase 9 — Pedidos | Planejada |
 | Fase 10 — Integracao InfinitePay | Planejada |
@@ -244,8 +244,8 @@ Definition of Done:
 - Estados de carrinho vazio, invalido e indisponivel documentados.
 - Migration `create_carts` criada.
 - RLS habilitado sem policies publicas.
-- Sem checkout implementado fora de escopo.
-- Fase 7 permanece planejada.
+- Sem checkout implementado dentro da Fase 6.
+- Fase 7 permaneceu planejada ao final da Fase 6.
 
 ## Fase 7 — Dados do cliente e endereco
 
@@ -253,10 +253,12 @@ Objetivo: coletar dados necessarios para entrega e contato.
 
 Principais entregas:
 
-- Modelo de cliente.
-- Modelo de endereco.
-- Formularios server-side.
-- Validacoes basicas.
+- Dados temporarios de contato vinculados ao carrinho.
+- Endereco de entrega vinculado ao carrinho.
+- Formularios server-side em `GET /checkout/dados`.
+- Persistencia transacional em `POST /checkout/dados`.
+- Validacoes brasileiras de CPF, telefone, CEP, UF e pais.
+- Minimizacao de PII, sem conta obrigatoria e sem cliente permanente.
 
 Dependencias: Fases 3 e 6.
 
@@ -266,6 +268,9 @@ Definition of Done:
 - Validacoes server-side implementadas.
 - Tratamento de erro documentado.
 - Privacidade e seguranca revisadas.
+- Migration `create_cart_customer_details` criada.
+- RLS habilitado sem policies publicas.
+- Fase 8 permanece planejada.
 
 ## Fase 8 — Integracao SuperFrete
 

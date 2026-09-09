@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho e Storage de catalogo IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout e Storage de catalogo IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -34,6 +34,7 @@ Supabase PostgreSQL
 - A primeira migration de negocio cria `categories` e `products`, sem seed ficticio.
 - A segunda migration de negocio cria materiais, cores, variantes, receita estimada de producao, imagens e o bucket `product-images`, sem seed ficticio.
 - A terceira migration de negocio cria `carts` e `cart_items`, sem seed ficticio.
+- A quarta migration de negocio cria `cart_customer_details` e `cart_shipping_addresses`, sem seed ficticio e sem PII.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
 
 ## Variaveis previstas
@@ -133,6 +134,20 @@ O carrinho anonimo usa PostgreSQL via backend Go. O frontend nao acessa `carts` 
 
 A migration `20260909194855_create_carts.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere carrinhos ou itens ficticios.
 
+## Dados de checkout
+
+Dados temporarios de checkout usam PostgreSQL via backend Go. O frontend nao acessa `cart_customer_details` ou `cart_shipping_addresses` diretamente.
+
+- `cart_customer_details` e `cart_shipping_addresses` ficam no schema `public`.
+- Cada tabela usa `cart_id` como chave primaria e FK para `carts`.
+- RLS fica habilitado sem policies publicas.
+- CPF e CEP sao armazenados normalizados.
+- Telefone e armazenado em formato canonico brasileiro.
+- Contato e endereco sao salvos em transacao.
+- Remocao do carrinho remove os dados por `ON DELETE CASCADE`.
+
+A migration `20260909203845_create_cart_customer_details.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere contato, endereco, CPF, PII ou dados ficticios.
+
 ## Storage
 
 PostgreSQL armazena dados estruturados. Supabase Storage armazena arquivos publicos de imagem do catalogo.
@@ -186,4 +201,5 @@ supabase/
 - Aplicar seed automaticamente em deploy de migrations.
 - Fazer `supabase login`, `supabase link` ou `supabase db push` manual como workflow normal de desenvolvimento.
 - Inserir seed ou produto ficticio apenas para validar deploy.
+- Inserir PII ficticia ou real em migrations.
 - Criar policy publica de escrita em `storage.objects`.

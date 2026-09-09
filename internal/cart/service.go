@@ -55,29 +55,21 @@ func NewService(repository Repository, options ...ServiceOption) *Service {
 }
 
 func (s *Service) View(ctx context.Context, tokenHash []byte) (CartView, error) {
-	if s == nil || s.repository == nil {
-		return CartView{}, ErrUnavailable
-	}
-
-	if !validHash(tokenHash) {
-		return EmptyView(), nil
-	}
-
-	activeCart, err := s.repository.FindActiveCart(ctx, tokenHash, s.now())
+	_, view, err := s.CheckoutCart(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return EmptyView(), nil
 		}
+		if errors.Is(err, ErrInvalidToken) {
+			return EmptyView(), nil
+		}
+		if errors.Is(err, ErrAmountOverflow) {
+			return CartView{}, ErrAmountOverflow
+		}
 
 		return CartView{}, ErrUnavailable
 	}
-
-	items, err := s.repository.ListItems(ctx, activeCart.ID)
-	if err != nil {
-		return CartView{}, ErrUnavailable
-	}
-
-	return s.prepareView(items)
+	return view, nil
 }
 
 func (s *Service) Add(ctx context.Context, tokenHash []byte, input AddItemInput) (Cart, error) {
@@ -218,6 +210,41 @@ func (s *Service) RemoveItem(ctx context.Context, tokenHash []byte, itemID strin
 	}
 
 	return &renewed, nil
+}
+
+func (s *Service) CheckoutCart(ctx context.Context, tokenHash []byte) (Cart, CartView, error) {
+	if s == nil || s.repository == nil {
+		return Cart{}, CartView{}, ErrUnavailable
+	}
+
+	if !validHash(tokenHash) {
+		return Cart{}, CartView{}, ErrInvalidToken
+	}
+
+	activeCart, err := s.repository.FindActiveCart(ctx, tokenHash, s.now())
+	if err != nil {
+		return Cart{}, CartView{}, err
+	}
+
+	items, err := s.repository.ListItems(ctx, activeCart.ID)
+	if err != nil {
+		return Cart{}, CartView{}, err
+	}
+
+	view, err := s.prepareView(items)
+	if err != nil {
+		return Cart{}, CartView{}, err
+	}
+
+	return activeCart, view, nil
+}
+
+func (s *Service) Renew(ctx context.Context, cartID string) (Cart, error) {
+	if s == nil || s.repository == nil {
+		return Cart{}, ErrUnavailable
+	}
+
+	return s.repository.RenewCart(ctx, cartID, s.now().Add(TTL))
 }
 
 func (s *Service) prepareView(items []StoredItem) (CartView, error) {

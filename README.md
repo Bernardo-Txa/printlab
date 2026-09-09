@@ -19,6 +19,7 @@ IMPLEMENTADO:
 - Pagina publica de produto em `GET /produtos/{slug}`.
 - Carrinho anonimo SSR em `GET /carrinho`.
 - Mutacoes de carrinho por POST para adicionar, atualizar quantidade e remover item.
+- Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, com contato e endereco vinculados ao carrinho.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -34,12 +35,12 @@ IMPLEMENTADO:
 - Primeiro schema de negocio com `categories` e `products`.
 - Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada, imagens e bucket publico de catalogo.
 - Fase 6 — Carrinho, com persistencia PostgreSQL, token opaco em cookie e subtotal recalculado no backend.
+- Fase 7 — Dados do Cliente e Endereco, com PII minimizada, validacoes brasileiras e persistencia transacional por carrinho.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Checkout sem obrigatoriedade de conta.
-- Enderecos, frete e integracao com SuperFrete.
+- Frete e integracao com SuperFrete.
 - Pedidos, pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
@@ -75,6 +76,7 @@ Frontend implementado:
 - Galeria SSR simples com imagem publica de produto/variante quando existir.
 - Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
+- Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo e sem JavaScript obrigatorio.
 
 Banco planejado:
 
@@ -103,7 +105,10 @@ Banco implementado:
 - `carts.token_hash` armazena `SHA-256` do token de cookie.
 - `cart_items.quantity` e limitado a `1..99`.
 - Subtotais do carrinho sao recalculados a partir do preco atual de produto/variante.
-- RLS esta habilitado nas tabelas de catalogo, variantes e carrinho sem policies publicas do Data API.
+- `cart_customer_details` e `cart_shipping_addresses` persistem contato e endereco do checkout vinculados ao carrinho anonimo.
+- CPF e CEP sao armazenados como digitos ASCII normalizados; telefone e armazenado em formato canonico brasileiro E.164.
+- Dados de contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
+- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho e dados temporarios de checkout sem policies publicas do Data API.
 
 Infraestrutura planejada:
 
@@ -255,6 +260,14 @@ curl -i http://localhost:8080/carrinho
 
 Sem cookie, a resposta esperada e HTTP 200 com carrinho vazio. Com banco configurado e cookie valido, a pagina lista itens persistidos. Mutacoes usam forms POST e redirecionam com HTTP 303 para `/carrinho`.
 
+Dados de checkout:
+
+```sh
+curl -i http://localhost:8080/checkout/dados
+```
+
+Sem carrinho valido com itens disponiveis, a resposta redireciona para `/carrinho`. Com carrinho valido, a rota renderiza formulario SSR de contato e endereco. O POST salva dados normalizados do carrinho atual e redireciona para `/checkout/dados?salvo=1`; frete, pedido e pagamento continuam planejados.
+
 ## Supabase local
 
 A CLI do Supabase esta instalada como devDependency:
@@ -292,6 +305,7 @@ internal/config/         leitura e validacao de configuracao
 internal/database/       pool PostgreSQL via pgxpool
 internal/products/       catalogo, service e repository PostgreSQL
 internal/cart/           carrinho anonimo, token, service e repository PostgreSQL
+internal/customers/      dados temporarios de checkout, validacao e repository PostgreSQL
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
