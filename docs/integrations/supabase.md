@@ -116,6 +116,8 @@ O catalogo publico usa o PostgreSQL do Supabase via backend Go e `pgxpool`.
 
 A migration `20260909153625_create_catalog.sql` foi aplicada ao Supabase DEV pelo workflow `Supabase Migrations` no run `34372918466`, com dry-run antes da aplicacao.
 
+A migration `20260909162227_create_product_variants.sql` foi aplicada ao Supabase DEV pelo workflow `Supabase Migrations` no run `34378986883`, com dry-run antes da aplicacao. O bucket `product-images` foi configurado pela migration, sem policy publica de upload.
+
 ## Storage
 
 PostgreSQL armazena dados estruturados. Supabase Storage armazena arquivos publicos de imagem do catalogo.

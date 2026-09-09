@@ -1,6 +1,6 @@
 # Fase 5 — Produtos, Variantes e Producao
 
-Status: ATIVA.
+Status: CONCLUIDA.
 
 ## Contexto
 
@@ -80,6 +80,46 @@ O upload permanece futuro. Nenhuma policy de `INSERT`, `UPDATE` ou `DELETE` publ
 - Selecao de variante default, primeira ativa, explicita valida, inexistente, inativa, de outro produto e produto sem variantes.
 - Fallback de imagem: variante, produto e placeholder.
 - Handlers de catalogo e produto preservados.
+
+## Validacoes executadas
+
+- `templ generate` passou.
+- `npm run css:build` passou.
+- `gofmt -w .` passou.
+- `go mod tidy` passou.
+- `go test ./...` passou.
+- `go vet ./...` passou.
+- `go build ./...` passou.
+- `npx supabase --version` retornou `2.117.0`.
+- `npx supabase db reset` aplicou `20260909153625_create_catalog.sql` e `20260909162227_create_product_variants.sql` localmente.
+- Supabase local confirmou:
+  - tabelas `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images`;
+  - RLS habilitado nas novas tabelas;
+  - constraints e indices criados;
+  - bucket `product-images` publico, com limite de 5 MB e MIME types de imagem;
+  - nenhuma policy publica criada para as novas tabelas ou `storage.objects`;
+  - nenhuma linha persistida em produtos, variantes, materiais, cores ou imagens.
+- Aplicacao local com banco vazio retornou:
+  - `GET /`: HTTP 200.
+  - `GET /health`: HTTP 200 com body `ok`.
+  - `GET /ready`: HTTP 200 com body `ok`.
+  - `GET /produtos`: HTTP 200 com empty state.
+  - `GET /produtos/nao-existe`: HTTP 404.
+  - `GET /static/css/app.css`: HTTP 200.
+- GitHub Actions `Supabase Migrations` run `34378986883` passou apos push:
+  - checagem de secrets;
+  - `supabase link`;
+  - `supabase db push --dry-run`;
+  - `supabase db push`.
+- Vercel publico em `https://printlab-pied.vercel.app` retornou:
+  - `GET /`: HTTP 200.
+  - `GET /health`: HTTP 200 com body `ok`.
+  - `GET /ready`: HTTP 200 com body `ok`.
+  - `GET /produtos`: HTTP 200 com empty state.
+  - `GET /static/css/app.css`: HTTP 200.
+- Nenhum secret real foi identificado no diff.
+- Nenhum seed ou produto ficticio foi criado.
+- Nenhuma imagem real foi validada remotamente porque nao ha `product_images` cadastradas.
 
 ## Definition of Done
 

@@ -47,3 +47,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration de catalogo aplicada ao Supabase DEV e `/produtos` validado na Vercel com empty state.
 - Catalogo e detalhe de produto atualizados para exibir menor preco efetivo, texto "A partir de", galeria SSR e imagem de produto/variante quando existir.
 - `supabase/config.toml` passou a habilitar Storage local para validacao do bucket de imagens de catalogo.
+- Migration de variantes/producao aplicada ao Supabase DEV e `/produtos` validado na Vercel com catalogo vazio.

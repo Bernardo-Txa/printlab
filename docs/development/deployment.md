@@ -151,6 +151,19 @@ curl -i https://printlab-pied.vercel.app/produtos
 
 O catalogo remoto pode continuar vazio. Nao inserir produto, variante ou imagem ficticia apenas para testar UI de variante em producao/desenvolvimento remoto.
 
+Na validacao remota da Fase 5, foram validados:
+
+- GitHub Actions `Supabase Migrations` run `34378986883`: sucesso.
+- `supabase db push --dry-run`: sucesso.
+- `supabase db push`: sucesso.
+- `GET /`: HTTP 200.
+- `GET /health`: HTTP 200 com body `ok`.
+- `GET /ready`: HTTP 200 com body `ok`.
+- `GET /produtos`: HTTP 200 com empty state.
+- `GET /static/css/app.css`: HTTP 200.
+
+Schema e bucket foram implementados. Imagem real de produto nao foi validada remotamente porque nao ha `product_images` cadastradas.
+
 ## Vercel
 
 `vercel.json` contem apenas:
