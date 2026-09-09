@@ -132,14 +132,12 @@ Secrets de runtime no ambiente de hosting:
 
 Na validacao final da Fase 3.1, a URL publica retornou HTTP 200 em `/ready`, confirmando a conexao runtime com o Supabase Transaction Pooler sem expor detalhes internos.
 
-Depois da Fase 4, validar tambem:
+Na validacao remota da Fase 4, tambem foram validados:
 
-```sh
-curl -i https://printlab-pied.vercel.app/produtos
-curl -i https://printlab-pied.vercel.app/produtos/nao-existe
-```
+- `GET /produtos`: HTTP 200 com empty state.
+- `GET /produtos/nao-existe`: HTTP 404.
 
-O catalogo pode estar vazio e ainda assim responder HTTP 200. Produto inexistente deve responder HTTP 404.
+O catalogo pode estar vazio e ainda assim responder HTTP 200. Produto inexistente responde HTTP 404.
 
 ## Vercel
 

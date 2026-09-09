@@ -106,6 +106,8 @@ O catalogo publico usa o PostgreSQL do Supabase via backend Go e `pgxpool`.
 - O Data API nao e a interface primaria do catalogo.
 - Imagens de produto e Supabase Storage continuam planejados.
 
+A migration `20260909153625_create_catalog.sql` foi aplicada ao Supabase DEV pelo workflow `Supabase Migrations` no run `34372918466`, com dry-run antes da aplicacao.
+
 ## Estrutura local
 
 ```text

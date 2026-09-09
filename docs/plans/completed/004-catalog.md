@@ -1,6 +1,6 @@
 # Fase 4 — Catalogo
 
-Status: ATIVA.
+Status: CONCLUIDA.
 
 ## Contexto
 
@@ -99,6 +99,37 @@ Implementar catalogo publico server-side com categorias, produtos basicos, lista
 - Formatacao BRL cobre centavos e milhares sem `float`.
 - Service valida slug e formata preco.
 
+## Validacoes executadas
+
+- `templ generate` passou.
+- `npm run css:build` passou.
+- `gofmt -w .` passou.
+- `go mod tidy` passou.
+- `go test ./...` passou.
+- `go vet ./...` passou.
+- `go build ./...` passou.
+- `npx supabase --version` retornou `2.117.0`.
+- `npx supabase start` aplicou a migration localmente.
+- `npx supabase db reset` aplicou `20260909153625_create_catalog.sql` localmente.
+- Aplicacao local com banco vazio retornou:
+  - `GET /`: HTTP 200.
+  - `GET /health`: HTTP 200 com body `ok`.
+  - `GET /ready`: HTTP 200 com body `ok`.
+  - `GET /produtos`: HTTP 200 com empty state.
+  - `GET /produtos/nao-existe`: HTTP 404.
+  - `GET /static/css/app.css`: HTTP 200.
+- GitHub Actions `Supabase Migrations` run `34372918466` passou apos push:
+  - checagem de secrets;
+  - `supabase link`;
+  - `supabase db push --dry-run`;
+  - `supabase db push`.
+- Vercel publico em `https://printlab-pied.vercel.app` retornou:
+  - `GET /`: HTTP 200.
+  - `GET /health`: HTTP 200 com body `ok`.
+  - `GET /ready`: HTTP 200 com body `ok`.
+  - `GET /produtos`: HTTP 200 com empty state.
+  - `GET /produtos/nao-existe`: HTTP 404.
+
 ## Definition of Done
 
 - `templ generate` executado.
@@ -109,9 +140,9 @@ Implementar catalogo publico server-side com categorias, produtos basicos, lista
 - `go vet ./...` passa.
 - `go build ./...` passa.
 - `npx supabase --version` passa.
-- Migration validada localmente quando ambiente permitir.
+- Migration validada localmente com Supabase local.
 - Migration aplicada ao Supabase DEV pelo workflow apos push.
-- Vercel valida `/`, `/health`, `/ready`, `/produtos` e `/produtos/nao-existe`.
+- Vercel validada em `/`, `/health`, `/ready`, `/produtos` e `/produtos/nao-existe`.
 - Nenhum secret versionado.
 - Nenhum seed ou produto ficticio criado.
 - Fase 5 permanece planejada.

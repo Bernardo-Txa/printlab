@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fase 4 ativa. Fases 5 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1 e 4 concluidas. Fases 5 a 17 planejadas.
 
 ## Status das fases
 
@@ -12,7 +12,7 @@ Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fase 4 ativa. Fases 5 a 17 plane
 | Fase 2.1 — Brand Experience | Concluida |
 | Fase 3 — Banco de dados | Concluida |
 | Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Concluida |
-| Fase 4 — Catalogo | Ativa |
+| Fase 4 — Catalogo | Concluida |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
 | Fase 7 — Dados do cliente e endereco | Planejada |

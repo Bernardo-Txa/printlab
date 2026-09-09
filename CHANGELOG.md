@@ -38,3 +38,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - GitHub Actions -> Supabase DEV validado por `workflow_dispatch` sem migration de negocio.
 - `/ready` remoto validado com HTTP 200 apos configuracao segura de `DATABASE_URL` e `DB_MAX_CONNS` na Vercel.
 - Navegacao principal atualizada com link real para `/produtos`.
+- Migration de catalogo aplicada ao Supabase DEV e `/produtos` validado na Vercel com empty state.
