@@ -79,7 +79,7 @@ O navegador nao deve acessar diretamente tabelas sensiveis nem enviar valores fi
 
 O carrinho anonimo usa cookie opaco no navegador e persistencia server-side. O banco armazena somente o hash SHA-256 do token do cookie, enquanto itens armazenam produto, variante opcional e quantidade.
 
-A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side e erros genericos.
+A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side, leitura consistente, `Cache-Control: private, no-store` em respostas HTML que possam conter PII e erros genericos.
 
 ## Responsabilidades do frontend
 
@@ -145,6 +145,7 @@ A Fase 7 adiciona dados temporarios de checkout vinculados ao carrinho:
 - CPF e CEP sao armazenados apenas como digitos ASCII normalizados.
 - Telefone e armazenado em formato canonico brasileiro E.164.
 - Contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
+- Contato e endereco sao lidos por uma unica consulta SQL com `JOIN`; estados parciais anomalos sao tratados como dados ausentes.
 - Nao ha indice ou unique em CPF; uma pessoa pode ter carrinhos diferentes.
 
 Ainda nao existem tabelas de pedidos, pagamentos, frete, clientes permanentes ou admin.

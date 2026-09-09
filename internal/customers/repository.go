@@ -23,42 +23,30 @@ func (r *PostgresRepository) Get(ctx context.Context, cartID string) (CheckoutDe
 	}
 
 	var details CheckoutDetails
+	var complement pgtype.Text
 	err := r.pool.QueryRow(ctx, `
 		select
-			full_name,
-			email,
-			phone,
-			cpf
-		from public.cart_customer_details
-		where cart_id = $1::uuid
+			customer.full_name,
+			customer.email,
+			customer.phone,
+			customer.cpf,
+			address.postal_code,
+			address.street,
+			address.number,
+			address.complement,
+			address.district,
+			address.city,
+			address.state,
+			address.country_code
+		from public.cart_customer_details as customer
+		join public.cart_shipping_addresses as address
+			on address.cart_id = customer.cart_id
+		where customer.cart_id = $1::uuid
 	`, cartID).Scan(
 		&details.Customer.FullName,
 		&details.Customer.Email,
 		&details.Customer.Phone,
 		&details.Customer.CPF,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return CheckoutDetails{}, false, nil
-		}
-
-		return CheckoutDetails{}, false, err
-	}
-
-	var complement pgtype.Text
-	err = r.pool.QueryRow(ctx, `
-		select
-			postal_code,
-			street,
-			number,
-			complement,
-			district,
-			city,
-			state,
-			country_code
-		from public.cart_shipping_addresses
-		where cart_id = $1::uuid
-	`, cartID).Scan(
 		&details.Address.PostalCode,
 		&details.Address.Street,
 		&details.Address.Number,

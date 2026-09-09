@@ -101,6 +101,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Telefone brasileiro e armazenado em formato canonico E.164.
 - E-mail e normalizado com trim e lowercase para uso operacional atual.
 - Contato e endereco sao persistidos em transacao para evitar estado parcial.
+- Contato e endereco sao lidos em uma unica consulta SQL consistente; estado parcial anomalo nao e retornado como checkout valido.
+- Respostas HTML de checkout que podem conter PII usam `Cache-Control: private, no-store`.
 - Erros publicos devem ser genericos e nao conter CPF, e-mail completo, telefone, endereco, token de carrinho ou detalhes PostgreSQL.
 - Logs nao devem registrar CPF, e-mail completo, telefone, endereco, token de carrinho, `DATABASE_URL` ou connection strings.
 - Dados temporarios sao removidos por `ON DELETE CASCADE` quando o carrinho for removido.

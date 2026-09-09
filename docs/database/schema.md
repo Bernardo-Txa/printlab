@@ -446,6 +446,12 @@ RLS:
 - RLS habilitado.
 - Nenhuma policy publica criada.
 
+## Leitura operacional de dados de checkout
+
+`cart_customer_details` e `cart_shipping_addresses` devem ser lidas como uma unidade logica. O repository Go usa uma unica consulta SQL com `JOIN` por `cart_id`, evitando que duas queries separadas observem estados diferentes em requests concorrentes.
+
+Como a escrita e transacional, os dois registros devem existir juntos. Se houver estado parcial anomalo, como contato sem endereco ou endereco sem contato, a aplicacao trata como dados ausentes e nao retorna PII parcial para o formulario de checkout.
+
 ## Tabela `public.product_images`
 
 Metadados de imagens publicas de catalogo armazenadas no Supabase Storage.

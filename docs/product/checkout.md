@@ -14,6 +14,7 @@ O checkout devera transformar uma intencao de compra em pedido, com validacao se
 - Salvamento bem-sucedido renova a validade do carrinho e do cookie.
 - O formulario funciona sem JavaScript e sem busca externa de CEP.
 - Apos salvar, a aplicacao redireciona para `/checkout/dados?salvo=1`.
+- Respostas HTML que podem conter PII usam `Cache-Control: private, no-store`.
 
 ## Dados coletados
 
@@ -53,6 +54,8 @@ Nao sao coletados senha, login, data de nascimento, genero, redes sociais, profi
 Os dados desta etapa sao PII e pertencem ao carrinho anonimo atual. A PrintLab nao cria entidade permanente de cliente nesta fase.
 
 O backend nao deve logar CPF, e-mail completo, telefone, endereco ou token do carrinho. Erros publicos devem ser genericos e nao expor dados internos de PostgreSQL ou connection strings.
+
+Contato e endereco sao lidos por uma unica consulta SQL com `JOIN`, para observar um snapshot consistente do PostgreSQL. Se houver estado parcial anomalo, como contato sem endereco ou endereco sem contato, o backend trata como dados ausentes e nao preenche o formulario com PII incompleta.
 
 Quando o carrinho for removido, `ON DELETE CASCADE` remove `cart_customer_details` e `cart_shipping_addresses`. A limpeza programada de carrinhos expirados e PII associada e pendencia obrigatoria antes do go-live comercial.
 

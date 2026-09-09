@@ -46,6 +46,9 @@ func TestCheckoutDetailsGetWithCartReturnsOK(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
+	if rec.Header().Get("Cache-Control") != checkoutPrivateCacheControl {
+		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
+	}
 	body := rec.Body.String()
 	if !strings.Contains(body, "Etapa 1 - Seus dados") || !strings.Contains(body, "Resumo do carrinho") {
 		t.Fatal("expected checkout details form and cart summary")
@@ -112,6 +115,9 @@ func TestCheckoutDetailsPostInvalidCPFRerendersForm(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+	if rec.Header().Get("Cache-Control") != checkoutPrivateCacheControl {
+		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
 	if !strings.Contains(body, "Informe um CPF valido.") || !strings.Contains(body, `value="Joao Silva"`) {

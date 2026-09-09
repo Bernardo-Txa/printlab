@@ -44,6 +44,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Validacoes brasileiras de CPF, telefone, CEP, UF e pais `BR`, sem dependencia externa.
 - Rotas `GET /checkout/dados` e `POST /checkout/dados` para salvar dados temporarios de checkout em transacao.
 - Testes de dados de checkout para validacao, normalizacao, service, handlers, migration e transacao.
+- Fase 7.1 — Hardening de Privacidade e Consistencia do Checkout.
+- Testes de regressao para cache privado de checkout e estado parcial de contato/endereco.
 
 ### Changed
 
@@ -66,3 +68,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Navegacao principal atualizada com link real para `/carrinho`.
 - Carrinho recalcula preco atual e subtotal no backend, preservando itens indisponiveis sem inclui-los no subtotal.
 - Carrinho com itens disponiveis passa a apontar para a etapa real de dados em `/checkout/dados`.
+- Respostas HTML de checkout com PII passam a usar `Cache-Control: private, no-store`.
+- Leitura de contato e endereco de checkout consolidada em uma unica consulta SQL consistente.

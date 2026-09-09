@@ -11,6 +11,8 @@ import (
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
+const checkoutPrivateCacheControl = "private, no-store"
+
 type checkoutDetailsService interface {
 	Page(ctx context.Context, tokenHash []byte, saved bool) (customers.CheckoutPage, error)
 	Save(ctx context.Context, tokenHash []byte, input customers.CheckoutInput) (customers.SaveResult, error)
@@ -23,6 +25,7 @@ func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdom
 			http.Redirect(w, r, "/carrinho", http.StatusSeeOther)
 			return
 		}
+		setCheckoutPrivateCache(w)
 
 		if service == nil {
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.CheckoutDetailsUnavailable())
@@ -73,6 +76,10 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 	}
 }
 
+func setCheckoutPrivateCache(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", checkoutPrivateCacheControl)
+}
+
 func checkoutToken(cookies *cartdomain.CookieManager, r *http.Request) (string, []byte, bool) {
 	cookies = ensureCartCookies(cookies)
 	token, ok := cookies.ReadToken(r)
@@ -108,6 +115,7 @@ func checkoutInputFromRequest(r *http.Request) customers.CheckoutInput {
 func handleCheckoutDetailsError(w http.ResponseWriter, r *http.Request, err error, page customers.CheckoutPage) {
 	switch {
 	case errors.Is(err, customers.ErrInvalidDetails):
+		setCheckoutPrivateCache(w)
 		renderHTML(w, r, http.StatusBadRequest, templates.CheckoutDetails(page))
 	case errors.Is(err, customers.ErrCartRequired),
 		errors.Is(err, customers.ErrEmptyCart),

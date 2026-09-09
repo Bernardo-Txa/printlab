@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6 e 7 concluidas. Fases 8 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7 e 7.1 concluidas. Fases 8 a 17 planejadas.
 
 ## Status das fases
 
@@ -17,6 +17,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6 e 7 concluidas. Fases 8 a 17 pl
 | Fase 5.1 — Semantica da receita de producao | Concluida |
 | Fase 6 — Carrinho | Concluida |
 | Fase 7 — Dados do cliente e endereco | Concluida |
+| Fase 7.1 — Hardening de privacidade e consistencia do checkout | Concluida |
 | Fase 8 — Integracao SuperFrete | Planejada |
 | Fase 9 — Pedidos | Planejada |
 | Fase 10 — Integracao InfinitePay | Planejada |
@@ -270,6 +271,27 @@ Definition of Done:
 - Privacidade e seguranca revisadas.
 - Migration `create_cart_customer_details` criada.
 - RLS habilitado sem policies publicas.
+- Fase 8 permanece planejada.
+
+## Fase 7.1 — Hardening de privacidade e consistencia do checkout
+
+Objetivo: reforcar privacidade e consistencia operacional da etapa de dados do checkout.
+
+Principais entregas:
+
+- `Cache-Control: private, no-store` em respostas HTML de checkout que podem conter PII.
+- Leitura de contato e endereco consolidada em uma unica consulta SQL consistente.
+- Estado parcial anomalo tratado como dados ausentes, sem retornar PII incompleta.
+- Testes de regressao para headers, query consolidada e estado parcial.
+
+Dependencias: Fase 7.
+
+Definition of Done:
+
+- Sem migration ou alteracao de schema.
+- Sem mudanca na escrita transacional existente.
+- Testes, vet e build executados.
+- Documentacao de checkout, seguranca e schema atualizada.
 - Fase 8 permanece planejada.
 
 ## Fase 8 — Integracao SuperFrete
