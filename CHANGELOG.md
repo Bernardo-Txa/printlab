@@ -18,6 +18,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Teste para entrega do asset de marca em `/static/images/branding/logo-printlab-primary.png`.
 - Fase 2.1 — Brand Experience, com homepage mais editorial e linguagem grafica da marca.
 - Workflow de GitHub Actions para migrations Supabase de desenvolvimento com dry-run antes da aplicacao.
+- Fase 3 — Fundacao do Banco de Dados, com `pgx/v5`, `pgxpool`, `internal/config`, `internal/database`, `GET /ready`, Supabase CLI local e `supabase/config.toml`.
+- `vercel.json` minimo configurando a regiao `gru1`.
+- Politica permanente de Git do projeto com fluxo implementar, validar, commit e push.
 
 ### Changed
 
@@ -25,3 +28,6 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Assets estaticos passaram a ser servidos via `embed.FS` para melhorar compatibilidade com deploy na Vercel.
 - Tokens de design refinados com base na paleta visual da marca.
 - Homepage revisada para remover copy tecnica e ampliar presenca estrutural das cores da PrintLab.
+- Fonte oficial de migrations alterada de `migrations/` para `supabase/migrations/`.
+- Workflow Supabase atualizado para usar CLI `2.117.0`.
+- Definition of Done atualizada para commit e push automaticos apos validacoes aplicaveis.

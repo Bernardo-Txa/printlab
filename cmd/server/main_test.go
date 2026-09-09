@@ -1,17 +1,21 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/Bernardo-Txa/printlab/internal/config"
+	"github.com/Bernardo-Txa/printlab/internal/database"
 )
 
 func TestHomeHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
@@ -43,7 +47,7 @@ func TestHomeCopyDoesNotExposeTechnicalImplementation(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	body := strings.ToLower(rec.Body.String())
 	for _, term := range []string{"backend", "server-side", "banco", "go:embed"} {
@@ -57,10 +61,14 @@ func TestHealthHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	if got := rec.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
+		t.Fatalf("expected content type %q, got %q", "text/plain; charset=utf-8", got)
 	}
 
 	if got := rec.Body.String(); got != "ok\n" {
@@ -68,11 +76,26 @@ func TestHealthHandler(t *testing.T) {
 	}
 }
 
+func TestReadyWithoutDatabaseURL(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/ready", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandler(t).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, rec.Code)
+	}
+
+	if strings.Contains(rec.Body.String(), "postgres") {
+		t.Fatal("expected ready response not to expose database details")
+	}
+}
+
 func TestStaticCSSHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/css/app.css", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
@@ -87,7 +110,7 @@ func TestStaticBrandLogoHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/images/branding/logo-printlab-primary.png", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
@@ -102,7 +125,7 @@ func TestStaticDirectoryListingIsNotServed(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/css/", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
@@ -113,7 +136,7 @@ func TestMissingStaticFile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/static/css/missing.css", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
@@ -124,9 +147,23 @@ func TestUnknownRoute(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/nao-existe", nil)
 	rec := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(rec, req)
+	newTestHandler(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
 	}
+}
+
+func newTestHandler(t *testing.T) http.Handler {
+	t.Helper()
+
+	db, err := database.New(context.Background(), database.Config{
+		MaxConns: config.DefaultDBMaxConns,
+	})
+	if err != nil {
+		t.Fatalf("expected test database config to be valid, got %v", err)
+	}
+	t.Cleanup(db.Close)
+
+	return newHandler(db)
 }

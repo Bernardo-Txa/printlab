@@ -3,10 +3,17 @@
   "private": true,
   "scripts": {
     "css:build": "tailwindcss -i ./web/assets/css/app.css -o ./web/static/css/app.css --minify",
-    "css:watch": "tailwindcss -i ./web/assets/css/app.css -o ./web/static/css/app.css --watch"
+    "css:watch": "tailwindcss -i ./web/assets/css/app.css -o ./web/static/css/app.css --watch",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:push:dry-run": "supabase db push --dry-run"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.3",
+    "supabase": "2.117.0",
     "tailwindcss": "4.3.3"
   }
 }

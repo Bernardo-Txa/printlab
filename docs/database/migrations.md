@@ -1,8 +1,10 @@
 # Migrations
 
-Status: PLANEJADO para schema; workflow de CI/CD para aplicar migrations Supabase configurado na Fase 3.
+Status: fundacao IMPLEMENTADA; primeiras migrations de negocio PLANEJADAS.
 
 Ainda nao ha migrations funcionais nesta fase. Quando aprovadas, migrations Supabase devem ficar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
+
+A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
 
 ## Workflow normal
 
@@ -37,6 +39,8 @@ supabase db push
 
 Se o dry-run falhar, o GitHub Actions interrompe o job antes de aplicar migrations.
 
+A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migration runner, DDL automatico ou `supabase db push` no processo web.
+
 ## Regras
 
 - Toda mudanca de schema deve possuir migration versionada.
@@ -46,6 +50,7 @@ Se o dry-run falhar, o GitHub Actions interrompe o job antes de aplicar migratio
 - Mudancas destrutivas precisam de cuidado adicional.
 - Alteracoes de banco nao devem ser feitas manualmente em producao sem registro.
 - Table Editor e SQL Editor remoto nao devem ser usados como workflow normal para mudancas de schema.
+- A primeira migration real deve ser criada junto da primeira funcionalidade que precisar de schema.
 
 ## Praticas recomendadas
 
@@ -57,6 +62,7 @@ Se o dry-run falhar, o GitHub Actions interrompe o job antes de aplicar migratio
 - Migrations destinadas ao CI devem estar em `supabase/migrations/`.
 - O workflow de CI nao usa `--include-seed`.
 - O workflow de CI nao executa reset remoto.
+- `supabase/config.toml` mantem seed desabilitado nesta fase.
 
 ## Antes de aprovar uma migration
 

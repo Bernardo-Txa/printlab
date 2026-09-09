@@ -9,17 +9,22 @@ IMPLEMENTADO:
 - Aplicacao Go em `cmd/server`.
 - Homepage server-side em `GET /`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
+- Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
 - Frontend server-side com `templ`.
 - Tailwind CSS via CLI npm.
 - Identidade visual da homepage refinada na Fase 2.1.
 - Workflow de CI/CD para migrations Supabase de desenvolvimento.
+- Configuracao centralizada em `internal/config`.
+- Acesso PostgreSQL com `pgx/v5` e `pgxpool` em `internal/database`.
+- Supabase CLI local e estrutura `supabase/`.
+- Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:
 
 - Catalogo, carrinho, checkout, pedidos, painel administrativo e integracoes externas.
-- Acesso ao PostgreSQL via `pgx`.
+- Schema de negocio.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -35,6 +40,19 @@ pgx
    |
    v
 Supabase PostgreSQL
+
+Runtime de banco:
+
+Vercel Go
+   |
+   v
+pgxpool
+   |
+   v
+Supabase Transaction Pooler
+   |
+   v
+PostgreSQL
 
 Servicos externos planejados:
 
@@ -77,11 +95,17 @@ As regras de negocio devem ficar no backend para evitar duplicacao insegura no n
 
 ## Banco de dados
 
-O banco planejado e PostgreSQL hospedado no Supabase. O acesso principal sera feito pelo backend Go usando `pgx`, por conexao PostgreSQL apropriada para ambiente hospedado.
+O banco planejado e PostgreSQL hospedado no Supabase. O acesso principal e feito pelo backend Go usando `pgx/v5` e `pgxpool`, por `DATABASE_URL`.
+
+`DATABASE_URL` e a unica fonte de verdade da conexao PostgreSQL em runtime. A aplicacao nao monta connection string manualmente e nao deve logar host, usuario, senha, project ref ou URL de conexao.
+
+Para compatibilidade com Supabase Transaction Pooler, `pgxpool.Config.ConnConfig.DefaultQueryExecMode` e configurado como `pgx.QueryExecModeExec`. A aplicacao nao depende de cache de prepared statements e nao executa `SQL PREPARE` explicito.
 
 O Supabase Data API nao sera a interface primaria da aplicacao. O uso futuro de Supabase Storage para imagens podera ser avaliado quando catalogo e midia de produto forem implementados.
 
-Migrations Supabase futuras devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. Schema e conexao Go com Supabase ainda dependem de aprovacao nas proximas entregas da Fase 3.
+Migrations Supabase futuras devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. A aplicacao Go nao executa migrations no startup.
+
+Schema de negocio ainda nao foi criado. Nenhuma tabela de produtos, carrinho, pedidos, pagamentos, frete, clientes ou admin existe nesta fase.
 
 ## Comunicacao com servicos externos
 
@@ -113,6 +137,7 @@ Fluxo atual:
 ```text
 GET / -> homepage HTML renderizada com templ
 GET /health -> HTTP 200
+GET /ready -> HTTP 200 quando banco configurado e acessivel; HTTP 503 quando ausente ou indisponivel
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 
@@ -145,11 +170,12 @@ A biblioteca padrao do Go e a primeira escolha. Dependencias externas so devem s
 Dependencias implementadas:
 
 - `github.com/a-h/templ` para templates server-side;
+- `github.com/jackc/pgx/v5` para PostgreSQL server-side;
 - `tailwindcss` e `@tailwindcss/cli` para CSS.
+- `supabase` CLI via npm para tooling local de banco.
 
 Dependencias planejadas, mas ainda nao adicionadas:
 
-- `pgx` para PostgreSQL;
 - HTMX quando houver interacao real.
 
 ## Seguranca

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2 e 2.1 concluidas. Fase 3 em andamento. Fases 4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1 e 3 concluidas. Fases 4 a 17 planejadas.
 
 ## Status das fases
 
@@ -10,7 +10,7 @@ Status: Fases 0, 1, 2 e 2.1 concluidas. Fase 3 em andamento. Fases 4 a 17 planej
 | Fase 1 — Bootstrap da aplicacao Go | Concluida |
 | Fase 2 — Design system e layout | Concluida |
 | Fase 2.1 — Brand Experience | Concluida |
-| Fase 3 — Banco de dados | Em andamento |
+| Fase 3 — Banco de dados | Concluida |
 | Fase 4 — Catalogo | Planejada |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
@@ -97,24 +97,27 @@ Definition of Done:
 
 ## Fase 3 — Banco de dados
 
-Objetivo: definir e aplicar o schema inicial aprovado.
+Objetivo: preparar a fundacao PostgreSQL/Supabase sem criar tabelas de negocio.
 
 Principais entregas:
 
 - Escolha da ferramenta de migrations.
-- Primeiras migrations versionadas.
+- Estrutura `supabase/` com `config.toml` e `supabase/migrations/`.
 - Configuracao de conexao via environment variables.
-- Acesso inicial via `pgx`.
+- Acesso inicial via `pgx/v5` e `pgxpool`.
 - Workflow de CI/CD para migrations Supabase com dry-run antes da aplicacao.
+- `GET /ready` para readiness de banco.
+- Vercel configurada para `gru1`.
 
-Dependencias: Fases 0 e 1; revisao de schema.
+Dependencias: Fases 0 e 1.
 
 Definition of Done:
 
-- Schema aprovado e documentado.
-- Migrations revisadas.
-- Testes aplicaveis de banco definidos ou executados.
+- Fundacao de conexao documentada.
+- Migrations sem duas fontes de verdade.
+- Testes aplicaveis de config, database e HTTP executados.
 - Nenhuma alteracao manual sem registro.
+- Nenhuma tabela de negocio criada.
 
 ## Fase 4 — Catalogo
 

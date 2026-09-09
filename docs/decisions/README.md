@@ -32,4 +32,4 @@ Data:
 
 - [ADR-0001 — Go como linguagem principal](0001-go-como-linguagem-principal.md)
 - [ADR-0002 — Frontend server-side com templ e HTMX](0002-frontend-server-side-com-templ-e-htmx.md)
-- [ADR-0003 — PostgreSQL/Supabase com acesso server-side via pgx](0003-postgresql-supabase-via-pgx.md)
+- [ADR-0003 — PostgreSQL/Supabase com pgx e Transaction Pooler](0003-postgresql-supabase-via-pgx.md)

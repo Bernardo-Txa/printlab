@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual IMPLEMENTADA.
+Status: fundacao visual e banco IMPLEMENTADA.
 
 ## Requisitos
 
@@ -8,6 +8,7 @@ Status: fundacao visual IMPLEMENTADA.
 - Node.js e npm.
 - CLI do `templ` v0.3.1020.
 - Terminal com acesso ao diretorio do projeto.
+- Supabase CLI instalada via npm (`supabase` v2.117.0).
 
 Nenhuma conta externa e necessaria para executar a aplicacao local atual. Nao conecte SuperFrete ou InfinitePay durante esta fase.
 
@@ -16,6 +17,16 @@ Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve c
 ## Configuracao local
 
 `.env.example` lista variaveis previstas sem credenciais reais. Caso seja necessario testar configuracao local futuramente, crie um `.env` local fora do Git.
+
+Variaveis de runtime:
+
+- `APP_ENV`: ambiente da aplicacao.
+- `PORT`: porta HTTP, default `8080`.
+- `SITE_URL`: URL publica da aplicacao quando necessaria.
+- `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
+- `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
+
+Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200 e `GET /ready` retorna 503. Esse comportamento e temporario enquanto a homepage nao depende do banco.
 
 Secrets exigidos no GitHub Actions para migrations:
 
@@ -73,6 +84,14 @@ Resposta esperada:
 ok
 ```
 
+## Validar readiness
+
+```sh
+curl -i http://localhost:8080/ready
+```
+
+Sem `DATABASE_URL`, a resposta esperada nesta fase e HTTP 503. Com `DATABASE_URL` configurada e banco acessivel, a resposta esperada e HTTP 200 com body `ok`.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -101,6 +120,19 @@ Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de 
 
 Enquanto o workflow estiver configurado, o desenvolvedor nao precisa executar manualmente `supabase login`, `supabase link` e `supabase db push` para migrations normais de desenvolvimento.
 
+Scripts locais:
+
+```sh
+npm run db:start
+npm run db:stop
+npm run db:status
+npm run db:reset
+npm run db:push:dry-run
+npm run db:push
+```
+
+`npm run db:push` e manual e nao deve ser chamado por build ou startup da aplicacao.
+
 ## Comandos de validacao
 
 ```sh
@@ -110,4 +142,5 @@ gofmt -w cmd/server web/components web/templates
 go test ./...
 go vet ./...
 go build ./...
+npx supabase --version
 ```

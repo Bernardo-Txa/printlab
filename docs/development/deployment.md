@@ -47,10 +47,13 @@ Supabase de desenvolvimento
 - Vercel Hobby pode ser usado durante desenvolvimento.
 - Entrada Go compativel com zero-config da Vercel em `cmd/server/main.go`.
 - Assets estaticos servidos via `embed.FS`, reduzindo dependencia de filesystem local no runtime da Vercel.
+- Vercel configurada em `vercel.json` para executar na regiao `gru1`.
 - Sem operacao comercial.
-- Sem conexao da aplicacao Go com Supabase.
+- Conexao PostgreSQL da aplicacao via `DATABASE_URL` quando configurada.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
+
+`gru1` foi escolhida porque o projeto Supabase da PrintLab esta em South America (Sao Paulo). Isso reduz a latencia entre o runtime Go na Vercel e o PostgreSQL no Supabase.
 
 ## Assets estaticos
 
@@ -79,11 +82,46 @@ O responsavel pelo projeto deve configurar estes GitHub Actions Secrets:
 - `SUPABASE_DB_PASSWORD`
 - `SUPABASE_PROJECT_ID`
 
-O job instala `supabase/setup-cli@v1` com Supabase CLI `2.20.3`, valida que os secrets existem, executa `supabase link --project-ref "$SUPABASE_PROJECT_ID"`, roda `supabase db push --dry-run` e somente depois aplica `supabase db push`.
+O job instala `supabase/setup-cli@v1` com Supabase CLI `2.117.0`, valida que os secrets existem, executa `supabase link --project-ref "$SUPABASE_PROJECT_ID"`, roda `supabase db push --dry-run` e somente depois aplica `supabase db push`.
 
 O workflow nao usa `--include-seed`, nao executa reset remoto e nao deve imprimir valores de secrets nos logs.
 
 Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Antes da operacao comercial sera necessario separar development/staging e production, com politica de aprovacao propria para producao.
+
+## Runtime PostgreSQL
+
+```text
+Vercel Go em gru1
+  |
+  v
+pgxpool
+  |
+  v
+Supabase Transaction Pooler em South America (Sao Paulo)
+  |
+  v
+PostgreSQL
+```
+
+Secrets de runtime no ambiente de hosting:
+
+- `DATABASE_URL`
+- `DB_MAX_CONNS`, opcional, default `4`
+
+`DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
+
+## Vercel
+
+`vercel.json` contem apenas:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["gru1"]
+}
+```
+
+Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker customizado.
 
 ## Antes da loja operar comercialmente
 

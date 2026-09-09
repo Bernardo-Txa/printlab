@@ -27,3 +27,15 @@ Regras obrigatorias:
 - Nao apague documentacao sem justificativa.
 - Nao adicione dependencias sem justificar.
 - Execute testes e validacoes antes de considerar uma tarefa concluida.
+
+## Git workflow
+
+- Inspecione o estado inicial com `git status --short` e `git branch --show-current`.
+- Nunca inclua alteracoes preexistentes nao relacionadas.
+- Implemente somente o escopo solicitado e atualize a documentacao aplicavel.
+- Depois que as validacoes aplicaveis passarem, faca commit automaticamente.
+- Depois do commit, faca push automaticamente para o upstream da branch atual.
+- Stage somente arquivos da tarefa; nao use `git add .` ou `git add -A` cegamente.
+- Revise `git diff`, `git diff --cached` e `git status --short` antes do commit.
+- Nunca versione secrets, credenciais, connection strings reais, arquivos temporarios ou dados privados.
+- Nunca use force push, reset destrutivo, rebase ou amend sem autorizacao explicita.

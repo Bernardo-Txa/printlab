@@ -1,10 +1,23 @@
 # Schema de banco
 
-Status: PLANEJADO.
+Status: PLANEJADO. Fundacao PostgreSQL/Supabase implementada, sem tabelas de negocio.
 
 Schema ainda nao aprovado.
 
 Nenhuma tabela deve ser criada nesta fase. As entidades abaixo sao candidatas provaveis para fases futuras e precisam de revisao antes de virar migration.
+
+## Convencoes futuras
+
+- Usar `snake_case` para tabelas, colunas, constraints e indices.
+- Usar `timestamptz` para datas e horas.
+- Tratar horarios em UTC no banco.
+- Usar `NOT NULL` quando a coluna for obrigatoria.
+- Declarar foreign keys explicitas para relacionamentos.
+- Colocar constraints no banco para invariantes importantes.
+- Criar indices a partir de queries reais ou necessidades claras.
+- Evitar `SELECT *` em codigo de producao.
+- Alteracoes de schema devem usar migrations versionadas em `supabase/migrations/`.
+- Migrations aplicadas nao devem ser alteradas silenciosamente.
 
 ## Entidades candidatas
 
@@ -28,6 +41,31 @@ Nenhuma tabela deve ser criada nesta fase. As entidades abaixo sao candidatas pr
 - Pedidos devem preservar os valores calculados no momento da compra.
 - Pagamentos e webhooks exigem desenho de idempotencia antes da implementacao.
 - Mudancas de schema devem usar migrations versionadas.
+- Regras financeiras nunca devem depender somente de frontend ou RLS.
+
+## Dinheiro
+
+Valores financeiros futuros nao devem usar `float32` ou `float64` como representacao canonica.
+
+A preferencia atual e armazenar dinheiro como inteiro em centavos:
+
+```text
+R$ 39,90 -> 3990
+```
+
+Nenhum preco e implementado nesta fase.
+
+## IDs
+
+Nao ha estrategia universal de IDs aprovada. `uuid` e `bigint identity` serao avaliados conforme cada entidade.
+
+Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+
+## RLS e Data API
+
+Supabase Data API nao e a interface principal da PrintLab. O browser nao acessa tabelas sensiveis diretamente; o backend Go controla regras criticas.
+
+RLS continua util como camada complementar futura, mas nao substitui validacao server-side para precos, frete, pagamentos, pedidos ou permissoes sensiveis.
 
 ## Pendencias
 

@@ -56,12 +56,18 @@ Nunca armazenar dentro do Git:
 
 Use environment variables para configuracoes sensiveis. `.env.example` deve conter apenas nomes de variaveis e comentarios, sem valores reais.
 
+`DATABASE_URL` e secret e deve ser configurada apenas em `.env` local ignorado pelo Git ou em secrets do ambiente de hosting. A aplicacao nao deve imprimir `DATABASE_URL`, senha, host privado, project ref ou connection string em logs, respostas HTTP ou mensagens publicas de erro.
+
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
+- Nao ha tabelas de negocio implementadas.
+- `GET /ready` nao expoe detalhes internos do PostgreSQL.
 
 ## Praticas recomendadas
 
@@ -70,6 +76,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Usar transacoes para alteracoes financeiras.
 - Projetar idempotencia antes de processar webhooks.
 - Revisar dependencias antes de adiciona-las.
+- Usar `TEST_DATABASE_URL` para testes opcionais de integracao com banco, nunca `DATABASE_URL` de producao.
 
 ## Praticas proibidas
 
@@ -77,3 +84,5 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Salvar secrets em codigo, fixtures, logs, documentacao ou exemplos.
 - Aceitar preco, desconto ou frete do cliente como valor final.
 - Processar webhook sem validacao e protecao contra duplicidade.
+- Executar migrations automaticamente no startup do servidor web.
+- Usar Table Editor ou SQL Editor remoto como workflow normal de mudanca de schema.

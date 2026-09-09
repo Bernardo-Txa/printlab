@@ -21,10 +21,17 @@ IMPLEMENTADO:
 - Design tokens refinados com base na identidade visual da marca.
 - Fase 2.1 de Brand Experience aplicada na homepage.
 - Workflow de GitHub Actions para aplicar migrations Supabase de desenvolvimento com dry-run previo.
+- Fundacao PostgreSQL/Supabase da Fase 3.
+- Configuracao centralizada em `internal/config`.
+- Pool PostgreSQL em `internal/database` com `pgx/v5` e `pgxpool`.
+- Rota `GET /ready` para readiness do banco.
+- Supabase CLI local via npm e estrutura `supabase/`.
+- Vercel configurada para a regiao `gru1`.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
+- Schema de negocio.
 - Catalogo de produtos.
 - Produtos com variantes, cores e materiais.
 - Carrinho e checkout sem obrigatoriedade de conta.
@@ -41,6 +48,7 @@ Backend:
 
 - Go.
 - `net/http` da biblioteca padrao.
+- `pgx/v5` com `pgxpool` para PostgreSQL.
 - Dependencias externas somente quando houver justificativa real.
 
 Frontend planejado:
@@ -62,7 +70,17 @@ Frontend implementado:
 Banco planejado:
 
 - PostgreSQL hospedado no Supabase.
-- Acesso server-side pelo backend Go usando `pgx`.
+- Schema de negocio de produtos, carrinho, pedidos, pagamentos e entregas.
+
+Banco implementado:
+
+- Acesso server-side pelo backend Go usando `pgx/v5`.
+- Pool de conexoes com `pgxpool`.
+- `DATABASE_URL` como unica fonte de verdade da conexao PostgreSQL em runtime.
+- `DB_MAX_CONNS` com default `4`.
+- `DefaultQueryExecMode` configurado como `pgx.QueryExecModeExec` para compatibilidade com Supabase Transaction Pooler.
+- `GET /ready` retorna 503 enquanto `DATABASE_URL` estiver ausente ou o banco estiver indisponivel.
+- A homepage e `GET /health` continuam funcionando sem `DATABASE_URL` nesta fase.
 
 Infraestrutura planejada:
 
@@ -75,7 +93,8 @@ Infraestrutura implementada para desenvolvimento:
 
 - GitHub Actions em `.github/workflows/supabase-migrations.yml` para migrations Supabase.
 - Execucao automatica apenas em mudancas de `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
-- Supabase CLI fixado em `2.20.3`, com `supabase db push --dry-run` antes de `supabase db push`.
+- Supabase CLI fixado em `2.117.0`, com `supabase db push --dry-run` antes de `supabase db push`.
+- `vercel.json` minimo com `regions: ["gru1"]`.
 
 ## Arquitetura resumida
 
@@ -108,6 +127,13 @@ Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve c
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_DB_PASSWORD`
 - `SUPABASE_PROJECT_ID`
+
+Configuracao local ou de hosting para runtime:
+
+- `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
+- `DB_MAX_CONNS`: opcional, default `4`.
+
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
 
 Instalacao local do tooling:
 
@@ -170,6 +196,35 @@ Validar logo servida pela aplicacao:
 curl -I http://localhost:8080/static/images/branding/logo-printlab-primary.png
 ```
 
+Readiness do banco:
+
+```sh
+curl -i http://localhost:8080/ready
+```
+
+Sem `DATABASE_URL`, a resposta esperada nesta fase e HTTP 503. Com `DATABASE_URL` configurada e banco acessivel, a resposta esperada e HTTP 200 com body `ok`.
+
+## Supabase local
+
+A CLI do Supabase esta instalada como devDependency:
+
+```sh
+npx supabase --version
+```
+
+Scripts disponiveis:
+
+```sh
+npm run db:start
+npm run db:stop
+npm run db:status
+npm run db:reset
+npm run db:push:dry-run
+npm run db:push
+```
+
+`npm run db:push` e manual e nao faz parte do build da aplicacao.
+
 ## Como executar testes
 
 ```sh
@@ -182,7 +237,9 @@ go vet ./...
 ```text
 cmd/server/              entrada HTTP da aplicacao
 .github/workflows/       automacoes de CI/CD
-internal/                pacotes internos futuros por area de dominio
+internal/config/         leitura e validacao de configuracao
+internal/database/       pool PostgreSQL via pgxpool
+internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
 web/assets/              fontes de assets, incluindo CSS fonte
@@ -190,6 +247,7 @@ web/static/              assets compilados, embutidos no binario e servidos em /
 supabase/migrations/     migrations futuras do Supabase
 tests/                   suporte futuro para testes de maior escopo
 docs/                    documentacao do projeto
+vercel.json              regiao Vercel gru1
 ```
 
 ## Documentacao
