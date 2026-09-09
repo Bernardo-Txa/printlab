@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase IMPLEMENTADA; schema de negocio PLANEJADO.
+Status: fundacao PostgreSQL/Supabase e catalogo IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Nao ha tabelas criadas.
-- Nao ha migrations funcionais.
+- Existem as tabelas `public.categories` e `public.products`.
+- A primeira migration funcional cria o catalogo basico.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -28,6 +28,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Nao montar connection string manualmente no codigo.
 - Configurar `pgx.QueryExecModeExec` como `DefaultQueryExecMode` para compatibilidade com Supabase Transaction Pooler.
 - Manter migrations separadas do startup da aplicacao.
+- Criar `categories` e `products` com UUID, slug unico, RLS habilitado e sem policies publicas nesta fase.
+- Usar `products.price_cents` como preco-base em centavos.
 
 ## Runtime de conexao
 
@@ -51,6 +53,17 @@ Pool padrao por instancia:
 
 `DB_MAX_CONNS` permite ajuste explicito, mas valores invalidos ou menores que 1 sao erro de configuracao.
 
+## Catalogo implementado
+
+- `public.categories` organiza filtros publicos por slug.
+- `public.products` guarda produtos basicos do catalogo.
+- `products.category_id` e opcional e usa `on delete set null`.
+- Produtos publicos exigem `products.is_active = true`.
+- Categorias publicas exigem `categories.is_active = true`.
+- Produtos inativos se comportam como inexistentes nas rotas publicas.
+- `products.is_featured` participa da ordenacao inicial.
+- `products.price_cents` e `bigint` com constraint `>= 0`.
+
 ## Convencoes de schema futuras
 
 - Nomes de tabelas, colunas, constraints e indices devem usar `snake_case`.
@@ -67,11 +80,11 @@ Pool padrao por instancia:
 
 Valores financeiros futuros nao devem usar `float32` ou `float64` como representacao canonica. A preferencia inicial e armazenar valores inteiros em centavos, por exemplo `R$ 39,90` como `3990`.
 
-Nenhum preco e implementado nesta fase.
+O preco-base de produto foi implementado em `products.price_cents`. Variantes, frete, descontos, totais, pedidos e pagamentos continuam planejados.
 
 ## IDs
 
-Nao ha estrategia universal de IDs aprovada nesta fase. `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories` e `products` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
 ## RLS e Data API
 

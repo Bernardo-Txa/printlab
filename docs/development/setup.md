@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual e banco IMPLEMENTADA.
+Status: fundacao visual, banco e catalogo IMPLEMENTADA.
 
 ## Requisitos
 
@@ -92,6 +92,26 @@ curl -i http://localhost:8080/ready
 
 Sem `DATABASE_URL`, a resposta esperada nesta fase e HTTP 503. Com `DATABASE_URL` configurada e banco acessivel, a resposta esperada e HTTP 200 com body `ok`.
 
+## Validar catalogo
+
+Com `DATABASE_URL` configurada e a migration de catalogo aplicada:
+
+```sh
+curl -i http://localhost:8080/produtos
+```
+
+Resposta esperada: HTTP 200. Se ainda nao houver produtos ativos, a pagina mostra o empty state do catalogo.
+
+Detalhe de produto inexistente:
+
+```sh
+curl -i http://localhost:8080/produtos/nao-existe
+```
+
+Resposta esperada: HTTP 404.
+
+Sem banco configurado ou com banco indisponivel, as rotas de catalogo retornam resposta generica de indisponibilidade.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -115,6 +135,8 @@ A homepage tambem deve ser validada visualmente em celular, tablet e desktop par
 ## Migrations Supabase
 
 O fluxo normal de schema deve ser: criar migration SQL em `supabase/migrations/`, revisar, versionar no Git e enviar para `main`. O GitHub Actions executara `supabase link`, `supabase db push --dry-run` e, se passar, `supabase db push` contra o projeto Supabase de desenvolvimento.
+
+A primeira migration real e `create_catalog`, criando `categories` e `products` sem inserir dados ficticios.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 

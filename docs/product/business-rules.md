@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: PLANEJADO, exceto quando explicitamente indicado como implementado.
+Status: catalogo basico IMPLEMENTADO; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -15,6 +15,19 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 - Backend e autoridade sobre status de pagamento.
 - Frete e validado server-side.
 - Pagamento nunca e confirmado somente por redirect do navegador.
+
+## Catalogo implementado
+
+- Somente produtos ativos aparecem publicamente.
+- Produto inativo responde como inexistente em rotas publicas.
+- Categoria de produto e opcional.
+- Categorias inativas nao aparecem como filtro publico.
+- Produto ativo sem categoria continua podendo aparecer no catalogo.
+- O preco-base vem do backend e e armazenado como inteiro em centavos.
+- O frontend nunca e autoridade sobre preco.
+- Dinheiro nao usa `float32` ou `float64`.
+- Produtos ficticios ou seeds demonstrativos nao devem ser inseridos apenas para testar catalogo.
+- Slugs sao os identificadores publicos de categorias e produtos.
 
 ## Autoridade do backend
 
@@ -32,7 +45,15 @@ Antes de finalizar uma compra, o backend devera futuramente:
 
 ## Dinheiro
 
-Valores monetarios nunca devem usar `float32` ou `float64` como representacao canonica. A estrategia final de dinheiro sera definida antes da implementacao de catalogo, carrinho e checkout.
+Valores monetarios nunca devem usar `float32` ou `float64` como representacao canonica.
+
+Na Fase 4, `products.price_cents` e o preco-base comercial do produto e usa inteiro em centavos:
+
+```text
+R$ 39,90 -> 3990
+```
+
+Carrinho, checkout, descontos, frete, total e pedidos continuam planejados e deverao recalcular valores no backend.
 
 ## Producao 3D
 

@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; implementacoes especificas ainda PLANEJADAS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico basico IMPLEMENTADO.
 
 ## Responsabilidade
 
@@ -60,13 +60,24 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
 
+## Catalogo publico
+
+- Produtos publicos exigem `products.is_active = true`.
+- Produto inativo retorna publicamente como inexistente.
+- Slugs de produto e categoria sao validados antes de consulta ao banco.
+- Slug invalido retorna resposta 404, sem revelar detalhes.
+- Queries de catalogo usam parametros PostgreSQL.
+- Erros de PostgreSQL nao sao retornados ao usuario.
+- Preco-base e definido pelo backend a partir de `products.price_cents`.
+- Templates recebem preco formatado e nao fazem calculo financeiro.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- Nao ha tabelas de negocio implementadas.
+- As unicas tabelas de negocio implementadas sao `categories` e `products`.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 
 ## Praticas recomendadas

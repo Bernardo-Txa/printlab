@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP e banco IMPLEMENTADA; funcionalidades de negocio PLANEJADAS.
+Status: fundacao HTTP, banco e catalogo IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
 
 ## Responsabilidade
 
@@ -9,16 +9,19 @@ O backend Go sera a camada autoritativa da aplicacao. Ele recebera requisicoes H
 Nesta fase, o backend implementa:
 
 - `GET /` para homepage server-side.
+- `GET /produtos` para catalogo publico.
+- `GET /produtos/{slug}` para detalhe publico de produto ativo.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
 - `internal/config` para ler configuracao.
 - `internal/database` para criar `pgxpool.Pool`.
+- `internal/products` para modelos, service e repository PostgreSQL do catalogo.
 
 ## Limites
 
-- Nao ha schema de negocio.
-- Nao ha produtos, carrinho, checkout, pedidos, pagamentos ou admin.
+- O schema de negocio implementado cobre apenas categorias e produtos basicos.
+- Nao ha variantes, imagens, carrinho, checkout, pedidos, pagamentos ou admin.
 - Nao ha integracoes externas.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 
@@ -31,6 +34,19 @@ Nesta fase, o backend implementa:
 - Usar `DATABASE_URL` como unica fonte de verdade da conexao PostgreSQL.
 - Usar `DB_MAX_CONNS` com default `4` para limitar conexoes por instancia.
 - Configurar `pgx.QueryExecModeExec` para compatibilidade com Supabase Transaction Pooler.
+- Usar `internal/products` como primeira vertical slice: handler HTTP, service, repository `pgxpool` e templates SSR.
+- Expor produto publicamente por slug, nunca por UUID.
+- Exibir publicamente apenas produtos ativos.
+- Tratar produto inativo como inexistente.
+- Representar preco-base como inteiro em centavos.
+
+## Catalogo
+
+`GET /produtos` lista produtos ativos e aceita filtro opcional `categoria=<slug>`. O filtro e validado antes da consulta ao banco e usa slug publico.
+
+`GET /produtos/{slug}` valida o slug e busca apenas produto ativo. Slug invalido, produto inexistente e produto inativo retornam HTTP 404.
+
+Se o banco estiver indisponivel, rotas de catalogo retornam HTTP 503 com resposta generica, sem detalhes do PostgreSQL.
 
 ## Health e readiness
 
@@ -47,6 +63,8 @@ Nesta fase, o backend implementa:
 - Testes deterministico para regras criticas.
 - Pacotes coesos por responsabilidade.
 - Fechar `pgxpool.Pool` no encerramento do processo.
+- Usar parametros PostgreSQL para entradas externas.
+- Listar colunas explicitamente em SQL.
 
 ## Praticas proibidas
 
@@ -57,3 +75,5 @@ Nesta fase, o backend implementa:
 - Colocar secrets no codigo, testes ou documentacao.
 - Executar migrations no startup da aplicacao.
 - Logar `DATABASE_URL`, senha, token ou connection string.
+- Usar `SELECT *`.
+- Concatenar valores externos em SQL.

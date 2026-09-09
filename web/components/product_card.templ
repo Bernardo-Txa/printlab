@@ -1,0 +1,37 @@
+package components
+
+import "github.com/Bernardo-Txa/printlab/internal/products"
+
+templ ProductCard(product products.Product) {
+	<article class="product-card">
+		<a class="product-card-link focus-ring" href={ templ.URL("/produtos/" + product.Slug) }>
+			@ProductVisual()
+			<div class="product-card-body">
+				if product.Category != nil {
+					<p class="product-category">{ product.Category.Name }</p>
+				}
+				<h3>{ product.Name }</h3>
+				if product.ShortDescription != "" {
+					<p class="product-summary">{ product.ShortDescription }</p>
+				}
+				<div class="product-card-footer">
+					<span class="product-price">{ product.PriceBRL }</span>
+					if product.IsFeatured {
+						<span class="product-featured">Destaque</span>
+					}
+				</div>
+			</div>
+		</a>
+	</article>
+}
+
+templ ProductVisual() {
+	<div class="product-visual" aria-hidden="true">
+		<span class="product-visual-grid"></span>
+		<span class="product-visual-layer product-visual-layer-blue"></span>
+		<span class="product-visual-layer product-visual-layer-teal"></span>
+		<span class="product-visual-layer product-visual-layer-pink"></span>
+		<span class="product-visual-dot"></span>
+		<span class="product-visual-label">Imagem em preparo</span>
+	</div>
+}

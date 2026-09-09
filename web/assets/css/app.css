@@ -328,6 +328,202 @@
     @apply right-10 top-10 h-16 w-16 rounded-control bg-highlight-yellow;
   }
 
+  .catalog-page-hero {
+    @apply overflow-hidden bg-secondary py-12 text-primary-foreground sm:py-16;
+  }
+
+  .catalog-page-hero .brand-kicker {
+    @apply border-white/15 bg-white/10 text-primary-foreground shadow-none;
+  }
+
+  .catalog-page-hero-grid {
+    @apply grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center;
+  }
+
+  .catalog-page-hero h1 {
+    @apply mt-5 max-w-4xl text-balance text-5xl font-semibold leading-none tracking-normal sm:text-6xl;
+  }
+
+  .catalog-page-hero p:not(.brand-kicker) {
+    @apply mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg;
+  }
+
+  .catalog-page-mark {
+    @apply relative hidden min-h-56 overflow-hidden rounded-section border border-white/15 bg-white/10 lg:block;
+  }
+
+  .catalog-page-mark .brand-layer-stack {
+    @apply bottom-8 left-8;
+  }
+
+  .catalog-list-section {
+    @apply bg-background py-12 sm:py-16;
+  }
+
+  .catalog-toolbar {
+    @apply mb-8 flex flex-col gap-5 sm:mb-10 lg:flex-row lg:items-end lg:justify-between;
+  }
+
+  .catalog-toolbar h2 {
+    @apply mt-2 text-3xl font-semibold text-foreground sm:text-4xl;
+  }
+
+  .category-filter {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .category-pill {
+    @apply inline-flex min-h-10 items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted outline-none transition-colors hover:border-highlight-teal hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .category-pill-active {
+    @apply border-primary bg-primary text-primary-foreground hover:border-primary hover:text-primary-foreground;
+  }
+
+  .product-grid {
+    @apply grid gap-5 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .product-card {
+    @apply min-h-full rounded-card border border-border bg-surface shadow-soft transition-transform duration-200 hover:-translate-y-1;
+  }
+
+  .product-card-link {
+    @apply flex h-full flex-col overflow-hidden rounded-card text-left no-underline;
+  }
+
+  .product-card-body {
+    @apply flex flex-1 flex-col p-5;
+  }
+
+  .product-card h3 {
+    @apply mt-2 text-2xl font-semibold leading-tight text-foreground;
+  }
+
+  .product-summary {
+    @apply mt-3 flex-1 text-sm leading-6 text-muted;
+  }
+
+  .product-card-footer {
+    @apply mt-5 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .product-category {
+    @apply text-sm font-semibold uppercase tracking-normal text-primary;
+  }
+
+  .product-price {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .product-featured {
+    @apply inline-flex rounded-control bg-highlight-yellow px-3 py-1 text-xs font-semibold text-foreground;
+  }
+
+  .product-visual {
+    @apply relative min-h-56 overflow-hidden bg-secondary;
+  }
+
+  .product-visual-grid {
+    @apply absolute inset-0 opacity-25;
+    background-image:
+      linear-gradient(color-mix(in oklab, white 28%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, white 28%, transparent) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  .product-visual-layer {
+    @apply absolute left-8 h-4 rounded-full;
+  }
+
+  .product-visual-layer-blue {
+    @apply bottom-16 w-44 bg-highlight-blue;
+  }
+
+  .product-visual-layer-teal {
+    @apply bottom-24 w-36 bg-highlight-teal;
+  }
+
+  .product-visual-layer-pink {
+    @apply bottom-32 w-28 bg-highlight-pink;
+  }
+
+  .product-visual-dot {
+    @apply absolute right-10 top-10 size-14 rounded-control bg-highlight-yellow;
+  }
+
+  .product-visual-label {
+    @apply absolute bottom-5 right-5 rounded-control bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-normal text-primary-foreground;
+  }
+
+  .catalog-contact-section {
+    @apply bg-background pb-14 sm:pb-18;
+  }
+
+  .product-detail-section {
+    @apply bg-background py-10 sm:py-14;
+  }
+
+  .back-link {
+    @apply inline-flex rounded-control px-1 py-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+  }
+
+  .product-detail-grid {
+    @apply mt-5 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start;
+  }
+
+  .product-detail-visual {
+    @apply overflow-hidden rounded-section border border-border bg-surface shadow-soft;
+  }
+
+  .product-detail-visual .product-visual {
+    @apply min-h-96;
+  }
+
+  .product-detail-content {
+    @apply rounded-section border border-border bg-surface p-6 shadow-soft sm:p-8;
+  }
+
+  .product-detail-content h1 {
+    @apply mt-3 text-balance text-4xl font-semibold leading-tight text-foreground sm:text-5xl;
+  }
+
+  .product-detail-summary {
+    @apply mt-5 text-pretty text-lg leading-8 text-muted;
+  }
+
+  .product-price-panel {
+    @apply mt-6 flex flex-col gap-1 rounded-card border border-border bg-surface-muted p-5;
+  }
+
+  .product-price-panel span {
+    @apply text-sm font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .product-price-panel strong {
+    @apply text-3xl font-semibold text-foreground;
+  }
+
+  .product-description {
+    @apply mt-8;
+  }
+
+  .product-description h2 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .product-description p {
+    @apply mt-3 text-base leading-7 text-muted;
+  }
+
+  .product-detail-actions {
+    @apply mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center;
+  }
+
+  .product-detail-actions p {
+    @apply text-sm leading-6 text-muted;
+  }
+
   .lab-story-section {
     @apply bg-surface py-14 sm:py-18;
   }

@@ -1,8 +1,14 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; primeiras migrations de negocio PLANEJADAS.
+Status: fundacao IMPLEMENTADA; primeira migration de negocio IMPLEMENTADA.
 
-Ainda nao ha migrations funcionais nesta fase. Quando aprovadas, migrations Supabase devem ficar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
+A primeira migration funcional do projeto cria o catalogo basico:
+
+- `supabase/migrations/20260909153625_create_catalog.sql`
+
+Ela cria `public.categories`, `public.products`, constraints, foreign key, indice `products_category_id_idx` e habilita RLS sem policies publicas. Nao insere dados.
+
+Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
 
@@ -50,7 +56,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - Mudancas destrutivas precisam de cuidado adicional.
 - Alteracoes de banco nao devem ser feitas manualmente em producao sem registro.
 - Table Editor e SQL Editor remoto nao devem ser usados como workflow normal para mudancas de schema.
-- A primeira migration real deve ser criada junto da primeira funcionalidade que precisar de schema.
+- A primeira migration real foi criada junto da Fase 4 de catalogo.
 
 ## Praticas recomendadas
 

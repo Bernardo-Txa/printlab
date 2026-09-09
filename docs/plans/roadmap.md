@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fases 4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fase 4 ativa. Fases 5 a 17 planejadas.
 
 ## Status das fases
 
@@ -12,7 +12,7 @@ Status: Fases 0, 1, 2, 2.1, 3 e 3.1 concluidas. Fases 4 a 17 planejadas.
 | Fase 2.1 — Brand Experience | Concluida |
 | Fase 3 — Banco de dados | Concluida |
 | Fase 3.1 — Validacao do ambiente remoto de desenvolvimento | Concluida |
-| Fase 4 — Catalogo | Planejada |
+| Fase 4 — Catalogo | Ativa |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
 | Fase 7 — Dados do cliente e endereco | Planejada |
@@ -149,19 +149,26 @@ Objetivo: permitir exibicao publica de produtos publicados.
 
 Principais entregas:
 
-- Listagem de produtos.
-- Pagina de detalhe.
-- Consultas de catalogo.
-- Estados vazios e erros.
+- Migration `create_catalog` com `categories` e `products`.
+- Listagem publica em `GET /produtos`.
+- Filtro server-side por categoria.
+- Pagina publica em `GET /produtos/{slug}`.
+- Repository PostgreSQL com `pgxpool`.
+- Service de catalogo com validacao de slug e formatacao BRL.
+- Estados vazios e erros genericos.
 
 Dependencias: Fases 2 e 3.
 
 Definition of Done:
 
-- Produtos exibidos a partir do banco.
-- Precos renderizados a partir de dados server-side.
-- Testes de handlers e consultas aplicaveis.
-- Documentacao de catalogo atualizada.
+- Produtos ativos exibidos a partir do banco.
+- Produto inativo tratado como inexistente.
+- Precos renderizados a partir de dados server-side em centavos.
+- Testes de handlers, service, slug e dinheiro executados.
+- Migration aplicada ao Supabase DEV pelo workflow.
+- Documentacao de catalogo e schema atualizada.
+- Nenhum produto ficticio criado.
+- Fase 5 permanece planejada.
 
 ## Fase 5 — Produtos e variantes
 

@@ -1,0 +1,138 @@
+package templates
+
+import (
+	"github.com/Bernardo-Txa/printlab/internal/products"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ Catalog(catalog products.Catalog) {
+	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.") {
+		<section class="catalog-page-hero">
+			@components.Container() {
+				<div class="catalog-page-hero-grid">
+					<div>
+						<p class="brand-kicker">Catalogo PrintLab</p>
+						<h1>Experimentos que voce pode levar para casa.</h1>
+						<p>
+							Produtos impressos em 3D com a linguagem de teste, cor e precisao da PrintLab.
+						</p>
+					</div>
+					<div class="catalog-page-mark" aria-hidden="true">
+						@components.LayerStackGraphic()
+					</div>
+				</div>
+			}
+		</section>
+		<section class="catalog-list-section" aria-labelledby="catalogo-produtos">
+			@components.Container() {
+				<div class="catalog-toolbar">
+					<div>
+						<p class="text-sm font-semibold uppercase tracking-normal text-primary">Produtos</p>
+						<h2 id="catalogo-produtos">Catalogo</h2>
+					</div>
+					if len(catalog.Categories) > 0 {
+						<nav class="category-filter" aria-label="Filtrar por categoria">
+							if catalog.SelectedCategorySlug == "" {
+								<a class="category-pill category-pill-active" href="/produtos" aria-current="page">Todos</a>
+							} else {
+								<a class="category-pill" href="/produtos">Todos</a>
+							}
+							for _, category := range catalog.Categories {
+								if catalog.SelectedCategorySlug == category.Slug {
+									<a class="category-pill category-pill-active" href={ templ.URL("/produtos?categoria=" + category.Slug) } aria-current="page">{ category.Name }</a>
+								} else {
+									<a class="category-pill" href={ templ.URL("/produtos?categoria=" + category.Slug) }>{ category.Name }</a>
+								}
+							}
+						</nav>
+					}
+				</div>
+				if len(catalog.Products) == 0 {
+					if catalog.SelectedCategory != nil {
+						@components.EmptyState("Ainda nao ha experimentos nesta categoria.", "Estamos preparando o catalogo da PrintLab com produtos reais.")
+					} else {
+						@components.EmptyState("Os primeiros experimentos estao quase prontos.", "Estamos preparando o catalogo da PrintLab com produtos reais.")
+					}
+				} else {
+					<div class="product-grid">
+						for _, product := range catalog.Products {
+							@components.ProductCard(product)
+						}
+					</div>
+				}
+			}
+		</section>
+		<section class="catalog-contact-section">
+			@components.Container() {
+				<div class="cta-layout">
+					<div>
+						<p class="brand-kicker">Contato</p>
+						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Quer falar sobre uma ideia?</h2>
+						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg">
+							O catalogo vai crescer com produtos reais da PrintLab. Enquanto isso, seguimos abertos para conversar sobre projetos em impressao 3D.
+						</p>
+					</div>
+					<a class="cta-badge focus-ring" href="/#contato">Falar com a PrintLab</a>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ ProductDetail(product products.Product, metaDescription string) {
+	@components.Layout(product.Name + " | PrintLab", metaDescription) {
+		<section class="product-detail-section">
+			@components.Container() {
+				<a class="back-link" href="/produtos">Voltar ao catalogo</a>
+				<div class="product-detail-grid">
+					<div class="product-detail-visual">
+						@components.ProductVisual()
+					</div>
+					<div class="product-detail-content">
+						if product.Category != nil {
+							<p class="product-category">{ product.Category.Name }</p>
+						}
+						<h1>{ product.Name }</h1>
+						if product.ShortDescription != "" {
+							<p class="product-detail-summary">{ product.ShortDescription }</p>
+						}
+						<div class="product-price-panel">
+							<span>Preco-base</span>
+							<strong>{ product.PriceBRL }</strong>
+						</div>
+						if product.Description != "" {
+							<div class="product-description">
+								<h2>Sobre o produto</h2>
+								<p>{ product.Description }</p>
+							</div>
+						}
+						<div class="product-detail-actions">
+							@components.LinkButton("/#contato", "Falar com a PrintLab")
+							<p>Checkout sera disponibilizado futuramente.</p>
+						</div>
+					</div>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ CatalogUnavailable() {
+	@components.Layout("Catalogo indisponivel | PrintLab", "Catalogo temporariamente indisponivel.") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Catalogo temporariamente indisponivel.", "Nao foi possivel carregar os produtos agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}
+
+templ ProductNotFound() {
+	@components.Layout("Produto nao encontrado | PrintLab", "Produto nao encontrado no catalogo da PrintLab.") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Produto nao encontrado.", "Esse experimento ainda nao esta disponivel no catalogo publico da PrintLab.")
+			}
+		</section>
+	}
+}

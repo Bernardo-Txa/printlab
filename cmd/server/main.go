@@ -12,6 +12,7 @@ import (
 
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/database"
+	"github.com/Bernardo-Txa/printlab/internal/products"
 	webfiles "github.com/Bernardo-Txa/printlab/web"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
@@ -46,10 +47,21 @@ func main() {
 }
 
 func newHandler(db *database.Database) http.Handler {
+	var catalog catalogService
+	if db != nil && db.Configured() {
+		catalog = products.NewService(products.NewPostgresRepository(db.Pool()))
+	}
+
+	return newHandlerWithCatalog(db, catalog)
+}
+
+func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("GET /ready", readyHandler(db))
+	mux.HandleFunc("GET /produtos", catalogHandler(catalog))
+	mux.HandleFunc("GET /produtos/{slug}", productHandler(catalog))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

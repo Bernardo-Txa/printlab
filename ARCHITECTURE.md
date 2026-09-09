@@ -8,6 +8,8 @@ IMPLEMENTADO:
 
 - Aplicacao Go em `cmd/server`.
 - Homepage server-side em `GET /`.
+- Catalogo publico em `GET /produtos`.
+- Pagina publica de produto em `GET /produtos/{slug}`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -17,14 +19,15 @@ IMPLEMENTADO:
 - Workflow de CI/CD para migrations Supabase de desenvolvimento.
 - Configuracao centralizada em `internal/config`.
 - Acesso PostgreSQL com `pgx/v5` e `pgxpool` em `internal/database`.
+- Primeiro schema de negocio com `public.categories` e `public.products`.
+- Vertical slice de catalogo em `internal/products`.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:
 
-- Catalogo, carrinho, checkout, pedidos, painel administrativo e integracoes externas.
-- Schema de negocio.
+- Variantes, carrinho, checkout, pedidos, painel administrativo e integracoes externas.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -103,9 +106,11 @@ Para compatibilidade com Supabase Transaction Pooler, `pgxpool.Config.ConnConfig
 
 O Supabase Data API nao sera a interface primaria da aplicacao. O uso futuro de Supabase Storage para imagens podera ser avaliado quando catalogo e midia de produto forem implementados.
 
-Migrations Supabase futuras devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. A aplicacao Go nao executa migrations no startup.
+Migrations Supabase devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. A aplicacao Go nao executa migrations no startup.
 
-Schema de negocio ainda nao foi criado. Nenhuma tabela de produtos, carrinho, pedidos, pagamentos, frete, clientes ou admin existe nesta fase.
+O primeiro schema de negocio cria `public.categories` e `public.products`. Produtos publicos dependem de `products.is_active = true`, usam slug como URL publica e armazenam preco-base em `price_cents` como inteiro em centavos.
+
+Ainda nao existem tabelas de variantes, imagens, carrinho, pedidos, pagamentos, frete, clientes ou admin.
 
 ## Comunicacao com servicos externos
 
@@ -138,7 +143,30 @@ Fluxo atual:
 GET / -> homepage HTML renderizada com templ
 GET /health -> HTTP 200
 GET /ready -> HTTP 200 quando banco configurado e acessivel; HTTP 503 quando ausente ou indisponivel
+GET /produtos -> catalogo publico SSR; HTTP 503 quando banco estiver indisponivel
+GET /produtos/{slug} -> detalhe publico de produto ativo; HTTP 404 para inexistente, inativo ou slug invalido
 GET /static/... -> assets embutidos a partir de web/static/
+```
+
+Vertical slice implementada para catalogo:
+
+```text
+HTTP
+   |
+   v
+products handler
+   |
+   v
+products service
+   |
+   v
+products repository
+   |
+   v
+pgxpool
+   |
+   v
+PostgreSQL
 ```
 
 Fluxo planejado para funcionalidades de negocio:

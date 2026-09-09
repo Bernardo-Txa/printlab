@@ -15,6 +15,8 @@ IMPLEMENTADO:
 - Aplicacao Go em `cmd/server` usando `net/http`.
 - Rota `GET /health` retornando HTTP 200.
 - Homepage server-side em `GET /` renderizada com `templ`.
+- Catalogo SSR em `GET /produtos`.
+- Pagina publica de produto em `GET /produtos/{slug}`.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -27,12 +29,11 @@ IMPLEMENTADO:
 - Rota `GET /ready` para readiness do banco.
 - Supabase CLI local via npm e estrutura `supabase/`.
 - Vercel configurada para a regiao `gru1`.
+- Primeiro schema de negocio com `categories` e `products`.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Schema de negocio.
-- Catalogo de produtos.
 - Produtos com variantes, cores e materiais.
 - Carrinho e checkout sem obrigatoriedade de conta.
 - Enderecos, frete e integracao com SuperFrete.
@@ -66,6 +67,8 @@ Frontend implementado:
 - Assets estaticos embutidos no binario Go para compatibilidade com deploy na Vercel.
 - Logo de marca em `web/static/images/branding/logo-printlab-primary.png`.
 - Linguagem visual com blocos coloridos, grid tecnico, camadas de impressao e elementos inspirados em laboratorio.
+- Catalogo publico e detalhe de produto renderizados no servidor, sem JavaScript obrigatorio.
+- Card de produto com placeholder visual de marca enquanto imagens reais nao existem.
 
 Banco planejado:
 
@@ -81,6 +84,11 @@ Banco implementado:
 - `DefaultQueryExecMode` configurado como `pgx.QueryExecModeExec` para compatibilidade com Supabase Transaction Pooler.
 - `GET /ready` retorna 503 enquanto `DATABASE_URL` estiver ausente ou o banco estiver indisponivel.
 - A homepage e `GET /health` continuam funcionando sem `DATABASE_URL` nesta fase.
+- `categories` e `products` implementam o catalogo basico.
+- Slugs sao unicos e usados em URLs publicas.
+- `products.price_cents` armazena o preco-base em centavos.
+- `products.is_active` controla exibicao publica.
+- `products.is_featured` participa da ordenacao inicial.
 
 Infraestrutura planejada:
 
@@ -204,6 +212,14 @@ curl -i http://localhost:8080/ready
 
 Sem `DATABASE_URL`, a resposta esperada nesta fase e HTTP 503. Com `DATABASE_URL` configurada e banco acessivel, a resposta esperada e HTTP 200 com body `ok`.
 
+Catalogo:
+
+```sh
+curl -i http://localhost:8080/produtos
+```
+
+Com banco configurado e migrations aplicadas, a resposta esperada e HTTP 200. Com catalogo vazio, a pagina mostra um empty state honesto. Sem banco ou sem schema aplicado, a rota retorna indisponibilidade generica.
+
 ## Supabase local
 
 A CLI do Supabase esta instalada como devDependency:
@@ -239,6 +255,7 @@ cmd/server/              entrada HTTP da aplicacao
 .github/workflows/       automacoes de CI/CD
 internal/config/         leitura e validacao de configuracao
 internal/database/       pool PostgreSQL via pgxpool
+internal/products/       catalogo, service e repository PostgreSQL
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

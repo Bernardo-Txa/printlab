@@ -50,6 +50,7 @@ Supabase de desenvolvimento
 - Vercel configurada em `vercel.json` para executar na regiao `gru1`.
 - Sem operacao comercial.
 - Conexao PostgreSQL da aplicacao via `DATABASE_URL` quando configurada.
+- Catalogo publico depende do PostgreSQL e retorna indisponibilidade generica quando o banco ou schema nao estiverem acessiveis.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -105,6 +106,8 @@ O workflow nao usa `--include-seed`, nao executa reset remoto e nao deve imprimi
 
 Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Antes da operacao comercial sera necessario separar development/staging e production, com politica de aprovacao propria para producao.
 
+A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. Ela deve ser aplicada pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios.
+
 ## Runtime PostgreSQL
 
 ```text
@@ -128,6 +131,15 @@ Secrets de runtime no ambiente de hosting:
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
 
 Na validacao final da Fase 3.1, a URL publica retornou HTTP 200 em `/ready`, confirmando a conexao runtime com o Supabase Transaction Pooler sem expor detalhes internos.
+
+Depois da Fase 4, validar tambem:
+
+```sh
+curl -i https://printlab-pied.vercel.app/produtos
+curl -i https://printlab-pied.vercel.app/produtos/nao-existe
+```
+
+O catalogo pode estar vazio e ainda assim responder HTTP 200. Produto inexistente deve responder HTTP 404.
 
 ## Vercel
 

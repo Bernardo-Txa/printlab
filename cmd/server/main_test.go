@@ -165,5 +165,19 @@ func newTestHandler(t *testing.T) http.Handler {
 	}
 	t.Cleanup(db.Close)
 
-	return newHandler(db)
+	return newHandlerWithCatalog(db, nil)
+}
+
+func newTestHandlerWithCatalog(t *testing.T, service catalogService) http.Handler {
+	t.Helper()
+
+	db, err := database.New(context.Background(), database.Config{
+		MaxConns: config.DefaultDBMaxConns,
+	})
+	if err != nil {
+		t.Fatalf("expected test database config to be valid, got %v", err)
+	}
+	t.Cleanup(db.Close)
+
+	return newHandlerWithCatalog(db, service)
 }

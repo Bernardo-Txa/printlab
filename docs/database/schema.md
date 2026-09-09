@@ -1,10 +1,8 @@
 # Schema de banco
 
-Status: PLANEJADO. Fundacao PostgreSQL/Supabase implementada, sem tabelas de negocio.
+Status: catalogo basico IMPLEMENTADO; demais entidades de negocio PLANEJADAS.
 
-Schema ainda nao aprovado.
-
-Nenhuma tabela deve ser criada nesta fase. As entidades abaixo sao candidatas provaveis para fases futuras e precisam de revisao antes de virar migration.
+A Fase 4 cria o primeiro schema de negocio da PrintLab: categorias e produtos basicos para catalogo publico.
 
 ## Convencoes futuras
 
@@ -19,12 +17,94 @@ Nenhuma tabela deve ser criada nesta fase. As entidades abaixo sao candidatas pr
 - Alteracoes de schema devem usar migrations versionadas em `supabase/migrations/`.
 - Migrations aplicadas nao devem ser alteradas silenciosamente.
 
+## Tabela `public.categories`
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `name` | `text` | nao | - | Nome publico da categoria. |
+| `slug` | `text` | nao | - | Identificador publico unico. |
+| `description` | `text` | sim | - | Descricao opcional. |
+| `is_active` | `boolean` | nao | `true` | Controla exibicao publica nos filtros. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Deve ser atualizado explicitamente em operacoes futuras de update. |
+
+Constraints:
+
+- `categories_pkey`: chave primaria em `id`.
+- `categories_slug_unique`: `slug` unico.
+- `categories_name_not_blank`: `btrim(name) <> ''`.
+- `categories_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
+- `categories_description_not_blank`: `description is null or btrim(description) <> ''`.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada nesta fase.
+
+## Tabela `public.products`
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `category_id` | `uuid` | sim | - | Categoria opcional. |
+| `name` | `text` | nao | - | Nome publico do produto. |
+| `slug` | `text` | nao | - | Identificador publico unico. |
+| `short_description` | `text` | sim | - | Resumo opcional para listagem e SEO. |
+| `description` | `text` | sim | - | Descricao opcional para detalhe. |
+| `price_cents` | `bigint` | nao | - | Preco-base comercial em centavos. |
+| `is_active` | `boolean` | nao | `false` | Controla exibicao publica. |
+| `is_featured` | `boolean` | nao | `false` | Permite destaque e ordenacao inicial. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Deve ser atualizado explicitamente em operacoes futuras de update. |
+
+Foreign keys:
+
+- `products_category_id_fkey`: `category_id` referencia `public.categories(id)` com `on delete set null`.
+
+Constraints:
+
+- `products_pkey`: chave primaria em `id`.
+- `products_slug_unique`: `slug` unico.
+- `products_name_not_blank`: `btrim(name) <> ''`.
+- `products_slug_format`: `slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`.
+- `products_price_cents_non_negative`: `price_cents >= 0`.
+- `products_short_description_not_blank`: `short_description is null or btrim(short_description) <> ''`.
+- `products_description_not_blank`: `description is null or btrim(description) <> ''`.
+
+Indices:
+
+- `products_category_id_idx` em `products(category_id)`.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada nesta fase.
+
+## Semantica de `price_cents`
+
+`products.price_cents` representa o preco-base comercial do produto na Fase 4.
+
+```text
+R$ 39,90 -> 3990
+```
+
+Dinheiro nao usa `float32` ou `float64`. Quando variantes forem implementadas na Fase 5, elas poderao ter preco proprio ou override sem quebrar o contrato atual do preco-base.
+
+## Categoria opcional
+
+`products.category_id` pode ser `null`. Um produto ativo sem categoria continua aparecendo no catalogo publico.
+
+Se uma categoria for removida, `on delete set null` preserva o produto. Se uma categoria estiver inativa, ela nao aparece nos filtros publicos; o produto ativo associado pode continuar aparecendo na listagem geral sem depender da categoria para existir publicamente.
+
 ## Entidades candidatas
 
-- `products`: produtos publicados ou administrados pela PrintLab.
 - `product_variants`: variacoes de produto, como cor, material ou tamanho.
 - `product_images`: imagens associadas a produtos.
-- `categories`: organizacao de catalogo.
 - `customers`: dados minimos de clientes.
 - `addresses`: enderecos de entrega ou cobranca quando necessario.
 - `carts`: carrinhos de visitantes ou clientes.
@@ -53,11 +133,11 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-Nenhum preco e implementado nesta fase.
+O preco-base de produto foi implementado em `products.price_cents`. Totais de carrinho, frete, pedidos, descontos e pagamentos continuam planejados.
 
 ## IDs
 
-Nao ha estrategia universal de IDs aprovada. `uuid` e `bigint identity` serao avaliados conforme cada entidade.
+`categories` e `products` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada caso.
 
 Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
@@ -69,9 +149,11 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 
 ## Pendencias
 
-- Definir representacao monetaria.
 - Definir status de pedido.
 - Definir status de pagamento.
 - Definir modelo de variantes.
 - Definir estrategia para produtos sob demanda.
 - Definir dados minimos de cliente e endereco.
+- Definir imagens de produto e storage.
+- Definir estoque.
+- Definir metricas de producao, como custo de filamento e tempo de impressao.

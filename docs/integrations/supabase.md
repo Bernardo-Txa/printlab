@@ -31,6 +31,7 @@ Supabase PostgreSQL
 - O workflow usa `supabase/setup-cli@v1` com Supabase CLI `2.117.0` fixado, executa `supabase link`, roda `supabase db push --dry-run` e so depois executa `supabase db push`.
 - `pgx.QueryExecModeExec` e usado para evitar dependencia de prepared statement cache incompativel com transaction pooling.
 - A aplicacao Go nao executa migrations no startup.
+- A primeira migration de negocio cria `categories` e `products`, sem seed ficticio.
 
 ## Variaveis previstas
 
@@ -94,6 +95,17 @@ Em 2026-09-09, a integracao remota da Fase 3.1 foi concluida sem expor valores d
 
 Nenhum valor de `DATABASE_URL`, senha, token, project ref ou connection string foi registrado.
 
+## Catalogo
+
+O catalogo publico usa o PostgreSQL do Supabase via backend Go e `pgxpool`.
+
+- `categories` e `products` ficam no schema `public`.
+- RLS fica habilitado nas duas tabelas sem policies publicas nesta fase.
+- `DATABASE_URL` deve apontar para o Transaction Pooler.
+- O backend consulta somente produtos ativos.
+- O Data API nao e a interface primaria do catalogo.
+- Imagens de produto e Supabase Storage continuam planejados.
+
 ## Estrutura local
 
 ```text
@@ -115,3 +127,4 @@ supabase/
 - Executar `supabase db reset --linked` contra ambiente remoto.
 - Aplicar seed automaticamente em deploy de migrations.
 - Fazer `supabase login`, `supabase link` ou `supabase db push` manual como workflow normal de desenvolvimento.
+- Inserir seed ou produto ficticio apenas para validar deploy.

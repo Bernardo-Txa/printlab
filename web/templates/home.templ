@@ -18,7 +18,7 @@ templ Home() {
 							Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.
 						</p>
 						<div class="mt-8 flex flex-col gap-3 sm:flex-row">
-							@components.LinkButton("#contato", "Falar com a PrintLab")
+							@components.LinkButton("/produtos", "Ver produtos")
 							@components.LinkButtonSecondary("#como-funciona", "Ver o processo")
 						</div>
 					</div>
@@ -90,8 +90,11 @@ templ Home() {
 						<p class="brand-kicker">Catalogo futuro</p>
 						<h2 class="mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl">Experimentos que voce vai poder levar para casa.</h2>
 						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg">
-							A vitrine ainda esta em preparacao. Esta area foi desenhada para receber objetos reais quando eles estiverem prontos para apresentacao.
+							A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentacao.
 						</p>
+						<div class="mt-8">
+							@components.LinkButton("/produtos", "Abrir catalogo")
+						</div>
 					</div>
 					<div class="catalog-preview" aria-label="Espaco visual reservado para catalogo futuro">
 						<span class="catalog-shape catalog-shape-blue"></span>

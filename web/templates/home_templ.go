@@ -63,7 +63,7 @@ func Home() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = components.LinkButton("#contato", "Falar com a PrintLab").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.LinkButton("/produtos", "Ver produtos").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -165,7 +165,15 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catalogo futuro</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que voce vai poder levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">A vitrine ainda esta em preparacao. Esta area foi desenhada para receber objetos reais quando eles estiverem prontos para apresentacao.</p></div><div class=\"catalog-preview\" aria-label=\"Espaco visual reservado para catalogo futuro\"><span class=\"catalog-shape catalog-shape-blue\"></span> <span class=\"catalog-shape catalog-shape-teal\"></span> <span class=\"catalog-shape catalog-shape-pink\"></span> <span class=\"catalog-shape catalog-shape-yellow\"></span></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catalogo futuro</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que voce vai poder levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentacao.</p><div class=\"mt-8\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = components.LinkButton("/produtos", "Abrir catalogo").Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div></div><div class=\"catalog-preview\" aria-label=\"Espaco visual reservado para catalogo futuro\"><span class=\"catalog-shape catalog-shape-blue\"></span> <span class=\"catalog-shape catalog-shape-teal\"></span> <span class=\"catalog-shape catalog-shape-pink\"></span> <span class=\"catalog-shape catalog-shape-yellow\"></span></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -175,7 +183,7 @@ func Home() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</section><section id=\"lab\" class=\"lab-story-section\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</section><section id=\"lab\" class=\"lab-story-section\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -191,7 +199,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"lab-story-grid\"><div><p class=\"brand-kicker\">Por que Lab?</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Porque criar tambem e testar.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">A PrintLab mistura fabricacao digital, experimentacao e criatividade. Cada projeto comeca como uma ideia e passa por ajustes ate ganhar forma fisica.</p></div><div class=\"lab-graphic\" aria-hidden=\"true\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"lab-story-grid\"><div><p class=\"brand-kicker\">Por que Lab?</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Porque criar tambem e testar.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">A PrintLab mistura fabricacao digital, experimentacao e criatividade. Cada projeto comeca como uma ideia e passa por ajustes ate ganhar forma fisica.</p></div><div class=\"lab-graphic\" aria-hidden=\"true\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -199,7 +207,7 @@ func Home() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"lab-flask-outline\"></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"lab-flask-outline\"></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -209,7 +217,7 @@ func Home() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</section><section class=\"brand-impact-section\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</section><section class=\"brand-impact-section\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -225,7 +233,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<h2 class=\"brand-impact-title\"><span>Da ideia</span> <span>para o mundo</span> <span>fisico.</span></h2>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<h2 class=\"brand-impact-title\"><span>Da ideia</span> <span>para o mundo</span> <span>fisico.</span></h2>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -235,7 +243,7 @@ func Home() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</section><section id=\"contato\" class=\"cta-section\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</section><section id=\"contato\" class=\"cta-section\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -251,7 +259,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Tem uma ideia? Vamos experimentar.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">O canal oficial de atendimento sera definido em breve. Enquanto isso, este espaco aproxima a marca de quem quer tirar uma ideia do papel.</p></div><div class=\"cta-badge\" aria-label=\"Falar com a PrintLab\">Falar com a PrintLab</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Tem uma ideia? Vamos experimentar.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">O canal oficial de atendimento sera definido em breve. Enquanto isso, este espaco aproxima a marca de quem quer tirar uma ideia do papel.</p></div><div class=\"cta-badge\" aria-label=\"Falar com a PrintLab\">Falar com a PrintLab</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -261,7 +269,7 @@ func Home() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
