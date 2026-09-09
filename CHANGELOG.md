@@ -17,6 +17,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Integracao da logo oficial inicial da PrintLab ao header e hero.
 - Teste para entrega do asset de marca em `/static/images/branding/logo-printlab-primary.png`.
 - Fase 2.1 — Brand Experience, com homepage mais editorial e linguagem grafica da marca.
+- Workflow de GitHub Actions para migrations Supabase de desenvolvimento com dry-run antes da aplicacao.
 
 ### Changed
 

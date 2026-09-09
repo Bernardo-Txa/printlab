@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2 e 2.1 concluidas. Fases 3 a 17 planejadas.
+Status: Fases 0, 1, 2 e 2.1 concluidas. Fase 3 em andamento. Fases 4 a 17 planejadas.
 
 ## Status das fases
 
@@ -10,7 +10,7 @@ Status: Fases 0, 1, 2 e 2.1 concluidas. Fases 3 a 17 planejadas.
 | Fase 1 — Bootstrap da aplicacao Go | Concluida |
 | Fase 2 — Design system e layout | Concluida |
 | Fase 2.1 — Brand Experience | Concluida |
-| Fase 3 — Banco de dados | Planejada |
+| Fase 3 — Banco de dados | Em andamento |
 | Fase 4 — Catalogo | Planejada |
 | Fase 5 — Produtos e variantes | Planejada |
 | Fase 6 — Carrinho | Planejada |
@@ -105,6 +105,7 @@ Principais entregas:
 - Primeiras migrations versionadas.
 - Configuracao de conexao via environment variables.
 - Acesso inicial via `pgx`.
+- Workflow de CI/CD para migrations Supabase com dry-run antes da aplicacao.
 
 Dependencias: Fases 0 e 1; revisao de schema.
 

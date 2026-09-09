@@ -20,6 +20,7 @@ IMPLEMENTADO:
 - Logo oficial inicial integrada ao header e ao hero da homepage.
 - Design tokens refinados com base na identidade visual da marca.
 - Fase 2.1 de Brand Experience aplicada na homepage.
+- Workflow de GitHub Actions para aplicar migrations Supabase de desenvolvimento com dry-run previo.
 
 PLANEJADO:
 
@@ -70,6 +71,12 @@ Infraestrutura planejada:
 - Supabase para PostgreSQL.
 - Supabase Storage podera ser avaliado futuramente para imagens.
 
+Infraestrutura implementada para desenvolvimento:
+
+- GitHub Actions em `.github/workflows/supabase-migrations.yml` para migrations Supabase.
+- Execucao automatica apenas em mudancas de `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
+- Supabase CLI fixado em `2.20.3`, com `supabase db push --dry-run` antes de `supabase db push`.
+
 ## Arquitetura resumida
 
 ```text
@@ -94,7 +101,13 @@ O module path Go esta definido como `github.com/Bernardo-Txa/printlab`.
 - Go 1.26.0 ou versao compativel.
 - Node.js e npm para tooling frontend.
 - CLI do `templ` v0.3.1020.
-- Nenhuma conta externa e necessaria nesta fase.
+- Nenhuma conta externa e necessaria para executar a aplicacao local atual.
+
+Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve configurar estes GitHub Actions Secrets, sem incluir valores no repositorio:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+- `SUPABASE_PROJECT_ID`
 
 Instalacao local do tooling:
 
@@ -168,12 +181,13 @@ go vet ./...
 
 ```text
 cmd/server/              entrada HTTP da aplicacao
+.github/workflows/       automacoes de CI/CD
 internal/                pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ
 web/assets/              fontes de assets, incluindo CSS fonte
 web/static/              assets compilados, embutidos no binario e servidos em /static/
-migrations/              migrations futuras de banco
+supabase/migrations/     migrations futuras do Supabase
 tests/                   suporte futuro para testes de maior escopo
 docs/                    documentacao do projeto
 ```

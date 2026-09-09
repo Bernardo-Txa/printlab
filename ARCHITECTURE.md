@@ -13,6 +13,7 @@ IMPLEMENTADO:
 - Frontend server-side com `templ`.
 - Tailwind CSS via CLI npm.
 - Identidade visual da homepage refinada na Fase 2.1.
+- Workflow de CI/CD para migrations Supabase de desenvolvimento.
 - Estrutura inicial de diretorios e documentacao.
 
 PLANEJADO:
@@ -79,6 +80,8 @@ As regras de negocio devem ficar no backend para evitar duplicacao insegura no n
 O banco planejado e PostgreSQL hospedado no Supabase. O acesso principal sera feito pelo backend Go usando `pgx`, por conexao PostgreSQL apropriada para ambiente hospedado.
 
 O Supabase Data API nao sera a interface primaria da aplicacao. O uso futuro de Supabase Storage para imagens podera ser avaliado quando catalogo e midia de produto forem implementados.
+
+Migrations Supabase futuras devem ser versionadas em `supabase/migrations/` e aplicadas ao ambiente de desenvolvimento pelo GitHub Actions apos dry-run bem-sucedido. Schema e conexao Go com Supabase ainda dependem de aprovacao nas proximas entregas da Fase 3.
 
 ## Comunicacao com servicos externos
 
