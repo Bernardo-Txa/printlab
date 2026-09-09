@@ -92,6 +92,16 @@ func TestProductFoundReturnsOK(t *testing.T) {
 	if !strings.Contains(body, "Imagem em preparo") {
 		t.Fatal("expected placeholder image fallback")
 	}
+
+	if !strings.Contains(body, `action="/carrinho/adicionar"`) || !strings.Contains(body, `name="product_slug"`) {
+		t.Fatal("expected real add-to-cart form")
+	}
+
+	for _, forbiddenField := range []string{`name="unit_price"`, `name="subtotal"`, `name="total"`, `name="product_name"`} {
+		if strings.Contains(body, forbiddenField) {
+			t.Fatalf("expected product form not to include authoritative field %s", forbiddenField)
+		}
+	}
 }
 
 func TestProductWithDefaultVariantReturnsOK(t *testing.T) {

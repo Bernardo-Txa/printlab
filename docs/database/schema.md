@@ -1,10 +1,12 @@
 # Schema de banco
 
-Status: catalogo com variantes e receita de producao IMPLEMENTADO; semantica de receita da Fase 5.1 IMPLEMENTADA; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao e carrinho IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
 A Fase 5.1 nao alterou schema. Ela corrigiu a leitura de receitas para preservar referencias a materiais e cores inativos em `variant_filaments`.
+
+A Fase 6 adiciona carrinho anonimo persistido server-side em `public.carts` e `public.cart_items`.
 
 ## Convencoes futuras
 
@@ -264,6 +266,88 @@ RLS:
 - RLS habilitado.
 - Nenhuma policy publica criada.
 
+## Tabela `public.carts`
+
+Carrinhos anonimos persistidos no PostgreSQL. O token bruto fica somente no navegador e no processamento da request; o banco persiste apenas o hash.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `token_hash` | `bytea` | nao | - | `SHA-256` do token bruto do cookie. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do carrinho. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente nas mutacoes. |
+| `expires_at` | `timestamptz` | nao | - | Expiracao do carrinho anonimo. |
+
+Constraints:
+
+- `carts_pkey`: chave primaria em `id`.
+- `carts_token_hash_key`: `token_hash` unico.
+- `carts_token_hash_length`: `octet_length(token_hash) = 32`.
+- `carts_expires_after_created`: `expires_at > created_at`.
+
+Semantica:
+
+- `token_hash` nunca deve conter o token bruto.
+- Carrinho expirado e tratado como inexistente pela aplicacao.
+- Mutacoes bem-sucedidas renovam `expires_at` para `agora + 30 dias`.
+- Nao ha job de limpeza nesta fase.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.cart_items`
+
+Itens de carrinho com produto, variante opcional e quantidade. Preco nao e persistido nesta tabela.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `cart_id` | `uuid` | nao | - | Carrinho dono da linha. |
+| `product_id` | `uuid` | nao | - | Produto escolhido. |
+| `variant_id` | `uuid` | sim | - | Variante escolhida, quando aplicavel. |
+| `quantity` | `integer` | nao | - | Quantidade entre 1 e 99. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao da linha. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente nas mutacoes. |
+
+Foreign keys:
+
+- `cart_items_cart_id_fkey`: `cart_id` referencia `public.carts(id)` com `on delete cascade`.
+- `cart_items_product_id_fkey`: `product_id` referencia `public.products(id)` com `on delete cascade`.
+- `cart_items_variant_product_fkey`: `(variant_id, product_id)` referencia `public.product_variants(id, product_id)`.
+
+Constraints:
+
+- `cart_items_pkey`: chave primaria em `id`.
+- `cart_items_quantity_range`: `quantity between 1 and 99`.
+
+Indices:
+
+- `cart_items_cart_id_idx` em `cart_items(cart_id)`.
+- `cart_items_product_id_idx` em `cart_items(product_id)`.
+- `cart_items_variant_id_idx` em `cart_items(variant_id)` quando `variant_id is not null`.
+- `cart_items_cart_product_no_variant_unique_idx`: unique parcial em `(cart_id, product_id)` quando `variant_id is null`.
+- `cart_items_cart_product_variant_unique_idx`: unique parcial em `(cart_id, product_id, variant_id)` quando `variant_id is not null`.
+
+Semantica:
+
+- O mesmo produto sem variante nao pode gerar multiplas linhas no mesmo carrinho.
+- O mesmo produto com a mesma variante nao pode gerar multiplas linhas no mesmo carrinho.
+- Adicionar novamente incrementa `quantity`, respeitando limite 99.
+- Atualizacoes e remocoes devem ser limitadas por `cart_id` e `id`.
+- Subtotais sao calculados em leitura usando preco atual do catalogo.
+- Itens indisponiveis podem continuar visiveis e nao entram no subtotal.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
 ## Tabela `public.product_images`
 
 Metadados de imagens publicas de catalogo armazenadas no Supabase Storage.
@@ -347,8 +431,6 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 
 - `customers`: dados minimos de clientes.
 - `addresses`: enderecos de entrega ou cobranca quando necessario.
-- `carts`: carrinhos de visitantes ou clientes.
-- `cart_items`: itens dentro de carrinhos.
 - `orders`: pedidos criados pelo backend.
 - `order_items`: itens persistidos de pedido com valores calculados pelo backend.
 - `payments`: registros de pagamento, tentativas e status validados.
@@ -373,7 +455,7 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-O preco-base de produto foi implementado em `products.price_cents`. Totais de carrinho, frete, pedidos, descontos e pagamentos continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete, pedidos, descontos, pagamentos e total final de checkout continuam planejados.
 
 ## IDs
 

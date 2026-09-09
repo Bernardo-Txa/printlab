@@ -17,6 +17,8 @@ IMPLEMENTADO:
 - Homepage server-side em `GET /` renderizada com `templ`.
 - Catalogo SSR em `GET /produtos`.
 - Pagina publica de produto em `GET /produtos/{slug}`.
+- Carrinho anonimo SSR em `GET /carrinho`.
+- Mutacoes de carrinho por POST para adicionar, atualizar quantidade e remover item.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -31,11 +33,12 @@ IMPLEMENTADO:
 - Vercel configurada para a regiao `gru1`.
 - Primeiro schema de negocio com `categories` e `products`.
 - Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada, imagens e bucket publico de catalogo.
+- Fase 6 — Carrinho, com persistencia PostgreSQL, token opaco em cookie e subtotal recalculado no backend.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Carrinho e checkout sem obrigatoriedade de conta.
+- Checkout sem obrigatoriedade de conta.
 - Enderecos, frete e integracao com SuperFrete.
 - Pedidos, pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
@@ -71,6 +74,7 @@ Frontend implementado:
 - Selecao de variante por links SSR via `?variante=<slug>`, sem JavaScript obrigatorio.
 - Galeria SSR simples com imagem publica de produto/variante quando existir.
 - Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
+- Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
 
 Banco planejado:
 
@@ -95,7 +99,11 @@ Banco implementado:
 - `product_variants.price_cents` pode sobrescrever o preco-base; quando `null`, usa `products.price_cents`.
 - `variant_filaments.estimated_weight_mg` armazena peso em miligramas como inteiro.
 - `product_variants.print_time_minutes` armazena tempo estimado de maquina, sem representar prazo de entrega.
-- RLS esta habilitado nas tabelas de catalogo/variantes sem policies publicas do Data API.
+- `carts` e `cart_items` persistem carrinhos anonimos sem armazenar token bruto nem precos.
+- `carts.token_hash` armazena `SHA-256` do token de cookie.
+- `cart_items.quantity` e limitado a `1..99`.
+- Subtotais do carrinho sao recalculados a partir do preco atual de produto/variante.
+- RLS esta habilitado nas tabelas de catalogo, variantes e carrinho sem policies publicas do Data API.
 
 Infraestrutura planejada:
 
@@ -145,11 +153,14 @@ Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve c
 
 Configuracao local ou de hosting para runtime:
 
+- `SITE_URL`: URL publica da aplicacao. Opcional, usada como origem permitida em mutacoes de carrinho.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
+
+O cookie anonimo do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
 Instalacao local do tooling:
 
@@ -236,6 +247,14 @@ curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
 
 O slug de variante e opcional e unico dentro do produto. Produto sem variantes continua usando o preco-base.
 
+Carrinho:
+
+```sh
+curl -i http://localhost:8080/carrinho
+```
+
+Sem cookie, a resposta esperada e HTTP 200 com carrinho vazio. Com banco configurado e cookie valido, a pagina lista itens persistidos. Mutacoes usam forms POST e redirecionam com HTTP 303 para `/carrinho`.
+
 ## Supabase local
 
 A CLI do Supabase esta instalada como devDependency:
@@ -272,6 +291,7 @@ cmd/server/              entrada HTTP da aplicacao
 internal/config/         leitura e validacao de configuracao
 internal/database/       pool PostgreSQL via pgxpool
 internal/products/       catalogo, service e repository PostgreSQL
+internal/cart/           carrinho anonimo, token, service e repository PostgreSQL
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5 e 5.1 concluidas. Fases 6 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1 e 6 concluidas. Fases 7 a 17 planejadas.
 
 ## Status das fases
 
@@ -15,7 +15,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5 e 5.1 concluidas. Fases 6 a 17 planejad
 | Fase 4 — Catalogo | Concluida |
 | Fase 5 — Produtos e variantes | Concluida |
 | Fase 5.1 — Semantica da receita de producao | Concluida |
-| Fase 6 — Carrinho | Planejada |
+| Fase 6 — Carrinho | Concluida |
 | Fase 7 — Dados do cliente e endereco | Planejada |
 | Fase 8 — Integracao SuperFrete | Planejada |
 | Fase 9 — Pedidos | Planejada |
@@ -225,19 +225,27 @@ Objetivo: permitir selecao de itens antes do checkout.
 
 Principais entregas:
 
-- Adicionar, alterar e remover itens.
-- Persistencia de carrinho aprovada.
-- Recalculo server-side.
-- Testes de quantidades e erros.
+- Carrinho anonimo persistido no PostgreSQL.
+- Token opaco em cookie `printlab_cart` e `SHA-256` no banco.
+- `GET /carrinho` com carrinho vazio, linhas, indisponibilidade e subtotal.
+- `POST /carrinho/adicionar` com add/increment e redirect 303.
+- `POST /carrinho/itens/{id}/quantidade` com validacao `1..99`.
+- `POST /carrinho/itens/{id}/remover` idempotente na experiencia publica.
+- Recalculo server-side de preco e subtotal.
+- Itens indisponiveis preservados sem entrar no subtotal.
+- Protecao cross-site por SameSite=Lax e validacao Origin/Referer.
 
 Dependencias: Fases 4, 5 e 5.1.
 
 Definition of Done:
 
 - Carrinho nao confia em preco vindo do cliente.
-- Testes cobrem alteracao de itens.
-- Estados de carrinho vazio e invalido documentados.
+- Testes cobrem token, cookie, service, disponibilidade, dinheiro, handlers e escopo por carrinho.
+- Estados de carrinho vazio, invalido e indisponivel documentados.
+- Migration `create_carts` criada.
+- RLS habilitado sem policies publicas.
 - Sem checkout implementado fora de escopo.
+- Fase 7 permanece planejada.
 
 ## Fase 7 — Dados do cliente e endereco
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	"github.com/Bernardo-Txa/printlab/internal/products"
@@ -41,30 +42,46 @@ func main() {
 	addr := ":" + cfg.Port
 	log.Printf("printlab web listening on %s", addr)
 
-	if err := http.ListenAndServe(addr, newHandler(db, cfg.SupabaseURL)); err != nil {
+	if err := http.ListenAndServe(addr, newHandler(db, cfg)); err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
 
-func newHandler(db *database.Database, supabaseURL string) http.Handler {
+func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var catalog catalogService
+	var shoppingCart cartService
 	if db != nil && db.Configured() {
+		supabaseURL := cfg.SupabaseURL
 		catalog = products.NewService(
 			products.NewPostgresRepository(db.Pool()),
 			products.WithSupabaseURL(supabaseURL),
 		)
+		shoppingCart = cartdomain.NewService(
+			cartdomain.NewPostgresRepository(db.Pool()),
+			cartdomain.WithSupabaseURL(supabaseURL),
+		)
 	}
 
-	return newHandlerWithCatalog(db, catalog)
+	return newHandlerWithServices(db, catalog, shoppingCart, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+		Secure: secureCartCookies(cfg),
+	}), cfg.SiteURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
+	return newHandlerWithServices(db, catalog, nil, cartdomain.NewCookieManager(cartdomain.CookieOptions{}), "")
+}
+
+func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, cartCookies *cartdomain.CookieManager, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("GET /ready", readyHandler(db))
 	mux.HandleFunc("GET /produtos", catalogHandler(catalog))
 	mux.HandleFunc("GET /produtos/{slug}", productHandler(catalog))
+	mux.HandleFunc("GET /carrinho", cartPageHandler(shoppingCart, cartCookies))
+	mux.HandleFunc("POST /carrinho/adicionar", addCartItemHandler(shoppingCart, cartCookies, siteURL))
+	mux.HandleFunc("POST /carrinho/itens/{id}/quantidade", updateCartItemQuantityHandler(shoppingCart, cartCookies, siteURL))
+	mux.HandleFunc("POST /carrinho/itens/{id}/remover", removeCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

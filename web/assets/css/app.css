@@ -603,11 +603,155 @@
   }
 
   .product-detail-actions {
-    @apply mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center;
+    @apply mt-8 flex flex-col gap-4 border-t border-border pt-6;
   }
 
   .product-detail-actions p {
     @apply text-sm leading-6 text-muted;
+  }
+
+  .add-to-cart-form {
+    @apply flex flex-col gap-3;
+  }
+
+  .add-to-cart-form label,
+  .cart-quantity-form label {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .add-to-cart-controls {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center;
+  }
+
+  .add-to-cart-controls input,
+  .cart-quantity-form input {
+    @apply min-h-11 w-28 rounded-control border border-border bg-surface px-3 py-2 text-base font-semibold text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .cart-section {
+    @apply bg-background py-10 sm:py-14;
+  }
+
+  .cart-heading {
+    @apply max-w-3xl;
+  }
+
+  .cart-heading h1 {
+    @apply mt-5 text-balance text-5xl font-semibold leading-none tracking-normal text-foreground sm:text-6xl;
+  }
+
+  .cart-heading p:not(.brand-kicker) {
+    @apply mt-5 text-pretty text-base leading-7 text-muted sm:text-lg;
+  }
+
+  .cart-empty {
+    @apply mt-8 flex flex-col items-start gap-5;
+  }
+
+  .cart-layout {
+    @apply mt-8 grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start;
+  }
+
+  .cart-lines {
+    @apply grid gap-4;
+  }
+
+  .cart-line {
+    @apply grid overflow-hidden rounded-card border border-border bg-surface shadow-soft sm:grid-cols-[12rem_1fr];
+  }
+
+  .cart-line-media .product-media,
+  .cart-line-media .product-visual {
+    @apply h-56 min-h-56 sm:h-full;
+  }
+
+  .cart-line-body {
+    @apply flex flex-col gap-5 p-5;
+  }
+
+  .cart-line-title {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .cart-line-title h2 {
+    @apply text-2xl font-semibold leading-tight text-foreground;
+  }
+
+  .cart-line-title p {
+    @apply mt-1 text-sm font-semibold text-muted;
+  }
+
+  .cart-line-status {
+    @apply inline-flex w-fit rounded-control bg-danger px-3 py-1 text-xs font-semibold uppercase tracking-normal text-primary-foreground;
+  }
+
+  .cart-line-warning {
+    @apply rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger;
+  }
+
+  .cart-line-prices {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  .cart-line-prices p {
+    @apply flex flex-col gap-1 rounded-card border border-border bg-background px-4 py-3;
+  }
+
+  .cart-line-prices span {
+    @apply text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .cart-line-prices strong {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .cart-line-actions {
+    @apply flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-end sm:justify-between;
+  }
+
+  .cart-quantity-form {
+    @apply flex flex-wrap items-end gap-3;
+  }
+
+  .cart-remove-button {
+    @apply inline-flex min-h-11 items-center justify-center rounded-control border border-danger/35 bg-surface px-4 py-2 text-sm font-semibold text-danger outline-none transition-colors hover:bg-danger hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-danger;
+  }
+
+  .cart-summary {
+    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+  }
+
+  .cart-summary h2 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .cart-summary-row {
+    @apply mt-5 flex items-center justify-between gap-4 border-y border-border py-4;
+  }
+
+  .cart-summary-row span {
+    @apply text-sm font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .cart-summary-row strong {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .cart-summary-note,
+  .cart-summary-alert {
+    @apply mt-4 text-sm leading-6 text-muted;
+  }
+
+  .cart-summary-alert {
+    @apply rounded-control border border-danger/25 bg-danger/10 px-3 py-2 font-semibold text-danger;
+  }
+
+  .cart-checkout-soon {
+    @apply mt-5 flex min-h-11 items-center justify-center rounded-control bg-surface-muted px-4 py-2 text-sm font-semibold text-muted;
+  }
+
+  .cart-summary .btn-base {
+    @apply mt-3 w-full;
   }
 
   .lab-story-section {

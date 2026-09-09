@@ -35,3 +35,4 @@ Data:
 - [ADR-0003 — PostgreSQL/Supabase com pgx e Transaction Pooler](0003-postgresql-supabase-via-pgx.md)
 - [ADR-0004 — Catalogo basico com categories e products](0004-catalogo-basico-com-categories-products.md)
 - [ADR-0005 — Modelagem de variantes e receita de producao 3D](0005-modelagem-de-variantes-e-receita-de-producao-3d.md)
+- [ADR-0006 — Carrinho anonimo persistido server-side](0006-carrinho-anonimo-persistido-server-side.md)

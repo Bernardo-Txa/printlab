@@ -93,6 +93,21 @@ func TestLoadTrimsOptionalSupabaseURL(t *testing.T) {
 	}
 }
 
+func TestLoadReadsOptionalSiteAndRuntimeEnvironment(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"APP_ENV":    " production ",
+		"VERCEL_ENV": " preview ",
+		"SITE_URL":   " https://printlab.example ",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.AppEnv != "production" || cfg.VercelEnv != "preview" || cfg.SiteURL != "https://printlab.example" {
+		t.Fatalf("expected optional environment values to be trimmed, got %#v", cfg)
+	}
+}
+
 func mapLookup(values map[string]string) envLookup {
 	return func(key string) (string, bool) {
 		value, ok := values[key]

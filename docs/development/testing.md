@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo e variantes IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes e carrinho IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -68,6 +68,13 @@ npx supabase --version
 - Selecao de variante cobre default ativa, primeira ativa sem default, explicita valida, inexistente, inativa, de outro produto e produto sem variantes.
 - Fallback de imagem cobre imagem de variante, imagem geral de produto e placeholder quando `SUPABASE_URL` nao esta disponivel.
 - URL publica de Storage e testada sem baixar arquivos do Supabase.
+- Token de carrinho cobre entropia/tamanho esperado, tokens diferentes, hash SHA-256 e token bruto diferente do hash.
+- Cookie de carrinho cobre `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure`, `MaxAge` e `Expires`.
+- Service de carrinho cobre carrinho inexistente, expirado, criacao no primeiro add, produto sem variante, variante obrigatoria, variante valida, variante inativa, variante de outro produto, produto inativo, produto inexistente, add/increment, limite 99 e quantidade invalida.
+- Carrinho cobre disponibilidade: produto ativo + variante ativa, produto inativo, variante inativa e produto que passa a exigir variante.
+- Dinheiro no carrinho cobre `price * quantity`, subtotal apenas de itens disponiveis e protecao contra overflow.
+- Mutacoes de item cobrem escopo por `cart_id + item_id`.
+- Handlers de carrinho cobrem `GET /carrinho` vazio, `POST /carrinho/adicionar`, quantidade invalida, produto inexistente, variante invalida, update, remove e origem cross-site invalida.
 
 ## Teste de integracao PostgreSQL opcional
 

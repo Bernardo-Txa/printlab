@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo e variantes IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes e carrinho IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -13,6 +13,12 @@ A segunda migration funcional evolui produtos, variantes e producao 3D:
 - `supabase/migrations/20260909162227_create_product_variants.sql`
 
 Ela cria `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, constraints, foreign keys, indices parciais, RLS sem policies publicas e configura o bucket `product-images` em `storage.buckets`. Nao insere produtos, materiais, cores, variantes ou imagens ficticias.
+
+A terceira migration funcional cria o carrinho anonimo persistido:
+
+- `supabase/migrations/20260909194855_create_carts.sql`
+
+Ela cria `public.carts` e `public.cart_items`, constraints, foreign keys, indices unique parciais para evitar linhas duplicadas, limite de quantidade `1..99` e RLS sem policies publicas. Nao insere carrinhos, itens ou dados ficticios.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
@@ -64,6 +70,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - Table Editor e SQL Editor remoto nao devem ser usados como workflow normal para mudancas de schema.
 - A primeira migration real foi criada junto da Fase 4 de catalogo.
 - A segunda migration real foi criada junto da Fase 5 de produtos, variantes e producao.
+- A terceira migration real foi criada junto da Fase 6 de carrinho.
 
 ## Praticas recomendadas
 

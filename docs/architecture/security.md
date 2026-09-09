@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes IMPLEMENTADO.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes e carrinho IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -77,13 +77,27 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - O bucket `product-images` e publico para leitura de imagens de catalogo, mas nao existe policy publica de upload, update ou delete.
 - `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
+## Carrinho anonimo
+
+- Carrinho anonimo usa cookie opaco `printlab_cart`.
+- O cookie e `HttpOnly`, `SameSite=Lax`, `Path=/`, host-only e `Secure` em producao.
+- O token do cookie e aleatorio, gerado com `crypto/rand` com 32 bytes.
+- O token bruto nao e persistido, logado, renderizado em HTML ou enviado em URL.
+- O banco armazena somente `SHA-256(token)` em `carts.token_hash`.
+- `cart_items` armazena somente produto, variante opcional e quantidade.
+- Preco unitario, subtotal e total sao sempre recalculados server-side.
+- Mutacoes de item usam escopo `cart_id + item_id`; nunca atualizam ou removem apenas por `item_id`.
+- Mutacoes usam POST e validacao centralizada de `Origin`/`Referer`.
+- Requests cross-site com origem conhecida e incompatibil devem ser rejeitados.
+- Checkout futuro devera revalidar todos os itens antes de criar pedido.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao e imagens.
+- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens e carrinho.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
 

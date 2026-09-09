@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes e producao IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao e carrinho IMPLEMENTADOS; demais funcionalidades de negocio PLANEJADAS.
 
 ## Responsabilidade
 
@@ -12,17 +12,22 @@ Nesta fase, o backend implementa:
 - `GET /produtos` para catalogo publico.
 - `GET /produtos/{slug}` para detalhe publico de produto ativo.
 - `GET /produtos/{slug}?variante=<slug>` para detalhe com variante selecionada por slug.
+- `GET /carrinho` para carrinho anonimo SSR.
+- `POST /carrinho/adicionar` para adicionar ou incrementar item.
+- `POST /carrinho/itens/{id}/quantidade` para alterar quantidade.
+- `POST /carrinho/itens/{id}/remover` para remover item.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
 - `internal/config` para ler configuracao.
 - `internal/database` para criar `pgxpool.Pool`.
 - `internal/products` para modelos, service e repository PostgreSQL do catalogo, variantes, receita estimada e imagens.
+- `internal/cart` para token/cookie, service e repository PostgreSQL do carrinho.
 
 ## Limites
 
-- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao e imagens.
-- Nao ha carrinho, checkout, pedidos, pagamentos ou admin.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens e carrinho.
+- Nao ha checkout, pedidos, pagamentos ou admin.
 - Nao ha integracoes comerciais externas como frete ou pagamento.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -46,6 +51,9 @@ Nesta fase, o backend implementa:
 - Representar peso estimado de filamento em miligramas como inteiro.
 - Representar tempo estimado de maquina em minutos como inteiro.
 - Construir URL publica de imagem em um helper de dominio a partir de `SUPABASE_URL`, bucket `product-images` e `storage_path`.
+- Persistir carrinho anonimo server-side, usando cookie opaco e `SHA-256` no banco.
+- Recalcular preco e subtotal do carrinho a partir do catalogo atual.
+- Manter mutacoes de item limitadas por `cart_id` e `item_id`.
 
 ## Catalogo
 
@@ -60,6 +68,22 @@ Quando um produto possui variantes ativas, o service escolhe automaticamente a v
 As consultas de catalogo evitam N+1 em Go. A listagem calcula o menor preco efetivo e busca imagem geral primaria em uma consulta. O detalhe carrega produto, variantes, receitas e imagens em consultas separadas e coesas.
 
 Se o banco estiver indisponivel, rotas de catalogo retornam HTTP 503 com resposta generica, sem detalhes do PostgreSQL.
+
+## Carrinho
+
+`GET /carrinho` renderiza carrinho vazio quando nao ha cookie valido. A rota nao cria registro no banco apenas por leitura.
+
+`POST /carrinho/adicionar` recebe `product_slug`, `variant_slug` opcional e `quantity`. O backend valida slugs, quantidade, produto ativo, variante ativa quando exigida e nao aceita preco do frontend.
+
+Produto com variantes ativas exige variante valida. Produto sem variantes ativas pode ser adicionado sem variante.
+
+Adicionar produto/variante ja existente incrementa a linha de forma atomica no SQL e respeita o limite 99.
+
+`POST /carrinho/itens/{id}/quantidade` e `POST /carrinho/itens/{id}/remover` atuam somente quando o item pertence ao carrinho atual. Ambas usam `cart_id` junto de `item_id`.
+
+Itens que ficam indisponiveis continuam aparecendo no carrinho, podem ser removidos e nao entram no subtotal.
+
+Mutacoes bem-sucedidas renovam a expiracao do carrinho e do cookie para 30 dias.
 
 ## Health e readiness
 

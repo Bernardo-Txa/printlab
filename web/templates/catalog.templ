@@ -142,8 +142,18 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 							</div>
 						}
 						<div class="product-detail-actions">
-							@components.LinkButton("/#contato", "Falar com a PrintLab")
-							<p>Checkout sera disponibilizado futuramente.</p>
+							<form class="add-to-cart-form" method="post" action="/carrinho/adicionar">
+								<input type="hidden" name="product_slug" value={ detail.Product.Slug }/>
+								if detail.SelectedVariant != nil {
+									<input type="hidden" name="variant_slug" value={ detail.SelectedVariant.Slug }/>
+								}
+								<label for="product-quantity">Quantidade</label>
+								<div class="add-to-cart-controls">
+									<input id="product-quantity" type="number" name="quantity" min="1" max="99" value="1" required/>
+									<button class="btn-base btn-primary" type="submit">Adicionar ao carrinho</button>
+								</div>
+							</form>
+							<p>Frete e pagamento serao definidos na proxima etapa.</p>
 						</div>
 					</div>
 				</div>

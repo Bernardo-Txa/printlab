@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes e Storage de catalogo IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho e Storage de catalogo IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -33,6 +33,7 @@ Supabase PostgreSQL
 - A aplicacao Go nao executa migrations no startup.
 - A primeira migration de negocio cria `categories` e `products`, sem seed ficticio.
 - A segunda migration de negocio cria materiais, cores, variantes, receita estimada de producao, imagens e o bucket `product-images`, sem seed ficticio.
+- A terceira migration de negocio cria `carts` e `cart_items`, sem seed ficticio.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
 
 ## Variaveis previstas
@@ -117,6 +118,20 @@ O catalogo publico usa o PostgreSQL do Supabase via backend Go e `pgxpool`.
 A migration `20260909153625_create_catalog.sql` foi aplicada ao Supabase DEV pelo workflow `Supabase Migrations` no run `34372918466`, com dry-run antes da aplicacao.
 
 A migration `20260909162227_create_product_variants.sql` foi aplicada ao Supabase DEV pelo workflow `Supabase Migrations` no run `34378986883`, com dry-run antes da aplicacao. O bucket `product-images` foi configurado pela migration, sem policy publica de upload.
+
+## Carrinho
+
+O carrinho anonimo usa PostgreSQL via backend Go. O frontend nao acessa `carts` ou `cart_items` diretamente.
+
+- `carts` e `cart_items` ficam no schema `public`.
+- RLS fica habilitado sem policies publicas.
+- `carts.token_hash` armazena somente `SHA-256` do token do cookie.
+- O token bruto nao e armazenado no Supabase.
+- `cart_items` armazena produto, variante opcional e quantidade.
+- Precos e subtotais sao recalculados em leitura pelo backend.
+- Carrinhos expiram apos 30 dias.
+
+A migration `20260909194855_create_carts.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere carrinhos ou itens ficticios.
 
 ## Storage
 

@@ -10,6 +10,8 @@ IMPLEMENTADO:
 - Homepage server-side em `GET /`.
 - Catalogo publico em `GET /produtos`.
 - Pagina publica de produto em `GET /produtos/{slug}`.
+- Carrinho anonimo em `GET /carrinho`.
+- Mutacoes de carrinho por POST com redirects 303.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -22,6 +24,7 @@ IMPLEMENTADO:
 - Primeiro schema de negocio com `public.categories` e `public.products`.
 - Vertical slice de catalogo em `internal/products`.
 - Fase 5 com `materials`, `colors`, `product_variants`, `variant_filaments` e `product_images`.
+- Fase 6 com `carts` e `cart_items`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
 - Selecao publica de variante por query string em `GET /produtos/{slug}?variante=<variant-slug>`.
 - Supabase CLI local e estrutura `supabase/`.
@@ -30,7 +33,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Carrinho, checkout, pedidos, painel administrativo e integracoes externas.
+- Checkout, pedidos, painel administrativo e integracoes externas.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -71,6 +74,8 @@ Go Backend -> InfinitePay Checkout/Webhooks
 A PrintLab sera uma aplicacao server-side. O backend Go recebera requisicoes HTTP, aplicara regras de negocio, acessara o banco e renderizara respostas HTML quando apropriado.
 
 O navegador nao deve acessar diretamente tabelas sensiveis nem enviar valores financeiros como fonte autoritativa. IDs, quantidades e escolhas do usuario podem ser enviados pelo cliente, mas preco, subtotal, total, frete validado, status de pagamento e status de pedido pertencem ao servidor.
+
+O carrinho anonimo usa cookie opaco no navegador e persistencia server-side. O banco armazena somente o hash SHA-256 do token do cookie, enquanto itens armazenam produto, variante opcional e quantidade.
 
 ## Responsabilidades do frontend
 
@@ -120,7 +125,16 @@ A Fase 5 adiciona variantes, materiais, cores, receitas estimadas de producao e 
 - `product_variants.print_time_minutes` usa inteiro em minutos e nao representa prazo de entrega.
 - `product_images.storage_path` guarda caminho relativo no bucket `product-images`.
 
-Ainda nao existem tabelas de carrinho, pedidos, pagamentos, frete, clientes ou admin.
+Ainda nao existem tabelas de pedidos, pagamentos, frete, clientes ou admin.
+
+A Fase 6 adiciona carrinho anonimo:
+
+- `carts.token_hash` armazena `SHA-256` do token bruto do cookie.
+- `carts.expires_at` controla validade de 30 dias.
+- `cart_items` armazena `product_id`, `variant_id` opcional e `quantity`.
+- `cart_items.quantity` e limitado a `1..99`.
+- Indices unique parciais impedem linhas duplicadas para produto sem variante e produto com variante.
+- Precos e subtotais sao recalculados em leitura, sem persistir `unit_price`.
 
 ## Comunicacao com servicos externos
 
@@ -156,6 +170,10 @@ GET /ready -> HTTP 200 quando banco configurado e acessivel; HTTP 503 quando aus
 GET /produtos -> catalogo publico SSR; HTTP 503 quando banco estiver indisponivel
 GET /produtos/{slug} -> detalhe publico de produto ativo; HTTP 404 para inexistente, inativo ou slug invalido
 GET /produtos/{slug}?variante={variant-slug} -> detalhe com variante ativa selecionada; HTTP 404 para variante invalida ou indisponivel
+GET /carrinho -> carrinho SSR; carrinho vazio 200 sem cookie
+POST /carrinho/adicionar -> adiciona/incrementa item e redireciona 303 para /carrinho
+POST /carrinho/itens/{id}/quantidade -> atualiza quantidade e redireciona 303
+POST /carrinho/itens/{id}/remover -> remove item e redireciona 303
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 
@@ -172,6 +190,27 @@ products service
    |
    v
 products repository
+   |
+   v
+pgxpool
+   |
+   v
+PostgreSQL
+```
+
+Vertical slice implementada para carrinho:
+
+```text
+HTTP
+   |
+   v
+cart handler
+   |
+   v
+cart service
+   |
+   v
+cart repository
    |
    v
 pgxpool
@@ -223,6 +262,8 @@ Regras obrigatorias:
 
 - Nunca confiar em dados financeiros recebidos do navegador.
 - Preco efetivo de variante deve ser calculado no backend a partir de `product_variants.price_cents` ou `products.price_cents`.
+- Carrinho nao congela preco; subtotal usa preco atual calculado no backend.
+- Token bruto de carrinho nao deve ser persistido, logado, renderizado em HTML ou usado em URL.
 - Preco, desconto, subtotal, total, frete, status de pagamento e status de pedido devem ser definidos ou validados pelo backend.
 - Pagamento so pode ser considerado confirmado apos validacao server-side.
 - Redirect do navegador apos pagamento nunca e prova suficiente de pagamento.

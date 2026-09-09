@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo e variantes IMPLEMENTADA.
+Status: fundacao visual, banco, catalogo, variantes e carrinho IMPLEMENTADA.
 
 ## Requisitos
 
@@ -22,14 +22,16 @@ Variaveis de runtime:
 
 - `APP_ENV`: ambiente da aplicacao.
 - `PORT`: porta HTTP, default `8080`.
-- `SITE_URL`: URL publica da aplicacao quando necessaria.
+- `SITE_URL`: URL publica da aplicacao quando necessaria, usada tambem como origem permitida em mutacoes de carrinho.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
 - `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada somente para montar URLs publicas de imagens do bucket `product-images`.
 
-Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200 e `GET /ready` retorna 503. Esse comportamento e temporario enquanto a homepage nao depende do banco.
+Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel e `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
+
+Na Vercel, `VERCEL_ENV=production` tambem e considerado para marcar o cookie do carrinho como `Secure`. Localmente, `SITE_URL=http://localhost:8080` permite validar formularios sem exigir HTTPS.
 
 Secrets exigidos no GitHub Actions para migrations:
 
@@ -123,6 +125,29 @@ curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
 
 O slug de variante e opcional. Variante invalida, inexistente, inativa ou de outro produto retorna HTTP 404. Produto sem variantes continua valido.
 
+## Validar carrinho
+
+Com `DATABASE_URL` configurada e migrations aplicadas:
+
+```sh
+curl -i http://localhost:8080/carrinho
+```
+
+Sem cookie, a resposta esperada e HTTP 200 com carrinho vazio. A rota nao cria carrinho apenas por leitura.
+
+Adicionar item exige produto real ativo no banco:
+
+```sh
+curl -i \
+  -X POST \
+  -H "Origin: http://localhost:8080" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data "product_slug=<produto>&variant_slug=<variante>&quantity=1" \
+  http://localhost:8080/carrinho/adicionar
+```
+
+Nao inserir produto, variante, carrinho ou item ficticio apenas para validar UI local. Use dados reais de desenvolvimento quando existirem.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -150,6 +175,8 @@ O fluxo normal de schema deve ser: criar migration SQL em `supabase/migrations/`
 A primeira migration real e `create_catalog`, criando `categories` e `products` sem inserir dados ficticios.
 
 A segunda migration real e `create_product_variants`, criando `materials`, `colors`, `product_variants`, `variant_filaments`, `product_images` e o bucket publico `product-images`. Ela nao insere produtos, materiais, cores, variantes ou imagens ficticias.
+
+A terceira migration real e `create_carts`, criando `carts` e `cart_items`. Ela nao insere carrinhos, itens ou dados ficticios.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 

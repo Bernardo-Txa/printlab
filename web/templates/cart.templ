@@ -1,0 +1,93 @@
+package templates
+
+import (
+	"strconv"
+
+	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ CartPage(view cartdomain.CartView) {
+	@components.Layout("Carrinho | PrintLab", "Carrinho de produtos da PrintLab.", "") {
+		<section class="cart-section">
+			@components.Container() {
+				<div class="cart-heading">
+					<p class="brand-kicker">Carrinho</p>
+					<h1>Seu carrinho</h1>
+					<p>Revise os itens escolhidos. Frete e pagamento serao definidos na proxima etapa.</p>
+				</div>
+				if view.IsEmpty {
+					<div class="cart-empty">
+						@components.EmptyState("Seu carrinho ainda esta vazio.", "Explore os produtos da PrintLab e adicione os experimentos que quiser acompanhar.")
+						<a class="btn-base btn-primary" href="/produtos">Explorar produtos</a>
+					</div>
+				} else {
+					<div class="cart-layout">
+						<div class="cart-lines" aria-label="Itens do carrinho">
+							for _, line := range view.Lines {
+								<article class="cart-line">
+									<div class="cart-line-media">
+										@components.ProductMedia(line.Image, line.ProductName)
+									</div>
+									<div class="cart-line-body">
+										<div class="cart-line-title">
+											<div>
+												<h2>{ line.ProductName }</h2>
+												if line.HasVariant {
+													<p>Variante: { line.VariantName }</p>
+												}
+											</div>
+											if !line.Available {
+												<span class="cart-line-status">Indisponivel</span>
+											}
+										</div>
+										if !line.Available {
+											<p class="cart-line-warning">{ line.UnavailableReason }</p>
+										}
+										<div class="cart-line-prices">
+											<p><span>Preco unitario</span><strong>{ line.UnitPriceBRL }</strong></p>
+											<p><span>Subtotal</span><strong>{ line.SubtotalBRL }</strong></p>
+										</div>
+										<div class="cart-line-actions">
+											<form class="cart-quantity-form" method="post" action={ templ.URL("/carrinho/itens/" + line.ID + "/quantidade") }>
+												<label for={ "cart-quantity-" + line.ID }>Quantidade</label>
+												<input id={ "cart-quantity-" + line.ID } type="number" name="quantity" min="1" max="99" value={ strconv.Itoa(line.Quantity) } required/>
+												<button class="btn-base btn-secondary" type="submit">Atualizar</button>
+											</form>
+											<form method="post" action={ templ.URL("/carrinho/itens/" + line.ID + "/remover") }>
+												<button class="cart-remove-button" type="submit">Remover</button>
+											</form>
+										</div>
+									</div>
+								</article>
+							}
+						</div>
+						<aside class="cart-summary" aria-label="Resumo do carrinho">
+							<h2>Resumo</h2>
+							<div class="cart-summary-row">
+								<span>Subtotal</span>
+								<strong>{ view.SubtotalBRL }</strong>
+							</div>
+							if view.HasUnavailableItems {
+								<p class="cart-summary-alert">Itens indisponiveis permanecem no carrinho para revisao, mas nao entram no subtotal.</p>
+							}
+							<p class="cart-summary-note">Frete sera calculado posteriormente no checkout.</p>
+							<span class="cart-checkout-soon">Checkout em breve</span>
+							<a class="btn-base btn-secondary" href="/produtos">Continuar comprando</a>
+						</aside>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ CartUnavailable() {
+	@components.Layout("Carrinho indisponivel | PrintLab", "Carrinho temporariamente indisponivel.", "") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Carrinho temporariamente indisponivel.", "Nao foi possivel carregar seu carrinho agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}

@@ -33,6 +33,12 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Helpers de dominio para peso em miligramas, apresentacao em gramas, tempo de maquina e URL publica de imagem.
 - Fase 5.1 — Correcao semantica da receita de producao.
 - Testes de regressao para preservar componentes de receita com material ou cor inativos.
+- Fase 6 — Carrinho anonimo persistido no PostgreSQL.
+- Migration `create_carts` para `public.carts` e `public.cart_items`.
+- Cookie opaco `printlab_cart` com token aleatorio, `HttpOnly`, `SameSite=Lax` e hash SHA-256 no banco.
+- Rotas `GET /carrinho`, `POST /carrinho/adicionar`, `POST /carrinho/itens/{id}/quantidade` e `POST /carrinho/itens/{id}/remover`.
+- Formulario real de adicionar ao carrinho no detalhe de produto, sem campos de preco enviados pelo frontend.
+- Testes de carrinho para token, cookie, service, disponibilidade, subtotal, overflow, escopo de item e handlers HTTP.
 
 ### Changed
 
@@ -52,3 +58,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration de variantes/producao aplicada ao Supabase DEV e `/produtos` validado na Vercel com catalogo vazio.
 - Receita de producao passou a carregar `variant_filaments` mesmo quando material ou cor referenciados estiverem inativos.
 - `materials.is_active` e `colors.is_active` agora documentam somente a oferta para novas escolhas futuras, sem alterar receitas existentes.
+- Navegacao principal atualizada com link real para `/carrinho`.
+- Carrinho recalcula preco atual e subtotal no backend, preservando itens indisponiveis sem inclui-los no subtotal.

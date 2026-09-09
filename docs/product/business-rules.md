@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo com variantes e receita de producao IMPLEMENTADO; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao e carrinho IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -50,6 +50,25 @@ Antes de finalizar uma compra, o backend devera futuramente:
 6. calcular total;
 7. criar o pedido.
 
+## Carrinho implementado
+
+- Carrinho anonimo nao exige login.
+- Carrinho e persistido no PostgreSQL, nao como JSON no navegador.
+- Cookie armazena somente token opaco do carrinho.
+- Banco armazena somente `SHA-256(token)`.
+- Carrinho expira apos 30 dias.
+- Mutacoes bem-sucedidas renovam a expiracao para `agora + 30 dias`.
+- Quantidade permitida por item: `1..99`.
+- Adicionar o mesmo produto/variante incrementa a quantidade existente.
+- Produto com variantes ativas exige variante valida para adicionar.
+- Produto sem variantes ativas pode ser adicionado sem variante.
+- Navegador nunca determina preco, subtotal ou total.
+- Carrinho nao congela preco; a leitura usa preco atual do catalogo.
+- Produto e variante sao revalidados ao adicionar e ao renderizar.
+- Item indisponivel nao some silenciosamente.
+- Item indisponivel nao entra no subtotal.
+- Checkout, frete, pedido e pagamento permanecem planejados.
+
 ## Dinheiro
 
 Valores monetarios nunca devem usar `float32` ou `float64` como representacao canonica.
@@ -69,7 +88,7 @@ Variante com price_cents = 5990: 5990
 Variante com price_cents = 0: 0
 ```
 
-Carrinho, checkout, descontos, frete, total e pedidos continuam planejados e deverao recalcular valores no backend.
+Carrinho recalcula precos e subtotais no backend. Checkout, descontos, frete, total final e pedidos continuam planejados e deverao recalcular valores no backend novamente.
 
 ## Producao 3D
 

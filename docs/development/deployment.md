@@ -52,6 +52,7 @@ Supabase de desenvolvimento
 - Conexao PostgreSQL da aplicacao via `DATABASE_URL` quando configurada.
 - Catalogo publico depende do PostgreSQL e retorna indisponibilidade generica quando o banco ou schema nao estiverem acessiveis.
 - Variantes e imagens de catalogo dependem do PostgreSQL e do bucket `product-images`.
+- Carrinho anonimo depende do PostgreSQL para persistencia e usa cookie host-only `printlab_cart`.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -107,7 +108,7 @@ O workflow nao usa `--include-seed`, nao executa reset remoto e nao deve imprimi
 
 Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Antes da operacao comercial sera necessario separar development/staging e production, com politica de aprovacao propria para producao.
 
-A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo.
+A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. A Fase 6 cria `create_carts`, com `carts` e `cart_items`. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo ou carrinho.
 
 ## Runtime PostgreSQL
 
@@ -129,8 +130,11 @@ Secrets de runtime no ambiente de hosting:
 - `DATABASE_URL`
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
+- `SITE_URL`, opcional e nao secret, usada como origem permitida para mutacoes de carrinho
 
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
+
+O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
 `SUPABASE_URL` pode ficar ausente enquanto nao houver imagens reais cadastradas. Nesse caso, catalogo e detalhe continuam funcionando com placeholder visual. Bucket/schema implementados nao significam imagem real validada.
 
@@ -163,6 +167,14 @@ Na validacao remota da Fase 5, foram validados:
 - `GET /static/css/app.css`: HTTP 200.
 
 Schema e bucket foram implementados. Imagem real de produto nao foi validada remotamente porque nao ha `product_images` cadastradas.
+
+Depois da Fase 6, validar tambem:
+
+```sh
+curl -i https://printlab-pied.vercel.app/carrinho
+```
+
+Sem cookie, a resposta esperada e HTTP 200 com carrinho vazio. Nao inserir produto, variante, carrinho ou item ficticio apenas para validar POST remoto.
 
 ## Vercel
 

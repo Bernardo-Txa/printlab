@@ -127,7 +127,7 @@ Formatos preferidos para operacao:
 
 - Nao ha seed ficticio.
 - Nao ha produto demonstrativo.
-- Nao ha carrinho ou checkout.
+- Nao ha checkout.
 - Nao ha upload de imagem.
 - Nao ha selecao de quantidade.
 - Nao ha estoque unitario de produtos.

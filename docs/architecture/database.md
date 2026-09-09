@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase, catalogo, variantes e producao IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao e carrinho IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments` e `public.product_images`.
-- As migrations funcionais criam o catalogo basico e a modelagem de variantes/producao.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts` e `public.cart_items`.
+- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao e o carrinho anonimo.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -35,6 +35,9 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Usar `variant_filaments.estimated_weight_mg` como peso estimado em miligramas.
 - Usar `product_variants.print_time_minutes` como tempo estimado de maquina em minutos, sem representar prazo de entrega.
 - Usar Supabase Storage apenas para imagens publicas de catalogo no bucket `product-images`.
+- Criar `carts` e `cart_items` para carrinho anonimo persistido server-side.
+- Persistir somente `SHA-256` do token de carrinho no banco.
+- Nao persistir preco em `cart_items`.
 
 ## Runtime de conexao
 
@@ -74,6 +77,10 @@ Pool padrao por instancia:
 - `variant_filaments` permite multicolor e multimaterial por variante.
 - `product_images` guarda metadados e caminhos relativos no bucket `product-images`.
 - O bucket `product-images` e publico para leitura de imagens de catalogo e nao possui policy publica de upload.
+- `carts` guarda `token_hash`, timestamps e `expires_at`.
+- `cart_items` guarda produto, variante opcional e quantidade `1..99`.
+- Indices unique parciais impedem linhas duplicadas por produto sem variante e produto com variante.
+- RLS esta habilitado em `carts` e `cart_items` sem policies publicas.
 
 ## Convencoes de schema futuras
 
@@ -93,7 +100,7 @@ Valores financeiros futuros nao devem usar `float32` ou `float64` como represent
 
 O preco-base de produto foi implementado em `products.price_cents`. Variantes podem sobrescrever esse valor com `product_variants.price_cents`; `null` significa fallback para o preco-base, enquanto `0` e override explicito.
 
-Frete, descontos, totais, pedidos e pagamentos continuam planejados.
+Carrinho calcula subtotal atual em leitura. Frete, descontos, total final, pedidos e pagamentos continuam planejados.
 
 ## Producao 3D
 
@@ -116,7 +123,7 @@ Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purch
 
 ## IDs
 
-`categories` e `products` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories`, `products`, `product_variants`, `carts` e `cart_items` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
 ## RLS e Data API
 

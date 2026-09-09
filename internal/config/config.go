@@ -21,6 +21,7 @@ var (
 
 type Config struct {
 	AppEnv             string
+	VercelEnv          string
 	Port               string
 	SiteURL            string
 	DatabaseURL        string
@@ -54,6 +55,7 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 
 	return Config{
 		AppEnv:             strings.TrimSpace(value(lookup, "APP_ENV")),
+		VercelEnv:          strings.TrimSpace(value(lookup, "VERCEL_ENV")),
 		Port:               port,
 		SiteURL:            strings.TrimSpace(value(lookup, "SITE_URL")),
 		DatabaseURL:        databaseURL,
