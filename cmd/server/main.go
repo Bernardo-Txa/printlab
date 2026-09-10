@@ -14,6 +14,7 @@ import (
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
+	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 	"github.com/Bernardo-Txa/printlab/internal/products"
 	shippingdomain "github.com/Bernardo-Txa/printlab/internal/shipping"
 	webfiles "github.com/Bernardo-Txa/printlab/web"
@@ -54,6 +55,7 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var shoppingCart cartService
 	var checkoutDetails checkoutDetailsService
 	var checkoutShipping checkoutShippingService
+	var orderReview orderReviewService
 	postalCodeLookup := customers.NewViaCEPClient()
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
@@ -90,9 +92,14 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			cfg.SuperFreteOriginPostalCode,
 			cfg.SuperFreteServiceCodes,
 		)
+		orderReview = ordersdomain.NewService(
+			ordersdomain.NewPostgresRepository(db.Pool()),
+			cfg.SuperFreteOriginPostalCode,
+			cfg.SuperFreteServiceCodes,
+		)
 	}
 
-	return newHandlerWithServices(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
 	}), postalCodeLookup, cfg.SiteURL)
 }
@@ -102,6 +109,10 @@ func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.H
 }
 
 func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, siteURL string) http.Handler {
+	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, nil, cartCookies, postalCodeLookup, siteURL)
+}
+
+func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -117,6 +128,9 @@ func newHandlerWithServices(db *database.Database, catalog catalogService, shopp
 	mux.HandleFunc("GET /api/cep/{cep}", postalCodeLookupHandler(postalCodeLookup))
 	mux.HandleFunc("GET /checkout/frete", checkoutShippingPageHandler(checkoutShipping, cartCookies))
 	mux.HandleFunc("POST /checkout/frete", selectShippingHandler(checkoutShipping, cartCookies, siteURL))
+	mux.HandleFunc("GET /checkout/revisao", checkoutReviewPageHandler(orderReview, cartCookies))
+	mux.HandleFunc("POST /checkout/revisao", confirmOrderHandler(orderReview, cartCookies, siteURL))
+	mux.HandleFunc("GET /pedido/{id}", orderPageHandler(orderReview))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

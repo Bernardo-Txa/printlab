@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout e frete IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS; pagamentos e demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes` e `public.cart_shipping_selections`.
-- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout e a base de frete.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items` e `public.order_item_filaments`.
+- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete e os snapshots de pedido.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -43,6 +43,9 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Adicionar perfil logistico opcional em `products` e `product_variants`, com peso em gramas e dimensoes em milimetros.
 - Criar `shipping_boxes` vazia para caixas fisicas reais da PrintLab, sem seed ficticio.
 - Criar `cart_shipping_selections` 1:1 com `carts` para armazenar a selecao de frete com snapshot do pacote real, preco em centavos, validade e `input_hash`.
+- Adicionar `carts.converted_at` para impedir reutilizacao de carrinho convertido.
+- Criar pedidos como snapshots historicos, com `orders.source_cart_id` unique para idempotencia.
+- Usar `order_number` apenas como referencia humana e UUID como identificador de rota.
 
 ## Runtime de conexao
 
@@ -90,7 +93,12 @@ Pool padrao por instancia:
 - `products` e `product_variants` possuem perfil logistico all-or-none para frete.
 - `shipping_boxes` guarda caixas reais ativas/inativas, medidas internas para encaixe, medidas externas para transportadora e peso de embalagem/protecao.
 - `cart_shipping_selections` guarda a escolha atual de frete do carrinho, com snapshot logistico, `quoted_at`, `expires_at` e `input_hash`.
-- RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes` e `cart_shipping_selections` sem policies publicas.
+- `carts.converted_at` marca carrinhos convertidos e fora do fluxo ativo de compra.
+- `orders` guarda pedido pendente de pagamento, total em centavos, UUID e `order_number`.
+- `order_customer_details` e `order_shipping_addresses` guardam snapshots privados.
+- `order_shipping_details` guarda o snapshot logistico do frete selecionado.
+- `order_items` e `order_item_filaments` guardam snapshots de itens e receita de producao.
+- RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections` e tabelas de pedido sem policies publicas.
 
 ## Convencoes de schema futuras
 
@@ -110,7 +118,7 @@ Valores financeiros futuros nao devem usar `float32` ou `float64` como represent
 
 O preco-base de produto foi implementado em `products.price_cents`. Variantes podem sobrescrever esse valor com `product_variants.price_cents`; `null` significa fallback para o preco-base, enquanto `0` e override explicito.
 
-Carrinho calcula subtotal atual em leitura. Dados de contato/endereco pertencem ao carrinho e nao congelam pedido. Frete selecionado usa `cart_shipping_selections.price_cents`. Descontos, total final definitivo, pedidos e pagamentos continuam planejados.
+Carrinho calcula subtotal atual em leitura. Dados de contato/endereco pertencem ao carrinho ate a criacao do pedido. Frete selecionado usa `cart_shipping_selections.price_cents`. Pedido congela subtotal, frete e total definitivo em `orders`. Descontos e pagamentos continuam planejados.
 
 ## Producao 3D
 
@@ -133,7 +141,7 @@ Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purch
 
 ## IDs
 
-`categories`, `products`, `product_variants`, `carts`, `cart_items` e `shipping_boxes` usam UUID. `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections` usam `cart_id` como chave primaria por serem relacoes 1:1 com carrinho. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada entidade. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories`, `products`, `product_variants`, `carts`, `cart_items`, `shipping_boxes`, `orders`, `order_items` e `order_item_filaments` usam UUID. `cart_customer_details`, `cart_shipping_addresses`, `cart_shipping_selections`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details` usam a chave primaria da entidade pai por serem relacoes 1:1. `orders.order_number` usa `bigint identity` sequencial apenas para referencia humana. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
 ## RLS e Data API
 

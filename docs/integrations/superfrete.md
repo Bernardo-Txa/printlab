@@ -1,8 +1,8 @@
 # SuperFrete
 
-Status: IMPLEMENTACAO CONCLUIDA; validacao Sandbox real PENDENTE.
+Status: IMPLEMENTADO E VALIDADO EM SANDBOX PARA COTACAO.
 
-A Fase 8 implementa cotacao server-side com SuperFrete para o checkout da PrintLab. A conclusao funcional local nao significa que o Sandbox real foi validado: isso depende de token Sandbox, CEP de origem operacional, produto real com perfil logistico e caixa real cadastrada.
+A Fase 8 implementa cotacao server-side com SuperFrete para o checkout da PrintLab. A validacao Sandbox real foi confirmada manualmente pelo responsavel do projeto antes da Fase 9, sem registrar secrets, CEPs, tokens ou dados pessoais.
 
 Documentacao oficial consultada:
 
@@ -154,7 +154,6 @@ Nao ha nesta fase:
 - seguro/valor declarado;
 - mao propria;
 - aviso de recebimento;
-- criacao de pedido;
 - pagamento.
 
 Adicionais enviados no calculator:
@@ -177,15 +176,16 @@ curl -i http://localhost:8080/checkout/frete
 
 Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`.
 
-## Validacao Sandbox pendente
+## Validacao Sandbox
 
-Para marcar a Fase 8 como concluida de ponta a ponta, ainda e necessario validar uma cotacao Sandbox real com:
+A validacao Sandbox real confirmou:
 
-- token Sandbox real;
-- CEP de origem operacional da PrintLab;
-- pelo menos um produto real com perfil logistico;
-- pelo menos uma caixa fisica real cadastrada;
-- carrinho real de desenvolvimento;
-- endereco de entrega de teste controlado.
+- cotacao com token Sandbox real configurado fora do repositorio;
+- chamada de planejamento com `products` retornando pacote;
+- rejeicao correta de caixa que nao comportava o pacote;
+- cotacao final com `package` apos uso de caixa compativel;
+- modalidades apresentadas ao usuario;
+- modalidade selecionada;
+- persistencia em `cart_shipping_selections`.
 
-Nao criar dados ficticios em migration nem registrar secrets na documentacao.
+Nao criar dados ficticios em migration nem registrar secrets na documentacao. A validacao de Sandbox nao inclui compra de etiqueta, postagem, rastreio ou pagamento.

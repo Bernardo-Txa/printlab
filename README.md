@@ -21,6 +21,9 @@ IMPLEMENTADO:
 - Mutacoes de carrinho por POST para adicionar, atualizar quantidade e remover item.
 - Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, com contato e endereco vinculados ao carrinho.
 - Frete em `GET /checkout/frete` e `POST /checkout/frete`, com cotacao server-side via SuperFrete quando configurada.
+- Revisao de checkout em `GET /checkout/revisao`.
+- Criacao de pedido pendente de pagamento em `POST /checkout/revisao`.
+- Exibicao de pedido por UUID em `GET /pedido/{id}`.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -37,13 +40,14 @@ IMPLEMENTADO:
 - Fase 5 — Produtos, Variantes e Producao, com materiais, cores, variantes, receita estimada, imagens e bucket publico de catalogo.
 - Fase 6 — Carrinho, com persistencia PostgreSQL, token opaco em cookie e subtotal recalculado no backend.
 - Fase 7 — Dados do Cliente e Endereco, com PII minimizada, validacoes brasileiras e persistencia transacional por carrinho.
-- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete: implementacao e testes concluidos, com validacao Sandbox real pendente.
+- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete concluida, incluindo validacao Sandbox real confirmada manualmente.
 - Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete concluida.
+- Fase 9 — Revisao e Criacao de Pedidos, com snapshots imutaveis e status `pending_payment`.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Pedidos, pagamentos e integracao com InfinitePay.
+- Pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
@@ -80,6 +84,7 @@ Frontend implementado:
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
+- Etapa de revisao e pagina de pedido renderizadas no servidor, sem JavaScript obrigatorio.
 
 Banco planejado:
 
@@ -114,7 +119,11 @@ Banco implementado:
 - `products` e `product_variants` possuem perfil logistico opcional em gramas e milimetros, com constraint all-or-none.
 - `shipping_boxes` guarda caixas fisicas reais com medidas internas, externas, peso de embalagem, status ativo e ordenacao.
 - `cart_shipping_selections` guarda a escolha de frete por carrinho com snapshot do pacote real, preco em centavos, prazo, validade de 30 minutos e `input_hash`.
-- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout e frete sem policies publicas do Data API.
+- `carts.converted_at` marca carrinhos convertidos em pedido.
+- `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_items` e `order_item_filaments` guardam snapshots historicos de pedido.
+- Pedidos criados pelo checkout nascem com status `pending_payment` e moeda `BRL`.
+- `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID.
+- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete e pedidos sem policies publicas do Data API.
 
 Infraestrutura planejada:
 
@@ -293,7 +302,16 @@ Frete:
 curl -i http://localhost:8080/checkout/frete
 ```
 
-Sem carrinho valido, a resposta redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Com carrinho, dados, perfis logisticos, caixas reais e SuperFrete configurados, a rota calcula cotacoes atuais e apresenta somente o preco da cotacao final usando a caixa fisica real. Pedido e pagamento continuam planejados.
+Sem carrinho valido, a resposta redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Com carrinho, dados, perfis logisticos, caixas reais e SuperFrete configurados, a rota calcula cotacoes atuais e apresenta somente o preco da cotacao final usando a caixa fisica real. A selecao por POST redireciona para `/checkout/revisao`.
+
+Revisao e pedido:
+
+```sh
+curl -i http://localhost:8080/checkout/revisao
+curl -i http://localhost:8080/pedido/<uuid-do-pedido>
+```
+
+Sem carrinho valido, a revisao redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`. Sem frete valido, expirado ou com `input_hash` divergente, redireciona para `/checkout/frete`. Pedido criado usa UUID na URL, status `pending_payment` e pagina sem CPF completo, endereco completo, telefone ou e-mail completo.
 
 ## Supabase local
 
@@ -334,6 +352,7 @@ internal/products/       catalogo, service e repository PostgreSQL
 internal/cart/           carrinho anonimo, token, service e repository PostgreSQL
 internal/customers/      dados temporarios de checkout, validacao e repository PostgreSQL
 internal/shipping/       embalagem real, cotacao SuperFrete e selecao de frete
+internal/orders/         revisao, criacao transacional e snapshots de pedido
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

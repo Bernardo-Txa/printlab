@@ -155,7 +155,7 @@ func TestCheckoutShippingPostValidServiceRedirects(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
 	}
-	if rec.Header().Get("Location") != "/checkout/frete?selecionado=1" {
+	if rec.Header().Get("Location") != "/checkout/revisao" {
 		t.Fatalf("expected selected redirect, got %q", rec.Header().Get("Location"))
 	}
 	if service.lastServiceCode != "1" {

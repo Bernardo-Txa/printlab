@@ -138,6 +138,7 @@ Formatos preferidos para operacao:
 - Upload de imagens.
 - Estoque fisico e inventario de filamento.
 - Custos de producao calculados.
+- Pagamento.
 
 ## Limites
 

@@ -200,6 +200,15 @@ func BuildInputHash(fingerprint QuoteFingerprint) ([]byte, error) {
 	return hash[:], nil
 }
 
+func BuildCartInputHash(originCEP string, destinationCEP string, services []string, items []CartItem, box ShippingBox) ([]byte, error) {
+	preparedItems, err := prepareQuoteProducts(items)
+	if err != nil {
+		return nil, err
+	}
+
+	return BuildInputHash(quoteFingerprint(originCEP, destinationCEP, services, preparedItems, box))
+}
+
 func InputHashHex(hash []byte) string {
 	return hex.EncodeToString(hash)
 }

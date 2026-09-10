@@ -63,6 +63,8 @@ O cookie contem um token opaco aleatorio gerado com `crypto/rand`, codificado co
 
 No banco, `carts.token_hash` armazena somente `SHA-256(token)`.
 
+`carts.converted_at = null` indica carrinho ativo. Quando `converted_at` esta preenchido, o carrinho ja foi convertido em pedido e nao deve ser reutilizado para novas compras.
+
 ## Cookie
 
 Cookie:
@@ -84,6 +86,8 @@ Ao modificar o carrinho com sucesso, o backend renova `expires_at` para `agora +
 
 Nao ha job de limpeza nesta fase. Remocao fisica de carrinhos expirados podera ser implementada futuramente.
 
+Quando um pedido e criado, a linha de `carts` e preservada com `converted_at` preenchido para manter a relacao historica por `source_cart_id`. Na mesma transacao, `cart_items`, `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections` sao removidos porque o pedido passa a ser o snapshot definitivo.
+
 ## Precos e subtotais
 
 `cart_items` nao persiste preco unitario.
@@ -95,7 +99,7 @@ product_variants.price_cents != null -> preco da variante
 caso contrario -> products.price_cents
 ```
 
-Se o preco mudar enquanto o item estiver no carrinho, o carrinho exibe o preco atual. O checkout de frete revalida sua propria cotacao, e o pedido futuro devera revalidar tudo novamente antes de congelar valores.
+Se o preco mudar enquanto o item estiver no carrinho, o carrinho exibe o preco atual. O checkout de frete revalida sua propria cotacao, e a revisao do pedido revalida tudo novamente antes de congelar valores.
 
 Subtotal da linha:
 
@@ -135,7 +139,6 @@ Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras
 ## Limites
 
 - Nao ha login.
-- Nao ha pedido.
 - Nao ha pagamento.
 - Nao ha cupom ou desconto.
 - Nao ha estoque ou reserva.

@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout e frete IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete e pedidos pendentes de pagamento IMPLEMENTADOS; pagamento e demais regras comerciais PLANEJADOS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -40,7 +40,7 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 
 O navegador podera enviar IDs, quantidades, CEP e escolhas de interface. Esses dados devem ser tratados como entrada nao confiavel.
 
-Antes de finalizar uma compra, o backend devera futuramente:
+Antes de finalizar uma compra, o backend deve:
 
 1. receber IDs e quantidades;
 2. buscar produtos e precos no banco;
@@ -64,10 +64,12 @@ Antes de finalizar uma compra, o backend devera futuramente:
 - Produto sem variantes ativas pode ser adicionado sem variante.
 - Navegador nunca determina preco, subtotal ou total.
 - Carrinho nao congela preco; a leitura usa preco atual do catalogo.
+- Carrinho convertido possui `carts.converted_at` preenchido e nao deve ser reutilizado como carrinho ativo.
 - Produto e variante sao revalidados ao adicionar e ao renderizar.
 - Item indisponivel nao some silenciosamente.
 - Item indisponivel nao entra no subtotal.
-- Pedido e pagamento permanecem planejados.
+- Depois que um pedido e criado, dados temporarios do carrinho sao removidos e uma nova compra deve usar novo carrinho.
+- Pagamento permanece planejado.
 
 ## Dados de checkout implementados
 
@@ -80,7 +82,7 @@ Antes de finalizar uma compra, o backend devera futuramente:
 - O backend valida e normaliza nome, e-mail, telefone brasileiro, CPF, CEP, UF e pais.
 - CPF e necessario para documentacao futura de envio/DC-e e nao e identificador publico.
 - Nao ha coleta de senha, conta, newsletter, marketing consent, data de nascimento, genero ou dados nao necessarios a compra.
-- O pedido futuro devera copiar contato e endereco para snapshots definitivos antes de pagamento/envio.
+- O pedido copia contato e endereco para snapshots definitivos antes de pagamento/envio.
 - Limpeza programada de carrinhos expirados e PII associada e requisito antes do go-live comercial.
 
 ## Dinheiro
@@ -102,7 +104,7 @@ Variante com price_cents = 5990: 5990
 Variante com price_cents = 0: 0
 ```
 
-Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Checkout final, descontos, total definitivo e pedidos continuam planejados e deverao recalcular valores no backend novamente.
+Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Descontos e pagamento continuam planejados.
 
 ## Frete implementado
 
@@ -124,7 +126,26 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
 - A selecao de frete expira em 30 minutos.
 - A selecao e invalidada por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
-- Multi-volume, etiqueta/postagem, rastreio e pedido permanecem planejados.
+- Multi-volume, etiqueta/postagem, rastreio e pagamento permanecem planejados.
+
+## Pedidos implementados
+
+- Pedido e criado somente a partir de carrinho valido, nao convertido, nao vazio, sem itens indisponiveis, com dados completos e frete selecionado valido.
+- `GET /checkout/revisao` nao recota SuperFrete; apenas valida expiracao e `input_hash` da selecao persistida.
+- `POST /checkout/revisao` recalcula precos, subtotal, frete e total no servidor.
+- O browser envia `review_fingerprint` apenas para detectar revisao antiga; ele nao define valores financeiros.
+- Se o fingerprint divergir, nenhum pedido e criado.
+- Pedido e criado em transacao PostgreSQL unica.
+- A conversao do carrinho usa lock por `SELECT ... FOR UPDATE`.
+- `orders.source_cart_id` permite idempotencia: um carrinho gera no maximo um pedido.
+- `order_number` e sequencial e serve somente como referencia humana.
+- A rota publica do pedido usa UUID, nao `order_number`.
+- O unico status criado pelo checkout nesta fase e `pending_payment`.
+- Pedido preserva snapshots de produto, variante, preco, quantidade, subtotal, frete, cliente, endereco e receita de producao.
+- O snapshot de producao guarda tempo e peso por unidade, sem multiplicar pela quantidade.
+- `order_item_filaments` nao possui FK para `materials`, `colors` ou `variant_filaments`.
+- Depois do commit, dados temporarios de carrinho, cliente, endereco e frete sao removidos.
+- A pagina `/pedido/{id}` nao deve exibir CPF completo, endereco completo, telefone ou e-mail completo.
 
 ## Producao 3D
 

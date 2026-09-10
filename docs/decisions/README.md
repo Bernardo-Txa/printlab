@@ -38,3 +38,4 @@ Data:
 - [ADR-0006 — Carrinho anonimo persistido server-side](0006-carrinho-anonimo-persistido-server-side.md)
 - [ADR-0007 — Dados temporarios de checkout vinculados ao carrinho](0007-dados-temporarios-checkout-vinculados-ao-carrinho.md)
 - [ADR-0008 — Selecao de embalagem fisica para frete](0008-selecao-de-embalagem-fisica-para-frete.md)
+- [ADR-0009 — Pedidos como snapshots imutaveis do checkout](0009-pedidos-como-snapshots-imutaveis-do-checkout.md)

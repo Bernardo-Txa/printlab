@@ -46,7 +46,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Testes de dados de checkout para validacao, normalizacao, service, handlers, migration e transacao.
 - Fase 7.1 — Hardening de Privacidade e Consistencia do Checkout.
 - Testes de regressao para cache privado de checkout e estado parcial de contato/endereco.
-- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete, com implementacao e testes concluidos e validacao Sandbox real pendente.
+- Fase 8 — Embalagem Real e Integracao de Frete SuperFrete, com implementacao, testes e validacao Sandbox real concluidos.
 - Perfis logisticos opcionais em `products` e `product_variants`, com peso em gramas, dimensoes em milimetros e constraints all-or-none.
 - Migration `add_shipping_profiles_and_selections` para `shipping_boxes` e `cart_shipping_selections`, sem seed de caixas ficticias.
 - Escolha da menor caixa fisica real compativel com pacote ideal, usando dimensoes internas, rotacao e desempates deterministicos.
@@ -59,6 +59,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Endpoint interno `GET /api/cep/{cep}` com consulta server-side ao ViaCEP e resposta limitada a rua, bairro, cidade e UF.
 - Diagnosticos seguros de frete por estagio e motivo, sem PII, secrets ou corpo bruto externo.
 - Categorias seguras de erro do cliente SuperFrete para status HTTP, timeout e JSON invalido.
+- Fase 9 — Revisao e Criacao de Pedidos, com snapshots imutaveis, `orders`, `order_items`, `order_item_filaments` e status inicial `pending_payment`.
+- Migration `create_orders` adicionando `carts.converted_at` e tabelas historicas de pedido, sem seed ou dados ficticios.
+- Rotas `GET /checkout/revisao`, `POST /checkout/revisao` e `GET /pedido/{id}`.
+- Snapshot historico de cliente, endereco, frete, itens, preco, receita de producao e filamentos no momento de criacao do pedido.
 
 ### Changed
 
@@ -85,3 +89,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Leitura de contato e endereco de checkout consolidada em uma unica consulta SQL consistente.
 - Salvamento de dados de checkout passa a redirecionar para a etapa real de frete.
 - Etapa de dados passa a oferecer consulta opcional de CEP via backend, mantendo preenchimento manual e validacao server-side como fonte autoritativa.
+- Selecao de frete passa a redirecionar para a etapa real de revisao do pedido.
+- Carrinhos convertidos deixam de ser reutilizados no fluxo ativo por `carts.converted_at`.

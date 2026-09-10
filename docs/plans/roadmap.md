@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1 e 8.1 concluidas. Fase 8 com implementacao concluida e validacao Sandbox SuperFrete pendente. Fases 9 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1 e 9 concluidas. Fases 10 a 17 planejadas.
 
 ## Status das fases
 
@@ -18,9 +18,9 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1 e 8.1 concluidas. Fase 
 | Fase 6 — Carrinho | Concluida |
 | Fase 7 — Dados do cliente e endereco | Concluida |
 | Fase 7.1 — Hardening de privacidade e consistencia do checkout | Concluida |
-| Fase 8 — Embalagem real e integracao SuperFrete | Implementacao concluida; Sandbox pendente |
+| Fase 8 — Embalagem real e integracao SuperFrete | Concluida |
 | Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete | Concluida |
-| Fase 9 — Pedidos | Planejada |
+| Fase 9 — Pedidos | Concluida |
 | Fase 10 — Integracao InfinitePay | Planejada |
 | Fase 11 — Webhooks de pagamento | Planejada |
 | Fase 12 — Acompanhamento do pedido | Planejada |
@@ -343,7 +343,7 @@ Definition of Done:
 - Endpoint de CEP retorna apenas rua, bairro, cidade e UF.
 - Testes de ViaCEP usam `httptest`, sem chamada real em `go test`.
 - Logs de CEP e frete nao registram CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto externo.
-- Fase 8 permanece com validacao Sandbox SuperFrete pendente.
+- Fase 8 foi concluida posteriormente com validacao Sandbox SuperFrete confirmada manualmente.
 
 ## Fase 9 — Pedidos
 
@@ -351,10 +351,15 @@ Objetivo: criar pedidos a partir de carrinho, cliente, endereco e frete validado
 
 Principais entregas:
 
-- Modelo de pedido.
+- Modelo de pedido com `orders` e `order_number` sequencial.
 - Itens de pedido com valores congelados.
-- Transacao de criacao.
-- Status iniciais.
+- Snapshots de cliente, endereco, frete e receita de producao 3D.
+- Revisao SSR em `GET /checkout/revisao`.
+- Criacao transacional em `POST /checkout/revisao`.
+- Exibicao de pedido por UUID em `GET /pedido/{id}`.
+- Conversao de carrinho por `carts.converted_at`.
+- Idempotencia por `source_cart_id`.
+- Status inicial `pending_payment`.
 
 Dependencias: Fases 3, 6, 7 e 8.
 
@@ -364,6 +369,7 @@ Definition of Done:
 - Transacoes testadas.
 - Status documentados.
 - Falhas nao criam estado financeiro inconsistente.
+- Pagamento permanece planejado para a Fase 10.
 
 ## Fase 10 — Integracao InfinitePay
 

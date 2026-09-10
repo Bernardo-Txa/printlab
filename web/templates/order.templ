@@ -1,0 +1,284 @@
+package templates
+
+import (
+	"strconv"
+
+	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ CheckoutReview(page ordersdomain.ReviewPage) {
+	@components.Layout("Revisao | PrintLab", "Revise produtos, dados, entrega e frete antes de criar o pedido.", "") {
+		<section class="checkout-section">
+			@components.Container() {
+				<div class="checkout-heading">
+					<p class="brand-kicker">Checkout</p>
+					<h1>Etapa 3 - Revisao</h1>
+					<p>Confira os dados da compra antes de confirmar. O pagamento sera disponibilizado na proxima etapa.</p>
+				</div>
+				<div class="checkout-stepper" aria-label="Etapas do checkout">
+					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
+					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
+					<span class="checkout-step checkout-step-active">3 Revisao</span>
+					<span class="checkout-step">4 Pagamento</span>
+				</div>
+				if page.Message != "" {
+					<p class="checkout-alert checkout-alert-error">{ page.Message }</p>
+				}
+				<div class="checkout-layout">
+					<form class="checkout-form" method="post" action="/checkout/revisao">
+						<input type="hidden" name="review_fingerprint" value={ page.Fingerprint }/>
+						<section class="checkout-form-section" aria-labelledby="review-products">
+							<div class="review-section-header">
+								<h2 id="review-products">Produtos</h2>
+							</div>
+							<div class="review-items">
+								for _, item := range page.Items {
+									<article class="review-item">
+										<div class="review-item-main">
+											<h3>{ item.ProductName }</h3>
+											if item.HasVariant {
+												<p>{ item.VariantName }</p>
+											}
+											if item.SKU != "" {
+												<p>SKU { item.SKU }</p>
+											}
+										</div>
+										<div class="review-item-values">
+											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
+											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
+											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
+										</div>
+										if item.UnitPrintTimeMinutes != nil || item.UnitEstimatedFilamentWeightLabel != "" || len(item.Filaments) > 0 {
+											<div class="review-production">
+												if item.UnitPrintTimeMinutes != nil {
+													<p><span>Tempo por unidade</span><strong>{ strconv.Itoa(*item.UnitPrintTimeMinutes) } min</strong></p>
+												}
+												if item.UnitEstimatedFilamentWeightLabel != "" {
+													<p><span>Filamento por unidade</span><strong>{ item.UnitEstimatedFilamentWeightLabel }</strong></p>
+												}
+												if len(item.Filaments) > 0 {
+													<ul>
+														for _, filament := range item.Filaments {
+															<li>
+																if filament.HexColor != "" {
+																	<span class="review-color-swatch" style={ templ.SafeCSS("background-color: " + filament.HexColor) }></span>
+																} else {
+																	<span class="review-color-swatch"></span>
+																}
+																<span>
+																	<strong>{ filament.MaterialName } / { filament.ColorName }</strong>
+																	<small>{ filament.EstimatedWeightLabel }</small>
+																	if filament.Label != "" {
+																		<small>{ filament.Label }</small>
+																	}
+																</span>
+															</li>
+														}
+													</ul>
+												}
+											</div>
+										}
+									</article>
+								}
+							</div>
+						</section>
+						<section class="checkout-form-section" aria-labelledby="review-customer">
+							<div class="review-section-header">
+								<h2 id="review-customer">Dados</h2>
+								<a href="/checkout/dados">Editar dados</a>
+							</div>
+							<div class="review-detail-grid">
+								<p><span>Nome</span><strong>{ page.Customer.FullName }</strong></p>
+								<p><span>E-mail</span><strong>{ page.Customer.Email }</strong></p>
+								<p><span>Telefone</span><strong>{ page.Customer.Phone }</strong></p>
+								<p><span>CPF</span><strong>{ page.Customer.MaskedCPF }</strong></p>
+							</div>
+						</section>
+						<section class="checkout-form-section" aria-labelledby="review-address">
+							<div class="review-section-header">
+								<h2 id="review-address">Entrega</h2>
+								<a href="/checkout/dados">Editar dados</a>
+							</div>
+							<div class="review-address">
+								<p>{ page.Address.LineOne }</p>
+								<p>{ page.Address.LineTwo }</p>
+								<p>{ page.Address.CountryCode }</p>
+							</div>
+						</section>
+						<section class="checkout-form-section" aria-labelledby="review-shipping">
+							<div class="review-section-header">
+								<h2 id="review-shipping">Frete</h2>
+								<a href="/checkout/frete">Alterar frete</a>
+							</div>
+							<div class="review-detail-grid">
+								<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+								if page.Shipping.CarrierName != "" {
+									<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+								}
+								<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
+								<p><span>Frete</span><strong>{ page.Shipping.PriceBRL }</strong></p>
+							</div>
+						</section>
+						<div class="checkout-form-actions">
+							<button class="btn-base btn-primary" type="submit">Confirmar pedido</button>
+							<a class="btn-base btn-secondary" href="/checkout/frete">Voltar ao frete</a>
+						</div>
+					</form>
+					<aside class="checkout-summary" aria-label="Resumo do pedido">
+						<h2>Resumo</h2>
+						<div class="checkout-summary-lines">
+							for _, item := range page.Items {
+								<div class="checkout-summary-line">
+									<div>
+										<strong>{ item.ProductName }</strong>
+										if item.HasVariant {
+											<span>{ item.VariantName }</span>
+										}
+										<span>Quantidade: { strconv.Itoa(item.Quantity) }</span>
+									</div>
+									<p>{ item.LineTotalBRL }</p>
+								</div>
+							}
+						</div>
+						<div class="checkout-summary-total">
+							<span>Produtos</span>
+							<strong>{ page.ProductsSubtotalBRL }</strong>
+						</div>
+						<div class="checkout-summary-total">
+							<span>Frete</span>
+							<strong>{ page.ShippingPriceBRL }</strong>
+						</div>
+						<div class="checkout-summary-total checkout-summary-grand-total">
+							<span>Total</span>
+							<strong>{ page.TotalBRL }</strong>
+						</div>
+						<p>O pedido sera criado com status aguardando pagamento.</p>
+					</aside>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ OrderConfirmation(page ordersdomain.OrderPage) {
+	@components.Layout("Pedido criado | PrintLab", "Pedido criado na PrintLab.", "") {
+		<section class="checkout-section">
+			@components.Container() {
+				<div class="checkout-heading">
+					<p class="brand-kicker">Pedido criado</p>
+					<h1>Pedido { page.OrderNumberLabel }</h1>
+					<p>Pagamento sera disponibilizado na proxima etapa.</p>
+				</div>
+				<div class="order-status-panel">
+					<span>Status</span>
+					<strong>{ page.StatusLabel }</strong>
+				</div>
+				<div class="checkout-layout">
+					<div class="checkout-form">
+						<section class="checkout-form-section" aria-labelledby="order-items">
+							<h2 id="order-items">Itens do pedido</h2>
+							<div class="review-items">
+								for _, item := range page.Items {
+									<article class="review-item">
+										<div class="review-item-main">
+											<h3>{ item.ProductName }</h3>
+											if item.HasVariant {
+												<p>{ item.VariantName }</p>
+											}
+											if item.SKU != "" {
+												<p>SKU { item.SKU }</p>
+											}
+										</div>
+										<div class="review-item-values">
+											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
+											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
+											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
+										</div>
+										if item.UnitPrintTimeMinutes != nil || item.UnitEstimatedFilamentWeightLabel != "" || len(item.Filaments) > 0 {
+											<div class="review-production">
+												if item.UnitPrintTimeMinutes != nil {
+													<p><span>Tempo por unidade</span><strong>{ strconv.Itoa(*item.UnitPrintTimeMinutes) } min</strong></p>
+												}
+												if item.UnitEstimatedFilamentWeightLabel != "" {
+													<p><span>Filamento por unidade</span><strong>{ item.UnitEstimatedFilamentWeightLabel }</strong></p>
+												}
+												if len(item.Filaments) > 0 {
+													<ul>
+														for _, filament := range item.Filaments {
+															<li>
+																if filament.HexColor != "" {
+																	<span class="review-color-swatch" style={ templ.SafeCSS("background-color: " + filament.HexColor) }></span>
+																} else {
+																	<span class="review-color-swatch"></span>
+																}
+																<span>
+																	<strong>{ filament.MaterialName } / { filament.ColorName }</strong>
+																	<small>{ filament.EstimatedWeightLabel }</small>
+																	if filament.Label != "" {
+																		<small>{ filament.Label }</small>
+																	}
+																</span>
+															</li>
+														}
+													</ul>
+												}
+											</div>
+										}
+									</article>
+								}
+							</div>
+						</section>
+						<section class="checkout-form-section" aria-labelledby="order-shipping">
+							<h2 id="order-shipping">Frete</h2>
+							<div class="review-detail-grid">
+								<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+								if page.Shipping.CarrierName != "" {
+									<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+								}
+								<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
+								<p><span>Pacote</span><strong>{ page.Shipping.ShippingBoxName }</strong></p>
+							</div>
+						</section>
+					</div>
+					<aside class="checkout-summary" aria-label="Resumo do pedido">
+						<h2>Resumo</h2>
+						<div class="checkout-summary-total">
+							<span>Produtos</span>
+							<strong>{ page.ProductsSubtotalBRL }</strong>
+						</div>
+						<div class="checkout-summary-total">
+							<span>Frete</span>
+							<strong>{ page.ShippingPriceBRL }</strong>
+						</div>
+						<div class="checkout-summary-total checkout-summary-grand-total">
+							<span>Total</span>
+							<strong>{ page.TotalBRL }</strong>
+						</div>
+						<p>Use este numero apenas como referencia humana. O link do pedido usa o identificador seguro.</p>
+					</aside>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ CheckoutReviewUnavailable() {
+	@components.Layout("Revisao indisponivel | PrintLab", "Revisao de checkout temporariamente indisponivel.", "") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Revisao temporariamente indisponivel.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}
+
+templ OrderUnavailable() {
+	@components.Layout("Pedido indisponivel | PrintLab", "Pedido temporariamente indisponivel.", "") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Pedido temporariamente indisponivel.", "Nao foi possivel carregar este pedido agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}

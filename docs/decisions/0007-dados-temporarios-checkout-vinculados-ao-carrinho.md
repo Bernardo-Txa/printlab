@@ -21,7 +21,7 @@ carts
   +-- cart_shipping_addresses
 ```
 
-Cada carrinho possui no maximo um registro de contato e um endereco de entrega atual. O pedido futuro devera copiar esses dados para snapshots definitivos no momento de criacao do pedido.
+Cada carrinho possui no maximo um registro de contato e um endereco de entrega atual. A Fase 9 implementou a copia desses dados para snapshots definitivos no momento de criacao do pedido.
 
 ## Alternativas consideradas
 

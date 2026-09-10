@@ -56,6 +56,7 @@ Supabase de desenvolvimento
 - Dados de checkout dependem do carrinho e do PostgreSQL, sem criar conta permanente de cliente.
 - Consulta de CEP usa endpoint interno no Go e chamada server-side ao ViaCEP, sem depender do banco.
 - Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
+- Pedidos dependem do PostgreSQL para criar snapshots historicos, converter carrinho e exibir `/pedido/{id}` por UUID.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -116,6 +117,8 @@ Este workflow aponta para o projeto Supabase de desenvolvimento da PrintLab. Ant
 A Fase 4 cria a primeira migration real, `create_catalog`, com `categories` e `products`. A Fase 5 cria `create_product_variants`, com materiais, cores, variantes, receita de producao, imagens e bucket `product-images`. A Fase 6 cria `create_carts`, com `carts` e `cart_items`. A Fase 7 cria `create_cart_customer_details`, com contato e endereco temporarios por carrinho. Elas devem ser aplicadas pelo workflow apos `supabase db push --dry-run`, sem seed e sem dados ficticios de catalogo, carrinho ou PII.
 
 A Fase 8 cria `add_shipping_profiles_and_selections`, com perfis logisticos em produtos/variantes, `shipping_boxes` e `cart_shipping_selections`. Ela deve ser aplicada pelo workflow sem seed de caixas, produtos, cotacoes ou dados ficticios.
+
+A Fase 9 cria `create_orders`, adicionando `carts.converted_at` e tabelas de pedido como snapshots historicos. Ela deve ser aplicada pelo workflow sem seed de pedidos, clientes, enderecos, itens ou dados ficticios.
 
 ## Runtime PostgreSQL
 
@@ -219,6 +222,8 @@ Quando existirem dados reais de desenvolvimento:
 
 A Fase 8.1 adiciona diagnosticos seguros para diferenciar falhas de configuracao, caixas, planejamento, pacote retornado, encaixe em caixa real, chamada final e cotacoes finais vazias. Esses logs nao devem registrar CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto da SuperFrete.
 
+A validacao Sandbox real da Fase 8 foi confirmada manualmente antes da Fase 9: planejamento retornou pacote, caixa pequena foi rejeitada, caixa compativel permitiu cotacao final, modalidades foram exibidas, uma modalidade foi selecionada e `cart_shipping_selections` persistiu a selecao. Nenhum secret, CEP ou dado pessoal deve ser registrado.
+
 Validar consulta de CEP no deploy:
 
 ```sh
@@ -227,6 +232,15 @@ curl -I https://printlab-pied.vercel.app/static/js/checkout.js
 ```
 
 A resposta do endpoint de CEP deve conter somente `street`, `district`, `city` e `state`. CEP inexistente deve retornar 404 e a interface deve permitir preenchimento manual.
+
+Depois da Fase 9, validar tambem sem criar pedido remoto automaticamente:
+
+```sh
+curl -i https://printlab-pied.vercel.app/checkout/revisao
+curl -i https://printlab-pied.vercel.app/pedido/00000000-0000-0000-0000-000000000000
+```
+
+Sem carrinho valido, `/checkout/revisao` deve redirecionar para `/carrinho`. Pedido inexistente por UUID deve retornar 404. Nao criar produto, caixa, carrinho, endereco, frete ou pedido ficticio apenas para validar rota remota.
 
 ## Vercel
 

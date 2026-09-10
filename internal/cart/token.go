@@ -83,6 +83,19 @@ func (m *CookieManager) SetCookie(w http.ResponseWriter, token string, expiresAt
 	http.SetCookie(w, m.Cookie(token, expiresAt))
 }
 
+func (m *CookieManager) ExpireCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     CookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   m != nil && m.secure,
+	})
+}
+
 func ValidToken(token string) bool {
 	decoded, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil || len(decoded) != TokenByteLength {

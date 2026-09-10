@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout e frete IMPLEMENTADOS; pedidos, pagamentos e admin PLANEJADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS; pagamentos e admin PLANEJADOS.
 
 ## Responsabilidade
 
@@ -20,6 +20,9 @@ Nesta fase, o backend implementa:
 - `POST /checkout/dados` para validar e salvar dados temporarios de checkout.
 - `GET /checkout/frete` para calcular e renderizar cotacoes atuais de frete.
 - `POST /checkout/frete` para revalidar e persistir a selecao de frete por carrinho.
+- `GET /checkout/revisao` para revisar checkout sem recotar frete.
+- `POST /checkout/revisao` para criar pedido pendente de pagamento.
+- `GET /pedido/{id}` para exibir pedido por UUID.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -29,11 +32,12 @@ Nesta fase, o backend implementa:
 - `internal/cart` para token/cookie, service e repository PostgreSQL do carrinho.
 - `internal/customers` para dados temporarios de checkout, validacoes brasileiras e repository PostgreSQL transacional.
 - `internal/shipping` para perfis logisticos, caixas fisicas, cotacao SuperFrete, selecao de frete e repository PostgreSQL.
+- `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
 
 ## Limites
 
-- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas e selecao de frete.
-- Nao ha pedidos, pagamentos ou admin.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete e pedidos.
+- Nao ha pagamentos ou admin.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -67,6 +71,9 @@ Nesta fase, o backend implementa:
 - Usar duas chamadas ao calculator da SuperFrete: `products` para obter pacote ideal e `package` com caixa fisica real para cotacao final.
 - Escolher a menor caixa real ativa que comporte o pacote ideal usando dimensoes internas e rotacao.
 - Persistir selecao de frete com snapshot do pacote real, preco em centavos, validade de 30 minutos e `input_hash`.
+- Criar pedidos como snapshots imutaveis de checkout.
+- Usar `orders.source_cart_id` como defesa de idempotencia para confirmacao duplicada.
+- Usar UUID em `/pedido/{id}` e `order_number` apenas como referencia humana.
 
 ## Catalogo
 
@@ -122,6 +129,18 @@ A cotacao usa duas chamadas SuperFrete:
 Somente o resultado da segunda chamada e apresentado ao cliente. O POST recebe apenas `service_code`, reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
 
 Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` atual diverge por mudanca de carrinho, variante, perfil logistico, CEP, servicos ou caixa.
+
+## Pedidos
+
+`GET /checkout/revisao` exige carrinho valido, nao convertido, nao vazio, sem itens indisponiveis, com dados completos e frete selecionado valido. Se faltar dados, redireciona para `/checkout/dados`; se faltar frete valido, redireciona para `/checkout/frete`; se faltar carrinho valido, redireciona para `/carrinho`.
+
+A revisao nao chama a SuperFrete. Ela recalcula o `input_hash` esperado para a selecao persistida e compara com o valor salvo em `cart_shipping_selections`.
+
+`POST /checkout/revisao` recebe apenas `review_fingerprint` como deteccao de tela antiga. O backend revalida disponibilidade, dados, frete, subtotal e total, cria o pedido em uma transacao PostgreSQL, converte o carrinho com `converted_at`, limpa dados temporarios e expira o cookie depois do commit.
+
+O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e receita de producao 3D. `order_item_filaments` preserva material, cor, peso e label sem depender de `materials`, `colors` ou `variant_filaments`.
+
+`GET /pedido/{id}` aceita somente UUID. A pagina mostra status humano, itens, frete e totais, mas nao exibe CPF completo, endereco completo, telefone ou e-mail completo.
 
 ## Health e readiness
 

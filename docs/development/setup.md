@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout e frete IMPLEMENTADA.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS.
 
 ## Requisitos
 
@@ -32,7 +32,7 @@ Variaveis de runtime:
 - `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional do `User-Agent` da SuperFrete.
 - `SUPERFRETE_SERVICES`: codigos de servico solicitados, separados por virgula.
 
-Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e `/checkout/dados` redireciona para `/carrinho` sem carrinho valido. O endpoint interno de CEP nao depende do banco.
+Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e rotas de checkout redirecionam para `/carrinho` sem carrinho valido. O endpoint interno de CEP nao depende do banco.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
@@ -198,6 +198,41 @@ curl -i \
 
 Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Sem perfil logistico, caixa real ou configuracao SuperFrete, a rota mostra indisponibilidade honesta, sem inventar peso, caixa ou preco.
 
+Depois de selecionar frete valido, o fluxo normal redireciona para `/checkout/revisao`.
+
+## Validar revisao e pedido
+
+Com `DATABASE_URL`, migrations aplicadas, carrinho real com itens disponiveis, dados de checkout salvos e frete selecionado valido:
+
+```sh
+curl -i http://localhost:8080/checkout/revisao
+```
+
+A resposta esperada e HTTP 200 com produtos, dados, entrega, frete e total recalculados pelo backend. A pagina usa `Cache-Control: private, no-store`, mostra CPF mascarado e inclui `review_fingerprint` apenas para deteccao de revisao antiga.
+
+Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`. Sem selecao de frete, com frete expirado ou `input_hash` divergente, redireciona para `/checkout/frete`.
+
+Confirmar pedido exige POST com `Origin`/`Referer` valido e dados reais de desenvolvimento:
+
+```sh
+curl -i \
+  -X POST \
+  -H "Origin: http://localhost:8080" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data "review_fingerprint=<fingerprint-renderizado>" \
+  http://localhost:8080/checkout/revisao
+```
+
+Pedido criado redireciona 303 para `/pedido/<uuid>`, expira o cookie `printlab_cart`, preenche `carts.converted_at` e remove `cart_items`, `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections` na mesma transacao.
+
+Validar pagina de pedido:
+
+```sh
+curl -i http://localhost:8080/pedido/<uuid-do-pedido>
+```
+
+A pagina deve mostrar status `Aguardando pagamento`, itens, frete e total, sem CPF completo, endereco completo, telefone ou e-mail completo. Nao ha botao InfinitePay nesta fase.
+
 ## Validar assets estaticos
 
 O CSS compilado deve ser servido por `/static/css/app.css`. Os arquivos de `web/static/` sao embutidos no binario Go, entao a mesma rota deve funcionar localmente e no deploy.
@@ -239,6 +274,8 @@ A terceira migration real e `create_carts`, criando `carts` e `cart_items`. Ela 
 A quarta migration real e `create_cart_customer_details`, criando `cart_customer_details` e `cart_shipping_addresses`. Ela nao insere contato, endereco, CPF, PII ou dados ficticios.
 
 A quinta migration real e `add_shipping_profiles_and_selections`, adicionando perfis logisticos, `shipping_boxes` e `cart_shipping_selections`. Ela nao insere caixas, produtos, cotacoes ou dados ficticios.
+
+A sexta migration real e `create_orders`, adicionando `carts.converted_at` e tabelas de pedido como snapshots historicos. Ela nao insere pedidos, clientes, enderecos, itens ou dados ficticios.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 

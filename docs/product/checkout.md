@@ -1,8 +1,8 @@
 # Checkout
 
-Status: etapas de dados e frete IMPLEMENTADAS; pedido e pagamento PLANEJADOS.
+Status: etapas de dados, frete, revisao e criacao de pedido IMPLEMENTADAS; pagamento PLANEJADO.
 
-O checkout devera transformar uma intencao de compra em pedido, com validacao server-side de produtos, endereco, frete e pagamento. As etapas reais atuais sao dados de contato/endereco e frete vinculados ao carrinho anonimo.
+O checkout transforma uma intencao de compra em pedido pendente de pagamento, com validacao server-side de produtos, endereco e frete. Pagamento permanece planejado para a Fase 10.
 
 ## Comportamento implementado
 
@@ -19,7 +19,10 @@ O checkout devera transformar uma intencao de compra em pedido, com validacao se
 - Respostas HTML que podem conter PII usam `Cache-Control: private, no-store`.
 - `GET /checkout/frete` renderiza opcoes de frete SSR quando a cotacao esta disponivel.
 - `POST /checkout/frete` recebe somente `service_code`, revalida a cotacao atual e persiste a selecao.
-- A selecao bem-sucedida permanece em `/checkout/frete?selecionado=1` e informa que a revisao do pedido sera a proxima etapa.
+- A selecao bem-sucedida redireciona para `/checkout/revisao`.
+- `GET /checkout/revisao` revisa produtos, dados, entrega, frete e total sem recotar SuperFrete.
+- `POST /checkout/revisao` cria pedido com snapshot imutavel e status `pending_payment`.
+- `GET /pedido/{id}` exibe o pedido por UUID, sem CPF completo, endereco completo, telefone ou e-mail completo.
 
 Fluxo atual:
 
@@ -27,7 +30,8 @@ Fluxo atual:
 Carrinho
   -> Dados
   -> Frete
-  -> Revisao futura
+  -> Revisao
+  -> Pedido criado
   -> Pagamento futuro
 ```
 
@@ -111,29 +115,34 @@ Frete selecionado expira em 30 minutos e e invalidado por `input_hash` quando ca
 
 Falhas de frete mantem mensagem publica generica. Internamente, a aplicacao diferencia indisponibilidade de configuracao, ausencia de caixas, falha na chamada de planejamento, ausencia de pacote retornado, caixa inexistente para o pacote, falha na chamada final e ausencia de cotacoes finais validas, sem logar PII ou secrets.
 
-## Snapshot futuro
+## Revisao e pedido
 
-Na Fase 9, o pedido devera copiar contato e endereco para snapshots definitivos de pedido. Isso evita depender do carrinho depois que a compra for criada.
+`GET /checkout/revisao` exige carrinho valido e nao convertido, carrinho nao vazio, itens disponiveis, dados completos e selecao de frete existente, nao expirada e com `input_hash` valido.
 
-O pedido tambem devera copiar ou revalidar a selecao de frete vigente antes de congelar valores definitivos.
+Se dados faltarem, redireciona para `/checkout/dados`. Se frete faltar, expirar ou divergir do carrinho atual, redireciona para `/checkout/frete`. Se o carrinho faltar, estiver vazio ou possuir item indisponivel, redireciona para `/carrinho`.
 
-## Comportamento planejado
+A revisao mostra CPF mascarado e usa `Cache-Control: private, no-store`.
 
-- Recalcular subtotal e total no backend.
-- Criar pedido antes ou durante o inicio do pagamento, conforme decisao futura.
+O POST de revisao recalcula produtos, disponibilidade, subtotal, frete e total no servidor. O campo oculto `review_fingerprint` serve somente para detectar revisao antiga entre GET e POST; nao e secret e nao determina preco.
+
+Se a revisao mudou, nenhum pedido e criado e a pagina informa que os dados precisam ser revisados novamente.
+
+Pedido criado copia contato, endereco, frete, itens e receita de producao para tabelas historicas. Depois do commit, `carts.converted_at` e preenchido, dados temporarios do carrinho sao removidos e o cookie `printlab_cart` expira.
 
 ## Regras obrigatorias
 
 - O frontend nao determina preco final.
 - O frontend nao determina frete; ele envia somente a escolha `service_code`.
+- O frontend nao determina status de pedido.
 - O frontend nao confirma pagamento.
+- Pedido deve ser criado em transacao unica e idempotente por `source_cart_id`.
 - Redirect de pagamento nao confirma pedido pago.
 - Webhook validado sera necessario para confirmacao server-side.
 
 ## Limites
 
-- Nao ha pedido implementado nesta fase.
 - Nao ha pagamento implementado nesta fase.
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
 - Nao ha contrato aprovado com InfinitePay.
-- Nao ha schema aprovado para pedidos ou pagamentos.
+- Nao ha webhook de pagamento.
+- Nao ha painel administrativo.

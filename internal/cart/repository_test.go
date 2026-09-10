@@ -52,6 +52,31 @@ func TestRepositoryAddItemUsesAtomicUpsertWithQuantityLimit(t *testing.T) {
 	}
 }
 
+func TestRepositoryIgnoresConvertedCarts(t *testing.T) {
+	source, err := os.ReadFile("repository.go")
+	if err != nil {
+		t.Fatalf("expected repository source to be readable, got %v", err)
+	}
+
+	for _, marker := range []string{
+		"func (r *PostgresRepository) FindActiveCart",
+		"func (r *PostgresRepository) CreateCart",
+		"func (r *PostgresRepository) RenewCart",
+		"func (r *PostgresRepository) addItemWithoutVariant",
+		"func (r *PostgresRepository) addItemWithVariant",
+		"func (r *PostgresRepository) UpdateItemQuantity",
+		"func (r *PostgresRepository) RemoveItem",
+	} {
+		query, ok := repositoryFunctionSource(string(source), marker)
+		if !ok {
+			t.Fatalf("expected %s to exist", marker)
+		}
+		if !strings.Contains(query, "converted_at is null") {
+			t.Fatalf("expected %s to ignore converted carts", marker)
+		}
+	}
+}
+
 func repositoryFunctionSource(source string, marker string) (string, bool) {
 	start := strings.Index(source, marker)
 	if start == -1 {

@@ -1,6 +1,6 @@
 # Fase 8 — Embalagem Real e Integracao de Frete SuperFrete
 
-Status: IMPLEMENTACAO CONCLUIDA; VALIDACAO SANDBOX SUPERFRETE PENDENTE.
+Status: CONCLUIDA.
 
 ## Objetivo
 
@@ -65,31 +65,31 @@ Implementar a primeira etapa real de frete da PrintLab:
 
 ### C. Sandbox SuperFrete real
 
-- [ ] Token Sandbox real configurado.
-- [ ] CEP de origem operacional da PrintLab configurado.
-- [ ] Produto real de desenvolvimento com perfil logistico cadastrado.
-- [ ] Caixa fisica real cadastrada em `shipping_boxes`.
-- [ ] Cotacao Sandbox real validada com primeira chamada `products`.
-- [ ] Pacote ideal retornado pela SuperFrete validado.
-- [ ] Menor caixa real compativel selecionada.
-- [ ] Segunda chamada `package` validada.
-- [ ] Pelo menos um servico valido retornado e apresentado.
-- [ ] Nenhuma credencial exposta.
+- [x] Token Sandbox real configurado fora do repositorio.
+- [x] CEP de origem operacional da PrintLab configurado fora do repositorio.
+- [x] Produto real de desenvolvimento com perfil logistico cadastrado.
+- [x] Caixa fisica real cadastrada em `shipping_boxes`.
+- [x] Cotacao Sandbox real validada com primeira chamada `products`.
+- [x] Pacote ideal retornado pela SuperFrete validado.
+- [x] Mecanismo rejeitou corretamente caixa que nao comportava o pacote (`no_fitting_box`).
+- [x] Caixa real compativel permitiu a cotacao final.
+- [x] Pelo menos um servico valido retornou, foi apresentado e selecionado.
+- [x] `cart_shipping_selections` recebeu a selecao persistida.
+- [x] Nenhuma credencial exposta.
 
-## Pendencias para concluir a fase de ponta a ponta
+## Validacao manual
 
-Para mover este plano para `docs/plans/completed/`, ainda falta validar uma cotacao Sandbox real com dados reais de desenvolvimento:
+A validacao Sandbox real foi confirmada manualmente pelo responsavel do projeto antes da Fase 9:
 
-- `SUPERFRETE_ENV=sandbox`;
-- `SUPERFRETE_API_TOKEN` real configurado como secret;
-- `SUPERFRETE_ORIGIN_POSTAL_CODE` real da PrintLab;
-- `SUPERFRETE_CONTACT_EMAIL` operacional;
-- `SUPERFRETE_SERVICES` com servicos autorizados;
-- ao menos um produto real com perfil logistico;
-- ao menos uma caixa fisica real ativa cadastrada;
-- carrinho real com dados de checkout.
+- cotacao Sandbox executada;
+- chamada de planejamento retornou pacote;
+- caixa pequena incompativel foi rejeitada corretamente;
+- caixa compativel permitiu cotacao final;
+- modalidades de frete foram apresentadas;
+- uma modalidade foi selecionada;
+- `cart_shipping_selections` persistiu a selecao.
 
-Nao criar esses dados em migration e nao registrar secrets.
+Valores de secrets, connection strings, CEPs, tokens ou dados pessoais nao foram registrados na documentacao.
 
 ## Decisoes
 

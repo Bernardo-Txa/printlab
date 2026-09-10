@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout e frete IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS; pagamentos e demais entidades de negocio PLANEJADOS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -11,6 +11,8 @@ A Fase 6 adiciona carrinho anonimo persistido server-side em `public.carts` e `p
 A Fase 7 adiciona dados temporarios de contato e endereco vinculados ao carrinho em `public.cart_customer_details` e `public.cart_shipping_addresses`.
 
 A Fase 8 adiciona perfis logisticos em produtos/variantes, caixas fisicas reais em `public.shipping_boxes` e selecoes de frete por carrinho em `public.cart_shipping_selections`.
+
+A Fase 9 adiciona `carts.converted_at` e tabelas de pedido como snapshots historicos em `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items` e `public.order_item_filaments`.
 
 ## Convencoes futuras
 
@@ -303,6 +305,7 @@ Campos:
 | `created_at` | `timestamptz` | nao | `now()` | Criacao do carrinho. |
 | `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente nas mutacoes. |
 | `expires_at` | `timestamptz` | nao | - | Expiracao do carrinho anonimo. |
+| `converted_at` | `timestamptz` | sim | - | Preenchido quando o carrinho e convertido em pedido. |
 
 Constraints:
 
@@ -311,11 +314,17 @@ Constraints:
 - `carts_token_hash_length`: `octet_length(token_hash) = 32`.
 - `carts_expires_after_created`: `expires_at > created_at`.
 
+Indices:
+
+- `carts_converted_at_idx`: indice parcial de carrinhos convertidos para auditoria e limpeza futura.
+
 Semantica:
 
 - `token_hash` nunca deve conter o token bruto.
 - Carrinho expirado e tratado como inexistente pela aplicacao.
+- Carrinho com `converted_at` preenchido e tratado como inexistente para novas compras.
 - Mutacoes bem-sucedidas renovam `expires_at` para `agora + 30 dias`.
+- Ao criar pedido, o carrinho e preservado como origem historica e dados temporarios associados sao removidos na mesma transacao.
 - Nao ha job de limpeza nesta fase.
 
 RLS:
@@ -582,7 +591,250 @@ Semantica:
 - `input_hash` inclui CEP de origem, CEP de destino, produtos, variantes, quantidades, perfil logistico efetivo, caixa real, dimensoes externas, peso de embalagem e configuracao de servicos/opcoes.
 - Nome, CPF, e-mail, telefone, rua e demais PII desnecessaria nao entram no hash.
 - Se o hash atual divergir ou `expires_at` estiver no passado, a selecao e ignorada.
-- O pedido futuro devera revalidar a cotacao antes de congelar valores.
+- O pedido revalida a cotacao antes de congelar valores historicos.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.orders`
+
+Cabecalho historico do pedido criado a partir de um carrinho validado.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Identificador publico usado em `/pedido/{id}`. |
+| `order_number` | `bigint` | nao | `generated always as identity` | Numero sequencial para referencia humana. |
+| `source_cart_id` | `uuid` | sim | - | Carrinho que originou o pedido, se ainda existir. |
+| `status` | `text` | nao | `'pending_payment'` | Estado inicial da Fase 9. |
+| `currency` | `text` | nao | `'BRL'` | Moeda fixa nesta fase. |
+| `products_subtotal_cents` | `bigint` | nao | - | Subtotal dos produtos em centavos. |
+| `shipping_price_cents` | `bigint` | nao | - | Frete selecionado em centavos. |
+| `total_cents` | `bigint` | nao | - | Total final em centavos. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do pedido. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente em fases futuras. |
+
+Foreign keys:
+
+- `orders_source_cart_id_fkey`: `source_cart_id` referencia `public.carts(id)` com `on delete set null`.
+
+Constraints:
+
+- `orders_pkey`: chave primaria em `id`.
+- `orders_order_number_unique`: `order_number` unico.
+- `orders_status_allowed`: nesta fase, somente `pending_payment`.
+- `orders_currency_brl`: nesta fase, somente `BRL`.
+- `orders_products_subtotal_non_negative`: subtotal de produtos nao negativo.
+- `orders_shipping_price_non_negative`: frete nao negativo.
+- `orders_total_non_negative`: total nao negativo.
+- `orders_total_matches_components`: total igual a subtotal de produtos + frete.
+
+Indices:
+
+- `orders_source_cart_id_unique_idx`: unique parcial em `source_cart_id` quando nao nulo.
+- `orders_created_at_idx` em `created_at desc`.
+
+Semantica:
+
+- Um carrinho gera no maximo um pedido.
+- `order_number` nao deve ser usado como autorizacao.
+- Pedido criado pelo checkout fica em `pending_payment` ate a Fase 10 implementar pagamento.
+- Valores financeiros sao calculados no backend com inteiros em centavos.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_customer_details`
+
+Snapshot privado dos dados de contato usados na criacao do pedido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
+| `full_name` | `text` | nao | - | Nome completo normalizado. |
+| `email` | `text` | nao | - | E-mail normalizado. |
+| `phone` | `text` | nao | - | Telefone brasileiro canonico. |
+| `cpf` | `text` | nao | - | CPF com 11 digitos ASCII. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do snapshot. |
+
+Foreign keys:
+
+- `order_customer_details_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+
+Constraints:
+
+- `order_customer_details_pkey`: chave primaria em `order_id`.
+- Constraints de nome, e-mail, telefone e CPF preservam a estrutura validada no checkout.
+
+Semantica:
+
+- Nao possui FK para `cart_customer_details`.
+- A rota publica do pedido nao deve exibir CPF completo, telefone ou e-mail completo.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_shipping_addresses`
+
+Snapshot privado do endereco de entrega usado na criacao do pedido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
+| `postal_code` | `text` | nao | - | CEP com 8 digitos ASCII. |
+| `street` | `text` | nao | - | Rua/logradouro. |
+| `number` | `text` | nao | - | Numero textual. |
+| `complement` | `text` | sim | - | Complemento opcional. |
+| `district` | `text` | nao | - | Bairro. |
+| `city` | `text` | nao | - | Cidade. |
+| `state` | `text` | nao | - | UF brasileira. |
+| `country_code` | `text` | nao | `'BR'` | Pais fixo Brasil nesta fase. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do snapshot. |
+
+Foreign keys:
+
+- `order_shipping_addresses_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+
+Constraints:
+
+- `order_shipping_addresses_pkey`: chave primaria em `order_id`.
+- Constraints estruturais brasileiras preservam CEP, tamanhos, trim, UF oficial e `country_code = 'BR'`.
+
+Semantica:
+
+- Nao possui FK para `cart_shipping_addresses`.
+- A rota publica do pedido nao deve exibir endereco completo.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_shipping_details`
+
+Snapshot do frete selecionado no checkout.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
+| `provider` | `text` | nao | - | Provedor de frete, inicialmente `superfrete`. |
+| `service_code` | `text` | nao | - | Codigo do servico selecionado. |
+| `service_name` | `text` | nao | - | Nome do servico selecionado. |
+| `carrier_name` | `text` | sim | - | Transportadora, quando retornada. |
+| `delivery_time_days` | `integer` | sim | - | Prazo em dias uteis, quando retornado. |
+| `shipping_box_name` | `text` | nao | - | Nome da caixa usada na cotacao final. |
+| `package_weight_g` | `bigint` | nao | - | Peso final cotado. |
+| `package_height_mm` | `integer` | nao | - | Altura externa cotada. |
+| `package_width_mm` | `integer` | nao | - | Largura externa cotada. |
+| `package_length_mm` | `integer` | nao | - | Comprimento externo cotado. |
+| `quoted_at` | `timestamptz` | sim | - | Momento da cotacao original. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do snapshot. |
+
+Foreign keys:
+
+- `order_shipping_details_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+
+Semantica:
+
+- Nao possui FK para `shipping_boxes`.
+- O nome da caixa, dimensoes externas, peso, transportadora, servico, prazo e preco em `orders.shipping_price_cents` sao historicos.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_items`
+
+Itens historicos do pedido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `order_id` | `uuid` | nao | - | Pedido dono da linha. |
+| `product_id` | `uuid` | sim | - | Produto original, se ainda existir. |
+| `variant_id` | `uuid` | sim | - | Variante original, se ainda existir. |
+| `product_name` | `text` | nao | - | Snapshot do nome do produto. |
+| `product_slug` | `text` | nao | - | Snapshot do slug do produto. |
+| `variant_name` | `text` | sim | - | Snapshot do nome da variante. |
+| `variant_slug` | `text` | sim | - | Snapshot do slug da variante. |
+| `sku` | `text` | sim | - | Snapshot do SKU. |
+| `unit_price_cents` | `bigint` | nao | - | Preco unitario em centavos. |
+| `quantity` | `integer` | nao | - | Quantidade entre 1 e 99. |
+| `line_total_cents` | `bigint` | nao | - | `unit_price_cents * quantity`. |
+| `unit_print_time_minutes` | `integer` | sim | - | Tempo estimado por unidade. |
+| `unit_estimated_filament_weight_mg` | `bigint` | sim | - | Peso estimado de filamento por unidade. |
+| `sort_order` | `integer` | nao | `0` | Ordem historica no pedido. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao da linha. |
+
+Foreign keys:
+
+- `order_items_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+- `order_items_product_id_fkey`: `product_id` referencia `public.products(id)` com `on delete set null`.
+- `order_items_variant_id_fkey`: `variant_id` referencia `public.product_variants(id)` com `on delete set null`.
+
+Indices:
+
+- `order_items_order_id_idx` em `order_id`.
+
+Semantica:
+
+- Campos snapshot sao a autoridade historica.
+- Produto ou variante podem ser removidos futuramente sem destruir o pedido.
+- Campos de producao sao por unidade, nao multiplicados por quantidade.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_item_filaments`
+
+Snapshot dos componentes de receita de producao 3D por item de pedido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria. |
+| `order_item_id` | `uuid` | nao | - | Item de pedido dono do componente. |
+| `material_name` | `text` | nao | - | Nome do material no momento da compra. |
+| `material_slug` | `text` | nao | - | Slug do material no momento da compra. |
+| `color_name` | `text` | nao | - | Nome da cor no momento da compra. |
+| `color_slug` | `text` | nao | - | Slug da cor no momento da compra. |
+| `hex_color` | `text` | sim | - | Cor hexadecimal quando existir. |
+| `estimated_weight_mg_per_unit` | `bigint` | nao | - | Peso estimado por unidade. |
+| `label` | `text` | sim | - | Label do componente quando existir. |
+| `sort_order` | `integer` | nao | `0` | Ordem historica do componente. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do snapshot. |
+
+Foreign keys:
+
+- `order_item_filaments_order_item_id_fkey`: `order_item_id` referencia `public.order_items(id)` com `on delete cascade`.
+
+Indices:
+
+- `order_item_filaments_order_item_id_idx` em `order_item_id`.
+
+Semantica:
+
+- Nao possui FK para `materials`, `colors` ou `variant_filaments`.
+- Material/cor inativos continuam entrando no snapshot quando fazem parte da receita da variante confirmada.
 
 RLS:
 
@@ -672,8 +924,6 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 
 - `customers`: identidade permanente de clientes somente se houver login ou conta futura.
 - `addresses`: enderecos permanentes ou de cobranca somente se houver necessidade futura.
-- `orders`: pedidos criados pelo backend.
-- `order_items`: itens persistidos de pedido com valores calculados pelo backend.
 - `payments`: registros de pagamento, tentativas e status validados.
 - `shipments`: dados de frete e envio.
 
@@ -696,11 +946,11 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedidos, descontos, pagamentos e total final definitivo de checkout continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedido pendente de pagamento congela subtotal, frete e total final em `orders`. Descontos e pagamentos continuam planejados.
 
 ## IDs
 
-`categories` e `products` usam UUID. Nao ha estrategia universal aprovada para as demais entidades; `uuid` e `bigint identity` serao avaliados conforme cada caso.
+`categories`, `products` e `orders` usam UUID como identificador tecnico. `orders.order_number` usa `bigint identity` sequencial apenas como referencia humana.
 
 Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
@@ -712,11 +962,9 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 
 ## Pendencias
 
-- Definir status de pedido.
 - Definir status de pagamento.
 - Refinar operacao de produtos sob demanda quando houver modulo de producao.
 - Definir upload/admin de imagens.
 - Definir estoque fisico e inventario de filamento.
 - Definir calculo de custos de producao a partir de insumos e tempo.
 - Implementar limpeza programada de carrinhos expirados e PII associada antes do go-live comercial.
-- Cadastrar caixas reais e perfis logisticos reais em desenvolvimento antes de validar Sandbox SuperFrete.

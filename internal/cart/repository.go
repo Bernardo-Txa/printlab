@@ -32,6 +32,7 @@ func (r *PostgresRepository) FindActiveCart(ctx context.Context, tokenHash []byt
 		from public.carts
 		where token_hash = $1
 			and expires_at > $2
+			and converted_at is null
 	`, tokenHash, now).Scan(&activeCart.ID, &activeCart.ExpiresAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -62,6 +63,7 @@ func (r *PostgresRepository) CreateCart(ctx context.Context, tokenHash []byte, e
 			on conflict (token_hash) do update set
 				updated_at = now(),
 				expires_at = excluded.expires_at
+			where public.carts.converted_at is null
 			returning id, expires_at
 		),
 		cleared_items as (
@@ -92,6 +94,7 @@ func (r *PostgresRepository) RenewCart(ctx context.Context, cartID string, expir
 			updated_at = now(),
 			expires_at = $2
 		where id = $1::uuid
+			and converted_at is null
 		returning
 			id::text,
 			expires_at
@@ -410,12 +413,15 @@ func (r *PostgresRepository) addItemWithoutVariant(ctx context.Context, cartID s
 			product_id,
 			variant_id,
 			quantity
-		) values (
-			$1::uuid,
+		)
+		select
+			active_cart.id,
 			$2::uuid,
 			null,
 			$3
-		)
+		from public.carts active_cart
+		where active_cart.id = $1::uuid
+			and active_cart.converted_at is null
 		on conflict (cart_id, product_id) where variant_id is null
 		do update set
 			quantity = public.cart_items.quantity + excluded.quantity,
@@ -425,6 +431,14 @@ func (r *PostgresRepository) addItemWithoutVariant(ctx context.Context, cartID s
 	`, cartID, productID, quantity).Scan(&storedQuantity)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			active, activeErr := r.activeCartExists(ctx, cartID)
+			if activeErr != nil {
+				return activeErr
+			}
+			if !active {
+				return ErrNotFound
+			}
+
 			return ErrQuantityLimit
 		}
 
@@ -442,12 +456,15 @@ func (r *PostgresRepository) addItemWithVariant(ctx context.Context, cartID stri
 			product_id,
 			variant_id,
 			quantity
-		) values (
-			$1::uuid,
+		)
+		select
+			active_cart.id,
 			$2::uuid,
 			$3::uuid,
 			$4
-		)
+		from public.carts active_cart
+		where active_cart.id = $1::uuid
+			and active_cart.converted_at is null
 		on conflict (cart_id, product_id, variant_id) where variant_id is not null
 		do update set
 			quantity = public.cart_items.quantity + excluded.quantity,
@@ -457,6 +474,14 @@ func (r *PostgresRepository) addItemWithVariant(ctx context.Context, cartID stri
 	`, cartID, productID, variantID, quantity).Scan(&storedQuantity)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			active, activeErr := r.activeCartExists(ctx, cartID)
+			if activeErr != nil {
+				return activeErr
+			}
+			if !active {
+				return ErrNotFound
+			}
+
 			return ErrQuantityLimit
 		}
 
@@ -478,6 +503,12 @@ func (r *PostgresRepository) UpdateItemQuantity(ctx context.Context, cartID stri
 			updated_at = now()
 		where cart_id = $1::uuid
 			and id = $2::uuid
+			and exists (
+				select 1
+				from public.carts active_cart
+				where active_cart.id = public.cart_items.cart_id
+					and active_cart.converted_at is null
+			)
 	`, cartID, itemID, quantity)
 	if err != nil {
 		return false, err
@@ -495,10 +526,33 @@ func (r *PostgresRepository) RemoveItem(ctx context.Context, cartID string, item
 		delete from public.cart_items
 		where cart_id = $1::uuid
 			and id = $2::uuid
+			and exists (
+				select 1
+				from public.carts active_cart
+				where active_cart.id = public.cart_items.cart_id
+					and active_cart.converted_at is null
+			)
 	`, cartID, itemID)
 	if err != nil {
 		return false, err
 	}
 
 	return commandTag.RowsAffected() > 0, nil
+}
+
+func (r *PostgresRepository) activeCartExists(ctx context.Context, cartID string) (bool, error) {
+	var active bool
+	err := r.pool.QueryRow(ctx, `
+		select exists (
+			select 1
+			from public.carts
+			where id = $1::uuid
+				and converted_at is null
+		)
+	`, cartID).Scan(&active)
+	if err != nil {
+		return false, err
+	}
+
+	return active, nil
 }

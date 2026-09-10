@@ -1,6 +1,6 @@
 # Integracoes
 
-Status: SuperFrete IMPLEMENTADO para cotacao de frete; demais integracoes comerciais PLANEJADAS.
+Status: SuperFrete IMPLEMENTADO e VALIDADO em Sandbox para cotacao de frete; demais integracoes comerciais PLANEJADAS.
 
 ## Responsabilidade
 
@@ -9,7 +9,7 @@ Integracoes externas devem permitir calculo de frete, pagamentos e outros servic
 ## Limites
 
 - SuperFrete foi implementado apenas para cotacao server-side de frete.
-- Sandbox SuperFrete real ainda depende de token, CEP de origem, produto com perfil logistico e caixa real cadastrada.
+- Sandbox SuperFrete real foi validado manualmente para cotacao, pacote planejado, caixa real compativel, modalidades e selecao persistida.
 - Nenhuma etiqueta, postagem, rastreio, pagamento ou webhook foi implementado.
 
 ## Decisoes

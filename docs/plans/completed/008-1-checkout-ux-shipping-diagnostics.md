@@ -38,7 +38,7 @@ Melhorar a etapa de dados do checkout e a observabilidade segura da cotacao de f
 - [x] Frete registra motivos seguros: `shipping_not_configured`, `no_active_boxes`, `planning_request_failed`, `planning_no_valid_quotes`, `planning_no_package`, `no_fitting_box`, `final_request_failed` e `final_no_valid_quotes`.
 - [x] Logs nao registram CEP, CPF, telefone, e-mail, endereco, token, Authorization ou corpo bruto externo.
 - [x] Testes de ViaCEP usam `httptest`, sem chamada externa real.
-- [x] Fase 8 permanece com validacao Sandbox SuperFrete pendente.
+- [x] Na conclusao desta fase, a validacao Sandbox real da SuperFrete permanecia pendente.
 
 ## Validacoes
 
@@ -66,4 +66,4 @@ Validacoes finais:
 - `go vet ./...`: passou.
 - `go build ./...`: passou.
 
-A Fase 8 continua ativa porque a cotacao Sandbox real da SuperFrete ainda depende de dados e credenciais reais de desenvolvimento.
+A validacao Sandbox real da SuperFrete foi concluida posteriormente antes da Fase 9, conforme registrado em `docs/plans/completed/008-shipping-superfrete.md`.

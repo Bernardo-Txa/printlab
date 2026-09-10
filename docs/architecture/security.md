@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout e frete IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete e pedidos pendentes de pagamento IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -20,7 +20,7 @@ O frontend nunca deve determinar de maneira autoritativa:
 - status de pagamento;
 - status de pedido.
 
-Antes de finalizar uma compra, o backend devera futuramente:
+Antes de finalizar uma compra, o backend deve:
 
 1. receber IDs e quantidades;
 2. buscar produtos e precos no banco;
@@ -86,12 +86,13 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - O token do cookie e aleatorio, gerado com `crypto/rand` com 32 bytes.
 - O token bruto nao e persistido, logado, renderizado em HTML ou enviado em URL.
 - O banco armazena somente `SHA-256(token)` em `carts.token_hash`.
+- Carrinho com `carts.converted_at` preenchido nao deve ser tratado como carrinho ativo.
 - `cart_items` armazena somente produto, variante opcional e quantidade.
 - Preco unitario, subtotal e total sao sempre recalculados server-side.
 - Mutacoes de item usam escopo `cart_id + item_id`; nunca atualizam ou removem apenas por `item_id`.
 - Mutacoes usam POST e validacao centralizada de `Origin`/`Referer`.
 - Requests cross-site com origem conhecida e incompatibil devem ser rejeitados.
-- Checkout futuro devera revalidar todos os itens antes de criar pedido.
+- Checkout revalida todos os itens antes de criar pedido.
 
 ## Dados pessoais de checkout
 
@@ -132,13 +133,29 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - `input_hash` invalida selecoes quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam, sem incluir PII desnecessaria.
 - Caixas fisicas reais sao obrigatorias para cotacao final; o sistema nao inventa caixas nem divide em multi-volume nesta fase.
 
+## Pedidos
+
+- `GET /checkout/revisao` e `GET /pedido/{id}` usam `Cache-Control: private, no-store`.
+- Revisao nao chama SuperFrete novamente; ela valida expiracao e `input_hash` da selecao persistida.
+- `review_fingerprint` e somente deteccao de tela antiga. Ele nao e secret e nao define preco, frete, subtotal, total ou status.
+- `POST /checkout/revisao` reutiliza validacao centralizada de `Origin`/`Referer`.
+- O pedido e criado em transacao PostgreSQL unica, com lock do carrinho por `SELECT ... FOR UPDATE`.
+- `orders.source_cart_id` unique impede que o mesmo carrinho crie pedidos duplicados.
+- Depois do commit, o backend expira o cookie `printlab_cart`.
+- O pedido preserva snapshot de itens, precos, frete, cliente, endereco e receita de producao.
+- `order_item_filaments` nao referencia `materials`, `colors` ou `variant_filaments`, para preservar historico.
+- A rota publica `/pedido/{id}` aceita somente UUID e nao deve expor pedido por `order_number`.
+- `order_number` nao e mecanismo de autorizacao.
+- A pagina publica de pedido nao deve renderizar CPF completo, endereco completo, telefone ou e-mail completo.
+- Logs de pedido podem conter UUID, `order_number`, status e conversao de carrinho; nao devem conter CPF, e-mail, telefone, endereco ou token de carrinho.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
 - Nao ha processamento de pagamento implementado.
-- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout e frete.
+- As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
 

@@ -15,6 +15,9 @@ IMPLEMENTADO:
 - Dados de checkout em `GET /checkout/dados` e `POST /checkout/dados`, vinculados ao carrinho anonimo.
 - Consulta interna de CEP em `GET /api/cep/{cep}` para melhoria progressiva da etapa de dados.
 - Frete em `GET /checkout/frete` e `POST /checkout/frete`, com cotacao server-side pela SuperFrete quando configurada.
+- Revisao de checkout em `GET /checkout/revisao`.
+- Criacao de pedido pendente de pagamento em `POST /checkout/revisao`.
+- Exibicao de pedido por UUID em `GET /pedido/{id}`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -30,19 +33,16 @@ IMPLEMENTADO:
 - Fase 6 com `carts` e `cart_items`.
 - Fase 7 com `cart_customer_details` e `cart_shipping_addresses`.
 - Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
+- Fase 9 com `orders`, snapshots de pedido e conversao de carrinho por `converted_at`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
 - Selecao publica de variante por query string em `GET /produtos/{slug}?variante=<variant-slug>`.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
 
-IMPLEMENTADO, COM VALIDACAO EXTERNA PENDENTE:
-
-- Cotacao Sandbox real da SuperFrete com token, CEP de origem, produto real com perfil logistico e caixa real cadastrada.
-
 PLANEJADO:
 
-- Pedidos, painel administrativo e integracoes externas de pagamento.
+- Painel administrativo e integracoes externas de pagamento.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -90,6 +90,8 @@ O carrinho anonimo usa cookie opaco no navegador e persistencia server-side. O b
 A etapa de dados do checkout continua sem login. Contato e endereco pertencem ao carrinho anonimo atual e nao criam uma identidade permanente de cliente. Esses dados sao PII e devem ser tratados com minimizacao, validacao server-side, leitura consistente, `Cache-Control: private, no-store` em respostas HTML que possam conter PII e erros genericos. A consulta de CEP e uma melhoria progressiva feita pelo backend contra ViaCEP; o navegador nao chama ViaCEP diretamente e o preenchimento manual continua valido.
 
 A etapa de frete tambem e server-side. O navegador envia somente a escolha da opcao de frete, por `service_code`. O backend recalcula a cotacao no POST, escolhe a menor caixa fisica real compativel por dimensoes internas com rotacao, persiste somente a cotacao final usando dimensoes externas e peso final, e invalida selecoes antigas por expiracao ou `input_hash`.
+
+A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carrinho atual, dados de checkout, selecao de frete, expiracao e `input_hash`. O POST recalcula subtotal, frete e total no backend, compara `review_fingerprint` apenas para detectar tela antiga, cria pedido em transacao PostgreSQL, converte o carrinho e remove dados temporarios. Pedido e snapshot historico e nao depende futuramente de catalogo, receita, dados temporarios ou caixa de frete.
 
 ## Responsabilidades do frontend
 
@@ -167,7 +169,19 @@ A Fase 8 adiciona frete:
 - A escolha da menor caixa valida usa menor volume interno, menor peso de embalagem, menor `sort_order`, `name` e `id`.
 - Multi-volume permanece fora do escopo.
 
-Ainda nao existem tabelas de pedidos, pagamentos, clientes permanentes ou admin.
+A Fase 9 adiciona pedidos:
+
+- `carts.converted_at` diferencia carrinho ativo de carrinho convertido.
+- `orders` guarda status `pending_payment`, moeda `BRL`, subtotal, frete e total em centavos.
+- `orders.order_number` e sequencial e serve apenas como referencia humana.
+- `orders.source_cart_id` e unique quando preenchido, impedindo pedido duplicado para o mesmo carrinho.
+- `order_customer_details` e `order_shipping_addresses` guardam snapshots privados.
+- `order_shipping_details` guarda servico, transportadora, prazo, caixa, peso e dimensoes externas cotadas.
+- `order_items` guarda snapshots de produto, variante, SKU, preco, quantidade, subtotal e producao por unidade.
+- `order_item_filaments` guarda componentes de receita sem FK para materiais, cores ou receita original.
+- RLS fica habilitado nas tabelas de pedido, sem policies publicas.
+
+Ainda nao existem tabelas de pagamentos, clientes permanentes ou admin.
 
 ## Comunicacao com servicos externos
 
@@ -215,7 +229,10 @@ GET /checkout/dados -> formulario SSR de contato/endereco; exige carrinho com it
 POST /checkout/dados -> valida e salva dados do carrinho em transacao; redireciona 303
 GET /api/cep/{cep} -> consulta CEP via backend; retorna street, district, city e state sem dados extras do provedor
 GET /checkout/frete -> calcula cotacoes atuais e renderiza opcoes de frete; exige carrinho, dados, perfis logisticos e caixas reais
-POST /checkout/frete -> revalida cotacao atual e persiste selecao de frete por service_code; redireciona 303
+POST /checkout/frete -> revalida cotacao atual e persiste selecao de frete por service_code; redireciona 303 para /checkout/revisao
+GET /checkout/revisao -> revisa carrinho, dados, frete e total sem recotar SuperFrete
+POST /checkout/revisao -> cria pedido pendente de pagamento em transacao e redireciona 303 para /pedido/{uuid}
+GET /pedido/{id} -> exibe pedido por UUID com status humano e sem PII completa
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 
@@ -300,19 +317,19 @@ shipping repository + SuperFrete client
 PostgreSQL + SuperFrete API
 ```
 
-Fluxo planejado para funcionalidades de negocio:
+Vertical slice implementada para pedidos:
 
 ```text
-Browser
+HTTP
    |
    v
-Handler HTTP
+orders handler
    |
    v
-Servico de dominio
+orders service
    |
    v
-Repositorio / pgx
+orders repository
    |
    v
 PostgreSQL

@@ -194,6 +194,59 @@ func TestBuildInputHash(t *testing.T) {
 	assertDifferentHash(t, first, changedBox)
 }
 
+func TestBuildCartInputHashMatchesSelectionFingerprint(t *testing.T) {
+	box := ShippingBox{
+		ID: "box-a",
+		External: DimensionsMM{
+			Height: 120,
+			Width:  150,
+			Length: 240,
+		},
+		PackagingWeightG: 120,
+	}
+	items := []CartItem{
+		{
+			ID:        "item-a",
+			ProductID: "product-a",
+			VariantID: "variant-a",
+			Quantity:  1,
+			VariantProfile: &ShippingProfile{
+				WeightG: 280,
+				Dimensions: DimensionsMM{
+					Height: 100,
+					Width:  120,
+					Length: 200,
+				},
+			},
+		},
+		{
+			ID:        "item-b",
+			ProductID: "product-b",
+			Quantity:  2,
+			ProductProfile: &ShippingProfile{
+				WeightG: 35,
+				Dimensions: DimensionsMM{
+					Height: 50,
+					Width:  60,
+					Length: 70,
+				},
+			},
+		},
+	}
+
+	got, err := BuildCartInputHash("01153000", "20020050", []string{"1", "2"}, items, box)
+	if err != nil {
+		t.Fatalf("expected cart input hash, got %v", err)
+	}
+	want, err := BuildInputHash(quoteFingerprintFixture())
+	if err != nil {
+		t.Fatalf("expected fixture hash, got %v", err)
+	}
+	if InputHashHex(got) != InputHashHex(want) {
+		t.Fatal("expected cart input hash to match persisted selection fingerprint")
+	}
+}
+
 func quoteFingerprintFixture() QuoteFingerprint {
 	return QuoteFingerprint{
 		OriginPostalCode:      "01153000",

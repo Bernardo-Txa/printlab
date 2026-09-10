@@ -73,7 +73,7 @@ func selectShippingHandler(service checkoutShippingService, cookies *cartdomain.
 			return
 		}
 
-		http.Redirect(w, r, "/checkout/frete?selecionado=1", http.StatusSeeOther)
+		http.Redirect(w, r, "/checkout/revisao", http.StatusSeeOther)
 	}
 }
 
