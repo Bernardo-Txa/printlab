@@ -43,6 +43,7 @@ IMPLEMENTADO:
 - Fase 8 — Embalagem Real e Integracao de Frete SuperFrete concluida, incluindo validacao Sandbox real confirmada manualmente.
 - Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete concluida.
 - Fase 9 — Revisao e Criacao de Pedidos, com snapshots imutaveis e status `pending_payment`.
+- Fase 9.1 — Interface publica de pedidos separada de dados operacionais preservados internamente.
 
 PLANEJADO:
 
@@ -84,7 +85,7 @@ Frontend implementado:
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
-- Etapa de revisao e pagina de pedido renderizadas no servidor, sem JavaScript obrigatorio.
+- Etapa de revisao e pagina de pedido renderizadas no servidor, sem JavaScript obrigatorio e sem expor dados operacionais de producao ou embalagem ao comprador.
 
 Banco planejado:
 

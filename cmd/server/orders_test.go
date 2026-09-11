@@ -92,6 +92,7 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 		"R$ 79,80",
 		"R$ 18,90",
 		"R$ 98,70",
+		"PAC",
 		"***.***.***-25",
 		`href="/checkout/dados"`,
 		`href="/checkout/frete"`,
@@ -104,6 +105,22 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 	for _, forbidden := range []string{`name="unit_price"`, `name="shipping_price"`, `name="subtotal"`, `name="total"`} {
 		if strings.Contains(body, forbidden) {
 			t.Fatalf("expected review form not to include authoritative field %s", forbidden)
+		}
+	}
+	for _, forbiddenOperationalData := range []string{
+		"SKU",
+		"PR-001",
+		"Tempo por unidade",
+		"Filamento por unidade",
+		"PLA",
+		"Azul",
+		"Cor principal",
+		"12 g",
+		"Pacote",
+		"Caixa Media",
+	} {
+		if strings.Contains(body, forbiddenOperationalData) {
+			t.Fatalf("expected review page not to render operational data %q", forbiddenOperationalData)
 		}
 	}
 }
@@ -201,7 +218,7 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagamento sera disponibilizado", "Produto Real", "R$ 98,70"} {
+	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagamento sera disponibilizado", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected order page to contain %q", expected)
 		}
@@ -209,6 +226,22 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 	for _, forbiddenPII := range []string{"52998224725", "***.***.***-25", "joao@example.com", "+5527999999999", "Rua Um", "29100-000"} {
 		if strings.Contains(body, forbiddenPII) {
 			t.Fatalf("expected order page not to render PII %q", forbiddenPII)
+		}
+	}
+	for _, forbiddenOperationalData := range []string{
+		"SKU",
+		"PR-001",
+		"Tempo por unidade",
+		"Filamento por unidade",
+		"PLA",
+		"Azul",
+		"Cor principal",
+		"12 g",
+		"Pacote",
+		"Caixa Media",
+	} {
+		if strings.Contains(body, forbiddenOperationalData) {
+			t.Fatalf("expected order page not to render operational data %q", forbiddenOperationalData)
 		}
 	}
 }

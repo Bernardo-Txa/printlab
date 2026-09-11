@@ -63,6 +63,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration `create_orders` adicionando `carts.converted_at` e tabelas historicas de pedido, sem seed ou dados ficticios.
 - Rotas `GET /checkout/revisao`, `POST /checkout/revisao` e `GET /pedido/{id}`.
 - Snapshot historico de cliente, endereco, frete, itens, preco, receita de producao e filamentos no momento de criacao do pedido.
+- Fase 9.1 — Separacao entre dados operacionais preservados em snapshot e interface publica de pedidos.
 
 ### Changed
 
@@ -91,3 +92,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Etapa de dados passa a oferecer consulta opcional de CEP via backend, mantendo preenchimento manual e validacao server-side como fonte autoritativa.
 - Selecao de frete passa a redirecionar para a etapa real de revisao do pedido.
 - Carrinhos convertidos deixam de ser reutilizados no fluxo ativo por `carts.converted_at`.
+- Revisao e pagina publica de pedido deixam de exibir SKU interno, dados de producao 3D e dados de embalagem fisica, preservando essas informacoes internamente.

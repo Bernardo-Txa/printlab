@@ -142,10 +142,11 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - A rota publica do pedido usa UUID, nao `order_number`.
 - O unico status criado pelo checkout nesta fase e `pending_payment`.
 - Pedido preserva snapshots de produto, variante, preco, quantidade, subtotal, frete, cliente, endereco e receita de producao.
+- Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
 - O snapshot de producao guarda tempo e peso por unidade, sem multiplicar pela quantidade.
 - `order_item_filaments` nao possui FK para `materials`, `colors` ou `variant_filaments`.
 - Depois do commit, dados temporarios de carrinho, cliente, endereco e frete sao removidos.
-- A pagina `/pedido/{id}` nao deve exibir CPF completo, endereco completo, telefone ou e-mail completo.
+- A pagina `/pedido/{id}` nao deve exibir CPF completo, endereco completo, telefone, e-mail completo, SKU interno, tempo de impressao, consumo de filamento, receita operacional, caixa fisica, peso ou dimensoes do pacote.
 
 ## Producao 3D
 

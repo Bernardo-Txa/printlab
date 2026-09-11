@@ -23,6 +23,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - A etapa de frete envia somente `service_code`; o backend revalida a cotacao e persiste o valor atual.
 - A etapa de revisao envia somente `review_fingerprint`; o backend recalcula tudo e usa o fingerprint apenas para detectar tela antiga.
 - A pagina de pedido nao deve exibir CPF completo, endereco completo, telefone ou e-mail completo.
+- A revisao e a pagina de pedido nao devem exibir SKU interno, tempo de impressao, consumo de filamento, componentes de receita, materiais, cores, caixa fisica, peso ou dimensoes do pacote.
 - A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
 - O formulario de dados usa mascaras progressivas e consulta CEP por endpoint interno da aplicacao; sem JavaScript, o preenchimento manual continua funcionando.
 

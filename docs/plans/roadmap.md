@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1 e 9 concluidas. Fases 10 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 concluidas. Fases 10 a 17 planejadas.
 
 ## Status das fases
 
@@ -21,6 +21,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1 e 9 concluidas.
 | Fase 8 — Embalagem real e integracao SuperFrete | Concluida |
 | Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete | Concluida |
 | Fase 9 — Pedidos | Concluida |
+| Fase 9.1 — Interface publica de pedidos | Concluida |
 | Fase 10 — Integracao InfinitePay | Planejada |
 | Fase 11 — Webhooks de pagamento | Planejada |
 | Fase 12 — Acompanhamento do pedido | Planejada |
@@ -369,6 +370,26 @@ Definition of Done:
 - Transacoes testadas.
 - Status documentados.
 - Falhas nao criam estado financeiro inconsistente.
+- Pagamento permanece planejado para a Fase 10.
+
+## Fase 9.1 — Interface publica de pedidos
+
+Objetivo: separar dados operacionais preservados nos snapshots da experiencia publica do comprador.
+
+Principais entregas:
+
+- Remocao de SKU interno da revisao e pagina de pedido.
+- Remocao de tempo de impressao, consumo de filamento e receita operacional da UI publica.
+- Remocao de caixa fisica, peso e dimensoes do pacote da pagina publica de pedido.
+- Preservacao dos campos operacionais no dominio, repository e banco.
+
+Dependencias: Fase 9.
+
+Definition of Done:
+
+- Revisao e pedido exibem somente informacoes comercialmente relevantes ao comprador.
+- Snapshots operacionais seguem preservados para painel administrativo e operacao futura.
+- Nenhuma migration e criada.
 - Pagamento permanece planejado para a Fase 10.
 
 ## Fase 10 — Integracao InfinitePay

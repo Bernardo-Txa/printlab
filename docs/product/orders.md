@@ -50,6 +50,8 @@ O pedido copia valores autoritativos no momento da confirmacao:
 
 Componentes de receita continuam entrando no snapshot mesmo quando material ou cor estiverem inativos, preservando a semantica da Fase 5.1.
 
+Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
+
 ## Revisao
 
 `GET /checkout/revisao` exige:
@@ -102,6 +104,21 @@ Se qualquer insert ou validacao falhar, a transacao faz rollback e nao persiste 
 `orders.source_cart_id` possui unique parcial quando nao nulo. Um carrinho gera no maximo um pedido.
 
 Se a mesma confirmacao for enviada duas vezes, a segunda tentativa deve redirecionar para o pedido ja criado para aquele carrinho quando possivel.
+
+## Interface publica
+
+`GET /checkout/revisao` e `GET /pedido/{id}` exibem somente dados comercialmente relevantes para o comprador:
+
+- produto;
+- variante;
+- quantidade;
+- precos;
+- servico de frete;
+- transportadora;
+- prazo;
+- subtotal, frete e total.
+
+Dados operacionais como SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem no snapshot para operacao futura, mas nao aparecem na interface publica do comprador.
 
 ## Privacidade
 

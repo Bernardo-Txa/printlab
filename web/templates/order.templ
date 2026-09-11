@@ -40,45 +40,12 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 											if item.HasVariant {
 												<p>{ item.VariantName }</p>
 											}
-											if item.SKU != "" {
-												<p>SKU { item.SKU }</p>
-											}
 										</div>
 										<div class="review-item-values">
 											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
 											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
 											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
 										</div>
-										if item.UnitPrintTimeMinutes != nil || item.UnitEstimatedFilamentWeightLabel != "" || len(item.Filaments) > 0 {
-											<div class="review-production">
-												if item.UnitPrintTimeMinutes != nil {
-													<p><span>Tempo por unidade</span><strong>{ strconv.Itoa(*item.UnitPrintTimeMinutes) } min</strong></p>
-												}
-												if item.UnitEstimatedFilamentWeightLabel != "" {
-													<p><span>Filamento por unidade</span><strong>{ item.UnitEstimatedFilamentWeightLabel }</strong></p>
-												}
-												if len(item.Filaments) > 0 {
-													<ul>
-														for _, filament := range item.Filaments {
-															<li>
-																if filament.HexColor != "" {
-																	<span class="review-color-swatch" style={ templ.SafeCSS("background-color: " + filament.HexColor) }></span>
-																} else {
-																	<span class="review-color-swatch"></span>
-																}
-																<span>
-																	<strong>{ filament.MaterialName } / { filament.ColorName }</strong>
-																	<small>{ filament.EstimatedWeightLabel }</small>
-																	if filament.Label != "" {
-																		<small>{ filament.Label }</small>
-																	}
-																</span>
-															</li>
-														}
-													</ul>
-												}
-											</div>
-										}
 									</article>
 								}
 							</div>
@@ -186,45 +153,12 @@ templ OrderConfirmation(page ordersdomain.OrderPage) {
 											if item.HasVariant {
 												<p>{ item.VariantName }</p>
 											}
-											if item.SKU != "" {
-												<p>SKU { item.SKU }</p>
-											}
 										</div>
 										<div class="review-item-values">
 											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
 											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
 											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
 										</div>
-										if item.UnitPrintTimeMinutes != nil || item.UnitEstimatedFilamentWeightLabel != "" || len(item.Filaments) > 0 {
-											<div class="review-production">
-												if item.UnitPrintTimeMinutes != nil {
-													<p><span>Tempo por unidade</span><strong>{ strconv.Itoa(*item.UnitPrintTimeMinutes) } min</strong></p>
-												}
-												if item.UnitEstimatedFilamentWeightLabel != "" {
-													<p><span>Filamento por unidade</span><strong>{ item.UnitEstimatedFilamentWeightLabel }</strong></p>
-												}
-												if len(item.Filaments) > 0 {
-													<ul>
-														for _, filament := range item.Filaments {
-															<li>
-																if filament.HexColor != "" {
-																	<span class="review-color-swatch" style={ templ.SafeCSS("background-color: " + filament.HexColor) }></span>
-																} else {
-																	<span class="review-color-swatch"></span>
-																}
-																<span>
-																	<strong>{ filament.MaterialName } / { filament.ColorName }</strong>
-																	<small>{ filament.EstimatedWeightLabel }</small>
-																	if filament.Label != "" {
-																		<small>{ filament.Label }</small>
-																	}
-																</span>
-															</li>
-														}
-													</ul>
-												}
-											</div>
-										}
 									</article>
 								}
 							</div>
@@ -237,7 +171,6 @@ templ OrderConfirmation(page ordersdomain.OrderPage) {
 									<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
 								}
 								<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
-								<p><span>Pacote</span><strong>{ page.Shipping.ShippingBoxName }</strong></p>
 							</div>
 						</section>
 					</div>

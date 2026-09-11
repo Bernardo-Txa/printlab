@@ -123,6 +123,10 @@ Se dados faltarem, redireciona para `/checkout/dados`. Se frete faltar, expirar 
 
 A revisao mostra CPF mascarado e usa `Cache-Control: private, no-store`.
 
+Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
+
+Na experiencia publica de revisao e pedido, o comprador ve produto, variante, quantidade, valores, dados necessarios, endereco, servico de frete, transportadora, prazo, frete e total. SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem fora da UI publica.
+
 O POST de revisao recalcula produtos, disponibilidade, subtotal, frete e total no servidor. O campo oculto `review_fingerprint` serve somente para detectar revisao antiga entre GET e POST; nao e secret e nao determina preco.
 
 Se a revisao mudou, nenhum pedido e criado e a pagina informa que os dados precisam ser revisados novamente.
