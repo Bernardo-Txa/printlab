@@ -1,8 +1,8 @@
 # Pedidos
 
-Status: REVISAO E CRIACAO DE PEDIDOS IMPLEMENTADAS; pagamento PLANEJADO.
+Status: REVISAO, CRIACAO DE PEDIDOS E INICIO DE PAGAMENTO INFINITEPAY IMPLEMENTADOS; validacao real de pagamento pendente.
 
-Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. Nesta fase, o pedido e criado antes do pagamento e fica com status `pending_payment`.
+Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. O pedido e criado antes do pagamento, nasce com status `pending_payment` e pode mudar para `paid` somente apos validacao server-side com a InfinitePay.
 
 ## Fluxo implementado
 
@@ -13,7 +13,9 @@ Carrinho
   -> Revisao
   -> Confirmar pedido
   -> Pedido criado
-  -> Pagamento futuro
+  -> Pagar agora
+  -> InfinitePay
+  -> Retorno validado server-side
 ```
 
 Rotas:
@@ -21,6 +23,8 @@ Rotas:
 - `GET /checkout/revisao`: revisao SSR de produtos, dados, entrega, frete e total.
 - `POST /checkout/revisao`: confirma o pedido de forma transacional.
 - `GET /pedido/{id}`: exibicao SSR do pedido criado por UUID.
+- `POST /pedido/{id}/pagar`: cria ou reutiliza checkout InfinitePay e redireciona para o ambiente hospedado.
+- `GET /pagamento/retorno`: valida retorno com `payment_check` server-side.
 
 `/pedido/{id}` aceita somente UUID. `order_number` e sequencial e apropriado para referencia humana, como `#1001`, mas nao e mecanismo de autorizacao.
 
@@ -120,6 +124,31 @@ Se a mesma confirmacao for enviada duas vezes, a segunda tentativa deve redireci
 
 Dados operacionais como SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem no snapshot para operacao futura, mas nao aparecem na interface publica do comprador.
 
+Quando o pedido esta `pending_payment` e `INFINITEPAY_HANDLE` esta configurado, `/pedido/{id}` mostra o CTA real `Pagar agora`. O POST valida origem, cria ou reutiliza um checkout pendente e redireciona para `https://checkout.infinitepay.com.br/...`.
+
+Quando o pedido esta `paid`, `/pedido/{id}` mostra `Pagamento confirmado` e nao mostra botao de pagamento.
+
+Checkout URL, `transaction_nsu`, `invoice_slug` e detalhes tecnicos do provedor nao sao renderizados na pagina publica.
+
+## Pagamento
+
+`order_payments.order_nsu` e derivado do UUID canonico do pedido. Ele nao contem PII e nao deve ser tratado como mecanismo de autorizacao.
+
+O payload enviado a InfinitePay e montado apenas a partir do snapshot do pedido:
+
+- item de produto com descricao publica, quantidade e preco unitario em centavos;
+- item de frete apenas quando o frete for maior que zero;
+- nome, e-mail e telefone do cliente;
+- CEP, logradouro, bairro, numero e complemento do endereco.
+
+Antes de chamar a InfinitePay, o backend soma `quantity * unit_price_cents` e o frete e exige igualdade exata com `orders.total_cents`.
+
+O retorno do navegador nunca confirma pagamento. `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` como entrada para `payment_check`. A aplicacao marca `orders.status = 'paid'` somente se a InfinitePay responder `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
+
+`paid_amount` e persistido separadamente e pode divergir de `amount`.
+
+Sem webhook, se o comprador pagar e fechar a InfinitePay antes de retornar, o pedido pode permanecer temporariamente `pending_payment`.
+
 ## Privacidade
 
 O pedido preserva PII necessaria para operacao futura, mas a rota `/pedido/{id}` nao exibe CPF completo, endereco completo, telefone ou e-mail completo. Como UUID de pedido nao e autenticacao forte, a pagina publica mostra somente resumo do pedido, itens, frete, valores e status humano.
@@ -128,9 +157,9 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 
 ## Limites
 
-- Nao ha InfinitePay implementado.
-- Nao ha processamento de pagamento.
+- Validacao real de link InfinitePay ainda esta pendente.
+- Validacao real de pagamento ainda esta pendente.
 - Nao ha webhook de pagamento.
 - Nao ha etiqueta, postagem ou rastreio.
 - Nao ha painel administrativo.
-- O unico status criado pelo checkout nesta fase e `pending_payment`.
+- O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.

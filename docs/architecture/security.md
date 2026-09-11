@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete e pedidos pendentes de pagamento IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos e inicio de pagamento InfinitePay IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -35,6 +35,10 @@ Antes de finalizar uma compra, o backend deve:
 Pagamento somente podera ser considerado confirmado apos validacao server-side.
 
 Redirect do navegador apos pagamento nunca devera ser considerado prova suficiente de pagamento.
+
+Na integracao InfinitePay implementada, `POST /pedido/{id}/pagar` valida origem, monta payload apenas com snapshots de pedido, compara o total em centavos com `orders.total_cents` e aceita redirect apenas para `https://checkout.infinitepay.com.br/...`.
+
+`GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` para chamar `payment_check` server-side. Query params como `receipt_url` e `capture_method` nao sao fonte de autoridade.
 
 Webhooks deverao futuramente possuir:
 
@@ -149,12 +153,23 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - A pagina publica de pedido nao deve renderizar CPF completo, endereco completo, telefone ou e-mail completo.
 - Logs de pedido podem conter UUID, `order_number`, status e conversao de carrinho; nao devem conter CPF, e-mail, telefone, endereco ou token de carrinho.
 
+## Pagamentos InfinitePay
+
+- `INFINITEPAY_HANDLE` deve ser configurado por environment variable, sem valor real no Git.
+- O backend nao usa token/API secret InfinitePay nesta fase.
+- A pagina publica do pedido nao deve renderizar checkout URL, `transaction_nsu`, `invoice_slug` ou detalhes tecnicos.
+- Logs de pagamento podem conter UUID e `order_number`, mas nao checkout URL, e-mail, telefone, endereco, query params completos, `transaction_nsu`, `invoice_slug` ou secrets.
+- `order_nsu` e derivado do UUID do pedido e nao deve ser tratado como autenticacao.
+- `order_payments` tem RLS habilitado e nenhuma policy publica.
+- Falhas de API, timeout, JSON invalido, retorno com `paid=false` ou abandono de checkout nao podem marcar pedido como pago.
+- Sem webhook, pagamento real sem retorno ao site pode permanecer `pending_payment` ate fase futura.
+
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Nao ha webhooks implementados.
-- Nao ha processamento de pagamento implementado.
+- Processamento de pagamento existe apenas como checkout hospedado InfinitePay e confirmacao por `payment_check`; validacao real controlada ainda esta pendente.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.

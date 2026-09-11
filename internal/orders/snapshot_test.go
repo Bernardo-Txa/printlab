@@ -50,6 +50,9 @@ func TestOrderStatusAndNumberLabels(t *testing.T) {
 	if got := StatusLabel(StatusPendingPayment); got != "Aguardando pagamento" {
 		t.Fatalf("expected pending payment label, got %q", got)
 	}
+	if got := StatusLabel(StatusPaid); got != "Pagamento confirmado" {
+		t.Fatalf("expected paid label, got %q", got)
+	}
 	if got := OrderNumberLabel(1001); got != "#1001" {
 		t.Fatalf("expected order number label, got %q", got)
 	}

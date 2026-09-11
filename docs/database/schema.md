@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS; pagamentos e demais entidades de negocio PLANEJADOS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos e pagamentos InfinitePay IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -13,6 +13,8 @@ A Fase 7 adiciona dados temporarios de contato e endereco vinculados ao carrinho
 A Fase 8 adiciona perfis logisticos em produtos/variantes, caixas fisicas reais em `public.shipping_boxes` e selecoes de frete por carrinho em `public.cart_shipping_selections`.
 
 A Fase 9 adiciona `carts.converted_at` e tabelas de pedido como snapshots historicos em `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items` e `public.order_item_filaments`.
+
+A Fase 10 adiciona `public.order_payments` para registrar checkout hospedado InfinitePay e confirmacao server-side por `payment_check`, alem de permitir `orders.status = 'paid'`.
 
 ## Convencoes futuras
 
@@ -609,7 +611,7 @@ Campos:
 | `id` | `uuid` | nao | `gen_random_uuid()` | Identificador publico usado em `/pedido/{id}`. |
 | `order_number` | `bigint` | nao | `generated always as identity` | Numero sequencial para referencia humana. |
 | `source_cart_id` | `uuid` | sim | - | Carrinho que originou o pedido, se ainda existir. |
-| `status` | `text` | nao | `'pending_payment'` | Estado inicial da Fase 9. |
+| `status` | `text` | nao | `'pending_payment'` | Estado do pedido: `pending_payment` ou `paid`. |
 | `currency` | `text` | nao | `'BRL'` | Moeda fixa nesta fase. |
 | `products_subtotal_cents` | `bigint` | nao | - | Subtotal dos produtos em centavos. |
 | `shipping_price_cents` | `bigint` | nao | - | Frete selecionado em centavos. |
@@ -625,7 +627,7 @@ Constraints:
 
 - `orders_pkey`: chave primaria em `id`.
 - `orders_order_number_unique`: `order_number` unico.
-- `orders_status_allowed`: nesta fase, somente `pending_payment`.
+- `orders_status_allowed`: permite `pending_payment` e `paid`.
 - `orders_currency_brl`: nesta fase, somente `BRL`.
 - `orders_products_subtotal_non_negative`: subtotal de produtos nao negativo.
 - `orders_shipping_price_non_negative`: frete nao negativo.
@@ -641,8 +643,58 @@ Semantica:
 
 - Um carrinho gera no maximo um pedido.
 - `order_number` nao deve ser usado como autorizacao.
-- Pedido criado pelo checkout fica em `pending_payment` ate a Fase 10 implementar pagamento.
+- Pedido criado pelo checkout fica em `pending_payment` ate confirmacao server-side de pagamento.
 - Valores financeiros sao calculados no backend com inteiros em centavos.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_payments`
+
+Registro 1:1 do pagamento InfinitePay de um pedido.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
+| `provider` | `text` | nao | `'infinitepay'` | Provider fixo desta fase. |
+| `status` | `text` | nao | `'pending'` | `pending` ou `paid`. |
+| `order_nsu` | `text` | nao | - | UUID canonico do pedido, usado com a InfinitePay. |
+| `checkout_url` | `text` | sim | - | URL hospedada retornada pela InfinitePay, nao renderizada em HTML publico. |
+| `invoice_slug` | `text` | sim | - | `slug` recebido no retorno e confirmado server-side. |
+| `transaction_nsu` | `text` | sim | - | Identificador externo confirmado server-side. |
+| `amount_cents` | `bigint` | sim | - | Valor em centavos validado contra `orders.total_cents`. |
+| `paid_amount_cents` | `bigint` | sim | - | Valor efetivamente pago em centavos, podendo divergir de `amount_cents`. |
+| `installments` | `integer` | sim | - | Numero de parcelas quando informado. |
+| `capture_method` | `text` | sim | - | Metodo retornado por `payment_check`. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente pelo backend. |
+| `paid_at` | `timestamptz` | sim | - | Momento em que o backend confirmou pagamento. |
+
+Foreign keys:
+
+- `order_payments_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+
+Constraints e indices:
+
+- `order_payments_pkey`: chave primaria em `order_id`.
+- `order_payments_provider_infinitepay`: provider deve ser `infinitepay`.
+- `order_payments_status_allowed`: status deve ser `pending` ou `paid`.
+- `order_payments_order_nsu_uuid`: `order_nsu` deve ser UUID canonico lowercase.
+- `order_payments_checkout_url_host`: `checkout_url`, quando preenchida, deve apontar para `https://checkout.infinitepay.com.br/`.
+- `order_payments_amount_non_negative` e `order_payments_paid_amount_non_negative`: valores nao negativos quando preenchidos.
+- `order_payments_installments_positive`: parcelas maior que zero quando preenchidas.
+- `order_payments_transaction_nsu_unique_idx`: unique parcial em `transaction_nsu` quando nao nulo.
+
+Semantica:
+
+- `order_nsu` nao contem PII e nao substitui autenticacao.
+- `paid_amount_cents` e persistido separadamente, mas a confirmacao usa `amount_cents = orders.total_cents`.
+- Checkout abandonado, `paid=false`, timeout ou erro de API mantem status `pending`.
+- Sem webhook, pagamento real sem retorno ao site pode permanecer temporariamente pendente.
 
 RLS:
 
@@ -924,7 +976,7 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 
 - `customers`: identidade permanente de clientes somente se houver login ou conta futura.
 - `addresses`: enderecos permanentes ou de cobranca somente se houver necessidade futura.
-- `payments`: registros de pagamento, tentativas e status validados.
+- `payment_events`: eventos/webhooks de pagamento validados em fase futura.
 - `shipments`: dados de frete e envio.
 
 ## Regras iniciais
@@ -932,7 +984,7 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 - Valores financeiros devem ter representacao segura e deterministica.
 - `float32` e `float64` nao devem ser usados como representacao canonica de dinheiro.
 - Pedidos devem preservar os valores calculados no momento da compra.
-- Pagamentos e webhooks exigem desenho de idempotencia antes da implementacao.
+- Webhooks exigem desenho de idempotencia antes da implementacao.
 - Mudancas de schema devem usar migrations versionadas.
 - Regras financeiras nunca devem depender somente de frontend ou RLS.
 
@@ -946,7 +998,7 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedido pendente de pagamento congela subtotal, frete e total final em `orders`. Descontos e pagamentos continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedido congela subtotal, frete e total final em `orders`. Pagamento InfinitePay registra valores em centavos em `order_payments`. Descontos continuam planejados.
 
 ## IDs
 
@@ -962,7 +1014,7 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 
 ## Pendencias
 
-- Definir status de pagamento.
+- Implementar webhooks de pagamento validados e idempotentes.
 - Refinar operacao de produtos sob demanda quando houver modulo de producao.
 - Definir upload/admin de imagens.
 - Definir estoque fisico e inventario de filamento.

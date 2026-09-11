@@ -24,6 +24,8 @@ IMPLEMENTADO:
 - Revisao de checkout em `GET /checkout/revisao`.
 - Criacao de pedido pendente de pagamento em `POST /checkout/revisao`.
 - Exibicao de pedido por UUID em `GET /pedido/{id}`.
+- Inicio de pagamento InfinitePay em `POST /pedido/{id}/pagar`.
+- Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
 - Tailwind CSS via CLI npm, sem CDN e sem bundler JavaScript.
 - Assets estaticos servidos em `/static/` via `embed.FS`, a partir de `web/static/`.
 - Logo oficial inicial integrada ao header e ao hero da homepage.
@@ -44,11 +46,11 @@ IMPLEMENTADO:
 - Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete concluida.
 - Fase 9 — Revisao e Criacao de Pedidos, com snapshots imutaveis e status `pending_payment`.
 - Fase 9.1 — Interface publica de pedidos separada de dados operacionais preservados internamente.
+- Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side implementado e validacao real pendente.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Pagamentos e integracao com InfinitePay.
 - Webhooks, acompanhamento de pedido e painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
@@ -123,6 +125,7 @@ Banco implementado:
 - `carts.converted_at` marca carrinhos convertidos em pedido.
 - `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_items` e `order_item_filaments` guardam snapshots historicos de pedido.
 - Pedidos criados pelo checkout nascem com status `pending_payment` e moeda `BRL`.
+- `order_payments` guarda pagamento InfinitePay 1:1 por pedido, com status `pending` ou `paid`.
 - `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID.
 - RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete e pedidos sem policies publicas do Data API.
 
@@ -183,6 +186,7 @@ Configuracao local ou de hosting para runtime:
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab, normalizado pelo backend.
 - `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional usado no `User-Agent` exigido pela SuperFrete.
 - `SUPERFRETE_SERVICES`: lista de codigos de servico solicitados, por exemplo `1,2,17`.
+- `INFINITEPAY_HANDLE`: InfiniteTag/handle sem `$`, obrigatorio somente para exibir e iniciar pagamento real.
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
@@ -314,6 +318,14 @@ curl -i http://localhost:8080/pedido/<uuid-do-pedido>
 
 Sem carrinho valido, a revisao redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`. Sem frete valido, expirado ou com `input_hash` divergente, redireciona para `/checkout/frete`. Pedido criado usa UUID na URL, status `pending_payment` e pagina sem CPF completo, endereco completo, telefone ou e-mail completo.
 
+Pagamento:
+
+```sh
+curl -i http://localhost:8080/pagamento/retorno
+```
+
+`POST /pedido/<uuid>/pagar` exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS para criar ou reutilizar checkout InfinitePay. O redirect do navegador nao confirma pagamento; `/pagamento/retorno` chama `payment_check` server-side e so marca o pedido como `paid` quando a InfinitePay confirma `success=true`, `paid=true` e valor igual ao total congelado do pedido. Sem webhook, pagamento real sem retorno ao site pode permanecer temporariamente pendente.
+
 ## Supabase local
 
 A CLI do Supabase esta instalada como devDependency:
@@ -354,6 +366,7 @@ internal/cart/           carrinho anonimo, token, service e repository PostgreSQ
 internal/customers/      dados temporarios de checkout, validacao e repository PostgreSQL
 internal/shipping/       embalagem real, cotacao SuperFrete e selecao de frete
 internal/orders/         revisao, criacao transacional e snapshots de pedido
+internal/payments/       checkout InfinitePay, payment_check e persistencia de pagamento
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

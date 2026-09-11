@@ -6,6 +6,7 @@ import (
 	"net/mail"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -23,7 +24,10 @@ var (
 	ErrInvalidSuperFreteOriginPostalCode = errors.New("invalid SUPERFRETE_ORIGIN_POSTAL_CODE")
 	ErrInvalidSuperFreteContactEmail     = errors.New("invalid SUPERFRETE_CONTACT_EMAIL")
 	ErrInvalidSuperFreteServices         = errors.New("invalid SUPERFRETE_SERVICES")
+	ErrInvalidInfinitePayHandle          = errors.New("invalid INFINITEPAY_HANDLE")
 )
+
+var infinitePayHandlePattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
 
 type Config struct {
 	AppEnv                      string
@@ -41,6 +45,8 @@ type Config struct {
 	SuperFreteContactEmail      string
 	SuperFreteServiceCodes      []string
 	SuperFreteServiceCodesValue string
+	InfinitePayHandle           string
+	InfinitePayConfigured       bool
 }
 
 type envLookup func(string) (string, bool)
@@ -71,6 +77,11 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		return Config{}, err
 	}
 
+	infinitePayHandle, err := parseInfinitePayHandle(lookup)
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{
 		AppEnv:                      strings.TrimSpace(value(lookup, "APP_ENV")),
 		VercelEnv:                   strings.TrimSpace(value(lookup, "VERCEL_ENV")),
@@ -87,6 +98,8 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		SuperFreteContactEmail:      superFrete.contactEmail,
 		SuperFreteServiceCodes:      superFrete.serviceCodes,
 		SuperFreteServiceCodesValue: strings.Join(superFrete.serviceCodes, ","),
+		InfinitePayHandle:           infinitePayHandle,
+		InfinitePayConfigured:       infinitePayHandle != "",
 	}, nil
 }
 
@@ -231,4 +244,16 @@ func allowedSuperFreteService(service string) bool {
 	default:
 		return false
 	}
+}
+
+func parseInfinitePayHandle(lookup envLookup) (string, error) {
+	handle := strings.TrimSpace(value(lookup, "INFINITEPAY_HANDLE"))
+	if handle == "" {
+		return "", nil
+	}
+	if strings.HasPrefix(handle, "$") || strings.ContainsAny(handle, " \t\r\n") || !infinitePayHandlePattern.MatchString(handle) {
+		return "", ErrInvalidInfinitePayHandle
+	}
+
+	return handle, nil
 }

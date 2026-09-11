@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete e pedidos pendentes de pagamento IMPLEMENTADOS; pagamento e demais regras comerciais PLANEJADOS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos e inicio de pagamento InfinitePay IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -104,7 +104,7 @@ Variante com price_cents = 5990: 5990
 Variante com price_cents = 0: 0
 ```
 
-Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Descontos e pagamento continuam planejados.
+Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Pagamento InfinitePay usa esses valores congelados; descontos continuam planejados.
 
 ## Frete implementado
 
@@ -126,7 +126,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
 - A selecao de frete expira em 30 minutos.
 - A selecao e invalidada por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
-- Multi-volume, etiqueta/postagem, rastreio e pagamento permanecem planejados.
+- Multi-volume, etiqueta/postagem e rastreio permanecem planejados.
 
 ## Pedidos implementados
 
@@ -147,6 +147,23 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - `order_item_filaments` nao possui FK para `materials`, `colors` ou `variant_filaments`.
 - Depois do commit, dados temporarios de carrinho, cliente, endereco e frete sao removidos.
 - A pagina `/pedido/{id}` nao deve exibir CPF completo, endereco completo, telefone, e-mail completo, SKU interno, tempo de impressao, consumo de filamento, receita operacional, caixa fisica, peso ou dimensoes do pacote.
+
+## Pagamento implementado
+
+- Pedido nasce com `orders.status = 'pending_payment'`.
+- `POST /pedido/{id}/pagar` inicia checkout hospedado InfinitePay somente a partir de pedido pendente.
+- O navegador nunca envia preco, total, frete, `redirect_url` ou status de pagamento.
+- O backend monta o payload InfinitePay a partir de `orders`, `order_items`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details`.
+- O item de produto usa preco unitario em centavos e quantidade do snapshot, nunca total unitario multiplicado como preco.
+- Frete entra como item separado somente quando seu valor e maior que zero.
+- Antes de chamar a InfinitePay, o backend exige que a soma dos itens do payload seja exatamente `orders.total_cents`.
+- `order_payments.status` usa somente `pending` ou `paid`.
+- `orders.status` pode mudar para `paid` somente apos `payment_check` server-side com `success=true`, `paid=true` e `amount` igual ao total do pedido.
+- `paid_amount` pode divergir de `amount` e e persistido sem ser usado para validar o total do pedido.
+- Redirect, query string, `receipt_url` e `capture_method` do navegador nao confirmam pagamento.
+- Checkout abandonado, retorno com `paid=false` ou falha de API mantem o pedido pendente.
+- Sem webhook, pagamento real sem retorno ao site pode ficar temporariamente pendente.
+- Validação real de link e pagamento InfinitePay ainda depende de execucao controlada.
 
 ## Producao 3D
 

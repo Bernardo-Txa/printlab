@@ -119,6 +119,47 @@ func TestLoadAllowsMissingSuperFreteConfig(t *testing.T) {
 	}
 }
 
+func TestLoadAllowsMissingInfinitePayHandle(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.InfinitePayConfigured {
+		t.Fatal("expected InfinitePay to be unconfigured")
+	}
+	if cfg.InfinitePayHandle != "" {
+		t.Fatalf("expected empty InfinitePay handle, got %q", cfg.InfinitePayHandle)
+	}
+}
+
+func TestLoadReadsInfinitePayHandle(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"INFINITEPAY_HANDLE": " printlab-handle_01 ",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !cfg.InfinitePayConfigured {
+		t.Fatal("expected InfinitePay to be configured")
+	}
+	if cfg.InfinitePayHandle != "printlab-handle_01" {
+		t.Fatalf("expected trimmed InfinitePay handle, got %q", cfg.InfinitePayHandle)
+	}
+}
+
+func TestLoadRejectsInvalidInfinitePayHandle(t *testing.T) {
+	for _, value := range []string{"$printlab", "print lab", "printlab/checkout", strings.Repeat("a", 101)} {
+		t.Run(value, func(t *testing.T) {
+			_, err := loadFromEnv(mapLookup(map[string]string{"INFINITEPAY_HANDLE": value}))
+			if !errors.Is(err, ErrInvalidInfinitePayHandle) {
+				t.Fatalf("expected ErrInvalidInfinitePayHandle, got %v", err)
+			}
+		})
+	}
+}
+
 func TestLoadReadsSuperFreteConfig(t *testing.T) {
 	cfg, err := loadFromEnv(mapLookup(map[string]string{
 		"SUPERFRETE_ENV":                " sandbox ",

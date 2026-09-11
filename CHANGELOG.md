@@ -64,6 +64,11 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Rotas `GET /checkout/revisao`, `POST /checkout/revisao` e `GET /pedido/{id}`.
 - Snapshot historico de cliente, endereco, frete, itens, preco, receita de producao e filamentos no momento de criacao do pedido.
 - Fase 9.1 — Separacao entre dados operacionais preservados em snapshot e interface publica de pedidos.
+- Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side, retorno por `payment_check` e validacao real pendente.
+- Migration `add_order_payments` para `public.order_payments` e status `paid` em pedidos.
+- Pacote `internal/payments` com client HTTP InfinitePay, service, repository PostgreSQL e testes.
+- Rotas `POST /pedido/{id}/pagar` e `GET /pagamento/retorno`.
+- ADR-0010 — Pagamento hospedado via InfinitePay.
 
 ### Changed
 
@@ -93,3 +98,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Selecao de frete passa a redirecionar para a etapa real de revisao do pedido.
 - Carrinhos convertidos deixam de ser reutilizados no fluxo ativo por `carts.converted_at`.
 - Revisao e pagina publica de pedido deixam de exibir SKU interno, dados de producao 3D e dados de embalagem fisica, preservando essas informacoes internamente.
+- Pagina publica de pedido passa a exibir CTA real de pagamento quando InfinitePay esta configurada e `Pagamento confirmado` quando o pedido esta `paid`.

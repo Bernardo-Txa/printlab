@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS; pagamentos e admin PLANEJADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos e inicio de pagamentos IMPLEMENTADOS; webhooks e admin PLANEJADOS.
 
 ## Responsabilidade
 
@@ -23,6 +23,8 @@ Nesta fase, o backend implementa:
 - `GET /checkout/revisao` para revisar checkout sem recotar frete.
 - `POST /checkout/revisao` para criar pedido pendente de pagamento.
 - `GET /pedido/{id}` para exibir pedido por UUID.
+- `POST /pedido/{id}/pagar` para iniciar ou reutilizar checkout hospedado InfinitePay.
+- `GET /pagamento/retorno` para validar retorno com `payment_check`.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -33,11 +35,12 @@ Nesta fase, o backend implementa:
 - `internal/customers` para dados temporarios de checkout, validacoes brasileiras e repository PostgreSQL transacional.
 - `internal/shipping` para perfis logisticos, caixas fisicas, cotacao SuperFrete, selecao de frete e repository PostgreSQL.
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
+- `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
 
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete e pedidos.
-- Nao ha pagamentos ou admin.
+- Nao ha webhooks ou admin.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -74,6 +77,8 @@ Nesta fase, o backend implementa:
 - Criar pedidos como snapshots imutaveis de checkout.
 - Usar `orders.source_cart_id` como defesa de idempotencia para confirmacao duplicada.
 - Usar UUID em `/pedido/{id}` e `order_number` apenas como referencia humana.
+- Iniciar pagamento hospedado a partir do pedido congelado, nunca a partir do carrinho.
+- Confirmar pagamento somente por `payment_check` server-side.
 
 ## Catalogo
 
@@ -141,6 +146,18 @@ A revisao nao chama a SuperFrete. Ela recalcula o `input_hash` esperado para a s
 O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e receita de producao 3D. `order_item_filaments` preserva material, cor, peso e label sem depender de `materials`, `colors` ou `variant_filaments`.
 
 `GET /pedido/{id}` aceita somente UUID. A pagina mostra status humano, itens, frete e totais, mas nao exibe CPF completo, endereco completo, telefone ou e-mail completo.
+
+## Pagamentos
+
+`POST /pedido/{id}/pagar` aceita somente UUID, valida `Origin`/`Referer` e exige pagamento configurado por `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS. Quando o pedido esta `pending_payment`, o service monta o payload InfinitePay a partir dos snapshots historicos do pedido e confere o total antes de chamar `POST /links`.
+
+O client InfinitePay usa `net/http`, timeout explicito, `context.Context`, base URL interna fixa `https://api.checkout.infinitepay.io` e nao adiciona SDK ou dependencia nova.
+
+Checkout URL retornada pelo provedor e aceita somente se for HTTPS no host `checkout.infinitepay.com.br`.
+
+`GET /pagamento/retorno` nao confirma pagamento por redirect. Ele valida parametros seguros, chama `POST /payment_check` e altera `orders.status` para `paid` em transacao somente quando `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
+
+Sem webhook, pagamento feito sem retorno do comprador ao site pode permanecer temporariamente pendente.
 
 ## Health e readiness
 

@@ -7,6 +7,7 @@ import (
 
 const (
 	StatusPendingPayment = "pending_payment"
+	StatusPaid           = "paid"
 	CurrencyBRL          = "BRL"
 	StaleReviewMessage   = "Algumas informações da sua compra foram atualizadas. Revise os dados antes de confirmar."
 )

@@ -195,8 +195,11 @@ func MaskCPF(cpf string) string {
 }
 
 func StatusLabel(status string) string {
-	if status == StatusPendingPayment {
+	switch status {
+	case StatusPendingPayment:
 		return "Aguardando pagamento"
+	case StatusPaid:
+		return "Pagamento confirmado"
 	}
 
 	return "Status indisponivel"

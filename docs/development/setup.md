@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete e pedidos IMPLEMENTADOS.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos e inicio de pagamento IMPLEMENTADOS.
 
 ## Requisitos
 
@@ -10,7 +10,7 @@ Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout
 - Terminal com acesso ao diretorio do projeto.
 - Supabase CLI instalada via npm (`supabase` v2.117.0).
 
-Nenhuma conta externa e necessaria para executar a aplicacao local basica. A cotacao real de frete exige configuracao SuperFrete opcional de desenvolvimento; sem ela, a rota de frete apresenta indisponibilidade segura.
+Nenhuma conta externa e necessaria para executar a aplicacao local basica. A cotacao real de frete exige configuracao SuperFrete opcional de desenvolvimento; sem ela, a rota de frete apresenta indisponibilidade segura. Pagamento real exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS; sem eles, a pagina de pedido nao exibe botao falso de pagamento.
 
 Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve configurar secrets diretamente no GitHub Actions. Nao coloque credenciais em `.env`, documentacao ou codigo.
 
@@ -31,12 +31,15 @@ Variaveis de runtime:
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab.
 - `SUPERFRETE_CONTACT_EMAIL`: e-mail operacional do `User-Agent` da SuperFrete.
 - `SUPERFRETE_SERVICES`: codigos de servico solicitados, separados por virgula.
+- `INFINITEPAY_HANDLE`: InfiniteTag/handle sem `$`, necessario apenas para iniciar checkout InfinitePay real.
 
 Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e rotas de checkout redirecionam para `/carrinho` sem carrinho valido. O endpoint interno de CEP nao depende do banco.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
 Sem configuracao SuperFrete, a rota `/checkout/frete` nao faz chamada externa e exibe estado de indisponibilidade depois que carrinho e dados forem resolvidos. Se qualquer variavel SuperFrete for preenchida, todas as variaveis obrigatorias precisam estar validas para evitar configuracao parcial.
+
+Sem `INFINITEPAY_HANDLE` ou sem `SITE_URL` HTTPS, a aplicacao continua iniciando e a pagina de pedido mostra pagamento temporariamente indisponivel, sem panic e sem botao falso.
 
 Na Vercel, `VERCEL_ENV=production` tambem e considerado para marcar o cookie do carrinho como `Secure`. Localmente, `SITE_URL=http://localhost:8080` permite validar formularios sem exigir HTTPS.
 
@@ -231,7 +234,23 @@ Validar pagina de pedido:
 curl -i http://localhost:8080/pedido/<uuid-do-pedido>
 ```
 
-A pagina deve mostrar status `Aguardando pagamento`, itens, frete e total, sem CPF completo, endereco completo, telefone ou e-mail completo. Nao ha botao InfinitePay nesta fase.
+A pagina deve mostrar status `Aguardando pagamento`, itens, frete e total, sem CPF completo, endereco completo, telefone ou e-mail completo. Se `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS estiverem configurados, ela mostra `Pagar agora`; caso contrario mostra indisponibilidade segura.
+
+## Validar pagamento InfinitePay
+
+Sem executar pagamento real, valide as rotas:
+
+```sh
+curl -i http://localhost:8080/pagamento/retorno
+curl -i \
+  -X POST \
+  -H "Origin: http://localhost:8080" \
+  http://localhost:8080/pedido/00000000-0000-0000-0000-000000000000/pagar
+```
+
+Retorno sem parametros deve responder erro seguro sem refletir query string. Pedido inexistente deve responder 404 ou redirecionar para estado seguro conforme configuracao.
+
+Para criar link real, use ambiente controlado com pedido real de desenvolvimento, `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE`. O redirect do navegador nao confirma pagamento: a aplicacao so marca `paid` apos `payment_check` server-side com valor igual ao total do pedido.
 
 ## Validar assets estaticos
 
@@ -276,6 +295,8 @@ A quarta migration real e `create_cart_customer_details`, criando `cart_customer
 A quinta migration real e `add_shipping_profiles_and_selections`, adicionando perfis logisticos, `shipping_boxes` e `cart_shipping_selections`. Ela nao insere caixas, produtos, cotacoes ou dados ficticios.
 
 A sexta migration real e `create_orders`, adicionando `carts.converted_at` e tabelas de pedido como snapshots historicos. Ela nao insere pedidos, clientes, enderecos, itens ou dados ficticios.
+
+A setima migration real e `add_order_payments`, adicionando `order_payments` e permitindo `orders.status = 'paid'`. Ela nao insere pagamentos, checkout URLs, transacoes ou dados ficticios.
 
 Nao use Table Editor ou SQL Editor remoto como workflow normal para mudancas de schema. Nao rode `supabase db reset --linked` contra banco remoto.
 

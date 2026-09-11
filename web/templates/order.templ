@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 	"github.com/Bernardo-Txa/printlab/web/components"
 )
 
@@ -128,14 +129,20 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 	}
 }
 
-templ OrderConfirmation(page ordersdomain.OrderPage) {
+templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.OrderPaymentView) {
 	@components.Layout("Pedido criado | PrintLab", "Pedido criado na PrintLab.", "") {
 		<section class="checkout-section">
 			@components.Container() {
 				<div class="checkout-heading">
 					<p class="brand-kicker">Pedido criado</p>
 					<h1>Pedido { page.OrderNumberLabel }</h1>
-					<p>Pagamento sera disponibilizado na proxima etapa.</p>
+					<p>Finalize o pagamento no ambiente seguro da InfinitePay.</p>
+				</div>
+				<div class="checkout-stepper" aria-label="Etapas do checkout">
+					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
+					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
+					<span class="checkout-step checkout-step-done">3 Revisao</span>
+					<span class="checkout-step checkout-step-active">4 Pagamento</span>
 				</div>
 				<div class="order-status-panel">
 					<span>Status</span>
@@ -188,8 +195,39 @@ templ OrderConfirmation(page ordersdomain.OrderPage) {
 							<span>Total</span>
 							<strong>{ page.TotalBRL }</strong>
 						</div>
+						if payment.ShowConfirmed {
+							<p class="checkout-alert checkout-alert-success">{ payment.Message }</p>
+						} else {
+							if payment.Message != "" {
+								<p>{ payment.Message }</p>
+							}
+							if payment.ShowUnavailable {
+								<p class="checkout-alert checkout-alert-error">{ payment.UnavailableMessage }</p>
+							}
+							if payment.CanPay {
+								<form method="post" action={ "/pedido/" + page.ID + "/pagar" }>
+									<button class="btn-base btn-primary" type="submit">Pagar agora</button>
+								</form>
+							}
+						}
 						<p>Use este numero apenas como referencia humana. O link do pedido usa o identificador seguro.</p>
 					</aside>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ PaymentReturn(page paymentsdomain.ReturnPage) {
+	@components.Layout(page.Title + " | PrintLab", page.Message, "") {
+		<section class="section-block">
+			@components.Container() {
+				<div class="checkout-form-section">
+					<h1>{ page.Title }</h1>
+					<p>{ page.Message }</p>
+					if page.CanReturnToOrder {
+						<a class="btn-base btn-secondary" href={ "/pedido/" + page.OrderID }>Voltar ao pedido</a>
+					}
 				</div>
 			}
 		</section>

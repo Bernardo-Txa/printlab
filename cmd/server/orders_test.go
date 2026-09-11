@@ -13,6 +13,7 @@ import (
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 )
 
 const orderID = "22222222-2222-2222-2222-222222222222"
@@ -206,10 +207,11 @@ func TestCheckoutReviewPostValidRedirectsAndExpiresCookie(t *testing.T) {
 
 func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 	service := &fakeOrderReviewService{orderPage: orderPageFixture()}
+	payment := &fakePaymentService{available: true}
 	req := httptest.NewRequest(http.MethodGet, "/pedido/"+orderID, nil)
 	rec := httptest.NewRecorder()
 
-	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+	newTestHandlerWithOrdersAndPayment(t, service, payment, nil, "").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
@@ -218,7 +220,7 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagamento sera disponibilizado", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70"} {
+	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagar agora", "ambiente seguro da InfinitePay", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected order page to contain %q", expected)
 		}
@@ -243,6 +245,53 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 		if strings.Contains(body, forbiddenOperationalData) {
 			t.Fatalf("expected order page not to render operational data %q", forbiddenOperationalData)
 		}
+	}
+	for _, forbiddenPaymentData := range []string{"checkout.infinitepay.com.br", "transaction_nsu", "invoice_slug"} {
+		if strings.Contains(body, forbiddenPaymentData) {
+			t.Fatalf("expected order page not to render payment technical data %q", forbiddenPaymentData)
+		}
+	}
+}
+
+func TestOrderPageWithoutPaymentConfigShowsSafeUnavailableState(t *testing.T) {
+	service := &fakeOrderReviewService{orderPage: orderPageFixture()}
+	req := httptest.NewRequest(http.MethodGet, "/pedido/"+orderID, nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Pagamento temporariamente indisponivel") {
+		t.Fatal("expected unavailable payment message")
+	}
+	if strings.Contains(body, "Pagar agora") {
+		t.Fatal("expected payment button not to render when service is unavailable")
+	}
+}
+
+func TestOrderPagePaidShowsConfirmedState(t *testing.T) {
+	page := orderPageFixture()
+	page.Status = ordersdomain.StatusPaid
+	page.StatusLabel = "Pagamento confirmado"
+	service := &fakeOrderReviewService{orderPage: page}
+	payment := &fakePaymentService{available: true}
+	req := httptest.NewRequest(http.MethodGet, "/pedido/"+orderID, nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, service, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Pagamento confirmado") {
+		t.Fatal("expected paid status on order page")
+	}
+	if strings.Contains(body, "Pagar agora") {
+		t.Fatal("expected paid order not to render pay button")
 	}
 }
 
@@ -273,10 +322,159 @@ func TestOrderPageMissingOrderReturnsNotFound(t *testing.T) {
 	}
 }
 
+func TestStartPaymentRejectsCrossSiteOrigin(t *testing.T) {
+	payment := &fakePaymentService{available: true}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/pedido/"+orderID+"/pagar", nil)
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d", http.StatusForbidden, rec.Code)
+	}
+	if payment.startCalls != 0 {
+		t.Fatal("expected cross-site payment request not to call service")
+	}
+}
+
+func TestStartPaymentInvalidOrderIDReturnsNotFound(t *testing.T) {
+	payment := &fakePaymentService{available: true}
+	req := httptest.NewRequest(http.MethodPost, "/pedido/1001/pagar", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+	if payment.startCalls != 0 {
+		t.Fatal("expected invalid order id not to call service")
+	}
+}
+
+func TestStartPaymentValidOrderRedirectsToInfinitePay(t *testing.T) {
+	payment := &fakePaymentService{
+		available: true,
+		startResult: paymentsdomain.CheckoutStartResult{
+			OrderID:     orderID,
+			CheckoutURL: "https://checkout.infinitepay.com.br/checkout-slug",
+		},
+	}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/pedido/"+orderID+"/pagar", nil)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec.Header().Get("Location") != "https://checkout.infinitepay.com.br/checkout-slug" {
+		t.Fatalf("expected InfinitePay redirect, got %q", rec.Header().Get("Location"))
+	}
+	if payment.lastStartOrderID != orderID {
+		t.Fatalf("expected order ID passed to payment service, got %q", payment.lastStartOrderID)
+	}
+}
+
+func TestStartPaymentPaidOrderRedirectsBackToOrder(t *testing.T) {
+	payment := &fakePaymentService{
+		available:   true,
+		startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID},
+		startErr:    paymentsdomain.ErrOrderAlreadyPaid,
+	}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/pedido/"+orderID+"/pagar", nil)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec.Header().Get("Location") != "/pedido/"+orderID {
+		t.Fatalf("expected order redirect, got %q", rec.Header().Get("Location"))
+	}
+}
+
+func TestPaymentReturnMissingParamsShowsSafeError(t *testing.T) {
+	payment := &fakePaymentService{available: true, returnErr: paymentsdomain.ErrInvalidReturn}
+	req := httptest.NewRequest(http.MethodGet, "/pagamento/retorno", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Pagamento nao confirmado") {
+		t.Fatal("expected safe payment error page")
+	}
+	if strings.Contains(rec.Body.String(), "order_nsu") {
+		t.Fatal("expected return page not to reflect query parameter names or raw values")
+	}
+}
+
+func TestPaymentReturnUnknownOrderShowsNotFound(t *testing.T) {
+	payment := &fakePaymentService{available: true, returnErr: paymentsdomain.ErrPaymentNotFound}
+	req := paymentReturnRequest()
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
+
+func TestPaymentReturnPendingShowsPendingMessage(t *testing.T) {
+	payment := &fakePaymentService{
+		available:    true,
+		returnResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusPending, OrderID: orderID},
+	}
+	req := paymentReturnRequest()
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Pagamento ainda nao foi confirmado") {
+		t.Fatal("expected pending payment message")
+	}
+	if payment.lastReturnInput.OrderNSU != orderID || payment.lastReturnInput.TransactionNSU != "txn_123" || payment.lastReturnInput.Slug != "slug_123" {
+		t.Fatalf("expected documented return params only, got %#v", payment.lastReturnInput)
+	}
+}
+
+func TestPaymentReturnConfirmedRedirectsToOrder(t *testing.T) {
+	payment := &fakePaymentService{
+		available:    true,
+		returnResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusConfirmed, OrderID: orderID},
+	}
+	req := paymentReturnRequest()
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec.Header().Get("Location") != "/pedido/"+orderID+"?pagamento=confirmado" {
+		t.Fatalf("expected confirmed order redirect, got %q", rec.Header().Get("Location"))
+	}
+}
+
 func orderReviewFormRequest(values url.Values) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/checkout/revisao", strings.NewReader(values.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return req
+}
+
+func paymentReturnRequest() *http.Request {
+	return httptest.NewRequest(http.MethodGet, "/pagamento/retorno?order_nsu="+orderID+"&transaction_nsu=txn_123&slug=slug_123&capture_method=ignored&receipt_url=https://example.test", nil)
 }
 
 func orderReviewPageFixture() ordersdomain.ReviewPage {
@@ -406,6 +604,12 @@ func orderPageFixture() ordersdomain.OrderPage {
 func newTestHandlerWithOrders(t *testing.T, service orderReviewService, cookies *cartdomain.CookieManager, siteURL string) http.Handler {
 	t.Helper()
 
+	return newTestHandlerWithOrdersAndPayment(t, service, nil, cookies, siteURL)
+}
+
+func newTestHandlerWithOrdersAndPayment(t *testing.T, service orderReviewService, payment paymentService, cookies *cartdomain.CookieManager, siteURL string) http.Handler {
+	t.Helper()
+
 	db, err := database.New(context.Background(), database.Config{
 		MaxConns: config.DefaultDBMaxConns,
 	})
@@ -414,7 +618,7 @@ func newTestHandlerWithOrders(t *testing.T, service orderReviewService, cookies 
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, service, cookies, nil, siteURL)
+	return newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, service, cookies, nil, payment, siteURL)
 }
 
 type fakeOrderReviewService struct {
@@ -465,3 +669,51 @@ func (s *fakeOrderReviewService) Get(_ context.Context, orderID string) (ordersd
 }
 
 var _ orderReviewService = (*fakeOrderReviewService)(nil)
+
+type fakePaymentService struct {
+	available    bool
+	startResult  paymentsdomain.CheckoutStartResult
+	returnResult paymentsdomain.ReturnResult
+	startErr     error
+	returnErr    error
+
+	startCalls       int
+	returnCalls      int
+	lastStartOrderID string
+	lastReturnInput  paymentsdomain.ReturnInput
+}
+
+func (s *fakePaymentService) Available() bool {
+	return s.available
+}
+
+func (s *fakePaymentService) StartCheckout(_ context.Context, orderID string) (paymentsdomain.CheckoutStartResult, error) {
+	s.startCalls++
+	s.lastStartOrderID = orderID
+	if s.startErr != nil {
+		return s.startResult, s.startErr
+	}
+	if s.startResult.CheckoutURL == "" {
+		return paymentsdomain.CheckoutStartResult{
+			OrderID:     orderID,
+			CheckoutURL: "https://checkout.infinitepay.com.br/checkout-slug",
+		}, nil
+	}
+
+	return s.startResult, nil
+}
+
+func (s *fakePaymentService) ConfirmReturn(_ context.Context, input paymentsdomain.ReturnInput) (paymentsdomain.ReturnResult, error) {
+	s.returnCalls++
+	s.lastReturnInput = input
+	if s.returnErr != nil {
+		return s.returnResult, s.returnErr
+	}
+	if s.returnResult.Status == "" {
+		return paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusPending, OrderID: orderID}, nil
+	}
+
+	return s.returnResult, nil
+}
+
+var _ paymentService = (*fakePaymentService)(nil)

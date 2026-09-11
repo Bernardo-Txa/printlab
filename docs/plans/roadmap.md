@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 concluidas. Fases 10 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 concluidas. Fase 10 com implementacao concluida e validacao real pendente. Fases 11 a 17 planejadas.
 
 ## Status das fases
 
@@ -22,7 +22,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 conclu
 | Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete | Concluida |
 | Fase 9 — Pedidos | Concluida |
 | Fase 9.1 — Interface publica de pedidos | Concluida |
-| Fase 10 — Integracao InfinitePay | Planejada |
+| Fase 10 — Integracao InfinitePay | Implementacao concluida; validacao real pendente |
 | Fase 11 — Webhooks de pagamento | Planejada |
 | Fase 12 — Acompanhamento do pedido | Planejada |
 | Fase 13 — Painel administrativo | Planejada |
@@ -398,10 +398,12 @@ Objetivo: iniciar pagamentos com InfinitePay de forma server-side.
 
 Principais entregas:
 
-- Cliente HTTP server-side.
-- Criacao de checkout ou fluxo equivalente.
-- Relacao com order ID interno.
-- Tratamento de erros.
+- Cliente HTTP server-side com `net/http`, timeout e base URL interna fixa.
+- Criacao/reuso de checkout hospedado InfinitePay por `POST /pedido/{id}/pagar`.
+- `order_payments` 1:1 com pedido.
+- Retorno `GET /pagamento/retorno` com `payment_check` server-side.
+- Atualizacao transacional de pedido para `paid` somente com valor confirmado.
+- UI SSR da etapa 4 de pagamento.
 
 Dependencias: Fase 9; confirmacao da documentacao oficial da InfinitePay.
 
@@ -411,6 +413,8 @@ Definition of Done:
 - Credenciais fora do Git.
 - Testes aplicaveis.
 - Redirect nao e tratado como confirmacao de pagamento.
+- Link real InfinitePay: pendente de validacao controlada.
+- Pagamento real confirmado: pendente de validacao controlada.
 
 ## Fase 11 — Webhooks de pagamento
 

@@ -9,6 +9,7 @@ import (
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
@@ -79,7 +80,7 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 	}
 }
 
-func orderPageHandler(service orderReviewService) http.HandlerFunc {
+func orderPageHandler(service orderReviewService, payment paymentService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setCheckoutPrivateCache(w)
 
@@ -100,8 +101,33 @@ func orderPageHandler(service orderReviewService) http.HandlerFunc {
 			return
 		}
 
-		renderHTML(w, r, http.StatusOK, templates.OrderConfirmation(page))
+		renderHTML(w, r, http.StatusOK, templates.OrderConfirmation(page, orderPaymentView(page, payment, r.URL.Query().Get("pagamento"))))
 	}
+}
+
+func orderPaymentView(page ordersdomain.OrderPage, service paymentService, paymentQuery string) paymentsdomain.OrderPaymentView {
+	view := paymentsdomain.OrderPaymentView{}
+	if page.Status == ordersdomain.StatusPaid {
+		view.ShowConfirmed = true
+		view.Message = "Pagamento confirmado."
+		return view
+	}
+	if paymentQuery == "indisponivel" {
+		view.ShowUnavailable = true
+		view.UnavailableMessage = "Pagamento temporariamente indisponivel. Tente novamente em alguns instantes."
+	}
+	if page.Status != ordersdomain.StatusPendingPayment {
+		return view
+	}
+	if service == nil || !service.Available() {
+		view.ShowUnavailable = true
+		view.UnavailableMessage = "Pagamento temporariamente indisponivel. Tente novamente em alguns instantes."
+		return view
+	}
+
+	view.CanPay = true
+	view.Message = "O pagamento sera concluido no ambiente seguro da InfinitePay."
+	return view
 }
 
 func handleOrderCheckoutError(w http.ResponseWriter, r *http.Request, err error, page ordersdomain.ReviewPage) {

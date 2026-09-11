@@ -57,6 +57,7 @@ Supabase de desenvolvimento
 - Consulta de CEP usa endpoint interno no Go e chamada server-side ao ViaCEP, sem depender do banco.
 - Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
 - Pedidos dependem do PostgreSQL para criar snapshots historicos, converter carrinho e exibir `/pedido/{id}` por UUID.
+- Pagamentos InfinitePay dependem de PostgreSQL para `order_payments`, de `SITE_URL` HTTPS e de `INFINITEPAY_HANDLE` para iniciar checkout hospedado.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -120,6 +121,8 @@ A Fase 8 cria `add_shipping_profiles_and_selections`, com perfis logisticos em p
 
 A Fase 9 cria `create_orders`, adicionando `carts.converted_at` e tabelas de pedido como snapshots historicos. Ela deve ser aplicada pelo workflow sem seed de pedidos, clientes, enderecos, itens ou dados ficticios.
 
+A Fase 10 cria `add_order_payments`, adicionando `order_payments` e permitindo `orders.status = 'paid'`. Ela deve ser aplicada pelo workflow sem seed de pagamentos, checkout URLs, transacoes ou dados ficticios.
+
 ## Runtime PostgreSQL
 
 ```text
@@ -138,9 +141,10 @@ PostgreSQL
 Secrets de runtime no ambiente de hosting:
 
 - `DATABASE_URL`
+- `INFINITEPAY_HANDLE`, necessario para habilitar checkout InfinitePay
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
-- `SITE_URL`, opcional e nao secret, usada como origem permitida para mutacoes de carrinho
+- `SITE_URL`, URL publica HTTPS usada como origem permitida e como base do `redirect_url` InfinitePay
 - `SUPERFRETE_ENV`, opcional ate habilitar cotacao real, aceitando `sandbox` ou `production`
 - `SUPERFRETE_API_TOKEN`, secret da SuperFrete
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`, CEP operacional de origem da PrintLab
@@ -150,6 +154,8 @@ Secrets de runtime no ambiente de hosting:
 `DATABASE_URL` deve ser configurada como secret e nunca impressa em logs. Se estiver ausente, `GET /ready` retorna 503, mas `GET /` e `GET /health` continuam funcionando temporariamente nesta fase.
 
 Se a configuracao SuperFrete estiver ausente, a aplicacao continua iniciando e as rotas publicas existentes continuam funcionando. A etapa `/checkout/frete`, quando acessada com carrinho e dados validos, apresenta indisponibilidade segura em vez de panic ou exposicao de erro interno. Se qualquer variavel SuperFrete for preenchida, a configuracao precisa estar completa e valida.
+
+Se `INFINITEPAY_HANDLE` ou `SITE_URL` HTTPS estiverem ausentes, a aplicacao continua iniciando e as rotas existentes continuam funcionando. A pagina de pedido nao exibe botao falso de pagamento e mostra indisponibilidade segura.
 
 O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
@@ -241,6 +247,16 @@ curl -i https://printlab-pied.vercel.app/pedido/00000000-0000-0000-0000-00000000
 ```
 
 Sem carrinho valido, `/checkout/revisao` deve redirecionar para `/carrinho`. Pedido inexistente por UUID deve retornar 404. Nao criar produto, caixa, carrinho, endereco, frete ou pedido ficticio apenas para validar rota remota.
+
+Depois da Fase 10, validar sem criar pagamento real automaticamente:
+
+```sh
+curl -i https://printlab-pied.vercel.app/pagamento/retorno
+curl -i -X POST https://printlab-pied.vercel.app/pedido/00000000-0000-0000-0000-000000000000/pagar \
+  -H 'Origin: https://printlab-pied.vercel.app'
+```
+
+Retorno sem parametros deve responder erro seguro sem refletir query string. Pedido inexistente por UUID deve retornar 404 ou redirecionar com indisponibilidade segura conforme configuracao. Nao executar pagamento real sem roteiro controlado.
 
 ## Vercel
 

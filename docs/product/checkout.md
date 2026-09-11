@@ -1,8 +1,8 @@
 # Checkout
 
-Status: etapas de dados, frete, revisao e criacao de pedido IMPLEMENTADAS; pagamento PLANEJADO.
+Status: etapas de dados, frete, revisao, criacao de pedido e inicio de pagamento IMPLEMENTADAS; validacao real InfinitePay pendente.
 
-O checkout transforma uma intencao de compra em pedido pendente de pagamento, com validacao server-side de produtos, endereco e frete. Pagamento permanece planejado para a Fase 10.
+O checkout transforma uma intencao de compra em pedido pendente de pagamento, com validacao server-side de produtos, endereco e frete. A etapa de pagamento usa checkout hospedado InfinitePay iniciado pelo backend.
 
 ## Comportamento implementado
 
@@ -23,6 +23,8 @@ O checkout transforma uma intencao de compra em pedido pendente de pagamento, co
 - `GET /checkout/revisao` revisa produtos, dados, entrega, frete e total sem recotar SuperFrete.
 - `POST /checkout/revisao` cria pedido com snapshot imutavel e status `pending_payment`.
 - `GET /pedido/{id}` exibe o pedido por UUID, sem CPF completo, endereco completo, telefone ou e-mail completo.
+- `POST /pedido/{id}/pagar` inicia ou reutiliza checkout InfinitePay server-side.
+- `GET /pagamento/retorno` confirma pagamento apenas por `payment_check` server-side.
 
 Fluxo atual:
 
@@ -32,7 +34,7 @@ Carrinho
   -> Frete
   -> Revisao
   -> Pedido criado
-  -> Pagamento futuro
+  -> Pagamento InfinitePay
 ```
 
 ## Dados coletados
@@ -133,6 +135,26 @@ Se a revisao mudou, nenhum pedido e criado e a pagina informa que os dados preci
 
 Pedido criado copia contato, endereco, frete, itens e receita de producao para tabelas historicas. Depois do commit, `carts.converted_at` e preenchido, dados temporarios do carrinho sao removidos e o cookie `printlab_cart` expira.
 
+## Pagamento
+
+A etapa de pagamento e iniciada pela pagina publica do pedido.
+
+`POST /pedido/{id}/pagar`:
+
+- valida `Origin`/`Referer`;
+- aceita somente UUID de pedido;
+- exige pedido `pending_payment`;
+- monta payload somente a partir do snapshot historico do pedido;
+- compara o total interno do payload com `orders.total_cents`;
+- cria ou reutiliza registro `order_payments`;
+- redireciona 303 para `https://checkout.infinitepay.com.br/...`.
+
+Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilidade segura e nao exibe botao falso.
+
+`GET /pagamento/retorno` nao confia no redirect. Ele valida `order_nsu`, `transaction_nsu` e `slug`, chama `payment_check` no backend e so muda o pedido para `paid` quando a resposta confirmar `success=true`, `paid=true` e `amount` igual ao total congelado do pedido.
+
+`receipt_url` e `capture_method` vindos da query string sao ignorados como fonte de autoridade.
+
 ## Regras obrigatorias
 
 - O frontend nao determina preco final.
@@ -141,12 +163,12 @@ Pedido criado copia contato, endereco, frete, itens e receita de producao para t
 - O frontend nao confirma pagamento.
 - Pedido deve ser criado em transacao unica e idempotente por `source_cart_id`.
 - Redirect de pagamento nao confirma pedido pago.
-- Webhook validado sera necessario para confirmacao server-side.
+- Webhook validado sera necessario para reconciliacao futura quando o comprador pagar e nao retornar ao site.
 
 ## Limites
 
-- Nao ha pagamento implementado nesta fase.
+- Validacao real de link InfinitePay ainda esta pendente.
+- Validacao real de pagamento ainda esta pendente.
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
-- Nao ha contrato aprovado com InfinitePay.
 - Nao ha webhook de pagamento.
 - Nao ha painel administrativo.
