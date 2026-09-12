@@ -1,6 +1,6 @@
 # Fase 11 — Webhook InfinitePay
 
-Status: IMPLEMENTACAO CONCLUIDA; validacao real de webhook pendente.
+Status: CONCLUIDA.
 
 ## Objetivo
 
@@ -31,25 +31,36 @@ Adicionar webhook InfinitePay para confirmar pagamentos sem depender do comprado
 
 ## Definition of Done
 
-- A. Implementacao local, testes automatizados e documentacao: concluida.
-- B. Novo checkout real contendo `webhook_url`: pendente de validacao controlada.
-- C. Webhook real recebido em producao: pendente.
-- D. Pagamento real confirmado sem redirect do comprador: pendente.
+- A. Implementacao local, testes automatizados e documentacao: concluida ✅
+- B. Novo checkout real contendo `webhook_url`: validado em producao ✅
+- C. Webhook real recebido em producao: validado ✅
+- D. Pagamento real confirmado sem redirect do comprador: validado ✅
 
-## Validacao automatizada prevista
+## Validacao automatizada final
 
 - `templ generate`;
 - `npm run css:build`;
 - `gofmt -w .`;
-- `go mod tidy`;
 - `go test ./...`;
 - `go vet ./...`;
 - `go build ./...`.
 
-## Validacao real pendente
+## Validacao real em producao
 
-1. Criar um novo pedido apos deploy desta fase.
-2. Iniciar o pagamento e confirmar que o checkout criado pela InfinitePay recebeu `webhook_url`.
-3. Pagar sem clicar em continuar/retornar.
-4. Confirmar nos logs que `payment webhook received` ocorreu.
-5. Confirmar que o pedido mudou para `paid` apos `payment_check` server-side.
+Validacao manual real confirmada em 2026-09-12:
+
+1. Foi criado um novo checkout apos o deploy da Fase 11.
+2. O checkout continha `webhook_url`.
+3. Foi realizado pagamento Pix real.
+4. O comprador nao clicou em continuar na InfinitePay.
+5. A InfinitePay enviou `POST /webhooks/infinitepay`.
+6. User-Agent observado: `InfinitePay/EcommerceWebhooks`.
+7. O endpoint respondeu HTTP 200.
+8. O pedido foi atualizado sem redirect do comprador.
+9. `orders.status = paid`.
+10. `order_payments.status = paid`.
+11. `amount_cents` correspondeu ao total esperado.
+12. `capture_method = pix`.
+13. `paid_at` foi preenchido.
+
+Nao foram registrados neste documento `transaction_nsu`, `invoice_slug`, CPF, e-mail, telefone, endereco, checkout URL ou qualquer PII.

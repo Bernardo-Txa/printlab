@@ -46,12 +46,13 @@ IMPLEMENTADO:
 - Fase 8.1 — UX do Checkout, Consulta de CEP e Diagnostico Seguro de Frete concluida.
 - Fase 9 — Revisao e Criacao de Pedidos, com snapshots imutaveis e status `pending_payment`.
 - Fase 9.1 — Interface publica de pedidos separada de dados operacionais preservados internamente.
-- Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side implementado e validacao real pendente.
+- Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side e validacao real concluida.
+- Fase 11 — Webhooks InfinitePay concluida, com validacao real em producao e pagamento confirmado sem redirect do comprador.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Webhooks, acompanhamento de pedido e painel administrativo.
+- Acompanhamento de pedido e painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
 Este projeto ainda esta em desenvolvimento e nao deve ser usado em operacao comercial.

@@ -1,6 +1,6 @@
 # Pedidos
 
-Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY E WEBHOOK IMPLEMENTADOS; recebimento real de webhook pendente.
+Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY E WEBHOOK CONCLUIDOS.
 
 Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. O pedido e criado antes do pagamento, nasce com status `pending_payment` e pode mudar para `paid` somente apos validacao server-side com a InfinitePay.
 
@@ -15,7 +15,7 @@ Carrinho
   -> Pedido criado
   -> Pagar agora
   -> InfinitePay
-  -> Retorno validado server-side
+  -> Retorno ou webhook validado server-side
 ```
 
 Rotas:
@@ -25,6 +25,7 @@ Rotas:
 - `GET /pedido/{id}`: exibicao SSR do pedido criado por UUID.
 - `POST /pedido/{id}/pagar`: cria ou reutiliza checkout InfinitePay e redireciona para o ambiente hospedado.
 - `GET /pagamento/retorno`: valida retorno com `payment_check` server-side.
+- `POST /webhooks/infinitepay`: valida webhook com `payment_check` server-side.
 
 `/pedido/{id}` aceita somente UUID. `order_number` e sequencial e apropriado para referencia humana, como `#1001`, mas nao e mecanismo de autorizacao.
 
@@ -149,6 +150,8 @@ O retorno do navegador nunca confirma pagamento. `GET /pagamento/retorno` usa so
 
 O webhook reduz dependencia do comprador clicar em continuar/retornar depois do pagamento. Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
 
+Validacao real em producao confirmou pagamento Pix com webhook: novo checkout continha `webhook_url`, a InfinitePay enviou `POST /webhooks/infinitepay`, o endpoint respondeu HTTP 200 e o pedido foi atualizado para `paid` sem redirect do comprador. `order_payments.status` tambem foi atualizado para `paid`, `amount_cents` correspondeu ao total esperado, `capture_method = pix` e `paid_at` foi preenchido.
+
 ## Privacidade
 
 O pedido preserva PII necessaria para operacao futura, mas a rota `/pedido/{id}` nao exibe CPF completo, endereco completo, telefone ou e-mail completo. Como UUID de pedido nao e autenticacao forte, a pagina publica mostra somente resumo do pedido, itens, frete, valores e status humano.
@@ -158,7 +161,7 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 ## Limites
 
 - Link real InfinitePay e pagamento real foram validados antes da Fase 11.
-- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Recebimento real de webhook InfinitePay e confirmacao sem redirect foram validados em producao.
 - Nao ha etiqueta, postagem ou rastreio.
 - Nao ha painel administrativo.
 - O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.

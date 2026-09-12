@@ -1,6 +1,6 @@
 # InfinitePay
 
-Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; diagnostico seguro e webhook implementados; link e pagamento reais validados; recebimento real de webhook pendente.
+Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; diagnostico seguro, checkout real, pagamento real e webhook real validados.
 
 ## Escopo implementado
 
@@ -13,12 +13,10 @@ GET /pedido/{uuid}
   -> POST /pedido/{uuid}/pagar
   -> PrintLab cria ou reutiliza checkout server-side
   -> Redirect 303 para checkout hospedado InfinitePay validado por allowlist
-  -> InfinitePay redireciona para GET /pagamento/retorno
+  -> InfinitePay redireciona para GET /pagamento/retorno ou envia POST /webhooks/infinitepay
   -> PrintLab chama payment_check server-side
   -> Pedido muda para paid somente se success=true, paid=true e amount=orders.total_cents
 ```
-
-Webhooks nao foram implementados nesta fase.
 
 ## Configuracao
 
@@ -259,5 +257,25 @@ Para validar link real ou webhook real, configure `DATABASE_URL`, `SITE_URL` HTT
 
 - Checkout/link real InfinitePay: validado.
 - Pagamento real confirmado via `payment_check`: validado.
-- Checkout novo contendo `webhook_url`: pendente de validacao controlada apos deploy da Fase 11.
-- Webhook real recebido e confirmacao sem redirect: pendente.
+- Checkout novo contendo `webhook_url`: validado em producao.
+- Webhook real recebido em producao: validado.
+- Confirmacao de pagamento sem redirect do comprador: validada.
+
+## Validacao real do webhook
+
+Validacao manual real confirmada em 2026-09-12:
+
+- novo checkout criado apos deploy da Fase 11 continha `webhook_url`;
+- pagamento Pix real foi concluido;
+- comprador nao clicou em continuar na InfinitePay;
+- InfinitePay enviou `POST /webhooks/infinitepay`;
+- User-Agent observado: `InfinitePay/EcommerceWebhooks`;
+- endpoint respondeu HTTP 200;
+- pedido foi atualizado sem redirect do comprador;
+- `orders.status = paid`;
+- `order_payments.status = paid`;
+- `amount_cents` correspondeu ao total esperado;
+- `capture_method = pix`;
+- `paid_at` foi preenchido.
+
+Nao registrar em documentacao, logs ou exemplos `transaction_nsu` real, `invoice_slug`, CPF, e-mail, telefone, endereco, checkout URL ou qualquer PII.

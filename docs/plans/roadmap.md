@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10 e 10.1 concluidas. Fase 11 com implementacao concluida e validacao real de webhook pendente. Fases 12 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1 e 11 concluidas. Fases 12 a 17 planejadas.
 
 ## Status das fases
 
@@ -24,7 +24,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10 e 1
 | Fase 9.1 — Interface publica de pedidos | Concluida |
 | Fase 10 — Integracao InfinitePay | Concluida |
 | Fase 10.1 — Diagnostico Seguro InfinitePay | Concluida |
-| Fase 11 — Webhooks de pagamento | Implementacao concluida; validacao real de webhook pendente |
+| Fase 11 — Webhooks de pagamento | Concluida |
 | Fase 12 — Acompanhamento do pedido | Planejada |
 | Fase 13 — Painel administrativo | Planejada |
 | Fase 14 — Seguranca | Planejada |
@@ -433,10 +433,10 @@ Dependencias: Fases 9 e 10.
 
 Definition of Done:
 
-- A. Implementacao do endpoint, payload, `payment_check`, idempotencia e testes automatizados: concluida.
-- B. Checkout real novo contendo `webhook_url`: pendente de validacao controlada.
-- C. Webhook real recebido em producao: pendente.
-- D. Pagamento confirmado sem redirect do comprador: pendente.
+- A. Implementacao do endpoint, payload, `payment_check`, idempotencia e testes automatizados: concluida ✅
+- B. Checkout real novo contendo `webhook_url`: concluida ✅
+- C. Webhook real recebido em producao: concluida ✅
+- D. Pagamento confirmado sem redirect do comprador: concluida ✅
 
 ## Fase 12 — Acompanhamento do pedido
 
