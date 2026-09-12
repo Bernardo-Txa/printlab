@@ -58,6 +58,7 @@ Supabase de desenvolvimento
 - Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
 - Pedidos dependem do PostgreSQL para criar snapshots historicos, converter carrinho e exibir `/pedido/{id}` por UUID.
 - Pagamentos InfinitePay dependem de PostgreSQL para `order_payments`, de `SITE_URL` HTTPS e de `INFINITEPAY_HANDLE` para iniciar checkout hospedado, gerar `redirect_url`, gerar `webhook_url` e confirmar por `payment_check`.
+- Admin 13.1 depende de PostgreSQL para `admin_sessions` e de `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_SUPABASE_USER_ID` para login real.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -144,6 +145,8 @@ Secrets de runtime no ambiente de hosting:
 - `INFINITEPAY_HANDLE`, necessario para habilitar checkout InfinitePay
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
+- `SUPABASE_PUBLISHABLE_KEY`, opcional e nao administrativa, usada para login Admin via Supabase Auth
+- `ADMIN_SUPABASE_USER_ID`, opcional, UUID do unico usuario Supabase Auth autorizado no Admin
 - `SITE_URL`, URL publica HTTPS usada como origem permitida e como base do `redirect_url` e `webhook_url` InfinitePay
 - `SUPERFRETE_ENV`, opcional ate habilitar cotacao real, aceitando `sandbox` ou `production`
 - `SUPERFRETE_API_TOKEN`, secret da SuperFrete
@@ -156,6 +159,8 @@ Secrets de runtime no ambiente de hosting:
 Se a configuracao SuperFrete estiver ausente, a aplicacao continua iniciando e as rotas publicas existentes continuam funcionando. A etapa `/checkout/frete`, quando acessada com carrinho e dados validos, apresenta indisponibilidade segura em vez de panic ou exposicao de erro interno. Se qualquer variavel SuperFrete for preenchida, a configuracao precisa estar completa e valida.
 
 Se `INFINITEPAY_HANDLE` ou `SITE_URL` HTTPS estiverem ausentes, a aplicacao continua iniciando e as rotas existentes continuam funcionando. A pagina de pedido nao exibe botao falso de pagamento e mostra indisponibilidade segura.
+
+Se `SUPABASE_PUBLISHABLE_KEY`, `ADMIN_SUPABASE_USER_ID`, `SUPABASE_URL` ou `DATABASE_URL` estiverem ausentes, a aplicacao publica continua iniciando. `/admin/login` apresenta indisponibilidade segura e nao revela qual configuracao esta faltando.
 
 O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
@@ -258,6 +263,14 @@ curl -i -X POST https://printlab-pied.vercel.app/pedido/00000000-0000-0000-0000-
 
 Retorno sem parametros deve responder erro seguro sem refletir query string. Pedido inexistente por UUID deve retornar 404 ou redirecionar com indisponibilidade segura conforme configuracao. Nao executar pagamento real sem roteiro controlado.
 
+Depois da Fase 13.1, validar Admin sem configurar credenciais reais automaticamente:
+
+```sh
+curl -i https://printlab-pied.vercel.app/admin/login
+```
+
+Sem config Admin, a resposta esperada e HTTP 503 com indisponibilidade segura. Com config Admin real feita manualmente na Vercel e usuario criado no Supabase Auth, validar login pelo navegador sem registrar e-mail, senha, user UUID real, token de sessao ou tokens Supabase em logs/documentacao.
+
 ## Vercel
 
 `vercel.json` contem apenas:
@@ -286,6 +299,7 @@ Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker custo
 - Revisar backups.
 - Revisar seguranca.
 - Implementar limpeza programada de carrinhos expirados e PII associada.
+- Implementar limpeza operacional de sessoes administrativas expiradas.
 
 ## Praticas proibidas
 

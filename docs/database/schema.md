@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay e acompanhamento seguro IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro e sessoes administrativas IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -17,6 +17,8 @@ A Fase 9 adiciona `carts.converted_at` e tabelas de pedido como snapshots histor
 A Fase 10 adiciona `public.order_payments` para registrar checkout hospedado InfinitePay e confirmacao server-side por `payment_check`, alem de permitir `orders.status = 'paid'`.
 
 A Fase 12 adiciona `orders.public_tracking_id` e `public.order_fulfillment` para acompanhamento publico seguro com status separados de pagamento, producao e envio.
+
+A Fase 13.1 adiciona `public.admin_sessions` para sessoes administrativas transitorias, sem armazenar senha, token bruto, access token ou refresh token.
 
 ## Convencoes futuras
 
@@ -1015,6 +1017,44 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 - `allowed_mime_types = image/avif, image/webp, image/jpeg, image/png`.
 - `avif_autodetection = true`.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
+
+## Tabela `public.admin_sessions`
+
+Sessoes administrativas proprias da PrintLab, criadas apos autenticacao bem-sucedida no Supabase Auth e autorizacao por `ADMIN_SUPABASE_USER_ID`.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria da sessao. |
+| `auth_user_id` | `uuid` | nao | - | UUID do usuario Supabase Auth autenticado. |
+| `token_hash` | `bytea` | nao | - | `SHA-256` do token opaco do cookie. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao da sessao. |
+| `expires_at` | `timestamptz` | nao | - | Expiracao da sessao, inicialmente 8 horas. |
+
+Constraints:
+
+- `admin_sessions_pkey`: chave primaria em `id`.
+- `admin_sessions_token_hash_key`: `token_hash` unico.
+- `admin_sessions_token_hash_length`: `octet_length(token_hash) = 32`.
+- `admin_sessions_expires_after_created`: `expires_at > created_at`.
+
+Indices:
+
+- `admin_sessions_expires_at_idx` em `admin_sessions(expires_at)`.
+
+Semantica:
+
+- Token bruto existe somente no cookie HttpOnly `printlab_admin_session`.
+- Senha, access token e refresh token do Supabase nao sao persistidos.
+- Nao ha FK para `auth.users` nesta fase para reduzir acoplamento ao schema interno do Supabase Auth.
+- A autorizacao continua no backend por comparacao com `ADMIN_SUPABASE_USER_ID`.
+- Sessao expirada e tratada como nao autenticada e pode ser removida oportunisticamente.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
 
 ## Entidades candidatas
 

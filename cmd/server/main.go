@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
@@ -58,6 +59,7 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var checkoutShipping checkoutShippingService
 	var orderReview orderReviewService
 	var payment paymentService
+	var adminPanel adminPanelService
 	postalCodeLookup := customers.NewViaCEPClient()
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
@@ -105,11 +107,27 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			cfg.InfinitePayHandle,
 			cfg.SiteURL,
 		)
+		if cfg.AdminAuthConfigured {
+			authClient, err := admindomain.NewSupabaseAuthClient(admindomain.SupabaseAuthClientConfig{
+				SupabaseURL:    cfg.SupabaseURL,
+				PublishableKey: cfg.SupabasePublishableKey,
+			})
+			if err != nil {
+				log.Print("admin authentication unavailable")
+			} else {
+				adminPanel = admindomain.NewService(
+					authClient,
+					admindomain.NewPostgresRepository(db.Pool()),
+					cfg.AdminSupabaseUserID,
+					admindomain.CookieOptions{Secure: secureCartCookies(cfg)},
+				)
+			}
+		}
 	}
 
 	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
-	}), postalCodeLookup, payment, cfg.SiteURL)
+	}), postalCodeLookup, payment, adminPanel, cfg.SiteURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
@@ -117,10 +135,10 @@ func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.H
 }
 
 func newHandlerWithServices(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, siteURL string) http.Handler {
-	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, nil, cartCookies, postalCodeLookup, nil, siteURL)
+	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, nil, cartCookies, postalCodeLookup, nil, nil, siteURL)
 }
 
-func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, siteURL string) http.Handler {
+func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, adminPanel adminPanelService, siteURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -145,6 +163,13 @@ func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogServi
 	mux.HandleFunc("GET /pagamento/retorno", paymentReturnHandler(payment))
 	mux.HandleFunc("POST /webhooks/infinitepay", infinitePayWebhookHandler(payment))
 	mux.HandleFunc("GET /webhooks/infinitepay", methodNotAllowedHandler(http.MethodPost))
+	mux.HandleFunc("GET /admin/login", adminLoginPageHandler(adminPanel))
+	mux.HandleFunc("POST /admin/login", adminLoginHandler(adminPanel, siteURL))
+	mux.HandleFunc("GET /admin", adminDashboardHandler(adminPanel))
+	mux.HandleFunc("POST /admin/logout", adminLogoutHandler(adminPanel, siteURL))
+	mux.HandleFunc("GET /admin/logout", methodNotAllowedHandler(http.MethodPost))
+	mux.HandleFunc("GET /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
+	mux.HandleFunc("POST /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
 	return mux

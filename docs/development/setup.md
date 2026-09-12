@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos e inicio de pagamento IMPLEMENTADOS.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e fundacao administrativa IMPLEMENTADOS.
 
 ## Requisitos
 
@@ -10,7 +10,7 @@ Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout
 - Terminal com acesso ao diretorio do projeto.
 - Supabase CLI instalada via npm (`supabase` v2.117.0).
 
-Nenhuma conta externa e necessaria para executar a aplicacao local basica. A cotacao real de frete exige configuracao SuperFrete opcional de desenvolvimento; sem ela, a rota de frete apresenta indisponibilidade segura. Pagamento real exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS; sem eles, a pagina de pedido nao exibe botao falso de pagamento.
+Nenhuma conta externa e necessaria para executar a aplicacao local basica. A cotacao real de frete exige configuracao SuperFrete opcional de desenvolvimento; sem ela, a rota de frete apresenta indisponibilidade segura. Pagamento real exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS; sem eles, a pagina de pedido nao exibe botao falso de pagamento. Admin real exige Supabase Auth configurado; sem ele, `/admin/login` mostra indisponibilidade segura.
 
 Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve configurar secrets diretamente no GitHub Actions. Nao coloque credenciais em `.env`, documentacao ou codigo.
 
@@ -25,7 +25,9 @@ Variaveis de runtime:
 - `SITE_URL`: URL publica da aplicacao quando necessaria, usada tambem como origem permitida em mutacoes de carrinho.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
-- `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada somente para montar URLs publicas de imagens do bucket `product-images`.
+- `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images` e para login Admin quando configurado.
+- `SUPABASE_PUBLISHABLE_KEY`: publishable key Supabase. Opcional; usada no login Admin.
+- `ADMIN_SUPABASE_USER_ID`: UUID do unico usuario Supabase Auth autorizado no Admin.
 - `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
 - `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab.
@@ -36,6 +38,8 @@ Variaveis de runtime:
 Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 200, `GET /ready` retorna 503, catalogo fica indisponivel, `GET /carrinho` funciona apenas como carrinho vazio quando nao ha cookie, e rotas de checkout redirecionam para `/carrinho` sem carrinho valido. O endpoint interno de CEP nao depende do banco.
 
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
+
+Sem `SUPABASE_PUBLISHABLE_KEY` ou `ADMIN_SUPABASE_USER_ID`, a aplicacao publica continua iniciando. `/admin/login` retorna pagina de indisponibilidade segura sem revelar qual variavel esta ausente.
 
 Sem configuracao SuperFrete, a rota `/checkout/frete` nao faz chamada externa e exibe estado de indisponibilidade depois que carrinho e dados forem resolvidos. Se qualquer variavel SuperFrete for preenchida, todas as variaveis obrigatorias precisam estar validas para evitar configuracao parcial.
 
@@ -256,6 +260,37 @@ curl -i \
 Retorno sem parametros deve responder erro seguro sem refletir query string. Webhook local sem pedido real deve responder JSON seguro, sem marcar pagamento. Pedido inexistente deve responder 404 ou redirecionar para estado seguro conforme configuracao.
 
 Para criar link real ou validar webhook real, use ambiente controlado com pedido real de desenvolvimento, `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE`. O redirect do navegador e o webhook nao confirmam pagamento diretamente: a aplicacao so marca `paid` apos `payment_check` server-side com valor igual ao total do pedido.
+
+## Validar Admin
+
+Sem configuracao Admin:
+
+```sh
+curl -i http://localhost:8080/admin/login
+```
+
+Resposta esperada: HTTP 503 com indisponibilidade segura, mantendo homepage, catalogo, carrinho, checkout e pagamentos funcionando quando suas proprias configuracoes estiverem presentes.
+
+Com `DATABASE_URL`, migrations aplicadas, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_SUPABASE_USER_ID` configurados:
+
+1. Crie manualmente o usuario administrador no Dashboard Supabase em Authentication -> Users.
+2. Configure `ADMIN_SUPABASE_USER_ID` com o UUID desse usuario.
+3. Acesse `GET /admin/login`.
+4. Envie e-mail e senha pelo formulario.
+5. Login autorizado redireciona para `/admin` e define cookie `printlab_admin_session`.
+
+Validacao por `curl` para origem:
+
+```sh
+curl -i \
+  -X POST \
+  -H "Origin: http://localhost:8080" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data "email=<email-admin>&password=<senha-admin>" \
+  http://localhost:8080/admin/login
+```
+
+Nao registre e-mail real, senha, token de sessao, token Supabase ou UUID real em documentacao ou commits.
 
 ## Validar assets estaticos
 

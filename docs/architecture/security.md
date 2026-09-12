@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook e acompanhamento seguro IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e fundacao administrativa IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -60,6 +60,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
 
 `SUPERFRETE_API_TOKEN` e secret operacional. Ele deve existir somente em `.env` local ignorado pelo Git ou nas variaveis de ambiente do hosting. O token nao deve ser logado, renderizado, armazenado no banco, enviado ao navegador, colocado em URL ou exposto em mensagens de erro.
+
+`SUPABASE_PUBLISHABLE_KEY` identifica a aplicacao perante o Supabase e nao concede autorizacao administrativa. Mesmo assim, valores reais nao devem ser escritos em documentacao, testes ou logs. `SUPABASE_SECRET_KEY` e `SUPABASE_SERVICE_ROLE_KEY` nao sao usadas pela Fase 13.1.
 
 ## Catalogo publico
 
@@ -163,6 +165,27 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - A resposta usa `Referrer-Policy: no-referrer`.
 - Nao existe endpoint publico de mutacao de producao ou envio.
 
+## Admin
+
+- Supabase Auth autentica e-mail e senha em `POST /admin/login`.
+- A PrintLab autoriza separadamente comparando `user.id` com `ADMIN_SUPABASE_USER_ID`.
+- E-mail nao e regra de autorizacao administrativa.
+- A aplicacao nao possui signup administrativo, criacao de conta, login social, lembrar de mim ou recuperacao de senha nesta subfase.
+- Senha administrativa vai somente para Supabase Auth, nunca e persistida, logada, colocada em query string ou armazenada em sessao.
+- Access token e refresh token do Supabase nao sao persistidos pela PrintLab.
+- Depois de autenticar e autorizar, a PrintLab cria sessao propria com token opaco aleatorio de 32 bytes.
+- `public.admin_sessions.token_hash` armazena somente `SHA-256(token)`, com constraint de 32 bytes.
+- `admin_sessions.expires_at` controla TTL inicial de 8 horas; nao ha renovacao automatica nesta fase.
+- `admin_sessions` tem RLS habilitado e nenhuma policy publica.
+- Nao ha FK para `auth.users`; a autorizacao e feita no backend com o UUID retornado pelo Auth.
+- Cookie administrativo `printlab_admin_session` usa `HttpOnly`, `SameSite=Strict`, `Path=/admin`, host-only e `Secure` em producao ou quando `SITE_URL` usa HTTPS.
+- Todas as paginas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: no-referrer`.
+- `POST /admin/login` e `POST /admin/logout` reutilizam validacao centralizada de `Origin`/`Referer`; `SameSite=Strict` e camada adicional, nao substituta.
+- Logs administrativos podem registrar somente eventos genericos como login bem-sucedido, login falho, logout, sessao expirada e erro de repository.
+- Logs administrativos nao devem registrar e-mail, senha, token de sessao, token hash, access token, refresh token, publishable key, secret key, PII de clientes ou connection strings.
+- O dashboard da Fase 13.1 mostra apenas contagens agregadas e nao carrega CPF, endereco, telefone, e-mail de cliente, `transaction_nsu` ou checkout URL.
+- Supabase Auth possui rate limits proprios; protecoes adicionais contra abuso, CAPTCHA/WAF/rate limiting e revisao de brute force ficam para a Fase 14.
+
 ## Pagamentos InfinitePay
 
 - `INFINITEPAY_HANDLE` deve ser configurado por environment variable, sem valor real no Git.
@@ -180,15 +203,15 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 
 ## Limites
 
-- Nao ha autenticacao implementada.
-- Nao ha autorizacao implementada.
+- Autenticacao e autorizacao administrativas basicas estao implementadas apenas para um usuario Supabase Auth autorizado por UUID.
+- Nao ha papeis multiplos, MFA obrigatorio, auditoria operacional, CAPTCHA/WAF, CRUD de produtos, alteracao de pedidos, upload de imagens ou mutations de fulfillment nesta subfase.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
 - Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
-- Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
+- Nao ha upload de imagens, escrita publica em Storage, CRUD administrativo, auditoria operacional ou alteracao administrativa de pedidos.
 
 ## Praticas recomendadas
 

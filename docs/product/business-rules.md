@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos e inicio de pagamento InfinitePay IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e fundacao administrativa IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -179,6 +179,20 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Logs nao devem registrar `public_tracking_id`.
 - Nao ha endpoint publico para alterar status de producao ou envio.
 
+## Admin 13.1 implementado
+
+- Admin exige login por Supabase Auth com e-mail e senha.
+- A PrintLab autoriza acesso administrativo somente por `ADMIN_SUPABASE_USER_ID`.
+- E-mail do usuario nao e regra de autorizacao.
+- Nao ha signup administrativo pela aplicacao.
+- Senha administrativa nunca e persistida pela PrintLab.
+- Access token e refresh token do Supabase nao sao persistidos.
+- Sessao administrativa usa token opaco em cookie HttpOnly e `SHA-256(token)` em `admin_sessions`.
+- Sessao expira em 8 horas e nao possui renovacao automatica nesta fase.
+- Dashboard inicial e somente leitura e mostra apenas contagens agregadas de pedidos.
+- Dashboard inicial nao deve carregar CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, checkout URL ou detalhes operacionais de item/producao.
+- CRUD de produtos, alteracao de pedidos, status de producao/envio, auditoria e upload de imagens permanecem planejados para subfases futuras.
+
 ## Producao 3D
 
 O catalogo representa receita estimada de producao por variante:
@@ -223,4 +237,4 @@ Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_
 
 Imagens podem ser gerais do produto ou especificas de uma variante. A pagina de produto prioriza imagens da variante selecionada; se nao existirem, usa imagens gerais do produto; se nenhuma imagem publica estiver disponivel, usa placeholder visual da PrintLab.
 
-Upload de imagens, admin e policies de escrita permanecem fora do escopo desta fase.
+Upload de imagens, admin de imagens e policies de escrita permanecem fora do escopo desta fase.

@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, dados de checkout e frete IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, checkout, pedidos, pagamentos, acompanhamento e Admin 13.1 IMPLEMENTADOS.
 
 ## Estrategia futura
 
@@ -17,6 +17,7 @@ Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, ca
 - Testes de idempotencia.
 - Testes de pagamento.
 - Testes de calculo financeiro.
+- Testes de autenticacao e sessao administrativa.
 
 ## Prioridade
 
@@ -88,6 +89,12 @@ npx supabase --version
 - Service de frete cobre pre-condicoes de carrinho/dados, ausencia de perfil logistico, ausencia de caixa, caixa sem encaixe, duas chamadas SuperFrete, uso de caixa real na cotacao final, preco revalidado, persistencia de selecao, selecao expirada, hash divergente e servico indisponivel.
 - Repository de frete cobre queries explicitamente escopadas por carrinho e teste opcional com `TEST_DATABASE_URL` para perfis, caixas ativas, upsert de selecao e ignorar caixa inativa.
 - Handlers de `/checkout/frete` cobrem redirect sem carrinho, redirect sem dados, estados sem perfil/caixa, cotacao valida, `Cache-Control: private, no-store`, POST cross-site rejeitado, selecao valida e POST que ignora preco malicioso do navegador.
+- Cliente Supabase Auth cobre login por senha, HTTP 400, HTTP 429, HTTP 500, timeout, erro de rede, JSON invalido, resposta sem user e user UUID invalido, sem expor senha nos erros.
+- Token administrativo cobre entropia/tamanho esperado, tokens diferentes, hash SHA-256 e token bruto diferente do hash.
+- Cookie administrativo cobre `HttpOnly`, `SameSite=Strict`, `Path=/admin`, `Secure`, `MaxAge`, `Expires` e limpeza no logout.
+- Sessao administrativa cobre sessao valida, inexistente, expirada, usuario autorizado, outro usuario rejeitado e logout removendo sessao.
+- Handlers Admin cobrem login page, config ausente, POST valido, credenciais invalidas com mensagem generica, origem cross-site rejeitada, `/admin` sem sessao, sessao valida, sessao expirada, cookie aleatorio, logout por POST e GET `/admin/logout` sem efeito.
+- Dashboard Admin cobre contagens de `pending_payment`, `paid + waiting`, `paid + in_production` e `paid + completed + shipping waiting`, sem PII.
 
 ## Teste de integracao PostgreSQL opcional
 

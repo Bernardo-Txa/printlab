@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11 e 12 concluidas. Fases 13 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12 e 13.1 concluidas. Fase 13 em andamento; Fases 13.2 a 17 planejadas.
 
 ## Status das fases
 
@@ -26,7 +26,11 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 10.1 — Diagnostico Seguro InfinitePay | Concluida |
 | Fase 11 — Webhooks de pagamento | Concluida |
 | Fase 12 — Acompanhamento do pedido | Concluida |
-| Fase 13 — Painel administrativo | Planejada |
+| Fase 13 — Painel administrativo | Em andamento |
+| Fase 13.1 — Autenticacao administrativa | Concluida |
+| Fase 13.2 — Pedidos, producao, envio e auditoria | Planejada |
+| Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Planejada |
+| Fase 13.4 — Imagens e Supabase Storage | Planejada |
 | Fase 14 — Seguranca | Planejada |
 | Fase 15 — Testes e observabilidade | Planejada |
 | Fase 16 — SEO e performance | Planejada |
@@ -466,19 +470,64 @@ Objetivo: apoiar operacao interna da PrintLab.
 
 Principais entregas:
 
-- Autenticacao e autorizacao administrativa.
-- Gestao de produtos.
-- Consulta de pedidos.
-- Fluxos basicos de producao.
+- 13.1: autenticacao, autorizacao, sessao e shell administrativo.
+- 13.2: pedidos, producao, envio e auditoria.
+- 13.3: catalogo, variantes, materiais, cores e caixas.
+- 13.4: imagens e Supabase Storage.
 
 Dependencias: Fases 3, 4, 9 e decisao de seguranca administrativa.
 
 Definition of Done:
 
-- Acesso administrativo protegido.
-- Permissoes documentadas.
-- Operacoes criticas auditaveis quando necessario.
-- Testes aplicaveis passam.
+- 13.1: acesso administrativo protegido: concluido ✅
+- 13.1: permissoes documentadas para unico administrador por UUID: concluido ✅
+- 13.1: testes aplicaveis passam: concluido ✅
+- 13.2: operacoes criticas auditaveis quando necessario: planejado
+- 13.2 a 13.4: funcionalidades internas de operacao: planejado
+
+## Fase 13.1 — Autenticacao administrativa
+
+Objetivo: criar a fundacao segura de acesso ao Admin sem CRUD ou mutacoes operacionais.
+
+Principais entregas:
+
+- Login por Supabase Auth usando e-mail/senha.
+- Autorizacao por `ADMIN_SUPABASE_USER_ID`.
+- Sessao propria da PrintLab com token opaco e hash SHA-256 em `admin_sessions`.
+- Cookie `printlab_admin_session` HttpOnly, SameSite Strict, Path `/admin`, host-only e Secure em producao.
+- Logout administrativo.
+- Guard para `/admin` e `/admin/*`.
+- Dashboard inicial somente leitura com contagens agregadas.
+- Headers privados/noindex/no-referrer.
+- Protecao `Origin`/`Referer` em POSTs administrativos.
+- Documentacao e ADR.
+
+Dependencias: Fases 3, 9, 11, 12 e decisao de seguranca administrativa.
+
+Definition of Done:
+
+- Autenticacao e autorizacao por UUID implementadas: concluido ✅
+- Sessoes administrativas seguras implementadas: concluido ✅
+- Config Admin opcional sem quebrar loja publica: concluido ✅
+- Testes e documentacao atualizados: concluido ✅
+
+## Fase 13.2 — Pedidos, producao, envio e auditoria
+
+Objetivo: permitir operacao interna de pedidos pagos, status de producao/envio e trilha de auditoria.
+
+Status: Planejada.
+
+## Fase 13.3 — Catalogo, variantes, materiais, cores e caixas
+
+Objetivo: permitir gestao interna do catalogo e dados operacionais basicos relacionados.
+
+Status: Planejada.
+
+## Fase 13.4 — Imagens e Supabase Storage
+
+Objetivo: permitir upload e gestao segura de imagens de catalogo.
+
+Status: Planejada.
 
 ## Fase 14 — Seguranca
 

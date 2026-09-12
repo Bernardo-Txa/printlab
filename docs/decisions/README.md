@@ -42,3 +42,4 @@ Data:
 - [ADR-0010 — Pagamento hospedado via InfinitePay](0010-pagamento-hospedado-via-infinitepay.md)
 - [ADR-0011 — Confirmacao redundante de pagamentos InfinitePay](0011-confirmacao-redundante-pagamentos-infinitepay.md)
 - [ADR-0012 — Acompanhamento publico por identificador aleatorio](0012-acompanhamento-publico-por-identificador-aleatorio.md)
+- [ADR-0013 — Autenticacao administrativa com Supabase Auth e sessao propria](0013-autenticacao-administrativa-supabase-auth-sessao-propria.md)

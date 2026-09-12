@@ -1072,7 +1072,7 @@ func newTestHandlerWithOrdersAndPayment(t *testing.T, service orderReviewService
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, service, cookies, nil, payment, siteURL)
+	return newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, service, cookies, nil, payment, nil, siteURL)
 }
 
 type fakeOrderReviewService struct {

@@ -19,6 +19,7 @@ Este diretorio concentra a documentacao operacional, tecnica e de produto do pro
   - [Integracoes](architecture/integrations.md)
 - Integracoes:
   - [Supabase](integrations/supabase.md)
+  - [Supabase Auth](integrations/supabase-auth.md)
   - [SuperFrete](integrations/superfrete.md)
   - [InfinitePay](integrations/infinitepay.md)
 - Banco:

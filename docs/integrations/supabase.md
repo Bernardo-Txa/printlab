@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete e Storage de catalogo IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo e Supabase Auth administrativo IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -27,6 +27,7 @@ Supabase PostgreSQL
 - Nenhuma credencial sera colocada em Git.
 - Supabase Data API nao sera a interface primaria da aplicacao.
 - Supabase Storage armazena imagens publicas de catalogo no bucket `product-images`.
+- Supabase Auth autentica credenciais administrativas da Fase 13.1.
 - Migrations versionadas serao aplicadas ao Supabase remoto de desenvolvimento pelo GitHub Actions quando houver alteracao em `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
 - O workflow usa `supabase/setup-cli@v1` com Supabase CLI `2.117.0` fixado, executa `supabase link`, roda `supabase db push --dry-run` e so depois executa `supabase db push`.
 - `pgx.QueryExecModeExec` e usado para evitar dependencia de prepared statement cache incompativel com transaction pooling.
@@ -45,10 +46,16 @@ As variaveis abaixo existem como placeholders em `.env.example` e devem ser revi
 - `DATABASE_URL`
 - `DB_MAX_CONNS`
 - `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `ADMIN_SUPABASE_USER_ID`
 
 `DATABASE_URL` e a unica fonte de verdade da conexao PostgreSQL.
 
-`SUPABASE_URL` e opcional e nao e secret. A aplicacao usa essa URL apenas para montar URLs publicas do Storage quando existirem imagens cadastradas em `product_images`.
+`SUPABASE_URL` e opcional e nao e secret. A aplicacao usa essa URL para montar URLs publicas do Storage quando existirem imagens cadastradas em `product_images` e como base da chamada server-side ao Supabase Auth quando Admin estiver configurado.
+
+`SUPABASE_PUBLISHABLE_KEY` e opcional e nao concede privilegios administrativos. Ela e usada no header `apikey` da chamada Auth de login.
+
+`ADMIN_SUPABASE_USER_ID` e o UUID do unico usuario Supabase Auth autorizado nesta subfase.
 
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
 
@@ -193,6 +200,30 @@ Uso proibido:
 - secrets.
 
 Nao ha policy publica de upload. Upload, admin autenticado e regras de escrita permanecem futuros.
+
+## Auth administrativo
+
+A Fase 13.1 adiciona login administrativo por Supabase Auth com e-mail e senha. O usuario inicial deve ser criado manualmente pelo responsavel no Dashboard Supabase em Authentication -> Users.
+
+A aplicacao chama:
+
+```text
+POST {SUPABASE_URL}/auth/v1/token?grant_type=password
+```
+
+com `apikey: SUPABASE_PUBLISHABLE_KEY` e body JSON contendo `email` e `password`.
+
+Do response, a PrintLab usa somente `user.id` para autorizacao. Access token e refresh token nao sao persistidos.
+
+Autorizacao:
+
+```text
+user.id == ADMIN_SUPABASE_USER_ID
+```
+
+Qualquer outro usuario autenticado recebe a mesma mensagem publica generica de credenciais invalidas e nao recebe sessao.
+
+Sessoes administrativas ficam em `public.admin_sessions` com token hash SHA-256, TTL de 8 horas e RLS habilitado sem policies publicas.
 
 ## Estrutura local
 

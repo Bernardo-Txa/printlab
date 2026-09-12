@@ -77,6 +77,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration `add_order_tracking_and_fulfillment`, adicionando UUID publico de acompanhamento, backfill para pedidos existentes e status 1:1 de producao/envio.
 - ADR-0012 — Acompanhamento publico por identificador aleatorio.
 - Documentacao `docs/product/order-tracking.md` para capability URL, minimizacao de dados, headers privados/noindex e regras de status.
+- Fase 13.1 — Fundacao de Autenticacao Administrativa, com Supabase Auth, autorizacao por `ADMIN_SUPABASE_USER_ID`, sessao propria da PrintLab, cookie HttpOnly e dashboard inicial protegido em `/admin`.
+- Migration `create_admin_sessions`, adicionando `public.admin_sessions` com hash SHA-256 do token, TTL por `expires_at`, RLS habilitado e nenhuma policy publica.
+- ADR-0013 — Autenticacao administrativa com Supabase Auth e sessao propria.
+- Documentacao `docs/integrations/supabase-auth.md` para fluxo Auth, publishable key, autorizacao por UUID e limites da Fase 13.1.
 
 ### Changed
 
@@ -110,3 +114,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Validacao de checkout URL da InfinitePay passa a aceitar por allowlist explicita `checkout.infinitepay.io` e `checkout.infinitepay.com.br`, mantendo rejeicao de HTTP, wildcard, subdominios e sufixos parecidos.
 - `/pedido/{id}` passa a exibir link `Acompanhar pedido` usando `orders.public_tracking_id`, sem usar `orders.id` como URL de acompanhamento.
 - Criacao de pedido passa a inserir `order_fulfillment` na mesma transacao do pedido.
+- `/admin/login` fica indisponivel de forma segura quando configuracao Admin ou banco estao ausentes, sem impedir a loja publica de iniciar.

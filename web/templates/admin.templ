@@ -1,0 +1,86 @@
+package templates
+
+import (
+	"strconv"
+
+	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ AdminLogin(message string) {
+	@components.PrivateNoIndexLayout("Admin | PrintLab", "Acesso administrativo da PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">PrintLab Admin</p>
+						<h1>Acesso administrativo</h1>
+					</div>
+					if message != "" {
+						<p class="checkout-alert checkout-alert-error">{ message }</p>
+					}
+					<form class="admin-login-form" method="post" action="/admin/login">
+						<label>
+							<span>E-mail</span>
+							<input type="email" name="email" autocomplete="email" required/>
+						</label>
+						<label>
+							<span>Senha</span>
+							<input type="password" name="password" autocomplete="current-password" required/>
+						</label>
+						<button class="btn-base btn-primary" type="submit">Entrar</button>
+					</form>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ AdminDashboard(dashboard admindomain.Dashboard) {
+	@components.PrivateNoIndexLayout("Painel administrativo | PrintLab", "Painel administrativo da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				<div class="admin-shell">
+					<aside class="admin-sidebar" aria-label="Navegacao administrativa">
+						<strong>PrintLab Admin</strong>
+						<nav aria-label="Secoes administrativas">
+							<span class="admin-nav-active">Visão geral</span>
+						</nav>
+						<form method="post" action="/admin/logout">
+							<button class="btn-base btn-secondary" type="submit">Sair</button>
+						</form>
+					</aside>
+					<div class="admin-main">
+						<div class="admin-heading">
+							<p class="brand-kicker">Operação</p>
+							<h1>Visão geral</h1>
+						</div>
+						<div class="admin-metrics" aria-label="Resumo operacional">
+							@adminMetric("Aguardando pagamento", dashboard.PendingPayment)
+							@adminMetric("Pagos aguardando produção", dashboard.PaidWaitingProduction)
+							@adminMetric("Em produção", dashboard.InProduction)
+							@adminMetric("Aguardando envio", dashboard.WaitingShipment)
+						</div>
+					</div>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ adminMetric(label string, value int) {
+	<article class="admin-metric">
+		<span>{ label }</span>
+		<strong>{ strconv.Itoa(value) }</strong>
+	</article>
+}
+
+templ AdminUnavailable() {
+	@components.PrivateNoIndexLayout("Admin indisponivel | PrintLab", "Administracao temporariamente indisponivel.") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Administração temporariamente indisponível.", "Nao foi possivel carregar a administracao agora.")
+			}
+		</section>
+	}
+}

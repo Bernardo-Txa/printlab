@@ -50,6 +50,12 @@ A oitava migration funcional corrige a constraint de host de checkout InfinitePa
 
 Ela recria `order_payments_checkout_url_host` para aceitar por allowlist explicita os hosts `checkout.infinitepay.io` e `checkout.infinitepay.com.br`, alinhando o banco com `ValidateCheckoutURL`. Nao altera dados, endpoints, regras financeiras ou status de pagamento.
 
+A nona migration funcional cria sessoes administrativas:
+
+- `supabase/migrations/20260912110000_create_admin_sessions.sql`
+
+Ela cria `public.admin_sessions` com UUID primario, `auth_user_id`, `token_hash` unico de 32 bytes, `created_at`, `expires_at`, indice por expiracao e RLS habilitado sem policies publicas. Nao cria usuario Auth, nao referencia `auth.users`, nao insere dados e nao armazena token bruto, senha, access token ou refresh token.
+
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
@@ -106,6 +112,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A sexta migration real foi criada junto da Fase 9 de pedidos.
 - A setima migration real foi criada junto da Fase 10 de pagamentos InfinitePay.
 - A oitava migration real corrige a allowlist persistida de host de checkout InfinitePay.
+- A nona migration real cria sessoes administrativas para a Fase 13.1.
 
 ## Praticas recomendadas
 

@@ -22,6 +22,7 @@ IMPLEMENTADO:
 - Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
+- Fundacao administrativa em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab e dashboard inicial somente leitura.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -46,7 +47,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Painel administrativo.
+- Subfases 13.2, 13.3 e 13.4 do painel administrativo.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -83,6 +84,7 @@ Go Backend -> ViaCEP API
 Go Backend -> InfinitePay Checkout
 Go Backend -> InfinitePay payment_check
 InfinitePay -> Go Backend webhook
+Go Backend -> Supabase Auth
 ```
 
 ## Arquitetura server-side
@@ -101,6 +103,8 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
+O painel administrativo da Fase 13.1 tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos.
+
 ## Responsabilidades do frontend
 
 O frontend e responsavel por apresentar HTML, formularios e interacoes progressivas. A stack atual e planejada e:
@@ -109,6 +113,7 @@ O frontend e responsavel por apresentar HTML, formularios e interacoes progressi
 - IMPLEMENTADO: Tailwind CSS para estilos utilitarios e design tokens.
 - PLANEJADO: HTMX para interacoes HTTP parciais quando houver necessidade real.
 - IMPLEMENTADO: JavaScript proprio minimo para mascaras progressivas e consulta interna de CEP na etapa de dados.
+- IMPLEMENTADO: UI administrativa inicial SSR sem JavaScript obrigatorio.
 
 O frontend pode melhorar a experiencia do usuario, mas nao decide regras financeiras, disponibilidade final, status de pedido ou confirmacao de pagamento.
 
@@ -198,7 +203,9 @@ A Fase 10 adiciona pagamento:
 - `transaction_nsu` possui unique parcial quando preenchido.
 - RLS fica habilitado em `order_payments`, sem policies publicas.
 
-Ainda nao existem tabelas de clientes permanentes ou admin.
+A Fase 13.1 adiciona `admin_sessions`, tabela transitoria de sessoes administrativas. Ela armazena somente `auth_user_id`, `SHA-256(token)`, timestamps e expiracao; nao referencia `auth.users`, nao guarda token bruto, senha, access token ou refresh token, e tem RLS habilitado sem policies publicas.
+
+Ainda nao existem tabelas de clientes permanentes nem tabelas de CRUD administrativo de produtos/pedidos.
 
 ## Comunicacao com servicos externos
 
@@ -209,6 +216,8 @@ A integracao SuperFrete usa `net/http`, timeout explicito, `Authorization: Beare
 A integracao ViaCEP usa `net/http`, timeout explicito de aproximadamente 3 segundos e contexto da request original. O backend consulta `https://viacep.com.br/ws/{cep}/json/` apos normalizar CEP com exatamente 8 digitos e responde ao navegador somente `street`, `district`, `city` e `state`.
 
 A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fixa `https://api.checkout.infinitepay.io`, `POST /links` para checkout hospedado e `POST /payment_check` para confirmacao server-side. O handle vem de `INFINITEPAY_HANDLE`; nao ha token/API secret no frontend. O webhook InfinitePay e aceito em `POST /webhooks/infinitepay`, mas serve apenas como gatilho para `payment_check`.
+
+A integracao Supabase Auth para Admin usa `net/http`, timeout explicito e `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` com header `apikey: SUPABASE_PUBLISHABLE_KEY`. A publishable key identifica a aplicacao, nao concede autorizacao administrativa. A autorizacao da PrintLab compara o UUID retornado por Supabase Auth com `ADMIN_SUPABASE_USER_ID`.
 
 ## Boundaries
 
@@ -221,7 +230,7 @@ Os pacotes em `internal/` devem representar areas de responsabilidade:
 - `shipping`: calculo e validacao de frete;
 - `payments`: pagamentos e webhooks;
 - `customers`: dados de cliente e endereco;
-- `admin`: operacao interna;
+- `admin`: autenticacao, sessao e operacao interna administrativa;
 - `database`: infraestrutura de acesso ao banco;
 - `config`: leitura de configuracao.
 
@@ -254,6 +263,10 @@ POST /pedido/{id}/pagar -> cria ou reutiliza checkout InfinitePay e redireciona 
 GET /pagamento/retorno -> valida payment_check; pago redireciona 303 para /pedido/{uuid}?pagamento=confirmado
 POST /webhooks/infinitepay -> valida identificadores, chama payment_check e responde JSON
 GET /acompanhar/{public_tracking_id} -> acompanhamento SSR minimizado, sem PII, valores ou IDs internos
+GET /admin/login -> formulario SSR de login administrativo ou indisponibilidade segura
+POST /admin/login -> autentica via Supabase Auth, autoriza por user UUID e cria sessao PrintLab
+GET /admin -> dashboard administrativo inicial somente leitura, protegido por sessao
+POST /admin/logout -> remove sessao e limpa cookie administrativo
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 

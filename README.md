@@ -49,11 +49,14 @@ IMPLEMENTADO:
 - Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side e validacao real concluida.
 - Fase 11 — Webhooks InfinitePay concluida, com validacao real em producao e pagamento confirmado sem redirect do comprador.
 - Fase 12 — Acompanhamento Seguro do Pedido, com `public_tracking_id`, rota `/acompanhar/{uuid}` e pagina SSR minimizada.
+- Fase 13.1 — Fundacao de Autenticacao Administrativa, com Supabase Auth, autorizacao por UUID, sessao propria, cookie HttpOnly e dashboard inicial protegido em `/admin`.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Painel administrativo.
+- Fase 13.2 — pedidos, producao, envio e auditoria no painel administrativo.
+- Fase 13.3 — catalogo, variantes, materiais, cores e caixas no painel administrativo.
+- Fase 13.4 — imagens e Supabase Storage no painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
 Este projeto ainda esta em desenvolvimento e nao deve ser usado em operacao comercial.
@@ -90,6 +93,7 @@ Frontend implementado:
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
 - Etapa de revisao, pagina de pedido e acompanhamento seguro renderizados no servidor, sem JavaScript obrigatorio e sem expor dados operacionais de producao ou embalagem ao comprador.
+- Login administrativo e dashboard inicial renderizados no servidor, sem JavaScript obrigatorio.
 
 Banco planejado:
 
@@ -130,6 +134,7 @@ Banco implementado:
 - `order_payments` guarda pagamento InfinitePay 1:1 por pedido, com status `pending` ou `paid`.
 - `order_fulfillment` guarda status operacional 1:1 de producao e envio do pedido.
 - `orders.public_tracking_id` e UUID aleatorio unico para `/acompanhar/{uuid}`.
+- `admin_sessions` guarda sessoes administrativas transitorias com `SHA-256` do token, TTL de 8 horas e RLS habilitado.
 - `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID interno e acompanhamento usa `public_tracking_id`.
 - RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete e pedidos sem policies publicas do Data API.
 
@@ -185,6 +190,8 @@ Configuracao local ou de hosting para runtime:
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
+- `SUPABASE_PUBLISHABLE_KEY`: opcional e nao administrativa; usada somente para autenticar credenciais do Admin no Supabase Auth.
+- `ADMIN_SUPABASE_USER_ID`: opcional; UUID do unico usuario Supabase Auth autorizado a acessar `/admin`.
 - `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
 - `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab, normalizado pelo backend.
@@ -192,7 +199,7 @@ Configuracao local ou de hosting para runtime:
 - `SUPERFRETE_SERVICES`: lista de codigos de servico solicitados, por exemplo `1,2,17`.
 - `INFINITEPAY_HANDLE`: InfiniteTag/handle sem `$`, obrigatorio somente para exibir e iniciar pagamento real.
 
-`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase. O Admin da Fase 13.1 nao usa secret key nem service role.
 
 O cookie anonimo do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
@@ -377,6 +384,7 @@ internal/customers/      dados temporarios de checkout, validacao e repository P
 internal/shipping/       embalagem real, cotacao SuperFrete e selecao de frete
 internal/orders/         revisao, criacao transacional e snapshots de pedido
 internal/payments/       checkout InfinitePay, payment_check e persistencia de pagamento
+internal/admin/          Supabase Auth, sessao administrativa e dashboard inicial
 internal/                demais pacotes internos futuros por area de dominio
 web/templates/           templates server-side em templ
 web/components/          componentes visuais reutilizaveis em templ

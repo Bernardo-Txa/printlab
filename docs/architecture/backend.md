@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay e acompanhamento seguro IMPLEMENTADOS; admin PLANEJADO.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e fundacao administrativa IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -27,6 +27,10 @@ Nesta fase, o backend implementa:
 - `GET /pagamento/retorno` para validar retorno com `payment_check`.
 - `POST /webhooks/infinitepay` para receber webhook InfinitePay e confirmar por `payment_check`.
 - `GET /acompanhar/{public_tracking_id}` para acompanhamento seguro e minimizado do pedido.
+- `GET /admin/login` para formulario SSR de login administrativo ou indisponibilidade segura quando config Admin estiver ausente.
+- `POST /admin/login` para autenticar e-mail/senha no Supabase Auth, autorizar por UUID e criar sessao propria.
+- `GET /admin` para dashboard administrativo inicial somente leitura.
+- `POST /admin/logout` para apagar sessao administrativa e limpar cookie.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -39,11 +43,12 @@ Nesta fase, o backend implementa:
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
 - `internal/orders` tambem expoe a view minimizada de acompanhamento por `public_tracking_id`.
 - `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
+- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side e dashboard agregado.
 
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete e pedidos.
-- Nao ha admin.
+- A Fase 13.1 implementa somente autenticacao, autorizacao, sessao, logout e dashboard inicial. CRUD de produtos, alteracao de pedidos, fulfillment, auditoria e upload de imagens permanecem fora do escopo.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -82,6 +87,9 @@ Nesta fase, o backend implementa:
 - Usar UUID em `/pedido/{id}` e `order_number` apenas como referencia humana.
 - Iniciar pagamento hospedado a partir do pedido congelado, nunca a partir do carrinho.
 - Confirmar pagamento somente por `payment_check` server-side.
+- Autenticar Admin por Supabase Auth sem armazenar senha, access token ou refresh token na PrintLab.
+- Autorizar Admin por `ADMIN_SUPABASE_USER_ID`, nunca por e-mail.
+- Usar sessao propria com token opaco, hash SHA-256 no PostgreSQL, cookie HttpOnly `SameSite=Strict` e TTL de 8 horas.
 
 ## Catalogo
 

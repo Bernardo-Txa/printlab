@@ -38,6 +38,9 @@ type Config struct {
 	DatabaseConfigured          bool
 	DBMaxConns                  int32
 	SupabaseURL                 string
+	SupabasePublishableKey      string
+	AdminSupabaseUserID         string
+	AdminAuthConfigured         bool
 	SuperFreteConfigured        bool
 	SuperFreteEnv               string
 	SuperFreteAPIToken          string
@@ -82,6 +85,10 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		return Config{}, err
 	}
 
+	supabaseURL := strings.TrimRight(strings.TrimSpace(value(lookup, "SUPABASE_URL")), "/")
+	supabasePublishableKey := strings.TrimSpace(value(lookup, "SUPABASE_PUBLISHABLE_KEY"))
+	adminSupabaseUserID := normalizeOptionalUUID(value(lookup, "ADMIN_SUPABASE_USER_ID"))
+
 	return Config{
 		AppEnv:                      strings.TrimSpace(value(lookup, "APP_ENV")),
 		VercelEnv:                   strings.TrimSpace(value(lookup, "VERCEL_ENV")),
@@ -90,7 +97,10 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		DatabaseURL:                 databaseURL,
 		DatabaseConfigured:          databaseConfigured,
 		DBMaxConns:                  dbMaxConns,
-		SupabaseURL:                 strings.TrimRight(strings.TrimSpace(value(lookup, "SUPABASE_URL")), "/"),
+		SupabaseURL:                 supabaseURL,
+		SupabasePublishableKey:      supabasePublishableKey,
+		AdminSupabaseUserID:         adminSupabaseUserID,
+		AdminAuthConfigured:         adminAuthConfigured(supabaseURL, supabasePublishableKey, adminSupabaseUserID),
 		SuperFreteConfigured:        superFrete.configured,
 		SuperFreteEnv:               superFrete.environment,
 		SuperFreteAPIToken:          superFrete.apiToken,
@@ -138,6 +148,45 @@ func validateDatabaseURL(databaseURL string) (bool, error) {
 	default:
 		return false, ErrInvalidDatabaseURL
 	}
+}
+
+func adminAuthConfigured(supabaseURL string, publishableKey string, adminUserID string) bool {
+	if strings.TrimSpace(publishableKey) == "" || !validUUID(adminUserID) {
+		return false
+	}
+
+	parsed, err := url.Parse(strings.TrimSpace(supabaseURL))
+	return err == nil && parsed.Scheme != "" && parsed.Host != "" && (parsed.Scheme == "http" || parsed.Scheme == "https")
+}
+
+func normalizeOptionalUUID(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if !validUUID(value) {
+		return ""
+	}
+
+	return value
+}
+
+func validUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+
+	for i, char := range value {
+		switch i {
+		case 8, 13, 18, 23:
+			if char != '-' {
+				return false
+			}
+		default:
+			if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F')) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 type superFreteEnvConfig struct {

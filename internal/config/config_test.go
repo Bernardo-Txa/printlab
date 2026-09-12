@@ -93,6 +93,70 @@ func TestLoadTrimsOptionalSupabaseURL(t *testing.T) {
 	}
 }
 
+func TestLoadAllowsMissingAdminAuthConfig(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.AdminAuthConfigured {
+		t.Fatal("expected admin auth to be unconfigured")
+	}
+	if cfg.SupabasePublishableKey != "" || cfg.AdminSupabaseUserID != "" {
+		t.Fatalf("expected empty admin auth values, got %#v", cfg)
+	}
+}
+
+func TestLoadReadsAdminAuthConfig(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPABASE_URL":             " https://example.supabase.co/ ",
+		"SUPABASE_PUBLISHABLE_KEY": " sb_publishable_test ",
+		"ADMIN_SUPABASE_USER_ID":   " 11111111-1111-1111-1111-111111111111 ",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !cfg.AdminAuthConfigured {
+		t.Fatal("expected admin auth to be configured")
+	}
+	if cfg.SupabasePublishableKey != "sb_publishable_test" {
+		t.Fatalf("expected trimmed publishable key, got %q", cfg.SupabasePublishableKey)
+	}
+	if cfg.AdminSupabaseUserID != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("expected normalized admin user id, got %q", cfg.AdminSupabaseUserID)
+	}
+}
+
+func TestLoadLeavesAdminAuthUnconfiguredWhenIncompleteOrInvalid(t *testing.T) {
+	tests := []map[string]string{
+		{
+			"SUPABASE_URL":             "https://example.supabase.co",
+			"SUPABASE_PUBLISHABLE_KEY": "sb_publishable_test",
+		},
+		{
+			"SUPABASE_URL":             "https://example.supabase.co",
+			"SUPABASE_PUBLISHABLE_KEY": "sb_publishable_test",
+			"ADMIN_SUPABASE_USER_ID":   "not-a-uuid",
+		},
+		{
+			"SUPABASE_URL":             "not a url",
+			"SUPABASE_PUBLISHABLE_KEY": "sb_publishable_test",
+			"ADMIN_SUPABASE_USER_ID":   "11111111-1111-1111-1111-111111111111",
+		},
+	}
+
+	for _, values := range tests {
+		cfg, err := loadFromEnv(mapLookup(values))
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if cfg.AdminAuthConfigured {
+			t.Fatalf("expected admin auth to be unconfigured for %#v", values)
+		}
+	}
+}
+
 func TestLoadReadsOptionalSiteAndRuntimeEnvironment(t *testing.T) {
 	cfg, err := loadFromEnv(mapLookup(map[string]string{
 		"APP_ENV":    " production ",

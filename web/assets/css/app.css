@@ -934,6 +934,72 @@
     @apply text-2xl text-primary;
   }
 
+  .admin-auth-section,
+  .admin-section {
+    @apply bg-background py-14 sm:py-18;
+  }
+
+  .admin-auth-panel {
+    @apply mx-auto max-w-xl rounded-card border border-border bg-surface p-6 shadow-soft sm:p-8;
+  }
+
+  .admin-auth-heading h1,
+  .admin-heading h1 {
+    @apply mt-4 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl;
+  }
+
+  .admin-login-form {
+    @apply mt-8 grid gap-5;
+  }
+
+  .admin-login-form label {
+    @apply grid gap-2 text-sm font-semibold text-foreground;
+  }
+
+  .admin-login-form input {
+    @apply min-h-12 rounded-control border border-border bg-surface px-4 text-base font-normal text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .admin-shell {
+    @apply grid gap-6 lg:grid-cols-[16rem_1fr];
+  }
+
+  .admin-sidebar {
+    @apply flex flex-col gap-6 rounded-card border border-border bg-surface p-5 shadow-soft;
+  }
+
+  .admin-sidebar strong {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .admin-sidebar nav {
+    @apply grid gap-2;
+  }
+
+  .admin-nav-active {
+    @apply rounded-control bg-surface-muted px-3 py-2 text-sm font-semibold text-primary;
+  }
+
+  .admin-main {
+    @apply min-w-0 rounded-card border border-border bg-surface p-6 shadow-soft sm:p-8;
+  }
+
+  .admin-metrics {
+    @apply mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .admin-metric {
+    @apply rounded-card border border-border bg-surface-muted p-5;
+  }
+
+  .admin-metric span {
+    @apply block text-sm font-semibold text-muted;
+  }
+
+  .admin-metric strong {
+    @apply mt-4 block text-4xl font-semibold leading-none tracking-normal text-foreground;
+  }
+
   .review-section-header {
     @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
   }
