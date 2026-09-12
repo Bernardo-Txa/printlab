@@ -125,7 +125,10 @@ Se a mesma confirmacao for enviada duas vezes, a segunda tentativa deve redireci
 
 Dados operacionais como SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem no snapshot para operacao futura, mas nao aparecem na interface publica do comprador.
 
-Quando o pedido esta `pending_payment` e `INFINITEPAY_HANDLE` esta configurado, `/pedido/{id}` mostra o CTA real `Pagar agora`. O POST valida origem, cria ou reutiliza um checkout pendente e redireciona para `https://checkout.infinitepay.com.br/...`.
+Quando o pedido esta `pending_payment` e `INFINITEPAY_HANDLE` esta configurado, `/pedido/{id}` mostra o CTA real `Pagar agora`. O POST valida origem, cria ou reutiliza um checkout pendente e redireciona somente para checkout URL `https` em host autorizado pela allowlist explicita:
+
+- `checkout.infinitepay.io`;
+- `checkout.infinitepay.com.br`.
 
 Quando o pedido esta `paid`, `/pedido/{id}` mostra `Pagamento confirmado` e nao mostra botao de pagamento.
 

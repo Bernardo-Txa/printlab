@@ -433,8 +433,8 @@ Dependencias: Fases 9 e 10.
 
 Definition of Done:
 
-- A. Implementacao do endpoint, payload, `payment_check`, idempotencia e testes automatizados: concluida ✅
-- B. Checkout real novo contendo `webhook_url`: concluida ✅
+- A. Implementacao e testes automatizados: concluida ✅
+- B. Checkout real contendo `webhook_url`: concluida ✅
 - C. Webhook real recebido em producao: concluida ✅
 - D. Pagamento confirmado sem redirect do comprador: concluida ✅
 

@@ -256,10 +256,10 @@ Para validar link real ou webhook real, configure `DATABASE_URL`, `SITE_URL` HTT
 ## Estado de validacao real
 
 - Checkout/link real InfinitePay: validado.
-- Pagamento real confirmado via `payment_check`: validado.
+- Pagamento real via `payment_check`: validado.
 - Checkout novo contendo `webhook_url`: validado em producao.
-- Webhook real recebido em producao: validado.
-- Confirmacao de pagamento sem redirect do comprador: validada.
+- Webhook real recebido: validado em producao.
+- Pagamento confirmado sem redirect do comprador: validado.
 
 ## Validacao real do webhook
 
