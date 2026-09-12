@@ -1,6 +1,6 @@
 # InfinitePay
 
-Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; validacao real de link e pagamento pendente.
+Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; diagnostico seguro implementado; validacao real de link e pagamento pendente.
 
 ## Escopo implementado
 
@@ -37,6 +37,8 @@ Base URL interna:
 ```text
 https://api.checkout.infinitepay.io
 ```
+
+Observacao da Fase 10.1: tambem foi encontrada documentacao da Central de Ajuda da InfinitePay citando `https://api.infinitepay.io/invoices/public/checkout/links`. A implementacao nao troca endpoint, nao faz fallback e nao executa duas chamadas nesta fase. A discrepancia fica como ponto de validacao controlada usando os diagnosticos seguros abaixo.
 
 Criacao de link:
 
@@ -133,6 +135,45 @@ Se o pedido ja estiver `paid`, a rota redireciona de volta para `/pedido/{id}` e
 - A comparacao financeira usa `amount` contra `orders.total_cents`; `paid_amount` e persistido, mas pode divergir por juros/tarifas.
 - Logs nao devem conter checkout URL, e-mail, telefone, endereco, query params completos, transaction NSU ou secrets.
 
+## Diagnostico seguro
+
+A Fase 10.1 adiciona um erro estruturado interno para falhas do provider InfinitePay. Ele preserva somente campos operacionais seguros:
+
+- `provider=infinitepay`;
+- `operation=create_checkout` ou `operation=payment_check`;
+- `status=<codigo HTTP>` quando houver resposta HTTP;
+- `category=<categoria segura>`;
+- `host=<host>` apenas para checkout URL invalida, quando util e sem caminho/query.
+
+Categorias seguras:
+
+- `network_error`;
+- `timeout`;
+- `http_400`;
+- `http_401`;
+- `http_403`;
+- `http_404`;
+- `http_409`;
+- `http_422`;
+- `http_429`;
+- `http_5xx`;
+- `invalid_json`;
+- `invalid_checkout_url`;
+- `unknown`.
+
+Quando a InfinitePay responde com status nao 2xx, o backend le apenas um body pequeno e tenta extrair apenas campos genericos sanitizados como `message`, `error` e `code`. Corpo bruto, payload completo, cliente, e-mail, telefone, endereco, checkout URL completa, `transaction_nsu`, `invoice_slug` e secrets nao podem aparecer em `Error()` nem em logs.
+
+Exemplos de logs seguros:
+
+```text
+payment checkout unavailable provider=infinitepay operation=create_checkout status=422 category=http_422
+payment confirmation unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx
+payment checkout unavailable provider=infinitepay operation=create_checkout category=timeout
+payment checkout unavailable provider=infinitepay operation=create_checkout category=invalid_checkout_url host=example.invalid
+```
+
+`payment checkout amount mismatch` continua sendo log separado e nao e classificado como indisponibilidade do provider.
+
 ## Limitacao sem webhook
 
 Se o comprador pagar e fechar a InfinitePay antes de clicar em continuar/retornar, a PrintLab pode permanecer temporariamente em `pending_payment`. A Fase 11 devera resolver isso com webhooks validados e idempotentes.
@@ -142,6 +183,8 @@ Se o comprador pagar e fechar a InfinitePay antes de clicar em continuar/retorna
 Validacoes automatizadas:
 
 ```sh
+templ generate
+npm run css:build
 go test ./...
 go vet ./...
 go build ./...

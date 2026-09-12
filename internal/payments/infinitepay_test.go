@@ -108,17 +108,16 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 
 func TestInfinitePayCreateCheckoutRejectsUnsafeOrInvalidResponses(t *testing.T) {
 	tests := []struct {
-		name   string
-		status int
-		body   string
-		want   error
+		name     string
+		status   int
+		body     string
+		want     error
+		category string
 	}{
-		{name: "missing url", status: http.StatusOK, body: `{}`, want: ErrInvalidCheckoutURL},
-		{name: "http url", status: http.StatusOK, body: `{"url":"http://checkout.infinitepay.com.br/test"}`, want: ErrInvalidCheckoutURL},
-		{name: "wrong host", status: http.StatusOK, body: `{"url":"https://evil.example/test"}`, want: ErrInvalidCheckoutURL},
-		{name: "invalid json", status: http.StatusOK, body: `{`, want: ErrProviderUnavailable},
-		{name: "bad request", status: http.StatusBadRequest, body: `{}`, want: ErrProviderUnavailable},
-		{name: "server error", status: http.StatusInternalServerError, body: `{}`, want: ErrProviderUnavailable},
+		{name: "missing url", status: http.StatusOK, body: `{}`, want: ErrInvalidCheckoutURL, category: ProviderCategoryInvalidCheckoutURL},
+		{name: "http url", status: http.StatusOK, body: `{"url":"http://checkout.infinitepay.com.br/test?ref=private"}`, want: ErrInvalidCheckoutURL, category: ProviderCategoryInvalidCheckoutURL},
+		{name: "wrong host", status: http.StatusOK, body: `{"url":"https://evil.example/test?ref=private"}`, want: ErrInvalidCheckoutURL, category: ProviderCategoryInvalidCheckoutURL},
+		{name: "invalid json", status: http.StatusOK, body: `{`, want: ErrProviderUnavailable, category: ProviderCategoryInvalidJSON},
 	}
 
 	for _, tt := range tests {
@@ -133,9 +132,49 @@ func TestInfinitePayCreateCheckoutRejectsUnsafeOrInvalidResponses(t *testing.T) 
 			httpClient.Timeout = time.Second
 			client := NewInfinitePayClient(WithInfinitePayBaseURL(server.URL), WithInfinitePayHTTPClient(httpClient))
 			_, err := client.CreateCheckout(context.Background(), CheckoutRequest{})
-			if !errors.Is(err, tt.want) {
-				t.Fatalf("expected %v, got %v", tt.want, err)
-			}
+			assertProviderError(t, err, tt.want, ProviderOperationCreateCheckout, tt.category, 0)
+			assertSafeProviderDiagnosticString(t, err.Error())
+			assertSafeProviderDiagnosticString(t, ProviderLogFields(err))
+		})
+	}
+}
+
+func TestInfinitePayClassifiesHTTPStatusDiagnostics(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   int
+		category string
+	}{
+		{name: "400", status: http.StatusBadRequest, category: ProviderCategoryHTTP400},
+		{name: "401", status: http.StatusUnauthorized, category: ProviderCategoryHTTP401},
+		{name: "403", status: http.StatusForbidden, category: ProviderCategoryHTTP403},
+		{name: "404", status: http.StatusNotFound, category: ProviderCategoryHTTP404},
+		{name: "409", status: http.StatusConflict, category: ProviderCategoryHTTP409},
+		{name: "422", status: http.StatusUnprocessableEntity, category: ProviderCategoryHTTP422},
+		{name: "429", status: http.StatusTooManyRequests, category: ProviderCategoryHTTP429},
+		{name: "500", status: http.StatusInternalServerError, category: ProviderCategoryHTTP5xx},
+		{name: "503", status: http.StatusServiceUnavailable, category: ProviderCategoryHTTP5xx},
+	}
+
+	for _, tt := range tests {
+		t.Run("create_checkout_"+tt.name, func(t *testing.T) {
+			client, closeServer := newInfinitePayStatusClient(t, tt.status)
+			defer closeServer()
+
+			_, err := client.CreateCheckout(context.Background(), CheckoutRequest{})
+			assertProviderError(t, err, ErrProviderUnavailable, ProviderOperationCreateCheckout, tt.category, tt.status)
+			assertSafeProviderDiagnosticString(t, err.Error())
+			assertSafeProviderDiagnosticString(t, ProviderLogFields(err))
+		})
+
+		t.Run("payment_check_"+tt.name, func(t *testing.T) {
+			client, closeServer := newInfinitePayStatusClient(t, tt.status)
+			defer closeServer()
+
+			_, err := client.CheckPayment(context.Background(), PaymentCheckRequest{})
+			assertProviderError(t, err, ErrProviderUnavailable, ProviderOperationPaymentCheck, tt.category, tt.status)
+			assertSafeProviderDiagnosticString(t, err.Error())
+			assertSafeProviderDiagnosticString(t, ProviderLogFields(err))
 		})
 	}
 }
@@ -152,9 +191,21 @@ func TestInfinitePayCreateCheckoutTimeoutReturnsProviderUnavailable(t *testing.T
 	client := NewInfinitePayClient(WithInfinitePayBaseURL(server.URL), WithInfinitePayHTTPClient(httpClient))
 
 	_, err := client.CreateCheckout(context.Background(), CheckoutRequest{})
-	if !errors.Is(err, ErrProviderUnavailable) {
-		t.Fatalf("expected ErrProviderUnavailable, got %v", err)
+	assertProviderError(t, err, ErrProviderUnavailable, ProviderOperationCreateCheckout, ProviderCategoryTimeout, 0)
+	assertSafeProviderDiagnosticString(t, err.Error())
+}
+
+func TestInfinitePayCreateCheckoutNetworkErrorReturnsProviderDiagnostics(t *testing.T) {
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return nil, errors.New("dial tcp: connection refused")
+		}),
 	}
+	client := NewInfinitePayClient(WithInfinitePayBaseURL("https://api.checkout.infinitepay.io"), WithInfinitePayHTTPClient(httpClient))
+
+	_, err := client.CreateCheckout(context.Background(), CheckoutRequest{})
+	assertProviderError(t, err, ErrProviderUnavailable, ProviderOperationCreateCheckout, ProviderCategoryNetworkError, 0)
+	assertSafeProviderDiagnosticString(t, err.Error())
 }
 
 func TestInfinitePayCheckPaymentSendsExpectedPayload(t *testing.T) {
@@ -195,14 +246,13 @@ func TestInfinitePayCheckPaymentSendsExpectedPayload(t *testing.T) {
 
 func TestInfinitePayCheckPaymentHandlesProviderFailures(t *testing.T) {
 	tests := []struct {
-		name   string
-		status int
-		body   string
+		name     string
+		status   int
+		body     string
+		category string
 	}{
-		{name: "missing amount when paid", status: http.StatusOK, body: `{"success":true,"paid":true,"paid_amount":1510}`},
-		{name: "invalid json", status: http.StatusOK, body: `{`},
-		{name: "bad request", status: http.StatusBadRequest, body: `{}`},
-		{name: "server error", status: http.StatusInternalServerError, body: `{}`},
+		{name: "missing amount when paid", status: http.StatusOK, body: `{"success":true,"paid":true,"paid_amount":1510}`, category: ProviderCategoryInvalidJSON},
+		{name: "invalid json", status: http.StatusOK, body: `{`, category: ProviderCategoryInvalidJSON},
 	}
 
 	for _, tt := range tests {
@@ -217,11 +267,77 @@ func TestInfinitePayCheckPaymentHandlesProviderFailures(t *testing.T) {
 			httpClient.Timeout = time.Second
 			client := NewInfinitePayClient(WithInfinitePayBaseURL(server.URL), WithInfinitePayHTTPClient(httpClient))
 			_, err := client.CheckPayment(context.Background(), PaymentCheckRequest{})
-			if !errors.Is(err, ErrProviderUnavailable) {
-				t.Fatalf("expected ErrProviderUnavailable, got %v", err)
-			}
+			assertProviderError(t, err, ErrProviderUnavailable, ProviderOperationPaymentCheck, tt.category, 0)
+			assertSafeProviderDiagnosticString(t, err.Error())
 		})
 	}
+}
+
+func newInfinitePayStatusClient(t *testing.T, status int) (*InfinitePayClient, func()) {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(`{"message":"invalid customer Joao Silva joao@example.com +5527999999999 Rua Um https://checkout.infinitepay.com.br/checkout-slug","error":"payload contains private address","code":"invalid_handle"}`))
+	}))
+
+	httpClient := server.Client()
+	httpClient.Timeout = time.Second
+	client := NewInfinitePayClient(WithInfinitePayBaseURL(server.URL), WithInfinitePayHTTPClient(httpClient))
+	return client, server.Close
+}
+
+func assertProviderError(t *testing.T, err error, cause error, operation string, category string, status int) {
+	t.Helper()
+	if !errors.Is(err, cause) {
+		t.Fatalf("expected %v, got %v", cause, err)
+	}
+
+	details, ok := ProviderErrorDetailsFor(err)
+	if !ok {
+		t.Fatalf("expected provider details, got %T: %v", err, err)
+	}
+	if details.Provider != ProviderInfinitePay {
+		t.Fatalf("expected provider %q, got %q", ProviderInfinitePay, details.Provider)
+	}
+	if details.Operation != operation {
+		t.Fatalf("expected operation %q, got %q", operation, details.Operation)
+	}
+	if details.Category != category {
+		t.Fatalf("expected category %q, got %q", category, details.Category)
+	}
+	if details.StatusCode != status {
+		t.Fatalf("expected status %d, got %d", status, details.StatusCode)
+	}
+}
+
+func assertSafeProviderDiagnosticString(t *testing.T, value string) {
+	t.Helper()
+	for _, leaked := range []string{
+		"Joao",
+		"joao@example.com",
+		"+5527999999999",
+		"Rua Um",
+		"29100000",
+		"12A",
+		"Apto 302",
+		"https://checkout.infinitepay.com.br/checkout-slug",
+		"http://checkout.infinitepay.com.br/test",
+		"https://evil.example/test",
+		"ref=private",
+		"txn_123",
+	} {
+		if strings.Contains(value, leaked) {
+			t.Fatalf("expected safe diagnostic not to contain %q, got %q", leaked, value)
+		}
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return f(request)
 }
 
 func assertJSONValue(t *testing.T, payload map[string]any, key string, want string) {

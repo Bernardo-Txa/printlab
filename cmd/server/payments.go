@@ -91,7 +91,7 @@ func handleStartPaymentError(w http.ResponseWriter, r *http.Request, err error, 
 		if errors.Is(err, paymentsdomain.ErrAmountMismatch) {
 			log.Printf("payment checkout amount mismatch order_id=%s", requestedOrderID)
 		} else {
-			log.Print("payment checkout unavailable")
+			log.Printf("payment checkout unavailable%s", paymentProviderLogSuffix(err))
 		}
 		http.Redirect(w, r, "/pedido/"+requestedOrderID+"?pagamento=indisponivel", http.StatusSeeOther)
 	}
@@ -109,8 +109,17 @@ func handlePaymentReturnError(w http.ResponseWriter, r *http.Request, err error,
 		if errors.Is(err, paymentsdomain.ErrAmountMismatch) {
 			log.Print("payment confirmation amount mismatch")
 		} else {
-			log.Print("payment confirmation unavailable")
+			log.Printf("payment confirmation unavailable%s", paymentProviderLogSuffix(err))
 		}
 		renderHTML(w, r, http.StatusServiceUnavailable, templates.PaymentReturn(page))
 	}
+}
+
+func paymentProviderLogSuffix(err error) string {
+	fields := paymentsdomain.ProviderLogFields(err)
+	if fields == "" {
+		return ""
+	}
+
+	return " " + fields
 }

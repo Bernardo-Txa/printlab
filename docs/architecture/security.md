@@ -159,6 +159,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - O backend nao usa token/API secret InfinitePay nesta fase.
 - A pagina publica do pedido nao deve renderizar checkout URL, `transaction_nsu`, `invoice_slug` ou detalhes tecnicos.
 - Logs de pagamento podem conter UUID e `order_number`, mas nao checkout URL, e-mail, telefone, endereco, query params completos, `transaction_nsu`, `invoice_slug` ou secrets.
+- Falhas da InfinitePay devem preservar diagnostico seguro com `provider`, `operation`, status HTTP quando houver e categoria controlada, sem body bruto, payload completo, checkout URL completa, PII, NSU de transacao ou secrets.
+- Categorias seguras de falha da InfinitePay incluem `network_error`, `timeout`, status HTTP mapeados, `invalid_json`, `invalid_checkout_url` e `unknown`.
 - `order_nsu` e derivado do UUID do pedido e nao deve ser tratado como autenticacao.
 - `order_payments` tem RLS habilitado e nenhuma policy publica.
 - Falhas de API, timeout, JSON invalido, retorno com `paid=false` ou abandono de checkout nao podem marcar pedido como pago.

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -95,11 +94,11 @@ func (c *InfinitePayClient) CreateCheckout(ctx context.Context, request Checkout
 	}
 
 	var response infinitePayCheckoutResponse
-	if err := c.postJSON(ctx, "/links", body, &response); err != nil {
+	if err := c.postJSON(ctx, ProviderOperationCreateCheckout, "/links", body, &response); err != nil {
 		return CheckoutCreated{}, err
 	}
 	if err := ValidateCheckoutURL(response.URL); err != nil {
-		return CheckoutCreated{}, err
+		return CheckoutCreated{}, providerInvalidCheckoutURLError(response.URL)
 	}
 
 	return CheckoutCreated{URL: response.URL}, nil
@@ -114,15 +113,15 @@ func (c *InfinitePayClient) CheckPayment(ctx context.Context, request PaymentChe
 	}
 
 	var response infinitePayPaymentCheckResponse
-	if err := c.postJSON(ctx, "/payment_check", body, &response); err != nil {
+	if err := c.postJSON(ctx, ProviderOperationPaymentCheck, "/payment_check", body, &response); err != nil {
 		return PaymentCheckResult{}, err
 	}
 	if response.Paid {
 		if response.Amount == nil || response.PaidAmount == nil {
-			return PaymentCheckResult{}, ErrProviderUnavailable
+			return PaymentCheckResult{}, providerInvalidJSONError(ProviderOperationPaymentCheck)
 		}
 		if response.Installments != nil && *response.Installments <= 0 {
-			return PaymentCheckResult{}, ErrProviderUnavailable
+			return PaymentCheckResult{}, providerInvalidJSONError(ProviderOperationPaymentCheck)
 		}
 	}
 
@@ -142,36 +141,32 @@ func (c *InfinitePayClient) CheckPayment(ctx context.Context, request PaymentChe
 	return result, nil
 }
 
-func (c *InfinitePayClient) postJSON(ctx context.Context, endpoint string, body any, response any) error {
+func (c *InfinitePayClient) postJSON(ctx context.Context, operation string, endpoint string, body any, response any) error {
 	payload, err := json.Marshal(body)
 	if err != nil {
-		return ErrProviderUnavailable
+		return NewProviderError(operation, ProviderCategoryUnknown, 0, ErrProviderUnavailable)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint(endpoint), bytes.NewReader(payload))
 	if err != nil {
-		return ErrProviderUnavailable
+		return NewProviderError(operation, ProviderCategoryUnknown, 0, ErrProviderUnavailable)
 	}
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 
 	httpResponse, err := c.httpClient.Do(request)
 	if err != nil {
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return ErrProviderUnavailable
-		}
-		return ErrProviderUnavailable
+		return providerNetworkError(operation, err)
 	}
 	defer httpResponse.Body.Close()
 
 	if httpResponse.StatusCode < http.StatusOK || httpResponse.StatusCode >= http.StatusMultipleChoices {
-		io.Copy(io.Discard, io.LimitReader(httpResponse.Body, maxProviderResponseBytes))
-		return ErrProviderUnavailable
+		return providerHTTPError(operation, httpResponse.StatusCode, httpResponse.Body)
 	}
 
 	decoder := json.NewDecoder(io.LimitReader(httpResponse.Body, maxProviderResponseBytes))
 	if err := decoder.Decode(response); err != nil {
-		return ErrProviderUnavailable
+		return providerInvalidJSONError(operation)
 	}
 
 	return nil

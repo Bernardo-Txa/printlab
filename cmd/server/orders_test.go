@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -398,6 +400,46 @@ func TestStartPaymentPaidOrderRedirectsBackToOrder(t *testing.T) {
 	}
 }
 
+func TestStartPaymentProviderErrorLogsSafeDiagnostics(t *testing.T) {
+	providerErr := paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationCreateCheckout, paymentsdomain.ProviderCategoryHTTP422, http.StatusUnprocessableEntity, paymentsdomain.ErrProviderUnavailable)
+	providerErr.Message = "invalid customer Joao Silva joao@example.com +5527999999999 Rua Um https://checkout.infinitepay.com.br/checkout-slug"
+	providerErr.Code = "invalid_handle"
+	payment := &fakePaymentService{
+		available:   true,
+		startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID},
+		startErr:    providerErr,
+	}
+	var logs bytes.Buffer
+	oldWriter := log.Writer()
+	oldFlags := log.Flags()
+	log.SetOutput(&logs)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(oldWriter)
+		log.SetFlags(oldFlags)
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/pedido/"+orderID+"/pagar", nil)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec.Header().Get("Location") != "/pedido/"+orderID+"?pagamento=indisponivel" {
+		t.Fatalf("expected unavailable redirect, got %q", rec.Header().Get("Location"))
+	}
+	logText := logs.String()
+	for _, expected := range []string{"payment checkout unavailable", "provider=infinitepay", "operation=create_checkout", "status=422", "category=http_422"} {
+		if !strings.Contains(logText, expected) {
+			t.Fatalf("expected log to contain %q, got %q", expected, logText)
+		}
+	}
+	assertPaymentLogDoesNotLeakSensitiveData(t, logText)
+}
+
 func TestPaymentReturnMissingParamsShowsSafeError(t *testing.T) {
 	payment := &fakePaymentService{available: true, returnErr: paymentsdomain.ErrInvalidReturn}
 	req := httptest.NewRequest(http.MethodGet, "/pagamento/retorno", nil)
@@ -426,6 +468,41 @@ func TestPaymentReturnUnknownOrderShowsNotFound(t *testing.T) {
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
 	}
+}
+
+func TestPaymentReturnProviderErrorLogsSafeDiagnostics(t *testing.T) {
+	providerErr := paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusServiceUnavailable, paymentsdomain.ErrProviderUnavailable)
+	providerErr.Message = "payment check failed for txn_123 and joao@example.com"
+	payment := &fakePaymentService{
+		available:    true,
+		returnResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+		returnErr:    providerErr,
+	}
+	var logs bytes.Buffer
+	oldWriter := log.Writer()
+	oldFlags := log.Flags()
+	log.SetOutput(&logs)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(oldWriter)
+		log.SetFlags(oldFlags)
+	})
+
+	req := paymentReturnRequest()
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, rec.Code)
+	}
+	logText := logs.String()
+	for _, expected := range []string{"payment confirmation unavailable", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
+		if !strings.Contains(logText, expected) {
+			t.Fatalf("expected log to contain %q, got %q", expected, logText)
+		}
+	}
+	assertPaymentLogDoesNotLeakSensitiveData(t, logText)
 }
 
 func TestPaymentReturnPendingShowsPendingMessage(t *testing.T) {
@@ -717,3 +794,19 @@ func (s *fakePaymentService) ConfirmReturn(_ context.Context, input paymentsdoma
 }
 
 var _ paymentService = (*fakePaymentService)(nil)
+
+func assertPaymentLogDoesNotLeakSensitiveData(t *testing.T, logText string) {
+	t.Helper()
+	for _, leaked := range []string{
+		"Joao",
+		"joao@example.com",
+		"+5527999999999",
+		"Rua Um",
+		"https://checkout.infinitepay.com.br/checkout-slug",
+		"txn_123",
+	} {
+		if strings.Contains(logText, leaked) {
+			t.Fatalf("expected payment log not to contain %q, got %q", leaked, logText)
+		}
+	}
+}

@@ -69,6 +69,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Pacote `internal/payments` com client HTTP InfinitePay, service, repository PostgreSQL e testes.
 - Rotas `POST /pedido/{id}/pagar` e `GET /pagamento/retorno`.
 - ADR-0010 — Pagamento hospedado via InfinitePay.
+- Fase 10.1 — Diagnostico Seguro da Integracao InfinitePay, preservando status HTTP, operacao e categoria sem expor PII, payload, checkout URL completa, transaction NSU ou secrets.
 
 ### Changed
 
