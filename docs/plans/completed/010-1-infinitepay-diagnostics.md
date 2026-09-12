@@ -12,6 +12,7 @@ Adicionar observabilidade segura ao checkout InfinitePay antes de decidir qualqu
 - Operacoes classificadas como `create_checkout` e `payment_check`.
 - Status HTTP preservado para respostas nao 2xx.
 - Categorias seguras para erro de rede, timeout, status HTTP, JSON invalido, checkout URL invalida e casos desconhecidos.
+- Correcao pontual posterior: validacao real em 2026 confirmou checkout URL com host `checkout.infinitepay.io`; a allowlist explicita passou a aceitar esse host e `checkout.infinitepay.com.br`.
 - Leitura limitada e sanitizada de body de erro estruturado, sem logar body bruto.
 - Logs seguros nos handlers de inicio de checkout e retorno de pagamento.
 - Diferenciacao entre erro HTTP da API e resposta 2xx com checkout URL invalida.

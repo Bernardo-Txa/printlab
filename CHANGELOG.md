@@ -100,3 +100,4 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Carrinhos convertidos deixam de ser reutilizados no fluxo ativo por `carts.converted_at`.
 - Revisao e pagina publica de pedido deixam de exibir SKU interno, dados de producao 3D e dados de embalagem fisica, preservando essas informacoes internamente.
 - Pagina publica de pedido passa a exibir CTA real de pagamento quando InfinitePay esta configurada e `Pagamento confirmado` quando o pedido esta `paid`.
+- Validacao de checkout URL da InfinitePay passa a aceitar por allowlist explicita `checkout.infinitepay.io` e `checkout.infinitepay.com.br`, mantendo rejeicao de HTTP, wildcard, subdominios e sufixos parecidos.

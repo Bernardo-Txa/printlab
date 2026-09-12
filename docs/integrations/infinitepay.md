@@ -12,7 +12,7 @@ Fluxo:
 GET /pedido/{uuid}
   -> POST /pedido/{uuid}/pagar
   -> PrintLab cria ou reutiliza checkout server-side
-  -> Redirect 303 para https://checkout.infinitepay.com.br/...
+  -> Redirect 303 para checkout hospedado InfinitePay validado por allowlist
   -> InfinitePay redireciona para GET /pagamento/retorno
   -> PrintLab chama payment_check server-side
   -> Pedido muda para paid somente se success=true, paid=true e amount=orders.total_cents
@@ -124,11 +124,24 @@ Se o pedido ja estiver `paid`, a rota redireciona de volta para `/pedido/{id}` e
 
 `GET /pagamento/retorno` e idempotente: retornos repetidos para pagamento ja confirmado mantem o pedido pago sem duplicar registros.
 
+## Hosts de checkout
+
+A documentacao publica possui exemplos historicos ou alternativos usando `checkout.infinitepay.com.br`.
+
+A validacao real em producao, em 2026, confirmou que `POST https://api.checkout.infinitepay.io/links` retorna atualmente checkout URL com host `checkout.infinitepay.io`.
+
+A PrintLab aceita ambos os hosts por allowlist explicita:
+
+- `checkout.infinitepay.io`;
+- `checkout.infinitepay.com.br`.
+
+Qualquer outro host continua rejeitado, incluindo subdominios ou sufixos parecidos como `evil.infinitepay.io`, `checkout.infinitepay.io.evil.com`, `infinitepay.io` e `api.checkout.infinitepay.io`. A URL tambem deve usar `https`.
+
 ## Seguranca
 
 - `POST /pedido/{id}/pagar` valida `Origin`/`Referer`.
 - O backend compara o total do payload com `orders.total_cents` antes de chamar a InfinitePay.
-- Checkout URL so e aceita com scheme `https` e host `checkout.infinitepay.com.br`.
+- Checkout URL so e aceita com scheme `https` e host autorizado pela allowlist explicita.
 - `GET /pagamento/retorno` usa `Cache-Control: private, no-store`.
 - A aplicacao ignora `receipt_url` e `capture_method` vindos do navegador.
 - A confirmacao depende apenas de `payment_check` server-side.

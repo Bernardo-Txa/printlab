@@ -20,7 +20,8 @@ const (
 	ReturnStatusConfirmed   = "confirmed"
 	ReturnStatusUnavailable = "unavailable"
 
-	checkoutHost = "checkout.infinitepay.com.br"
+	checkoutHostBR      = "checkout.infinitepay.com.br"
+	checkoutHostCurrent = "checkout.infinitepay.io"
 )
 
 var (
@@ -220,7 +221,7 @@ func PaymentRedirectURL(siteURL string) (string, bool) {
 
 func ValidateCheckoutURL(rawURL string) error {
 	parsed, err := url.Parse(strings.TrimSpace(rawURL))
-	if err != nil || parsed.Scheme != "https" || parsed.Host != checkoutHost {
+	if err != nil || parsed.Scheme != "https" || parsed.Port() != "" || !isAllowedCheckoutHost(parsed.Hostname()) {
 		return ErrInvalidCheckoutURL
 	}
 	if parsed.Path == "" || parsed.Path == "/" {
@@ -228,6 +229,15 @@ func ValidateCheckoutURL(rawURL string) error {
 	}
 
 	return nil
+}
+
+func isAllowedCheckoutHost(host string) bool {
+	switch strings.ToLower(strings.TrimSpace(host)) {
+	case checkoutHostBR, checkoutHostCurrent:
+		return true
+	default:
+		return false
+	}
 }
 
 func ReturnPageFor(result ReturnResult) ReturnPage {

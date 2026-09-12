@@ -36,7 +36,7 @@ Pagamento somente podera ser considerado confirmado apos validacao server-side.
 
 Redirect do navegador apos pagamento nunca devera ser considerado prova suficiente de pagamento.
 
-Na integracao InfinitePay implementada, `POST /pedido/{id}/pagar` valida origem, monta payload apenas com snapshots de pedido, compara o total em centavos com `orders.total_cents` e aceita redirect apenas para `https://checkout.infinitepay.com.br/...`.
+Na integracao InfinitePay implementada, `POST /pedido/{id}/pagar` valida origem, monta payload apenas com snapshots de pedido, compara o total em centavos com `orders.total_cents` e aceita redirect apenas para checkout hospedado em host explicitamente autorizado da InfinitePay.
 
 `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` para chamar `payment_check` server-side. Query params como `receipt_url` e `capture_method` nao sao fonte de autoridade.
 

@@ -106,6 +106,26 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 	}
 }
 
+func TestInfinitePayCreateCheckoutAcceptsCurrentCheckoutHost(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"url":"https://checkout.infinitepay.io/checkout-slug"}`))
+	}))
+	defer server.Close()
+
+	httpClient := server.Client()
+	httpClient.Timeout = time.Second
+	client := NewInfinitePayClient(WithInfinitePayBaseURL(server.URL), WithInfinitePayHTTPClient(httpClient))
+
+	result, err := client.CreateCheckout(context.Background(), CheckoutRequest{})
+	if err != nil {
+		t.Fatalf("expected current InfinitePay checkout host to be valid, got %v", err)
+	}
+	if result.URL != "https://checkout.infinitepay.io/checkout-slug" {
+		t.Fatalf("expected current checkout URL, got %q", result.URL)
+	}
+}
+
 func TestInfinitePayCreateCheckoutRejectsUnsafeOrInvalidResponses(t *testing.T) {
 	tests := []struct {
 		name     string
