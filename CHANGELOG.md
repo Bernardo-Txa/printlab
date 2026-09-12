@@ -70,6 +70,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Rotas `POST /pedido/{id}/pagar` e `GET /pagamento/retorno`.
 - ADR-0010 — Pagamento hospedado via InfinitePay.
 - Fase 10.1 — Diagnostico Seguro da Integracao InfinitePay, preservando status HTTP, operacao e categoria sem expor PII, payload, checkout URL completa, transaction NSU ou secrets.
+- Migration `allow_current_infinitepay_checkout_host`, alinhando a constraint `order_payments_checkout_url_host` aos hosts `checkout.infinitepay.io` e `checkout.infinitepay.com.br` aceitos pelo dominio Go.
 
 ### Changed
 

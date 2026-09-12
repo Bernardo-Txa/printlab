@@ -684,7 +684,7 @@ Constraints e indices:
 - `order_payments_provider_infinitepay`: provider deve ser `infinitepay`.
 - `order_payments_status_allowed`: status deve ser `pending` ou `paid`.
 - `order_payments_order_nsu_uuid`: `order_nsu` deve ser UUID canonico lowercase.
-- `order_payments_checkout_url_host`: `checkout_url`, quando preenchida, deve apontar para `https://checkout.infinitepay.com.br/`.
+- `order_payments_checkout_url_host`: `checkout_url`, quando preenchida, deve apontar para `https://checkout.infinitepay.io/` ou `https://checkout.infinitepay.com.br/`, alinhado a `ValidateCheckoutURL`.
 - `order_payments_amount_non_negative` e `order_payments_paid_amount_non_negative`: valores nao negativos quando preenchidos.
 - `order_payments_installments_positive`: parcelas maior que zero quando preenchidas.
 - `order_payments_transaction_nsu_unique_idx`: unique parcial em `transaction_nsu` quando nao nulo.
@@ -692,6 +692,7 @@ Constraints e indices:
 Semantica:
 
 - `order_nsu` nao contem PII e nao substitui autenticacao.
+- A API real da InfinitePay retornou `checkout.infinitepay.io` em 2026; o banco e o dominio Go aceitam somente esse host e `checkout.infinitepay.com.br` por allowlist explicita.
 - `paid_amount_cents` e persistido separadamente, mas a confirmacao usa `amount_cents = orders.total_cents`.
 - Checkout abandonado, `paid=false`, timeout ou erro de API mantem status `pending`.
 - Sem webhook, pagamento real sem retorno ao site pode permanecer temporariamente pendente.

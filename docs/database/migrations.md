@@ -38,6 +38,18 @@ A sexta migration funcional cria a base de pedidos:
 
 Ela adiciona `converted_at` em `public.carts`, cria `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items` e `public.order_item_filaments`, com constraints financeiras, snapshots historicos, idempotencia por `source_cart_id`, indices uteis e RLS sem policies publicas. Nao insere pedidos, clientes, enderecos, itens ou dados ficticios.
 
+A setima migration funcional cria a base de pagamentos InfinitePay:
+
+- `supabase/migrations/20260911193009_add_order_payments.sql`
+
+Ela permite `orders.status = 'paid'`, cria `public.order_payments`, constraints financeiras e de integridade, indice unique parcial para `transaction_nsu` e RLS sem policies publicas.
+
+A oitava migration funcional corrige a constraint de host de checkout InfinitePay:
+
+- `supabase/migrations/20260911220406_allow_current_infinitepay_checkout_host.sql`
+
+Ela recria `order_payments_checkout_url_host` para aceitar por allowlist explicita os hosts `checkout.infinitepay.io` e `checkout.infinitepay.com.br`, alinhando o banco com `ValidateCheckoutURL`. Nao altera dados, endpoints, regras financeiras ou status de pagamento.
+
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
@@ -92,6 +104,8 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A quarta migration real foi criada junto da Fase 7 de dados do cliente e endereco.
 - A quinta migration real foi criada junto da Fase 8 de frete SuperFrete.
 - A sexta migration real foi criada junto da Fase 9 de pedidos.
+- A setima migration real foi criada junto da Fase 10 de pagamentos InfinitePay.
+- A oitava migration real corrige a allowlist persistida de host de checkout InfinitePay.
 
 ## Praticas recomendadas
 

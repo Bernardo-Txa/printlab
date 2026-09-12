@@ -135,7 +135,7 @@ A PrintLab aceita ambos os hosts por allowlist explicita:
 - `checkout.infinitepay.io`;
 - `checkout.infinitepay.com.br`.
 
-Qualquer outro host continua rejeitado, incluindo subdominios ou sufixos parecidos como `evil.infinitepay.io`, `checkout.infinitepay.io.evil.com`, `infinitepay.io` e `api.checkout.infinitepay.io`. A URL tambem deve usar `https`.
+Essa allowlist e aplicada no dominio Go por `ValidateCheckoutURL` e tambem na constraint `order_payments_checkout_url_host` do PostgreSQL. Qualquer outro host continua rejeitado, incluindo subdominios ou sufixos parecidos como `evil.infinitepay.io`, `checkout.infinitepay.io.evil.com`, `infinitepay.io` e `api.checkout.infinitepay.io`. A URL tambem deve usar `https`.
 
 ## Seguranca
 
