@@ -49,7 +49,7 @@ O dashboard inicial e somente leitura e mostra contagens agregadas:
 - E-mail nao e autorizacao administrativa; o UUID do usuario e a fonte estavel.
 - Senha, access token, refresh token, token de sessao e token hash nao devem aparecer em logs ou documentacao.
 - Todas as respostas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`.
-- POSTs administrativos validam `Origin`/`Referer`; `Origin: null` so passa com `Referer` same-origin ou `SITE_URL` valido.
+- POSTs administrativos validam `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
 - O dashboard da 13.1 nao carrega nem renderiza CPF, endereco, telefone, e-mail de cliente, `transaction_nsu` ou checkout URL.
 
 ## Limites da 13.1

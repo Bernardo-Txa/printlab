@@ -184,13 +184,13 @@ func TestValidMutationSourceAllowsConfiguredSiteURL(t *testing.T) {
 	}
 }
 
-func TestValidMutationSourceAllowsOpaqueOriginWithSameOriginReferer(t *testing.T) {
+func TestValidMutationSourceRejectsOpaqueOriginWithSameOriginReferer(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
 	req.Header.Set("Origin", "null")
 	req.Header.Set("Referer", "https://printlab.test/admin/login")
 
-	if !validMutationSource(req, "https://printlab.test") {
-		t.Fatal("expected opaque origin with same-origin referer to be allowed")
+	if validMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected opaque origin with same-origin referer to be rejected")
 	}
 }
 

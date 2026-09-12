@@ -106,18 +106,10 @@ func TestAdminLoginInvalidCredentialsShowsGenericMessageAndNoCookie(t *testing.T
 	}
 }
 
-func TestAdminLoginAllowsOpaqueOriginWithSameOriginReferer(t *testing.T) {
-	expiresAt := time.Now().Add(admindomain.SessionTTL)
-	service := &fakeAdminPanelService{
-		available: true,
-		loginResult: admindomain.LoginResult{
-			Token:     mustAdminToken(t),
-			ExpiresAt: expiresAt,
-		},
-	}
+func TestAdminLoginRejectsOpaqueOriginWithSameOriginReferer(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
-	form := url.Values{"email": {"admin@example.com"}, "password": {"correct-password"}}
-	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("email=admin@example.com&password=secret"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Origin", "null")
 	req.Header.Set("Referer", "https://printlab.test/admin/login")
@@ -125,11 +117,11 @@ func TestAdminLoginAllowsOpaqueOriginWithSameOriginReferer(t *testing.T) {
 
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("expected redirect, got %d", rec.Code)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
 	}
-	if !service.loginCalled {
-		t.Fatal("expected opaque same-origin login to call service")
+	if service.loginCalled {
+		t.Fatal("expected opaque login with referer not to call service")
 	}
 }
 

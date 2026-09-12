@@ -115,8 +115,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - `/pedido/{id}` passa a exibir link `Acompanhar pedido` usando `orders.public_tracking_id`, sem usar `orders.id` como URL de acompanhamento.
 - Criacao de pedido passa a inserir `order_fulfillment` na mesma transacao do pedido.
 - `/admin/login` fica indisponivel de forma segura quando configuracao Admin ou banco estao ausentes, sem impedir a loja publica de iniciar.
-- Paginas administrativas passam a usar `Referrer-Policy: same-origin`, preservando privacidade cross-origin e permitindo fallback seguro de `Referer` no login.
+- Paginas administrativas passam a usar `Referrer-Policy: same-origin`, preservando privacidade cross-origin sem impedir origem verificavel em submits administrativos same-origin.
 
 ### Fixed
 
-- `POST /admin/login` deixa de retornar 403 antes do Supabase Auth quando o navegador envia `Origin: null`; origins opacos agora exigem `Referer` permitido.
+- `POST /admin/login` deixa de induzir `Origin: null` em submits administrativos same-origin normais; origins opacos continuam rejeitados.

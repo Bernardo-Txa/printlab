@@ -179,8 +179,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - `admin_sessions` tem RLS habilitado e nenhuma policy publica.
 - Nao ha FK para `auth.users`; a autorizacao e feita no backend com o UUID retornado pelo Auth.
 - Cookie administrativo `printlab_admin_session` usa `HttpOnly`, `SameSite=Strict`, `Path=/admin`, host-only e `Secure` em producao ou quando `SITE_URL` usa HTTPS.
-- Todas as paginas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`, permitindo fallback seguro de `Referer` em submits same-origin sem vazar referrer para outros origins.
-- `POST /admin/login` e `POST /admin/logout` reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` so e aceito quando acompanhado de `Referer` permitido. `SameSite=Strict` e camada adicional, nao substituta.
+- Todas as paginas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`, preservando referrer apenas em navegacoes same-origin.
+- `POST /admin/login` e `POST /admin/logout` reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`. `SameSite=Strict` e camada adicional, nao substituta.
 - Logs administrativos podem registrar somente eventos genericos como login bem-sucedido, login falho, logout, sessao expirada e erro de repository.
 - Logs administrativos nao devem registrar e-mail, senha, token de sessao, token hash, access token, refresh token, publishable key, secret key, PII de clientes ou connection strings.
 - O dashboard da Fase 13.1 mostra apenas contagens agregadas e nao carrega CPF, endereco, telefone, e-mail de cliente, `transaction_nsu` ou checkout URL.
