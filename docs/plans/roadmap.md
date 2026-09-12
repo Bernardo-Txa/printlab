@@ -498,7 +498,7 @@ Principais entregas:
 - Logout administrativo.
 - Guard para `/admin` e `/admin/*`.
 - Dashboard inicial somente leitura com contagens agregadas.
-- Headers privados/noindex/no-referrer.
+- Headers privados/noindex e `Referrer-Policy: same-origin`.
 - Protecao `Origin`/`Referer` em POSTs administrativos.
 - Documentacao e ADR.
 

@@ -106,6 +106,51 @@ func TestAdminLoginInvalidCredentialsShowsGenericMessageAndNoCookie(t *testing.T
 	}
 }
 
+func TestAdminLoginAllowsOpaqueOriginWithSameOriginReferer(t *testing.T) {
+	expiresAt := time.Now().Add(admindomain.SessionTTL)
+	service := &fakeAdminPanelService{
+		available: true,
+		loginResult: admindomain.LoginResult{
+			Token:     mustAdminToken(t),
+			ExpiresAt: expiresAt,
+		},
+	}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	form := url.Values{"email": {"admin@example.com"}, "password": {"correct-password"}}
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "null")
+	req.Header.Set("Referer", "https://printlab.test/admin/login")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected redirect, got %d", rec.Code)
+	}
+	if !service.loginCalled {
+		t.Fatal("expected opaque same-origin login to call service")
+	}
+}
+
+func TestAdminLoginRejectsOpaqueOriginWithoutReferer(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("email=admin@example.com&password=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "null")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.loginCalled {
+		t.Fatal("expected opaque login without referer not to call service")
+	}
+}
+
 func TestAdminLoginRejectsCrossSiteOrigin(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -285,8 +330,8 @@ func assertAdminHeaders(t *testing.T, rec *httptest.ResponseRecorder) {
 	if robots := rec.Header().Get("X-Robots-Tag"); !strings.Contains(robots, "noindex") || !strings.Contains(robots, "nofollow") || !strings.Contains(robots, "noarchive") {
 		t.Fatalf("expected noindex robots header, got %q", robots)
 	}
-	if rec.Header().Get("Referrer-Policy") != "no-referrer" {
-		t.Fatalf("expected no-referrer policy, got %q", rec.Header().Get("Referrer-Policy"))
+	if rec.Header().Get("Referrer-Policy") != "same-origin" {
+		t.Fatalf("expected same-origin referrer policy, got %q", rec.Header().Get("Referrer-Policy"))
 	}
 }
 

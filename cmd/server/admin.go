@@ -136,5 +136,5 @@ func adminAvailable(service adminPanelService) bool {
 func setAdminPrivateHeaders(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", checkoutPrivateCacheControl)
 	w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive")
-	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Referrer-Policy", "same-origin")
 }

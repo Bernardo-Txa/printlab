@@ -256,6 +256,10 @@ func validMutationSource(r *http.Request, siteURL string) bool {
 	}
 
 	if origin := r.Header.Get("Origin"); origin != "" {
+		if strings.EqualFold(strings.TrimSpace(origin), "null") {
+			referer := r.Header.Get("Referer")
+			return referer != "" && allowedRequestSource(referer, r, siteURL)
+		}
 		return allowedRequestSource(origin, r, siteURL)
 	}
 

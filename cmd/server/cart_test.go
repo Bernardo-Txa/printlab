@@ -184,6 +184,35 @@ func TestValidMutationSourceAllowsConfiguredSiteURL(t *testing.T) {
 	}
 }
 
+func TestValidMutationSourceAllowsOpaqueOriginWithSameOriginReferer(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
+	req.Header.Set("Origin", "null")
+	req.Header.Set("Referer", "https://printlab.test/admin/login")
+
+	if !validMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected opaque origin with same-origin referer to be allowed")
+	}
+}
+
+func TestValidMutationSourceRejectsOpaqueOriginWithoutReferer(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
+	req.Header.Set("Origin", "null")
+
+	if validMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected opaque origin without referer to be rejected")
+	}
+}
+
+func TestValidMutationSourceRejectsOpaqueOriginWithCrossSiteReferer(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
+	req.Header.Set("Origin", "null")
+	req.Header.Set("Referer", "https://evil.example/admin/login")
+
+	if validMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected opaque origin with cross-site referer to be rejected")
+	}
+}
+
 func TestSecureCartCookiesForProductionRuntime(t *testing.T) {
 	if !secureCartCookies(config.Config{AppEnv: "production"}) {
 		t.Fatal("expected production APP_ENV to use secure cookies")

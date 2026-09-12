@@ -16,7 +16,7 @@ Criar a fundacao administrativa segura para `/admin` sem implementar CRUD, alter
 - Logout em `POST /admin/logout`.
 - Guard administrativo para `/admin` e `/admin/*`.
 - Dashboard inicial somente leitura com contagens agregadas de pedidos.
-- Headers privados/noindex/no-referrer em paginas administrativas.
+- Headers privados/noindex e `Referrer-Policy: same-origin` em paginas administrativas.
 - Protecao `Origin`/`Referer` em POSTs administrativos.
 - Migration `create_admin_sessions`.
 - Documentacao e ADR da decisao de autenticacao.

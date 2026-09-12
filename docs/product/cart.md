@@ -132,7 +132,7 @@ Se um produto que estava no carrinho sem variante passar a ter variantes ativas,
 
 Mutacoes do carrinho usam POST, cookie `SameSite=Lax` e validacao centralizada de `Origin`/`Referer`.
 
-Quando `Origin` esta presente, a origem precisa bater com o host da request ou com `SITE_URL`. Quando `Origin` esta ausente e `Referer` esta presente, o `Referer` e usado como fallback. Requests sem ambos sao aceitos para preservar compatibilidade com navegadores/proxies, apoiados pelo `SameSite=Lax`.
+Quando `Origin` esta presente, a origem precisa bater com o host da request ou com `SITE_URL`. O valor opaco `Origin: null` nao e tratado como origem confiavel; ele so passa quando houver `Referer` permitido. Quando `Origin` esta ausente e `Referer` esta presente, o `Referer` e usado como fallback. Requests sem ambos sao aceitos para preservar compatibilidade com navegadores/proxies, apoiados pelo `SameSite=Lax`.
 
 Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras.
 
