@@ -210,8 +210,54 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 								</form>
 							}
 						}
+						if page.TrackingURL != "" {
+							<a class="btn-base btn-secondary" href={ page.TrackingURL }>Acompanhar pedido</a>
+						}
 						<p>Use este numero apenas como referencia humana. O link do pedido usa o identificador seguro.</p>
 					</aside>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ OrderTracking(page ordersdomain.TrackingPage) {
+	@components.PrivateNoIndexLayout("Acompanhar pedido "+page.OrderNumberLabel+" | PrintLab", "Acompanhamento seguro do pedido PrintLab.") {
+		<section class="tracking-section">
+			@components.Container() {
+				<div class="tracking-heading">
+					<p class="brand-kicker">Acompanhamento</p>
+					<h1>Pedido { page.OrderNumberLabel }</h1>
+					<p>Status basico do pedido, sem dados pessoais ou informacoes internas de pagamento.</p>
+				</div>
+				<div class="tracking-overview" aria-label="Resumo do pedido">
+					<p>
+						<span>Pedido</span>
+						<strong>Pedido { page.OrderNumberLabel }</strong>
+					</p>
+					<p>
+						<span>Data do pedido</span>
+						<strong><time datetime={ page.CreatedAtISO }>{ page.CreatedAtLabel }</time></strong>
+					</p>
+					<p>
+						<span>Pagamento</span>
+						<strong>{ page.PaymentStatusLabel }</strong>
+					</p>
+					if page.ShippingServiceLabel != "" {
+						<p>
+							<span>Servico de envio</span>
+							<strong>{ page.ShippingServiceLabel }</strong>
+						</p>
+					}
+				</div>
+				<div class="tracking-steps" aria-label="Status do pedido">
+					for _, step := range page.Steps {
+						<article class="tracking-card">
+							<span>{ step.Title }</span>
+							<strong>{ step.StatusLabel }</strong>
+							<p>{ step.Description }</p>
+						</article>
+					}
 				</div>
 			}
 		</section>
@@ -229,6 +275,16 @@ templ PaymentReturn(page paymentsdomain.ReturnPage) {
 						<a class="btn-base btn-secondary" href={ "/pedido/" + page.OrderID }>Voltar ao pedido</a>
 					}
 				</div>
+			}
+		</section>
+	}
+}
+
+templ OrderTrackingUnavailable() {
+	@components.PrivateNoIndexLayout("Acompanhamento indisponivel | PrintLab", "Acompanhamento temporariamente indisponivel.") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Acompanhamento temporariamente indisponivel.", "Nao foi possivel carregar este acompanhamento agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}

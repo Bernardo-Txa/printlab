@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos e webhook InfinitePay IMPLEMENTADOS; admin PLANEJADO.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay e acompanhamento seguro IMPLEMENTADOS; admin PLANEJADO.
 
 ## Responsabilidade
 
@@ -26,6 +26,7 @@ Nesta fase, o backend implementa:
 - `POST /pedido/{id}/pagar` para iniciar ou reutilizar checkout hospedado InfinitePay.
 - `GET /pagamento/retorno` para validar retorno com `payment_check`.
 - `POST /webhooks/infinitepay` para receber webhook InfinitePay e confirmar por `payment_check`.
+- `GET /acompanhar/{public_tracking_id}` para acompanhamento seguro e minimizado do pedido.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -36,6 +37,7 @@ Nesta fase, o backend implementa:
 - `internal/customers` para dados temporarios de checkout, validacoes brasileiras e repository PostgreSQL transacional.
 - `internal/shipping` para perfis logisticos, caixas fisicas, cotacao SuperFrete, selecao de frete e repository PostgreSQL.
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
+- `internal/orders` tambem expoe a view minimizada de acompanhamento por `public_tracking_id`.
 - `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
 
 ## Limites
@@ -147,6 +149,8 @@ A revisao nao chama a SuperFrete. Ela recalcula o `input_hash` esperado para a s
 O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e receita de producao 3D. `order_item_filaments` preserva material, cor, peso e label sem depender de `materials`, `colors` ou `variant_filaments`.
 
 `GET /pedido/{id}` aceita somente UUID. A pagina mostra status humano, itens, frete e totais, mas nao exibe CPF completo, endereco completo, telefone ou e-mail completo.
+
+`GET /acompanhar/{public_tracking_id}` aceita somente UUID, consulta por `orders.public_tracking_id` e renderiza apenas numero humano, data, status de pagamento, status de producao, status de envio e transportadora/servico comercial quando houver. Identificador invalido e desconhecido retornam 404. A rota usa headers `private, no-store`, `noindex` e `no-referrer` e nao loga o tracking ID.
 
 ## Pagamentos
 

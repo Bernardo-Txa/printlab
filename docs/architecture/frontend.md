@@ -1,12 +1,12 @@
 # Frontend
 
-Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR e CTA real de pagamento IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
+Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR, CTA real de pagamento e acompanhamento seguro SSR IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
 
 ## Responsabilidade
 
 O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
 
-Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}` e a pagina de retorno de pagamento em `GET /pagamento/retorno` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
+Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno` e o acompanhamento em `GET /acompanhar/{public_tracking_id}` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
@@ -25,6 +25,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - A etapa de pagamento envia apenas POST para `/pedido/{id}/pagar`; checkout URL e validacao financeira pertencem ao backend.
 - A pagina de pedido nao deve exibir CPF completo, endereco completo, telefone ou e-mail completo.
 - A pagina de pedido nao deve exibir checkout URL, `transaction_nsu`, `invoice_slug` ou dados tecnicos da InfinitePay.
+- A pagina de acompanhamento nao deve exibir itens, produtos, valores, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, identificadores de pagamento, peso, dimensoes, filamento, material ou cor.
 - A revisao e a pagina de pedido nao devem exibir SKU interno, tempo de impressao, consumo de filamento, componentes de receita, materiais, cores, caixa fisica, peso ou dimensoes do pacote.
 - A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
 - O formulario de dados usa mascaras progressivas e consulta CEP por endpoint interno da aplicacao; sem JavaScript, o preenchimento manual continua funcionando.
@@ -48,6 +49,8 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir a etapa de revisao com resumo, links de edicao e POST tradicional, sem JavaScript obrigatorio.
 - Exibir pedido criado por UUID com CTA real `Pagar agora` apenas quando InfinitePay estiver configurada; caso contrario mostrar indisponibilidade segura.
 - Exibir pedido pago com `Pagamento confirmado`, sem botao de pagamento.
+- Exibir acompanhamento por `public_tracking_id` com tres cards de progresso: pagamento, producao e envio.
+- Incluir meta robots `noindex, nofollow, noarchive` nas paginas privadas/noindex.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
 - Priorizar imagens da variante selecionada no detalhe; quando nao existirem, usar imagens gerais do produto.
@@ -72,7 +75,7 @@ Templates de catalogo implementados:
 - `web/templates/checkout.templ` para etapa de dados, contato, entrega, mensagens de validacao e resumo compacto do carrinho.
 - `web/templates/shipping.templ` para etapa de frete, opcoes cotadas, estado indisponivel e resumo parcial.
 - `web/templates/order.templ` para revisao de checkout, criacao de pedido e pagina de pedido.
-- `web/templates/order.templ` tambem contem a pagina segura de retorno de pagamento.
+- `web/templates/order.templ` tambem contem a pagina segura de retorno de pagamento e acompanhamento de pedido.
 - `web/components/product_card.templ` para card reutilizavel, media de produto, galeria SSR e placeholder visual de produto.
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.

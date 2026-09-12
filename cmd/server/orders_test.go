@@ -20,6 +20,7 @@ import (
 )
 
 const orderID = "22222222-2222-2222-2222-222222222222"
+const trackingID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 func TestCheckoutReviewGetWithoutCartRedirectsToCart(t *testing.T) {
 	service := &fakeOrderReviewService{}
@@ -223,10 +224,13 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagar agora", "ambiente seguro da InfinitePay", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70"} {
+	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagar agora", "ambiente seguro da InfinitePay", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70", `href="/acompanhar/` + trackingID + `"`} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected order page to contain %q", expected)
 		}
+	}
+	if strings.Contains(body, `href="/acompanhar/`+orderID+`"`) {
+		t.Fatal("expected order tracking link not to use internal order ID")
 	}
 	for _, forbiddenPII := range []string{"52998224725", "***.***.***-25", "joao@example.com", "+5527999999999", "Rua Um", "29100-000"} {
 		if strings.Contains(body, forbiddenPII) {
@@ -322,6 +326,117 @@ func TestOrderPageMissingOrderReturnsNotFound(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
+
+func TestOrderTrackingPageWithValidIDReturnsOK(t *testing.T) {
+	service := &fakeOrderReviewService{trackingPage: trackingPageFixture()}
+	req := httptest.NewRequest(http.MethodGet, "/acompanhar/"+trackingID, nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	assertOrderTrackingHeaders(t, rec)
+	body := rec.Body.String()
+	for _, expected := range []string{
+		`<meta name="robots" content="noindex, nofollow, noarchive">`,
+		"Pedido #1004",
+		"Data do pedido",
+		"12/09/2026 14:30",
+		"Pagamento",
+		"Aguardando pagamento",
+		"Producao",
+		"Sera iniciada apos a confirmacao do pagamento",
+		"Envio",
+		"Sera preparado apos a producao",
+		"Correios - PAC",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected tracking page to contain %q", expected)
+		}
+	}
+	for _, leaked := range []string{
+		orderID,
+		"52998224725",
+		"***.***.***-25",
+		"joao@example.com",
+		"+5527999999999",
+		"Rua Um",
+		"29100-000",
+		"source_cart_id",
+		"transaction_nsu",
+		"invoice_slug",
+		"checkout_url",
+		"720",
+		"120",
+		"160",
+		"240",
+		"filamento",
+		"filament",
+		"PLA",
+		"Azul",
+		"Material",
+		"Cor principal",
+	} {
+		if strings.Contains(body, leaked) {
+			t.Fatalf("expected tracking page not to contain %q", leaked)
+		}
+	}
+	if service.lastTrackingID != trackingID {
+		t.Fatalf("expected tracking id passed to service, got %q", service.lastTrackingID)
+	}
+}
+
+func TestOrderTrackingInvalidUUIDReturnsNotFound(t *testing.T) {
+	service := &fakeOrderReviewService{}
+	req := httptest.NewRequest(http.MethodGet, "/acompanhar/1004", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+	assertOrderTrackingHeaders(t, rec)
+	if service.trackCalls != 0 {
+		t.Fatal("expected invalid tracking ID not to call order service")
+	}
+}
+
+func TestOrderTrackingUnknownIDReturnsNotFound(t *testing.T) {
+	service := &fakeOrderReviewService{trackErr: ordersdomain.ErrNotFound}
+	req := httptest.NewRequest(http.MethodGet, "/acompanhar/"+trackingID, nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
+	}
+	assertOrderTrackingHeaders(t, rec)
+	if service.trackCalls != 1 {
+		t.Fatalf("expected one tracking lookup, got %d", service.trackCalls)
+	}
+}
+
+func TestOrderTrackingPostMethodNotAllowed(t *testing.T) {
+	service := &fakeOrderReviewService{}
+	req := httptest.NewRequest(http.MethodPost, "/acompanhar/"+trackingID, nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, nil, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rec.Code)
+	}
+	if rec.Header().Get("Allow") != http.MethodGet {
+		t.Fatalf("expected Allow GET, got %q", rec.Header().Get("Allow"))
+	}
+	if service.trackCalls != 0 {
+		t.Fatal("expected POST not to call tracking service")
 	}
 }
 
@@ -874,6 +989,8 @@ func orderPageFixture() ordersdomain.OrderPage {
 	review := orderReviewPageFixture()
 	return ordersdomain.OrderPage{
 		ID:                  orderID,
+		PublicTrackingID:    trackingID,
+		TrackingURL:         "/acompanhar/" + trackingID,
 		OrderNumber:         1001,
 		OrderNumberLabel:    "#1001",
 		Status:              ordersdomain.StatusPendingPayment,
@@ -912,6 +1029,32 @@ func orderPageFixture() ordersdomain.OrderPage {
 	}
 }
 
+func trackingPageFixture() ordersdomain.TrackingPage {
+	return ordersdomain.TrackingPageFromRecord(ordersdomain.TrackingRecord{
+		OrderNumber:      1004,
+		Status:           ordersdomain.StatusPendingPayment,
+		CreatedAt:        time.Date(2026, 9, 12, 14, 30, 0, 0, time.UTC),
+		ProductionStatus: ordersdomain.ProductionStatusWaiting,
+		ShippingStatus:   ordersdomain.ShippingStatusWaiting,
+		ServiceName:      "PAC",
+		CarrierName:      "Correios",
+	})
+}
+
+func assertOrderTrackingHeaders(t *testing.T, rec *httptest.ResponseRecorder) {
+	t.Helper()
+
+	if rec.Header().Get("Cache-Control") != checkoutPrivateCacheControl {
+		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
+	}
+	if robots := rec.Header().Get("X-Robots-Tag"); !strings.Contains(robots, "noindex") || !strings.Contains(robots, "nofollow") || !strings.Contains(robots, "noarchive") {
+		t.Fatalf("expected noindex robots header, got %q", robots)
+	}
+	if rec.Header().Get("Referrer-Policy") != "no-referrer" {
+		t.Fatalf("expected no-referrer policy, got %q", rec.Header().Get("Referrer-Policy"))
+	}
+}
+
 func newTestHandlerWithOrders(t *testing.T, service orderReviewService, cookies *cartdomain.CookieManager, siteURL string) http.Handler {
 	t.Helper()
 
@@ -936,17 +1079,21 @@ type fakeOrderReviewService struct {
 	reviewPage    ordersdomain.ReviewPage
 	confirmResult ordersdomain.ConfirmResult
 	orderPage     ordersdomain.OrderPage
+	trackingPage  ordersdomain.TrackingPage
 	reviewErr     error
 	confirmErr    error
 	getErr        error
+	trackErr      error
 
 	reviewCalls  int
 	confirmCalls int
 	getCalls     int
+	trackCalls   int
 
 	lastStale       bool
 	lastFingerprint string
 	lastOrderID     string
+	lastTrackingID  string
 }
 
 func (s *fakeOrderReviewService) Review(_ context.Context, _ []byte, stale bool) (ordersdomain.ReviewPage, error) {
@@ -977,6 +1124,16 @@ func (s *fakeOrderReviewService) Get(_ context.Context, orderID string) (ordersd
 	}
 
 	return s.orderPage, nil
+}
+
+func (s *fakeOrderReviewService) Track(_ context.Context, trackingID string) (ordersdomain.TrackingPage, error) {
+	s.trackCalls++
+	s.lastTrackingID = trackingID
+	if s.trackErr != nil {
+		return ordersdomain.TrackingPage{}, s.trackErr
+	}
+
+	return s.trackingPage, nil
 }
 
 var _ orderReviewService = (*fakeOrderReviewService)(nil)

@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bernardo-Txa/printlab/internal/products"
 	"github.com/Bernardo-Txa/printlab/internal/shipping"
@@ -205,11 +206,63 @@ func StatusLabel(status string) string {
 	return "Status indisponivel"
 }
 
+func TrackingPageFromRecord(record TrackingRecord) TrackingPage {
+	page := TrackingPage{
+		OrderNumber:           record.OrderNumber,
+		OrderNumberLabel:      OrderNumberLabel(record.OrderNumber),
+		CreatedAt:             record.CreatedAt,
+		CreatedAtLabel:        formatOrderDate(record.CreatedAt),
+		CreatedAtISO:          record.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		PaymentStatus:         record.Status,
+		PaymentStatusLabel:    StatusLabel(record.Status),
+		ProductionStatus:      record.ProductionStatus,
+		ProductionStatusLabel: productionTrackingLabel(record.Status, record.ProductionStatus),
+		ShippingStatus:        record.ShippingStatus,
+		ShippingStatusLabel:   shippingTrackingLabel(record.Status, record.ProductionStatus, record.ShippingStatus),
+		ShippingServiceLabel:  shippingServiceLabel(record.CarrierName, record.ServiceName),
+	}
+	page.Steps = []TrackingStep{
+		{
+			Title:       "Pagamento",
+			StatusLabel: page.PaymentStatusLabel,
+			Description: "Status financeiro validado pelo servidor da PrintLab.",
+		},
+		{
+			Title:       "Producao",
+			StatusLabel: page.ProductionStatusLabel,
+			Description: "Status operacional resumido do preparo do pedido.",
+		},
+		{
+			Title:       "Envio",
+			StatusLabel: page.ShippingStatusLabel,
+			Description: "Acompanhamento basico da etapa de envio.",
+		},
+	}
+
+	return page
+}
+
 func OrderNumberLabel(orderNumber int64) string {
 	return "#" + strconv.FormatInt(orderNumber, 10)
 }
 
+func TrackingPath(trackingID string) string {
+	if !ValidTrackingID(trackingID) {
+		return ""
+	}
+
+	return "/acompanhar/" + strings.ToLower(trackingID)
+}
+
 func ValidOrderID(value string) bool {
+	return validUUID(value)
+}
+
+func ValidTrackingID(value string) bool {
+	return validUUID(value)
+}
+
+func validUUID(value string) bool {
 	if len(value) != 36 {
 		return false
 	}
@@ -228,6 +281,70 @@ func ValidOrderID(value string) bool {
 	}
 
 	return true
+}
+
+func productionTrackingLabel(paymentStatus string, productionStatus string) string {
+	if paymentStatus == StatusPendingPayment && productionStatus == ProductionStatusWaiting {
+		return "Sera iniciada apos a confirmacao do pagamento"
+	}
+
+	switch productionStatus {
+	case ProductionStatusWaiting:
+		return "Aguardando producao"
+	case ProductionStatusInProduction:
+		return "Em producao"
+	case ProductionStatusCompleted:
+		return "Producao concluida"
+	}
+
+	return "Status indisponivel"
+}
+
+func shippingTrackingLabel(paymentStatus string, productionStatus string, shippingStatus string) string {
+	switch shippingStatus {
+	case ShippingStatusPreparing:
+		return "Preparando envio"
+	case ShippingStatusShipped:
+		return "Enviado"
+	case ShippingStatusDelivered:
+		return "Entregue"
+	}
+
+	if paymentStatus == StatusPendingPayment && productionStatus == ProductionStatusWaiting {
+		return "Sera preparado apos a producao"
+	}
+
+	switch productionStatus {
+	case ProductionStatusWaiting:
+		return "Aguardando producao"
+	case ProductionStatusInProduction:
+		return "Aguardando conclusao da producao"
+	case ProductionStatusCompleted:
+		return "Aguardando preparacao do envio"
+	}
+
+	return "Status indisponivel"
+}
+
+func shippingServiceLabel(carrierName string, serviceName string) string {
+	carrierName = strings.TrimSpace(carrierName)
+	serviceName = strings.TrimSpace(serviceName)
+	switch {
+	case carrierName != "" && serviceName != "":
+		return carrierName + " - " + serviceName
+	case carrierName != "":
+		return carrierName
+	default:
+		return serviceName
+	}
+}
+
+func formatOrderDate(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+
+	return value.Format("02/01/2006 15:04")
 }
 
 func prepareAddress(address ReviewAddress) ReviewAddress {

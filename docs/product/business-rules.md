@@ -163,8 +163,21 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - `paid_amount` pode divergir de `amount` e e persistido sem ser usado para validar o total do pedido.
 - Redirect, query string, `receipt_url` e `capture_method` do navegador nao confirmam pagamento.
 - Checkout abandonado, retorno/webhook com `paid=false` ou falha de API mantem o pedido pendente.
-- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
+
+## Acompanhamento de pedido implementado
+
+- Todo pedido possui `orders.public_tracking_id` UUID aleatorio, unico e obrigatorio.
+- `/acompanhar/{public_tracking_id}` usa o identificador publico aleatorio, nao `orders.id` nem `order_number`.
+- `order_number` continua sendo apenas referencia humana.
+- UUID invalido e UUID desconhecido retornam 404.
+- A pagina de acompanhamento nao mostra itens, produtos, valores, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, `transaction_nsu`, `invoice_slug`, checkout URL, peso, dimensoes, filamento, material ou cor.
+- Acompanhamento mostra somente numero humano do pedido, data, status de pagamento, status de producao, status de envio e transportadora/servico comercial quando houver.
+- Respostas de acompanhamento usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: no-referrer`.
+- O HTML de acompanhamento usa meta robots `noindex, nofollow, noarchive`.
+- Logs nao devem registrar `public_tracking_id`.
+- Nao ha endpoint publico para alterar status de producao ou envio.
 
 ## Producao 3D
 

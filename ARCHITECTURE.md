@@ -21,6 +21,7 @@ IMPLEMENTADO:
 - Inicio de pagamento InfinitePay em `POST /pedido/{id}/pagar`.
 - Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
+- Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -45,7 +46,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Painel administrativo e acompanhamento de pedido.
+- Painel administrativo.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -252,6 +253,7 @@ GET /pedido/{id} -> exibe pedido por UUID com status humano e sem PII completa
 POST /pedido/{id}/pagar -> cria ou reutiliza checkout InfinitePay e redireciona 303 para checkout hospedado
 GET /pagamento/retorno -> valida payment_check; pago redireciona 303 para /pedido/{uuid}?pagamento=confirmado
 POST /webhooks/infinitepay -> valida identificadores, chama payment_check e responde JSON
+GET /acompanhar/{public_tracking_id} -> acompanhamento SSR minimizado, sem PII, valores ou IDs internos
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 

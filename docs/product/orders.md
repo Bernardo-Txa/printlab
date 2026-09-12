@@ -1,6 +1,6 @@
 # Pedidos
 
-Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY E WEBHOOK CONCLUIDOS.
+Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY, WEBHOOK E ACOMPANHAMENTO SEGURO CONCLUIDOS.
 
 Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. O pedido e criado antes do pagamento, nasce com status `pending_payment` e pode mudar para `paid` somente apos validacao server-side com a InfinitePay.
 
@@ -16,6 +16,7 @@ Carrinho
   -> Pagar agora
   -> InfinitePay
   -> Retorno ou webhook validado server-side
+  -> Acompanhamento seguro
 ```
 
 Rotas:
@@ -26,8 +27,11 @@ Rotas:
 - `POST /pedido/{id}/pagar`: cria ou reutiliza checkout InfinitePay e redireciona para o ambiente hospedado.
 - `GET /pagamento/retorno`: valida retorno com `payment_check` server-side.
 - `POST /webhooks/infinitepay`: valida webhook com `payment_check` server-side.
+- `GET /acompanhar/{public_tracking_id}`: acompanhamento seguro e minimizado do pedido.
 
 `/pedido/{id}` aceita somente UUID. `order_number` e sequencial e apropriado para referencia humana, como `#1001`, mas nao e mecanismo de autorizacao.
+
+`/acompanhar/{public_tracking_id}` aceita somente UUID aleatorio persistido em `orders.public_tracking_id`. Identificador invalido ou desconhecido retorna 404.
 
 ## Snapshot historico
 
@@ -95,7 +99,7 @@ Algumas informações da sua compra foram atualizadas. Revise os dados antes de 
 - resolve o carrinho por cookie;
 - faz lock do carrinho com `SELECT ... FOR UPDATE`;
 - revalida disponibilidade, dados, frete, `input_hash` e fingerprint;
-- insere `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_items` e `order_item_filaments`;
+- insere `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_fulfillment`, `order_items` e `order_item_filaments`;
 - marca `carts.converted_at`;
 - remove `cart_items`, `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections`;
 - faz `COMMIT`;
@@ -103,6 +107,8 @@ Algumas informações da sua compra foram atualizadas. Revise os dados antes de 
 - redireciona 303 para `/pedido/{uuid}`.
 
 Se qualquer insert ou validacao falhar, a transacao faz rollback e nao persiste pedido parcial.
+
+`order_fulfillment` nasce junto do pedido com `production_status = 'waiting'` e `shipping_status = 'waiting'`.
 
 ## Idempotencia
 
@@ -134,6 +140,36 @@ Quando o pedido esta `paid`, `/pedido/{id}` mostra `Pagamento confirmado` e nao 
 
 Checkout URL, `transaction_nsu`, `invoice_slug` e detalhes tecnicos do provedor nao sao renderizados na pagina publica.
 
+## Acompanhamento seguro
+
+`GET /acompanhar/{public_tracking_id}` e uma pagina SSR sem JavaScript obrigatorio. Ela usa `public_tracking_id`, nao `orders.id` nem `order_number`, e trata o link como capability URL.
+
+A view model publica contem somente:
+
+- `order_number`;
+- data do pedido;
+- status de pagamento;
+- status de producao;
+- status de envio;
+- transportadora/servico comercial quando houver.
+
+A pagina nao exibe itens, produtos, valores, frete pago, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, `transaction_nsu`, `invoice_slug`, checkout URL, peso, dimensoes, filamento, material ou cor.
+
+Headers da resposta:
+
+- `Cache-Control: private, no-store`;
+- `X-Robots-Tag: noindex, nofollow, noarchive`;
+- `Referrer-Policy: no-referrer`.
+
+O HTML tambem inclui meta robots `noindex, nofollow, noarchive`.
+
+Status operacionais:
+
+- producao: `waiting`, `in_production`, `completed`;
+- envio: `waiting`, `preparing`, `shipped`, `delivered`.
+
+Enquanto producao nao estiver `completed`, o banco impede envio diferente de `waiting`.
+
 ## Pagamento
 
 `order_payments.order_nsu` e derivado do UUID canonico do pedido. Ele nao contem PII e nao deve ser tratado como mecanismo de autorizacao.
@@ -159,6 +195,8 @@ Validacao real em producao confirmou pagamento Pix com webhook: novo checkout co
 
 O pedido preserva PII necessaria para operacao futura, mas a rota `/pedido/{id}` nao exibe CPF completo, endereco completo, telefone ou e-mail completo. Como UUID de pedido nao e autenticacao forte, a pagina publica mostra somente resumo do pedido, itens, frete, valores e status humano.
 
+O acompanhamento por `/acompanhar/{public_tracking_id}` e ainda mais restrito: nao mostra itens nem valores, apenas status basico.
+
 Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pessoais. Logs podem registrar pedido criado, UUID, `order_number`, status e conversao de carrinho; nao devem registrar CPF, e-mail, telefone, endereco ou token do carrinho.
 
 ## Limites
@@ -167,4 +205,5 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 - Recebimento real de webhook InfinitePay e confirmacao sem redirect foram validados em producao.
 - Nao ha etiqueta, postagem ou rastreio.
 - Nao ha painel administrativo.
+- Nao ha endpoint publico para alterar producao ou envio.
 - O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.

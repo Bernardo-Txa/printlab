@@ -48,11 +48,12 @@ IMPLEMENTADO:
 - Fase 9.1 — Interface publica de pedidos separada de dados operacionais preservados internamente.
 - Fase 10 — Pagamentos InfinitePay, com checkout hospedado server-side e validacao real concluida.
 - Fase 11 — Webhooks InfinitePay concluida, com validacao real em producao e pagamento confirmado sem redirect do comprador.
+- Fase 12 — Acompanhamento Seguro do Pedido, com `public_tracking_id`, rota `/acompanhar/{uuid}` e pagina SSR minimizada.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Acompanhamento de pedido e painel administrativo.
+- Painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
 Este projeto ainda esta em desenvolvimento e nao deve ser usado em operacao comercial.
@@ -88,7 +89,7 @@ Frontend implementado:
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
-- Etapa de revisao e pagina de pedido renderizadas no servidor, sem JavaScript obrigatorio e sem expor dados operacionais de producao ou embalagem ao comprador.
+- Etapa de revisao, pagina de pedido e acompanhamento seguro renderizados no servidor, sem JavaScript obrigatorio e sem expor dados operacionais de producao ou embalagem ao comprador.
 
 Banco planejado:
 
@@ -127,7 +128,9 @@ Banco implementado:
 - `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_items` e `order_item_filaments` guardam snapshots historicos de pedido.
 - Pedidos criados pelo checkout nascem com status `pending_payment` e moeda `BRL`.
 - `order_payments` guarda pagamento InfinitePay 1:1 por pedido, com status `pending` ou `paid`.
-- `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID.
+- `order_fulfillment` guarda status operacional 1:1 de producao e envio do pedido.
+- `orders.public_tracking_id` e UUID aleatorio unico para `/acompanhar/{uuid}`.
+- `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID interno e acompanhamento usa `public_tracking_id`.
 - RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete e pedidos sem policies publicas do Data API.
 
 Infraestrutura planejada:
@@ -315,9 +318,12 @@ Revisao e pedido:
 ```sh
 curl -i http://localhost:8080/checkout/revisao
 curl -i http://localhost:8080/pedido/<uuid-do-pedido>
+curl -i http://localhost:8080/acompanhar/<public_tracking_id>
 ```
 
 Sem carrinho valido, a revisao redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`. Sem frete valido, expirado ou com `input_hash` divergente, redireciona para `/checkout/frete`. Pedido criado usa UUID na URL, status `pending_payment` e pagina sem CPF completo, endereco completo, telefone ou e-mail completo.
+
+`/acompanhar/<public_tracking_id>` usa o UUID publico aleatorio do pedido, retorna 404 para identificador invalido/desconhecido, envia headers `private, no-store`, `noindex` e `no-referrer`, e mostra apenas numero humano, data, pagamento, producao, envio e transportadora/servico comercial quando disponivel.
 
 Pagamento:
 

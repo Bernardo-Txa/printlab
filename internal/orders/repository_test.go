@@ -25,6 +25,7 @@ func TestRepositoryConfirmUsesTransactionLockAndCleanup(t *testing.T) {
 		"insertOrderCustomer(ctx, tx",
 		"insertOrderAddress(ctx, tx",
 		"insertOrderShipping(ctx, tx",
+		"insertOrderFulfillment(ctx, tx",
 		"insertOrderItems(ctx, tx",
 		"convertCart(ctx, tx",
 		"clearTemporaryCartData(ctx, tx",
@@ -57,6 +58,7 @@ func TestRepositorySnapshotsAndClearsTemporaryCheckoutData(t *testing.T) {
 		"insert into public.order_customer_details",
 		"insert into public.order_shipping_addresses",
 		"insert into public.order_shipping_details",
+		"insert into public.order_fulfillment",
 		"insert into public.order_items",
 		"unit_print_time_minutes",
 		"unit_estimated_filament_weight_mg",
@@ -72,6 +74,54 @@ func TestRepositorySnapshotsAndClearsTemporaryCheckoutData(t *testing.T) {
 	} {
 		if !strings.Contains(sql, expected) {
 			t.Fatalf("expected repository source to contain %q", expected)
+		}
+	}
+}
+
+func TestRepositoryTrackingQueryUsesPublicIdentifierAndMinimalProjection(t *testing.T) {
+	source, err := os.ReadFile("repository.go")
+	if err != nil {
+		t.Fatalf("expected repository source to be readable, got %v", err)
+	}
+
+	trackSource, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) Track")
+	if !ok {
+		t.Fatal("expected Track to exist")
+	}
+	sql := strings.ToLower(trackSource)
+
+	for _, expected := range []string{
+		"where o.public_tracking_id = $1::uuid",
+		"join public.order_fulfillment",
+		"join public.order_shipping_details",
+		"o.order_number",
+		"o.status",
+		"o.created_at",
+		"fulfillment.production_status",
+		"fulfillment.shipping_status",
+		"shipping.service_name",
+		"shipping.carrier_name",
+	} {
+		if !strings.Contains(sql, expected) {
+			t.Fatalf("expected Track source to contain %q", expected)
+		}
+	}
+
+	for _, forbidden := range []string{
+		"select *",
+		"order_customer_details",
+		"order_shipping_addresses",
+		"order_items",
+		"order_item_filaments",
+		"order_payments",
+		"checkout_url",
+		"transaction_nsu",
+		"invoice_slug",
+		"public_tracking_id,",
+		"o.id::text",
+	} {
+		if strings.Contains(sql, forbidden) {
+			t.Fatalf("expected Track source not to contain %q", forbidden)
 		}
 	}
 }

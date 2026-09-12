@@ -17,6 +17,7 @@ type orderReviewService interface {
 	Review(ctx context.Context, tokenHash []byte, stale bool) (ordersdomain.ReviewPage, error)
 	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string) (ordersdomain.ConfirmResult, error)
 	Get(ctx context.Context, orderID string) (ordersdomain.OrderPage, error)
+	Track(ctx context.Context, trackingID string) (ordersdomain.TrackingPage, error)
 }
 
 func checkoutReviewPageHandler(service orderReviewService, cookies *cartdomain.CookieManager) http.HandlerFunc {
@@ -105,6 +106,37 @@ func orderPageHandler(service orderReviewService, payment paymentService) http.H
 	}
 }
 
+func orderTrackingPageHandler(service orderReviewService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		setOrderTrackingHeaders(w)
+
+		trackingID := r.PathValue("tracking_id")
+		if !ordersdomain.ValidTrackingID(trackingID) {
+			http.NotFound(w, r)
+			return
+		}
+
+		if service == nil {
+			renderHTML(w, r, http.StatusServiceUnavailable, templates.OrderTrackingUnavailable())
+			return
+		}
+
+		page, err := service.Track(r.Context(), trackingID)
+		if err != nil {
+			handleOrderTrackingPageError(w, r, err)
+			return
+		}
+
+		renderHTML(w, r, http.StatusOK, templates.OrderTracking(page))
+	}
+}
+
+func setOrderTrackingHeaders(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", checkoutPrivateCacheControl)
+	w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+}
+
 func orderPaymentView(page ordersdomain.OrderPage, service paymentService, paymentQuery string) paymentsdomain.OrderPaymentView {
 	view := paymentsdomain.OrderPaymentView{}
 	if page.Status == ordersdomain.StatusPaid {
@@ -159,5 +191,17 @@ func handleOrderPageError(w http.ResponseWriter, r *http.Request, err error) {
 	default:
 		log.Print("order page unavailable")
 		renderHTML(w, r, http.StatusServiceUnavailable, templates.OrderUnavailable())
+	}
+}
+
+func handleOrderTrackingPageError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, ordersdomain.ErrInvalidTrackingID),
+		errors.Is(err, ordersdomain.ErrNotFound):
+		log.Print("order tracking not found")
+		http.NotFound(w, r)
+	default:
+		log.Print("order tracking unavailable")
+		renderHTML(w, r, http.StatusServiceUnavailable, templates.OrderTrackingUnavailable())
 	}
 }

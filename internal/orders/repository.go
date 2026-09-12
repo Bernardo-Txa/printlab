@@ -107,6 +107,9 @@ func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expe
 	if err := r.insertOrderShipping(ctx, tx, orderID, page.Shipping); err != nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
+	if err := r.insertOrderFulfillment(ctx, tx, orderID); err != nil {
+		return ConfirmResult{}, ErrUnavailable
+	}
 	if err := r.insertOrderItems(ctx, tx, orderID, page.Items); err != nil {
 		return ConfirmResult{}, err
 	}
@@ -143,6 +146,7 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 	err := r.pool.QueryRow(ctx, `
 		select
 			id::text,
+			public_tracking_id::text,
 			order_number,
 			status,
 			products_subtotal_cents,
@@ -153,6 +157,7 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 		where id = $1::uuid
 	`, orderID).Scan(
 		&page.ID,
+		&page.PublicTrackingID,
 		&page.OrderNumber,
 		&page.Status,
 		&productsSubtotalCents,
@@ -170,6 +175,7 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 
 	page.OrderNumberLabel = OrderNumberLabel(page.OrderNumber)
 	page.StatusLabel = StatusLabel(page.Status)
+	page.TrackingURL = TrackingPath(page.PublicTrackingID)
 	page.ProductsSubtotalBRL = products.FormatBRL(productsSubtotalCents)
 	page.ShippingPriceBRL = products.FormatBRL(shippingPriceCents)
 	page.TotalBRL = products.FormatBRL(totalCents)
@@ -187,6 +193,51 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 	page.Shipping = shippingDetails
 
 	return page, nil
+}
+
+func (r *PostgresRepository) Track(ctx context.Context, trackingID string) (TrackingPage, error) {
+	if r == nil || r.pool == nil {
+		return TrackingPage{}, ErrUnavailable
+	}
+
+	var record TrackingRecord
+	var carrierName pgtype.Text
+	err := r.pool.QueryRow(ctx, `
+		select
+			o.order_number,
+			o.status,
+			o.created_at,
+			fulfillment.production_status,
+			fulfillment.shipping_status,
+			shipping.service_name,
+			shipping.carrier_name
+		from public.orders o
+		join public.order_fulfillment fulfillment
+			on fulfillment.order_id = o.id
+		join public.order_shipping_details shipping
+			on shipping.order_id = o.id
+		where o.public_tracking_id = $1::uuid
+	`, trackingID).Scan(
+		&record.OrderNumber,
+		&record.Status,
+		&record.CreatedAt,
+		&record.ProductionStatus,
+		&record.ShippingStatus,
+		&record.ServiceName,
+		&carrierName,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return TrackingPage{}, ErrNotFound
+		}
+
+		return TrackingPage{}, ErrUnavailable
+	}
+	if carrierName.Valid {
+		record.CarrierName = carrierName.String
+	}
+
+	return TrackingPageFromRecord(record), nil
 }
 
 type cartLock struct {
@@ -839,6 +890,17 @@ func (r *PostgresRepository) insertOrderShipping(ctx context.Context, q queryer,
 			$12
 		)
 	`, orderID, details.Provider, details.ServiceCode, details.ServiceName, textOrNil(details.CarrierName), intOrNil(details.DeliveryTimeDays), details.ShippingBoxName, details.PackageWeightG, details.PackageHeightMM, details.PackageWidthMM, details.PackageLengthMM, timeOrNil(details.QuotedAt))
+	return err
+}
+
+func (r *PostgresRepository) insertOrderFulfillment(ctx context.Context, q queryer, orderID string) error {
+	_, err := q.Exec(ctx, `
+		insert into public.order_fulfillment (
+			order_id
+		) values (
+			$1::uuid
+		)
+	`, orderID)
 	return err
 }
 

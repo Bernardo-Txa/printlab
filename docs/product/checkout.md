@@ -1,6 +1,6 @@
 # Checkout
 
-Status: etapas de dados, frete, revisao, criacao de pedido e inicio de pagamento IMPLEMENTADAS; validacao real InfinitePay pendente.
+Status: etapas de dados, frete, revisao, criacao de pedido, pagamento InfinitePay e webhook redundante IMPLEMENTADOS e validados.
 
 O checkout transforma uma intencao de compra em pedido pendente de pagamento, com validacao server-side de produtos, endereco e frete. A etapa de pagamento usa checkout hospedado InfinitePay iniciado pelo backend.
 
@@ -147,7 +147,7 @@ A etapa de pagamento e iniciada pela pagina publica do pedido.
 - monta payload somente a partir do snapshot historico do pedido;
 - compara o total interno do payload com `orders.total_cents`;
 - cria ou reutiliza registro `order_payments`;
-- redireciona 303 para `https://checkout.infinitepay.com.br/...`.
+- redireciona 303 somente para checkout URL `https` em host autorizado da InfinitePay (`checkout.infinitepay.io` ou `checkout.infinitepay.com.br`).
 
 Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilidade segura e nao exibe botao falso.
 
@@ -171,5 +171,5 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 
 - Link real InfinitePay e pagamento real foram validados antes da Fase 11.
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
-- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Nao ha painel administrativo.

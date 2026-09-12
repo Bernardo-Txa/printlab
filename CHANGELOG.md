@@ -73,6 +73,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration `allow_current_infinitepay_checkout_host`, alinhando a constraint `order_payments_checkout_url_host` aos hosts `checkout.infinitepay.io` e `checkout.infinitepay.com.br` aceitos pelo dominio Go.
 - Fase 11 — Webhook InfinitePay concluida, com `webhook_url` no checkout, endpoint `POST /webhooks/infinitepay`, confirmacao por `payment_check` server-side, idempotencia, logs seguros sem PII e validacao real em producao com pagamento Pix sem redirect do comprador.
 - ADR-0011 — Confirmacao redundante de pagamentos InfinitePay.
+- Fase 12 — Acompanhamento Seguro do Pedido, com `public_tracking_id`, `order_fulfillment`, rota `GET /acompanhar/{public_tracking_id}` e pagina SSR minimizada.
+- Migration `add_order_tracking_and_fulfillment`, adicionando UUID publico de acompanhamento, backfill para pedidos existentes e status 1:1 de producao/envio.
+- ADR-0012 — Acompanhamento publico por identificador aleatorio.
+- Documentacao `docs/product/order-tracking.md` para capability URL, minimizacao de dados, headers privados/noindex e regras de status.
 
 ### Changed
 
@@ -104,3 +108,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Revisao e pagina publica de pedido deixam de exibir SKU interno, dados de producao 3D e dados de embalagem fisica, preservando essas informacoes internamente.
 - Pagina publica de pedido passa a exibir CTA real de pagamento quando InfinitePay esta configurada e `Pagamento confirmado` quando o pedido esta `paid`.
 - Validacao de checkout URL da InfinitePay passa a aceitar por allowlist explicita `checkout.infinitepay.io` e `checkout.infinitepay.com.br`, mantendo rejeicao de HTTP, wildcard, subdominios e sufixos parecidos.
+- `/pedido/{id}` passa a exibir link `Acompanhar pedido` usando `orders.public_tracking_id`, sem usar `orders.id` como URL de acompanhamento.
+- Criacao de pedido passa a inserir `order_fulfillment` na mesma transacao do pedido.

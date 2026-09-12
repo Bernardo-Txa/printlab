@@ -40,3 +40,5 @@ Data:
 - [ADR-0008 — Selecao de embalagem fisica para frete](0008-selecao-de-embalagem-fisica-para-frete.md)
 - [ADR-0009 — Pedidos como snapshots imutaveis do checkout](0009-pedidos-como-snapshots-imutaveis-do-checkout.md)
 - [ADR-0010 — Pagamento hospedado via InfinitePay](0010-pagamento-hospedado-via-infinitepay.md)
+- [ADR-0011 — Confirmacao redundante de pagamentos InfinitePay](0011-confirmacao-redundante-pagamentos-infinitepay.md)
+- [ADR-0012 — Acompanhamento publico por identificador aleatorio](0012-acompanhamento-publico-por-identificador-aleatorio.md)

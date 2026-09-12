@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos e inicio de pagamento InfinitePay IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook e acompanhamento seguro IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -40,12 +40,7 @@ Na integracao InfinitePay implementada, `POST /pedido/{id}/pagar` valida origem,
 
 `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` para chamar `payment_check` server-side. Query params como `receipt_url` e `capture_method` nao sao fonte de autoridade.
 
-Webhooks deverao futuramente possuir:
-
-- validacao;
-- idempotencia;
-- protecao contra processamento duplicado;
-- logs adequados.
+Webhooks InfinitePay sao apenas gatilho para `payment_check` server-side e nao confirmam pagamento diretamente pelo payload recebido.
 
 ## Secrets
 
@@ -151,7 +146,22 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - A rota publica `/pedido/{id}` aceita somente UUID e nao deve expor pedido por `order_number`.
 - `order_number` nao e mecanismo de autorizacao.
 - A pagina publica de pedido nao deve renderizar CPF completo, endereco completo, telefone ou e-mail completo.
+- A pagina publica de pedido pode renderizar link `Acompanhar pedido`, mas esse link deve usar `orders.public_tracking_id`, nunca `orders.id` nem `order_number`.
 - Logs de pedido podem conter UUID, `order_number`, status e conversao de carrinho; nao devem conter CPF, e-mail, telefone, endereco ou token de carrinho.
+
+## Acompanhamento de pedido
+
+- `/acompanhar/{public_tracking_id}` trata o link como capability URL.
+- `public_tracking_id` e UUID aleatorio persistido, unico e obrigatorio.
+- `public_tracking_id` nao substitui autenticacao e nao deve ser logado.
+- UUID invalido e UUID desconhecido retornam 404.
+- A consulta usa `orders.public_tracking_id` e lista colunas explicitamente.
+- A view publica nao deve conter CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, `transaction_nsu`, `invoice_slug`, checkout URL, itens, produtos, valores, peso, dimensoes, filamento, material ou cor.
+- A resposta usa `Cache-Control: private, no-store`.
+- A resposta usa `X-Robots-Tag: noindex, nofollow, noarchive`.
+- O HTML usa meta robots `noindex, nofollow, noarchive`.
+- A resposta usa `Referrer-Policy: no-referrer`.
+- Nao existe endpoint publico de mutacao de producao ou envio.
 
 ## Pagamentos InfinitePay
 
@@ -173,7 +183,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
-- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
+- Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
 - Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.

@@ -10,21 +10,31 @@ const (
 	StatusPaid           = "paid"
 	CurrencyBRL          = "BRL"
 	StaleReviewMessage   = "Algumas informações da sua compra foram atualizadas. Revise os dados antes de confirmar."
+
+	ProductionStatusWaiting      = "waiting"
+	ProductionStatusInProduction = "in_production"
+	ProductionStatusCompleted    = "completed"
+
+	ShippingStatusWaiting   = "waiting"
+	ShippingStatusPreparing = "preparing"
+	ShippingStatusShipped   = "shipped"
+	ShippingStatusDelivered = "delivered"
 )
 
 var (
-	ErrCartRequired     = errors.New("order cart required")
-	ErrEmptyCart        = errors.New("order cart empty")
-	ErrUnavailableItems = errors.New("order cart has unavailable items")
-	ErrDetailsRequired  = errors.New("order checkout details required")
-	ErrShippingRequired = errors.New("order shipping required")
-	ErrShippingExpired  = errors.New("order shipping expired")
-	ErrShippingChanged  = errors.New("order shipping changed")
-	ErrStaleReview      = errors.New("order review stale")
-	ErrInvalidOrderID   = errors.New("invalid order id")
-	ErrNotFound         = errors.New("order not found")
-	ErrAmountOverflow   = errors.New("order amount overflow")
-	ErrUnavailable      = errors.New("orders unavailable")
+	ErrCartRequired      = errors.New("order cart required")
+	ErrEmptyCart         = errors.New("order cart empty")
+	ErrUnavailableItems  = errors.New("order cart has unavailable items")
+	ErrDetailsRequired   = errors.New("order checkout details required")
+	ErrShippingRequired  = errors.New("order shipping required")
+	ErrShippingExpired   = errors.New("order shipping expired")
+	ErrShippingChanged   = errors.New("order shipping changed")
+	ErrStaleReview       = errors.New("order review stale")
+	ErrInvalidOrderID    = errors.New("invalid order id")
+	ErrInvalidTrackingID = errors.New("invalid order tracking id")
+	ErrNotFound          = errors.New("order not found")
+	ErrAmountOverflow    = errors.New("order amount overflow")
+	ErrUnavailable       = errors.New("orders unavailable")
 )
 
 type ReviewParams struct {
@@ -130,6 +140,8 @@ type ConfirmResult struct {
 
 type OrderPage struct {
 	ID                  string
+	PublicTrackingID    string
+	TrackingURL         string
 	OrderNumber         int64
 	OrderNumberLabel    string
 	Status              string
@@ -167,4 +179,36 @@ type OrderShipping struct {
 	PackageHeightMM  int
 	PackageWidthMM   int
 	PackageLengthMM  int
+}
+
+type TrackingRecord struct {
+	OrderNumber      int64
+	Status           string
+	CreatedAt        time.Time
+	ProductionStatus string
+	ShippingStatus   string
+	ServiceName      string
+	CarrierName      string
+}
+
+type TrackingPage struct {
+	OrderNumber           int64
+	OrderNumberLabel      string
+	CreatedAt             time.Time
+	CreatedAtLabel        string
+	CreatedAtISO          string
+	PaymentStatus         string
+	PaymentStatusLabel    string
+	ProductionStatus      string
+	ProductionStatusLabel string
+	ShippingStatus        string
+	ShippingStatusLabel   string
+	ShippingServiceLabel  string
+	Steps                 []TrackingStep
+}
+
+type TrackingStep struct {
+	Title       string
+	StatusLabel string
+	Description string
 }

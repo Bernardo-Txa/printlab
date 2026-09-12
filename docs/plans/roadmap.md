@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1 e 11 concluidas. Fases 12 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11 e 12 concluidas. Fases 13 a 17 planejadas.
 
 ## Status das fases
 
@@ -25,7 +25,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 10 — Integracao InfinitePay | Concluida |
 | Fase 10.1 — Diagnostico Seguro InfinitePay | Concluida |
 | Fase 11 — Webhooks de pagamento | Concluida |
-| Fase 12 — Acompanhamento do pedido | Planejada |
+| Fase 12 — Acompanhamento do pedido | Concluida |
 | Fase 13 — Painel administrativo | Planejada |
 | Fase 14 — Seguranca | Planejada |
 | Fase 15 — Testes e observabilidade | Planejada |
@@ -444,18 +444,21 @@ Objetivo: permitir que cliente acompanhe status basico do pedido.
 
 Principais entregas:
 
-- Consulta segura de pedido.
-- Tela de acompanhamento.
-- Estados de pagamento, producao e envio aprovados.
+- `orders.public_tracking_id` UUID aleatorio, unico e obrigatorio.
+- `order_fulfillment` 1:1 com status de producao e envio.
+- Consulta segura por `/acompanhar/{public_tracking_id}`.
+- Tela SSR de acompanhamento minimizada, sem PII, valores ou IDs internos.
+- Headers privados, noindex e no-referrer.
+- Link `Acompanhar pedido` em `/pedido/{id}` usando `public_tracking_id`.
 
 Dependencias: Fases 9 e 11.
 
 Definition of Done:
 
-- Acesso a pedido e protegido por regra aprovada.
-- Informacoes sensiveis nao sao expostas indevidamente.
-- Status exibidos refletem fonte server-side.
-- Documentacao atualizada.
+- Acesso a pedido e protegido por regra aprovada: concluido ✅
+- Informacoes sensiveis nao sao expostas indevidamente: concluido ✅
+- Status exibidos refletem fonte server-side: concluido ✅
+- Documentacao atualizada: concluido ✅
 
 ## Fase 13 — Painel administrativo
 

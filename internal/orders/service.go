@@ -12,6 +12,7 @@ type Repository interface {
 	Review(ctx context.Context, tokenHash []byte, now time.Time, params ReviewParams) (ReviewPage, error)
 	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error)
 	Get(ctx context.Context, orderID string) (OrderPage, error)
+	Track(ctx context.Context, trackingID string) (TrackingPage, error)
 }
 
 type Service struct {
@@ -90,6 +91,17 @@ func (s *Service) Get(ctx context.Context, orderID string) (OrderPage, error) {
 	}
 
 	return s.repository.Get(ctx, orderID)
+}
+
+func (s *Service) Track(ctx context.Context, trackingID string) (TrackingPage, error) {
+	if s == nil || s.repository == nil {
+		return TrackingPage{}, ErrUnavailable
+	}
+	if !ValidTrackingID(trackingID) {
+		return TrackingPage{}, ErrInvalidTrackingID
+	}
+
+	return s.repository.Track(ctx, trackingID)
 }
 
 func normalizeCartError(err error) error {

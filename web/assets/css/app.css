@@ -1030,6 +1030,56 @@
     @apply text-2xl font-semibold text-foreground;
   }
 
+  .tracking-section {
+    @apply bg-background py-10 sm:py-14;
+  }
+
+  .tracking-heading {
+    @apply max-w-3xl;
+  }
+
+  .tracking-heading h1 {
+    @apply mt-5 text-balance text-5xl font-semibold leading-none tracking-normal text-foreground sm:text-6xl;
+  }
+
+  .tracking-heading p:not(.brand-kicker) {
+    @apply mt-5 text-pretty text-base leading-7 text-muted sm:text-lg;
+  }
+
+  .tracking-overview {
+    @apply mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .tracking-overview p {
+    @apply flex min-w-0 flex-col gap-1 rounded-card border border-border bg-surface px-4 py-3 shadow-soft;
+  }
+
+  .tracking-overview span,
+  .tracking-card span {
+    @apply text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .tracking-overview strong,
+  .tracking-card strong {
+    @apply break-words text-base font-semibold text-foreground;
+  }
+
+  .tracking-steps {
+    @apply mt-6 grid gap-4 lg:grid-cols-3;
+  }
+
+  .tracking-card {
+    @apply flex min-h-44 flex-col gap-3 rounded-card border border-border bg-surface p-5 shadow-soft;
+  }
+
+  .tracking-card strong {
+    @apply text-2xl leading-tight;
+  }
+
+  .tracking-card p {
+    @apply text-sm leading-6 text-muted;
+  }
+
   .lab-story-section {
     @apply bg-surface py-14 sm:py-18;
   }

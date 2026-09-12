@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos e pagamentos InfinitePay IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay e acompanhamento seguro IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -15,6 +15,8 @@ A Fase 8 adiciona perfis logisticos em produtos/variantes, caixas fisicas reais 
 A Fase 9 adiciona `carts.converted_at` e tabelas de pedido como snapshots historicos em `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items` e `public.order_item_filaments`.
 
 A Fase 10 adiciona `public.order_payments` para registrar checkout hospedado InfinitePay e confirmacao server-side por `payment_check`, alem de permitir `orders.status = 'paid'`.
+
+A Fase 12 adiciona `orders.public_tracking_id` e `public.order_fulfillment` para acompanhamento publico seguro com status separados de pagamento, producao e envio.
 
 ## Convencoes futuras
 
@@ -609,6 +611,7 @@ Campos:
 | Coluna | Tipo | Nulo | Default | Observacao |
 | --- | --- | --- | --- | --- |
 | `id` | `uuid` | nao | `gen_random_uuid()` | Identificador publico usado em `/pedido/{id}`. |
+| `public_tracking_id` | `uuid` | nao | `gen_random_uuid()` | Identificador publico aleatorio usado em `/acompanhar/{public_tracking_id}`. |
 | `order_number` | `bigint` | nao | `generated always as identity` | Numero sequencial para referencia humana. |
 | `source_cart_id` | `uuid` | sim | - | Carrinho que originou o pedido, se ainda existir. |
 | `status` | `text` | nao | `'pending_payment'` | Estado do pedido: `pending_payment` ou `paid`. |
@@ -626,6 +629,7 @@ Foreign keys:
 Constraints:
 
 - `orders_pkey`: chave primaria em `id`.
+- `orders_public_tracking_id_unique`: `public_tracking_id` unico.
 - `orders_order_number_unique`: `order_number` unico.
 - `orders_status_allowed`: permite `pending_payment` e `paid`.
 - `orders_currency_brl`: nesta fase, somente `BRL`.
@@ -643,8 +647,47 @@ Semantica:
 
 - Um carrinho gera no maximo um pedido.
 - `order_number` nao deve ser usado como autorizacao.
+- `public_tracking_id` e capability URL persistida para acompanhamento publico minimizado.
+- `public_tracking_id` nao deve ser logado nem usado para carregar dados sensiveis.
 - Pedido criado pelo checkout fica em `pending_payment` ate confirmacao server-side de pagamento.
 - Valores financeiros sao calculados no backend com inteiros em centavos.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.order_fulfillment`
+
+Status operacional 1:1 do pedido para acompanhamento de producao e envio.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
+| `production_status` | `text` | nao | `'waiting'` | `waiting`, `in_production` ou `completed`. |
+| `shipping_status` | `text` | nao | `'waiting'` | `waiting`, `preparing`, `shipped` ou `delivered`. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente em operacoes futuras. |
+
+Foreign keys:
+
+- `order_fulfillment_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete cascade`.
+
+Constraints:
+
+- `order_fulfillment_pkey`: chave primaria em `order_id`.
+- `order_fulfillment_production_status_allowed`: producao limitada a `waiting`, `in_production`, `completed`.
+- `order_fulfillment_shipping_status_allowed`: envio limitado a `waiting`, `preparing`, `shipped`, `delivered`.
+- `order_fulfillment_shipping_requires_completed_production`: envio diferente de `waiting` exige `production_status = 'completed'`.
+
+Semantica:
+
+- Todo pedido criado pela aplicacao insere `order_fulfillment` na mesma transacao.
+- Pedidos existentes receberam backfill `waiting`/`waiting`.
+- A rota publica de acompanhamento usa estes estados apenas para apresentacao minimizada.
+- Nao ha endpoint publico para alterar producao ou envio.
 
 RLS:
 
@@ -1003,7 +1046,7 @@ O preco-base de produto foi implementado em `products.price_cents`. Subtotal de 
 
 ## IDs
 
-`categories`, `products` e `orders` usam UUID como identificador tecnico. `orders.order_number` usa `bigint identity` sequencial apenas como referencia humana.
+`categories`, `products` e `orders` usam UUID como identificador tecnico. `orders.public_tracking_id` usa UUID aleatorio separado para acompanhamento publico minimizado. `orders.order_number` usa `bigint identity` sequencial apenas como referencia humana.
 
 Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
@@ -1015,7 +1058,7 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 
 ## Pendencias
 
-- Implementar webhooks de pagamento validados e idempotentes.
+- Avaliar tabela de eventos de pagamento somente se houver necessidade operacional futura.
 - Refinar operacao de produtos sob demanda quando houver modulo de producao.
 - Definir upload/admin de imagens.
 - Definir estoque fisico e inventario de filamento.

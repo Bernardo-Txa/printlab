@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos e pagamentos InfinitePay IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay e acompanhamento seguro IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -8,8 +8,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments` e `public.order_payments`.
-- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido e o registro 1:1 de pagamento.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments` e `public.order_payments`.
+- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento e o acompanhamento seguro.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -47,6 +47,8 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Criar pedidos como snapshots historicos, com `orders.source_cart_id` unique para idempotencia.
 - Usar `order_number` apenas como referencia humana e UUID como identificador de rota.
 - Criar `order_payments` 1:1 com `orders`, RLS habilitado, provider fixo `infinitepay`, status `pending`/`paid`, `order_nsu` derivado do UUID do pedido e unique parcial para `transaction_nsu`.
+- Criar `orders.public_tracking_id` como UUID aleatorio, unico e persistido para acompanhamento publico.
+- Criar `order_fulfillment` 1:1 com `orders`, RLS habilitado e sem policies publicas, separando status de producao e envio.
 
 ## Runtime de conexao
 
@@ -95,7 +97,8 @@ Pool padrao por instancia:
 - `shipping_boxes` guarda caixas reais ativas/inativas, medidas internas para encaixe, medidas externas para transportadora e peso de embalagem/protecao.
 - `cart_shipping_selections` guarda a escolha atual de frete do carrinho, com snapshot logistico, `quoted_at`, `expires_at` e `input_hash`.
 - `carts.converted_at` marca carrinhos convertidos e fora do fluxo ativo de compra.
-- `orders` guarda pedido pendente de pagamento ou pago, total em centavos, UUID e `order_number`.
+- `orders` guarda pedido pendente de pagamento ou pago, total em centavos, UUID interno, `public_tracking_id` e `order_number`.
+- `order_fulfillment` guarda status de producao e envio 1:1 para acompanhamento minimizado.
 - `order_customer_details` e `order_shipping_addresses` guardam snapshots privados.
 - `order_shipping_details` guarda o snapshot logistico do frete selecionado.
 - `order_items` e `order_item_filaments` guardam snapshots de itens e receita de producao.
@@ -143,7 +146,7 @@ Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purch
 
 ## IDs
 
-`categories`, `products`, `product_variants`, `carts`, `cart_items`, `shipping_boxes`, `orders`, `order_items` e `order_item_filaments` usam UUID. `cart_customer_details`, `cart_shipping_addresses`, `cart_shipping_selections`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details` usam a chave primaria da entidade pai por serem relacoes 1:1. `orders.order_number` usa `bigint identity` sequencial apenas para referencia humana. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories`, `products`, `product_variants`, `carts`, `cart_items`, `shipping_boxes`, `orders`, `order_items` e `order_item_filaments` usam UUID. `cart_customer_details`, `cart_shipping_addresses`, `cart_shipping_selections`, `order_fulfillment`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details` usam a chave primaria da entidade pai por serem relacoes 1:1. `orders.public_tracking_id` usa UUID aleatorio separado para acompanhamento. `orders.order_number` usa `bigint identity` sequencial apenas para referencia humana. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
 
 ## RLS e Data API
 

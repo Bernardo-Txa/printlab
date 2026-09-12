@@ -140,6 +140,8 @@ func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogServi
 	mux.HandleFunc("POST /checkout/revisao", confirmOrderHandler(orderReview, cartCookies, siteURL))
 	mux.HandleFunc("GET /pedido/{id}", orderPageHandler(orderReview, payment))
 	mux.HandleFunc("POST /pedido/{id}/pagar", startPaymentHandler(payment, siteURL))
+	mux.HandleFunc("GET /acompanhar/{tracking_id}", orderTrackingPageHandler(orderReview))
+	mux.HandleFunc("POST /acompanhar/{tracking_id}", methodNotAllowedHandler(http.MethodGet))
 	mux.HandleFunc("GET /pagamento/retorno", paymentReturnHandler(payment))
 	mux.HandleFunc("POST /webhooks/infinitepay", infinitePayWebhookHandler(payment))
 	mux.HandleFunc("GET /webhooks/infinitepay", methodNotAllowedHandler(http.MethodPost))
