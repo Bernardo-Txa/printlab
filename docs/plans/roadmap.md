@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 concluidas. Fase 10 com implementacao concluida e validacao real pendente. Fases 11 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10 e 10.1 concluidas. Fase 11 com implementacao concluida e validacao real de webhook pendente. Fases 12 a 17 planejadas.
 
 ## Status das fases
 
@@ -22,8 +22,9 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9 e 9.1 conclu
 | Fase 8.1 — UX do checkout, consulta de CEP e diagnostico seguro de frete | Concluida |
 | Fase 9 — Pedidos | Concluida |
 | Fase 9.1 — Interface publica de pedidos | Concluida |
-| Fase 10 — Integracao InfinitePay | Implementacao concluida; validacao real pendente |
-| Fase 11 — Webhooks de pagamento | Planejada |
+| Fase 10 — Integracao InfinitePay | Concluida |
+| Fase 10.1 — Diagnostico Seguro InfinitePay | Concluida |
+| Fase 11 — Webhooks de pagamento | Implementacao concluida; validacao real de webhook pendente |
 | Fase 12 — Acompanhamento do pedido | Planejada |
 | Fase 13 — Painel administrativo | Planejada |
 | Fase 14 — Seguranca | Planejada |
@@ -413,28 +414,29 @@ Definition of Done:
 - Credenciais fora do Git.
 - Testes aplicaveis.
 - Redirect nao e tratado como confirmacao de pagamento.
-- Link real InfinitePay: pendente de validacao controlada.
-- Pagamento real confirmado: pendente de validacao controlada.
+- Link real InfinitePay: validado em producao.
+- Pagamento real confirmado: validado em producao.
 
 ## Fase 11 — Webhooks de pagamento
 
-Objetivo: confirmar pagamentos por eventos validados no backend.
+Objetivo: confirmar pagamentos por eventos recebidos no backend sem confiar no webhook como autoridade direta.
 
 Principais entregas:
 
-- Endpoint de webhook.
-- Validacao de autenticidade conforme contrato oficial.
-- Idempotencia.
-- Logs adequados.
+- Endpoint `POST /webhooks/infinitepay`.
+- `webhook_url` enviado em `POST /links`.
+- Confirmacao redundante via `payment_check` server-side.
+- Idempotencia para webhook duplicado e corrida com retorno do navegador.
+- Logs seguros sem PII, checkout URL completa ou NSU de transacao.
 
 Dependencias: Fases 9 e 10.
 
 Definition of Done:
 
-- Webhook duplicado nao duplica processamento.
-- Eventos invalidos sao rejeitados.
-- Status de pagamento muda apenas por evento confiavel.
-- Testes de idempotencia passam.
+- A. Implementacao do endpoint, payload, `payment_check`, idempotencia e testes automatizados: concluida.
+- B. Checkout real novo contendo `webhook_url`: pendente de validacao controlada.
+- C. Webhook real recebido em producao: pendente.
+- D. Pagamento confirmado sem redirect do comprador: pendente.
 
 ## Fase 12 — Acompanhamento do pedido
 

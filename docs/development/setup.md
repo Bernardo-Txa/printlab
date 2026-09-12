@@ -244,13 +244,18 @@ Sem executar pagamento real, valide as rotas:
 curl -i http://localhost:8080/pagamento/retorno
 curl -i \
   -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"invoice_slug":"slug","transaction_nsu":"txn","order_nsu":"00000000-0000-0000-0000-000000000000"}' \
+  http://localhost:8080/webhooks/infinitepay
+curl -i \
+  -X POST \
   -H "Origin: http://localhost:8080" \
   http://localhost:8080/pedido/00000000-0000-0000-0000-000000000000/pagar
 ```
 
-Retorno sem parametros deve responder erro seguro sem refletir query string. Pedido inexistente deve responder 404 ou redirecionar para estado seguro conforme configuracao.
+Retorno sem parametros deve responder erro seguro sem refletir query string. Webhook local sem pedido real deve responder JSON seguro, sem marcar pagamento. Pedido inexistente deve responder 404 ou redirecionar para estado seguro conforme configuracao.
 
-Para criar link real, use ambiente controlado com pedido real de desenvolvimento, `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE`. O redirect do navegador nao confirma pagamento: a aplicacao so marca `paid` apos `payment_check` server-side com valor igual ao total do pedido.
+Para criar link real ou validar webhook real, use ambiente controlado com pedido real de desenvolvimento, `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE`. O redirect do navegador e o webhook nao confirmam pagamento diretamente: a aplicacao so marca `paid` apos `payment_check` server-side com valor igual ao total do pedido.
 
 ## Validar assets estaticos
 

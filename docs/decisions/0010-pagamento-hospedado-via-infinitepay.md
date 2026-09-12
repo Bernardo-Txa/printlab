@@ -31,8 +31,8 @@ Pagamentos ficam em `public.order_payments`, 1:1 com `orders`, com RLS habilitad
 
 - A aplicacao nao precisa expor credenciais ou valores financeiros ao frontend.
 - `INFINITEPAY_HANDLE` e configuracao de runtime; valor real nao entra no Git.
-- Sem webhook, se o comprador pagar e nao retornar ao site, o pedido pode permanecer temporariamente `pending_payment`.
-- A validacao real de link e pagamento precisa de execucao controlada posterior.
+- Na Fase 10, sem webhook, se o comprador pagasse e nao retornasse ao site, o pedido poderia permanecer temporariamente `pending_payment`.
+- A validacao real de link e pagamento foi planejada como execucao controlada posterior e ocorreu antes da Fase 11.
 
 ## Referencias
 

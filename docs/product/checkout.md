@@ -153,6 +153,8 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 
 `GET /pagamento/retorno` nao confia no redirect. Ele valida `order_nsu`, `transaction_nsu` e `slug`, chama `payment_check` no backend e so muda o pedido para `paid` quando a resposta confirmar `success=true`, `paid=true` e `amount` igual ao total congelado do pedido.
 
+`POST /webhooks/infinitepay` recebe eventos do provider, mas tambem nao confia no payload como autoridade. Ele valida `order_nsu`, `transaction_nsu` e `invoice_slug`, chama `payment_check` no backend e aplica a mesma regra financeira. O `webhook_url` e gerado no backend a partir de `SITE_URL`; o navegador nunca controla esse valor.
+
 `receipt_url` e `capture_method` vindos da query string sao ignorados como fonte de autoridade.
 
 ## Regras obrigatorias
@@ -163,12 +165,11 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 - O frontend nao confirma pagamento.
 - Pedido deve ser criado em transacao unica e idempotente por `source_cart_id`.
 - Redirect de pagamento nao confirma pedido pago.
-- Webhook validado sera necessario para reconciliacao futura quando o comprador pagar e nao retornar ao site.
+- Webhook InfinitePay confirma de forma redundante apenas apos `payment_check` server-side quando o comprador paga e nao retorna ao site.
 
 ## Limites
 
-- Validacao real de link InfinitePay ainda esta pendente.
-- Validacao real de pagamento ainda esta pendente.
+- Link real InfinitePay e pagamento real foram validados antes da Fase 11.
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
-- Nao ha webhook de pagamento.
+- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
 - Nao ha painel administrativo.

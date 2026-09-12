@@ -10,12 +10,12 @@ import (
 const testOrderID = "22222222-2222-2222-2222-222222222222"
 
 func TestBuildCheckoutRequestUsesOrderSnapshotAndUnitPrices(t *testing.T) {
-	request, err := BuildCheckoutRequest(checkoutOrderFixture(), "printlab", "https://printlab.example/pagamento/retorno")
+	request, err := BuildCheckoutRequest(checkoutOrderFixture(), "printlab", "https://printlab.example/pagamento/retorno", "https://printlab.example/webhooks/infinitepay")
 	if err != nil {
 		t.Fatalf("expected checkout request, got %v", err)
 	}
 
-	if request.Handle != "printlab" || request.RedirectURL != "https://printlab.example/pagamento/retorno" || request.OrderNSU != testOrderID {
+	if request.Handle != "printlab" || request.RedirectURL != "https://printlab.example/pagamento/retorno" || request.WebhookURL != "https://printlab.example/webhooks/infinitepay" || request.OrderNSU != testOrderID {
 		t.Fatalf("unexpected checkout request identity fields: %#v", request)
 	}
 	if len(request.Items) != 2 {
@@ -51,6 +51,26 @@ func TestStartCheckoutDoesNotCallProviderOnTotalMismatch(t *testing.T) {
 	}
 	if gateway.createCalls != 0 {
 		t.Fatal("expected provider not to be called on total mismatch")
+	}
+}
+
+func TestStartCheckoutSendsServerGeneratedWebhookURL(t *testing.T) {
+	repository := &fakePaymentRepository{}
+	gateway := &fakePaymentGateway{}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	_, err := service.StartCheckout(context.Background(), testOrderID)
+	if err != nil {
+		t.Fatalf("expected checkout start, got %v", err)
+	}
+	if gateway.createCalls != 1 {
+		t.Fatalf("expected provider to be called once, got %d", gateway.createCalls)
+	}
+	if gateway.lastRequest.RedirectURL != "https://printlab.example/pagamento/retorno" {
+		t.Fatalf("expected server redirect URL, got %q", gateway.lastRequest.RedirectURL)
+	}
+	if gateway.lastRequest.WebhookURL != "https://printlab.example/webhooks/infinitepay" {
+		t.Fatalf("expected server webhook URL, got %q", gateway.lastRequest.WebhookURL)
 	}
 }
 
@@ -218,6 +238,178 @@ func TestConfirmReturnIsIdempotentForAlreadyPaidOrder(t *testing.T) {
 	}
 }
 
+func TestConfirmWebhookMarksPaidOnlyAfterPaymentCheck(t *testing.T) {
+	installments := 1
+	repository := &fakePaymentRepository{target: pendingTargetFixture()}
+	gateway := &fakePaymentGateway{
+		checkResult: PaymentCheckResult{
+			Success:         true,
+			Paid:            true,
+			AmountCents:     6970,
+			PaidAmountCents: 6970,
+			Installments:    &installments,
+			CaptureMethod:   "pix",
+		},
+	}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	webhookAmount := int64(6970)
+	result, err := service.ConfirmWebhook(context.Background(), WebhookInput{
+		OrderNSU:       testOrderID,
+		TransactionNSU: "txn_123",
+		InvoiceSlug:    "slug_123",
+		AmountCents:    &webhookAmount,
+	})
+	if err != nil {
+		t.Fatalf("expected confirmed webhook, got %v", err)
+	}
+	if result.Status != ReturnStatusConfirmed || result.Message != ReturnMessageVerified {
+		t.Fatalf("expected verified webhook result, got %#v", result)
+	}
+	if repository.markPaidCalls != 1 {
+		t.Fatalf("expected MarkPaid once, got %d", repository.markPaidCalls)
+	}
+	if gateway.lastCheckRequest.OrderNSU != testOrderID || gateway.lastCheckRequest.TransactionNSU != "txn_123" || gateway.lastCheckRequest.Slug != "slug_123" {
+		t.Fatalf("expected webhook identifiers to be checked server-side, got %#v", gateway.lastCheckRequest)
+	}
+	if repository.lastPayment.AmountCents != 6970 || repository.lastPayment.PaidAmountCents != 6970 {
+		t.Fatalf("expected payment_check amounts to be persisted, got %#v", repository.lastPayment)
+	}
+}
+
+func TestConfirmWebhookRejectsPendingUnavailableAndAmountMismatch(t *testing.T) {
+	tests := []struct {
+		name        string
+		checkResult PaymentCheckResult
+		checkErr    error
+		wantErr     error
+		wantStatus  string
+	}{
+		{
+			name:        "pending",
+			checkResult: PaymentCheckResult{Success: true, Paid: false},
+			wantErr:     ErrPaymentNotConfirmed,
+			wantStatus:  ReturnStatusPending,
+		},
+		{
+			name:        "fake webhook amount still needs payment check",
+			checkResult: PaymentCheckResult{Success: false, Paid: false},
+			wantErr:     ErrPaymentNotConfirmed,
+			wantStatus:  ReturnStatusPending,
+		},
+		{
+			name:        "amount mismatch",
+			checkResult: PaymentCheckResult{Success: true, Paid: true, AmountCents: 9999, PaidAmountCents: 9999},
+			wantErr:     ErrAmountMismatch,
+			wantStatus:  ReturnStatusUnavailable,
+		},
+		{
+			name:       "provider timeout",
+			checkErr:   NewProviderError(ProviderOperationPaymentCheck, ProviderCategoryTimeout, 0, ErrProviderUnavailable),
+			wantErr:    ErrProviderUnavailable,
+			wantStatus: ReturnStatusUnavailable,
+		},
+		{
+			name:       "provider 500",
+			checkErr:   NewProviderError(ProviderOperationPaymentCheck, ProviderCategoryHTTP5xx, 500, ErrProviderUnavailable),
+			wantErr:    ErrProviderUnavailable,
+			wantStatus: ReturnStatusUnavailable,
+		},
+		{
+			name:       "provider invalid json",
+			checkErr:   NewProviderError(ProviderOperationPaymentCheck, ProviderCategoryInvalidJSON, 0, ErrProviderUnavailable),
+			wantErr:    ErrProviderUnavailable,
+			wantStatus: ReturnStatusUnavailable,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			webhookAmount := int64(6970)
+			repository := &fakePaymentRepository{target: pendingTargetFixture()}
+			gateway := &fakePaymentGateway{checkResult: tt.checkResult, checkErr: tt.checkErr}
+			service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+			result, err := service.ConfirmWebhook(context.Background(), WebhookInput{
+				OrderNSU:       testOrderID,
+				TransactionNSU: "txn_123",
+				InvoiceSlug:    "slug_123",
+				AmountCents:    &webhookAmount,
+			})
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("expected %v, got %v", tt.wantErr, err)
+			}
+			if result.Status != tt.wantStatus {
+				t.Fatalf("expected status %q, got %#v", tt.wantStatus, result)
+			}
+			if repository.markPaidCalls != 0 {
+				t.Fatal("expected webhook not to mark paid")
+			}
+		})
+	}
+}
+
+func TestConfirmWebhookIsIdempotentForAlreadyPaidOrder(t *testing.T) {
+	repository := &fakePaymentRepository{
+		target: PaymentVerificationTarget{
+			OrderID:       testOrderID,
+			OrderNumber:   1001,
+			OrderStatus:   OrderStatusPaid,
+			PaymentStatus: PaymentStatusPaid,
+			TotalCents:    6970,
+		},
+	}
+	gateway := &fakePaymentGateway{}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	result, err := service.ConfirmWebhook(context.Background(), webhookInputFixture())
+	if err != nil {
+		t.Fatalf("expected idempotent webhook result, got %v", err)
+	}
+	if result.Status != ReturnStatusConfirmed || result.Message != ReturnMessageAlreadyPaid {
+		t.Fatalf("expected already paid result, got %#v", result)
+	}
+	if gateway.checkCalls != 0 || repository.markPaidCalls != 0 {
+		t.Fatal("expected duplicate webhook not to call provider or mark paid")
+	}
+}
+
+func TestConfirmReturnAndWebhookAreDeterministicallyIdempotent(t *testing.T) {
+	t.Run("return then webhook", func(t *testing.T) {
+		repository := &fakePaymentRepository{target: pendingTargetFixture()}
+		gateway := &fakePaymentGateway{checkResult: PaymentCheckResult{Success: true, Paid: true, AmountCents: 6970, PaidAmountCents: 6970}}
+		service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+		if _, err := service.ConfirmReturn(context.Background(), returnInputFixture()); err != nil {
+			t.Fatalf("expected return confirmation, got %v", err)
+		}
+		result, err := service.ConfirmWebhook(context.Background(), webhookInputFixture())
+		if err != nil {
+			t.Fatalf("expected duplicate webhook confirmation, got %v", err)
+		}
+		if result.Message != ReturnMessageAlreadyPaid || repository.markPaidCalls != 1 {
+			t.Fatalf("expected webhook to be idempotent after return, result=%#v markPaidCalls=%d", result, repository.markPaidCalls)
+		}
+	})
+
+	t.Run("webhook then return", func(t *testing.T) {
+		repository := &fakePaymentRepository{target: pendingTargetFixture()}
+		gateway := &fakePaymentGateway{checkResult: PaymentCheckResult{Success: true, Paid: true, AmountCents: 6970, PaidAmountCents: 6970}}
+		service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+		if _, err := service.ConfirmWebhook(context.Background(), webhookInputFixture()); err != nil {
+			t.Fatalf("expected webhook confirmation, got %v", err)
+		}
+		result, err := service.ConfirmReturn(context.Background(), returnInputFixture())
+		if err != nil {
+			t.Fatalf("expected duplicate return confirmation, got %v", err)
+		}
+		if result.Message != ReturnMessageAlreadyPaid || repository.markPaidCalls != 1 {
+			t.Fatalf("expected return to be idempotent after webhook, result=%#v markPaidCalls=%d", result, repository.markPaidCalls)
+		}
+	})
+}
+
 func checkoutOrderFixture() CheckoutOrder {
 	return CheckoutOrder{
 		ID:          testOrderID,
@@ -267,6 +459,14 @@ func returnInputFixture() ReturnInput {
 		OrderNSU:       testOrderID,
 		TransactionNSU: "txn_123",
 		Slug:           "slug_123",
+	}
+}
+
+func webhookInputFixture() WebhookInput {
+	return WebhookInput{
+		OrderNSU:       testOrderID,
+		TransactionNSU: "txn_123",
+		InvoiceSlug:    "slug_123",
 	}
 }
 
@@ -320,6 +520,11 @@ func (r *fakePaymentRepository) MarkPaid(_ context.Context, _ string, payment Ve
 	if r.markPaidErr != nil {
 		return ReturnResult{Status: ReturnStatusUnavailable, OrderID: testOrderID}, r.markPaidErr
 	}
+	if r.target.OrderID == "" {
+		r.target = pendingTargetFixture()
+	}
+	r.target.OrderStatus = OrderStatusPaid
+	r.target.PaymentStatus = PaymentStatusPaid
 
 	return ReturnResult{Status: ReturnStatusConfirmed, OrderID: testOrderID}, nil
 }
@@ -330,9 +535,10 @@ type fakePaymentGateway struct {
 	checkResult  PaymentCheckResult
 	checkErr     error
 
-	createCalls int
-	checkCalls  int
-	lastRequest CheckoutRequest
+	createCalls      int
+	checkCalls       int
+	lastRequest      CheckoutRequest
+	lastCheckRequest PaymentCheckRequest
 }
 
 func (g *fakePaymentGateway) CreateCheckout(_ context.Context, request CheckoutRequest) (CheckoutCreated, error) {
@@ -348,8 +554,9 @@ func (g *fakePaymentGateway) CreateCheckout(_ context.Context, request CheckoutR
 	return CheckoutCreated{URL: "https://checkout.infinitepay.com.br/checkout-slug"}, nil
 }
 
-func (g *fakePaymentGateway) CheckPayment(_ context.Context, _ PaymentCheckRequest) (PaymentCheckResult, error) {
+func (g *fakePaymentGateway) CheckPayment(_ context.Context, request PaymentCheckRequest) (PaymentCheckResult, error) {
 	g.checkCalls++
+	g.lastCheckRequest = request
 	if g.checkErr != nil {
 		return PaymentCheckResult{}, g.checkErr
 	}

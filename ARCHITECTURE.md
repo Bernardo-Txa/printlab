@@ -20,6 +20,7 @@ IMPLEMENTADO:
 - Exibicao de pedido por UUID em `GET /pedido/{id}`.
 - Inicio de pagamento InfinitePay em `POST /pedido/{id}/pagar`.
 - Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
+- Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -44,7 +45,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Webhooks de pagamento, painel administrativo e acompanhamento de pedido.
+- Painel administrativo e acompanhamento de pedido.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -80,6 +81,7 @@ Go Backend -> SuperFrete API
 Go Backend -> ViaCEP API
 Go Backend -> InfinitePay Checkout
 Go Backend -> InfinitePay payment_check
+InfinitePay -> Go Backend webhook
 ```
 
 ## Arquitetura server-side
@@ -96,7 +98,7 @@ A etapa de frete tambem e server-side. O navegador envia somente a escolha da op
 
 A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carrinho atual, dados de checkout, selecao de frete, expiracao e `input_hash`. O POST recalcula subtotal, frete e total no backend, compara `review_fingerprint` apenas para detectar tela antiga, cria pedido em transacao PostgreSQL, converte o carrinho e remove dados temporarios. Pedido e snapshot historico e nao depende futuramente de catalogo, receita, dados temporarios ou caixa de frete.
 
-O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` nunca confirma por redirect: ele chama `payment_check` e so marca o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
+O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
 ## Responsabilidades do frontend
 
@@ -205,7 +207,7 @@ A integracao SuperFrete usa `net/http`, timeout explicito, `Authorization: Beare
 
 A integracao ViaCEP usa `net/http`, timeout explicito de aproximadamente 3 segundos e contexto da request original. O backend consulta `https://viacep.com.br/ws/{cep}/json/` apos normalizar CEP com exatamente 8 digitos e responde ao navegador somente `street`, `district`, `city` e `state`.
 
-A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fixa `https://api.checkout.infinitepay.io`, `POST /links` para checkout hospedado e `POST /payment_check` para confirmacao server-side. O handle vem de `INFINITEPAY_HANDLE`; nao ha token/API secret no frontend. Webhooks ainda nao existem.
+A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fixa `https://api.checkout.infinitepay.io`, `POST /links` para checkout hospedado e `POST /payment_check` para confirmacao server-side. O handle vem de `INFINITEPAY_HANDLE`; nao ha token/API secret no frontend. O webhook InfinitePay e aceito em `POST /webhooks/infinitepay`, mas serve apenas como gatilho para `payment_check`.
 
 ## Boundaries
 
@@ -249,6 +251,7 @@ POST /checkout/revisao -> cria pedido pendente de pagamento em transacao e redir
 GET /pedido/{id} -> exibe pedido por UUID com status humano e sem PII completa
 POST /pedido/{id}/pagar -> cria ou reutiliza checkout InfinitePay e redireciona 303 para checkout hospedado
 GET /pagamento/retorno -> valida payment_check; pago redireciona 303 para /pedido/{uuid}?pagamento=confirmado
+POST /webhooks/infinitepay -> valida identificadores, chama payment_check e responde JSON
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 

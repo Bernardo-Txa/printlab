@@ -159,11 +159,12 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Antes de chamar a InfinitePay, o backend exige que a soma dos itens do payload seja exatamente `orders.total_cents`.
 - `order_payments.status` usa somente `pending` ou `paid`.
 - `orders.status` pode mudar para `paid` somente apos `payment_check` server-side com `success=true`, `paid=true` e `amount` igual ao total do pedido.
+- O webhook InfinitePay nao confirma pagamento diretamente; ele apenas aciona `payment_check` server-side com `order_nsu`, `transaction_nsu` e `invoice_slug`.
 - `paid_amount` pode divergir de `amount` e e persistido sem ser usado para validar o total do pedido.
 - Redirect, query string, `receipt_url` e `capture_method` do navegador nao confirmam pagamento.
-- Checkout abandonado, retorno com `paid=false` ou falha de API mantem o pedido pendente.
-- Sem webhook, pagamento real sem retorno ao site pode ficar temporariamente pendente.
-- Validação real de link e pagamento InfinitePay ainda depende de execucao controlada.
+- Checkout abandonado, retorno/webhook com `paid=false` ou falha de API mantem o pedido pendente.
+- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
 
 ## Producao 3D
 

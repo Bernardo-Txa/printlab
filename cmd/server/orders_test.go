@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -544,6 +545,204 @@ func TestPaymentReturnConfirmedRedirectsToOrder(t *testing.T) {
 	}
 }
 
+func TestPaymentWebhookValidJSONReturnsOK(t *testing.T) {
+	payment := &fakePaymentService{
+		available:     true,
+		webhookResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusConfirmed, OrderID: orderID, Message: paymentsdomain.ReturnMessageVerified},
+	}
+	req := paymentWebhookRequest(validInfinitePayWebhookJSON())
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%q", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	assertPaymentWebhookResponse(t, rec, true, nil)
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("expected no-store cache header, got %q", rec.Header().Get("Cache-Control"))
+	}
+	if !strings.HasPrefix(rec.Header().Get("Content-Type"), "application/json") {
+		t.Fatalf("expected JSON response, got %q", rec.Header().Get("Content-Type"))
+	}
+	if payment.webhookCalls != 1 {
+		t.Fatalf("expected webhook confirmation once, got %d", payment.webhookCalls)
+	}
+	if payment.lastWebhookInput.OrderNSU != orderID || payment.lastWebhookInput.TransactionNSU != "txn_123" || payment.lastWebhookInput.InvoiceSlug != "slug_123" {
+		t.Fatalf("expected webhook identifiers only, got %#v", payment.lastWebhookInput)
+	}
+}
+
+func TestPaymentWebhookGetMethodNotAllowed(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/webhooks/infinitepay", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, &fakePaymentService{available: true}, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rec.Code)
+	}
+}
+
+func TestPaymentWebhookRejectsInvalidJSONAndOversizedBody(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantStatus int
+	}{
+		{name: "invalid json", body: `{`, wantStatus: http.StatusBadRequest},
+		{name: "oversized body", body: strings.Repeat(" ", maxInfinitePayWebhookBodyBytes+1), wantStatus: http.StatusRequestEntityTooLarge},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payment := &fakePaymentService{available: true}
+			req := paymentWebhookRequest(tt.body)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Fatalf("expected status %d, got %d", tt.wantStatus, rec.Code)
+			}
+			if payment.webhookCalls != 0 {
+				t.Fatal("expected invalid webhook body not to call payment service")
+			}
+			assertPaymentWebhookResponse(t, rec, false, stringPtr("Payload invalido"))
+		})
+	}
+}
+
+func TestPaymentWebhookRejectsUnsafeInputsAndMissingOrder(t *testing.T) {
+	tests := []struct {
+		name        string
+		body        string
+		err         error
+		wantMessage string
+	}{
+		{name: "invalid order_nsu", body: `{"invoice_slug":"slug_123","transaction_nsu":"txn_123","order_nsu":"not-a-uuid"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
+		{name: "missing transaction_nsu", body: `{"invoice_slug":"slug_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
+		{name: "missing invoice_slug", body: `{"transaction_nsu":"txn_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
+		{name: "missing order", body: validInfinitePayWebhookJSON(), err: paymentsdomain.ErrPaymentNotFound, wantMessage: "Pedido nao encontrado"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payment := &fakePaymentService{
+				available:  true,
+				webhookErr: tt.err,
+			}
+			req := paymentWebhookRequest(tt.body)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d body=%q", http.StatusBadRequest, rec.Code, rec.Body.String())
+			}
+			if payment.webhookCalls != 1 {
+				t.Fatalf("expected payment service call, got %d", payment.webhookCalls)
+			}
+			assertPaymentWebhookResponse(t, rec, false, stringPtr(tt.wantMessage))
+		})
+	}
+}
+
+func TestPaymentWebhookReturnsRetryableFailureWhenPaymentCheckDoesNotConfirm(t *testing.T) {
+	tests := []struct {
+		name        string
+		result      paymentsdomain.ReturnResult
+		err         error
+		wantMessage string
+	}{
+		{
+			name:        "pending",
+			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusPending, OrderID: orderID},
+			err:         paymentsdomain.ErrPaymentNotConfirmed,
+			wantMessage: "Pagamento ainda nao confirmado",
+		},
+		{
+			name:        "amount mismatch",
+			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+			err:         paymentsdomain.ErrAmountMismatch,
+			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+		},
+		{
+			name:        "provider timeout",
+			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryTimeout, 0, paymentsdomain.ErrProviderUnavailable),
+			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+		},
+		{
+			name:        "provider 500",
+			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusInternalServerError, paymentsdomain.ErrProviderUnavailable),
+			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+		},
+		{
+			name:        "provider invalid json",
+			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryInvalidJSON, 0, paymentsdomain.ErrProviderUnavailable),
+			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payment := &fakePaymentService{
+				available:     true,
+				webhookResult: tt.result,
+				webhookErr:    tt.err,
+			}
+			req := paymentWebhookRequest(validInfinitePayWebhookJSON())
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d body=%q", http.StatusBadRequest, rec.Code, rec.Body.String())
+			}
+			assertPaymentWebhookResponse(t, rec, false, stringPtr(tt.wantMessage))
+		})
+	}
+}
+
+func TestPaymentWebhookProviderErrorLogsSafeDiagnostics(t *testing.T) {
+	providerErr := paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusServiceUnavailable, paymentsdomain.ErrProviderUnavailable)
+	providerErr.Message = "payment check failed for txn_123 Joao Silva joao@example.com +5527999999999 Rua Um https://checkout.infinitepay.com.br/checkout-slug"
+	payment := &fakePaymentService{
+		available:     true,
+		webhookResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+		webhookErr:    providerErr,
+	}
+	var logs bytes.Buffer
+	oldWriter := log.Writer()
+	oldFlags := log.Flags()
+	log.SetOutput(&logs)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(oldWriter)
+		log.SetFlags(oldFlags)
+	})
+
+	req := paymentWebhookRequest(validInfinitePayWebhookJSON())
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+	logText := logs.String()
+	for _, expected := range []string{"payment webhook received", "payment webhook unavailable", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
+		if !strings.Contains(logText, expected) {
+			t.Fatalf("expected log to contain %q, got %q", expected, logText)
+		}
+	}
+	assertPaymentLogDoesNotLeakSensitiveData(t, logText)
+}
+
 func orderReviewFormRequest(values url.Values) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/checkout/revisao", strings.NewReader(values.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -552,6 +751,41 @@ func orderReviewFormRequest(values url.Values) *http.Request {
 
 func paymentReturnRequest() *http.Request {
 	return httptest.NewRequest(http.MethodGet, "/pagamento/retorno?order_nsu="+orderID+"&transaction_nsu=txn_123&slug=slug_123&capture_method=ignored&receipt_url=https://example.test", nil)
+}
+
+func paymentWebhookRequest(body string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/infinitepay", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	return req
+}
+
+func validInfinitePayWebhookJSON() string {
+	return `{"invoice_slug":"slug_123","transaction_nsu":"txn_123","order_nsu":"` + orderID + `","amount":9870,"paid_amount":9870,"installments":1,"capture_method":"pix","receipt_url":"https://example.test/receipt","items":[{"name":"ignored"}]}`
+}
+
+func assertPaymentWebhookResponse(t *testing.T, rec *httptest.ResponseRecorder, success bool, message *string) {
+	t.Helper()
+
+	var response paymentWebhookResponse
+	if err := json.NewDecoder(rec.Body).Decode(&response); err != nil {
+		t.Fatalf("expected webhook JSON response, got %v body=%q", err, rec.Body.String())
+	}
+	if response.Success != success {
+		t.Fatalf("expected success=%v, got %#v", success, response)
+	}
+	if message == nil {
+		if response.Message != nil {
+			t.Fatalf("expected null message, got %#v", response)
+		}
+		return
+	}
+	if response.Message == nil || *response.Message != *message {
+		t.Fatalf("expected message %q, got %#v", *message, response)
+	}
+}
+
+func stringPtr(value string) *string {
+	return &value
 }
 
 func orderReviewPageFixture() ordersdomain.ReviewPage {
@@ -748,16 +982,20 @@ func (s *fakeOrderReviewService) Get(_ context.Context, orderID string) (ordersd
 var _ orderReviewService = (*fakeOrderReviewService)(nil)
 
 type fakePaymentService struct {
-	available    bool
-	startResult  paymentsdomain.CheckoutStartResult
-	returnResult paymentsdomain.ReturnResult
-	startErr     error
-	returnErr    error
+	available     bool
+	startResult   paymentsdomain.CheckoutStartResult
+	returnResult  paymentsdomain.ReturnResult
+	webhookResult paymentsdomain.ReturnResult
+	startErr      error
+	returnErr     error
+	webhookErr    error
 
 	startCalls       int
 	returnCalls      int
+	webhookCalls     int
 	lastStartOrderID string
 	lastReturnInput  paymentsdomain.ReturnInput
+	lastWebhookInput paymentsdomain.WebhookInput
 }
 
 func (s *fakePaymentService) Available() bool {
@@ -791,6 +1029,19 @@ func (s *fakePaymentService) ConfirmReturn(_ context.Context, input paymentsdoma
 	}
 
 	return s.returnResult, nil
+}
+
+func (s *fakePaymentService) ConfirmWebhook(_ context.Context, input paymentsdomain.WebhookInput) (paymentsdomain.ReturnResult, error) {
+	s.webhookCalls++
+	s.lastWebhookInput = input
+	if s.webhookErr != nil {
+		return s.webhookResult, s.webhookErr
+	}
+	if s.webhookResult.Status == "" {
+		return paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusPending, OrderID: orderID}, nil
+	}
+
+	return s.webhookResult, nil
 }
 
 var _ paymentService = (*fakePaymentService)(nil)

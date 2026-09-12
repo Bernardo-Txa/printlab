@@ -71,6 +71,7 @@ func (c *InfinitePayClient) CreateCheckout(ctx context.Context, request Checkout
 	body := infinitePayCheckoutRequest{
 		Handle:      request.Handle,
 		RedirectURL: request.RedirectURL,
+		WebhookURL:  request.WebhookURL,
 		OrderNSU:    request.OrderNSU,
 		Customer: infinitePayCustomer{
 			Name:        request.Customer.Name,
@@ -183,6 +184,7 @@ func (c *InfinitePayClient) endpoint(path string) string {
 type infinitePayCheckoutRequest struct {
 	Handle      string                    `json:"handle"`
 	RedirectURL string                    `json:"redirect_url"`
+	WebhookURL  string                    `json:"webhook_url"`
 	OrderNSU    string                    `json:"order_nsu"`
 	Items       []infinitePayCheckoutItem `json:"items"`
 	Customer    infinitePayCustomer       `json:"customer"`

@@ -39,6 +39,7 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 	result, err := client.CreateCheckout(context.Background(), CheckoutRequest{
 		Handle:      "printlab",
 		RedirectURL: "https://printlab.example/pagamento/retorno",
+		WebhookURL:  "https://printlab.example/webhooks/infinitepay",
 		OrderNSU:    "22222222-2222-2222-2222-222222222222",
 		Items: []CheckoutItem{
 			{Quantity: 3, PriceCents: 1990, Description: "Produto Real - Padrao"},
@@ -66,10 +67,8 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 
 	assertJSONValue(t, payload, "handle", "printlab")
 	assertJSONValue(t, payload, "redirect_url", "https://printlab.example/pagamento/retorno")
+	assertJSONValue(t, payload, "webhook_url", "https://printlab.example/webhooks/infinitepay")
 	assertJSONValue(t, payload, "order_nsu", "22222222-2222-2222-2222-222222222222")
-	if _, ok := payload["webhook_url"]; ok {
-		t.Fatal("expected checkout payload not to send webhook_url")
-	}
 	if _, ok := payload["cpf"]; ok {
 		t.Fatal("expected checkout payload not to send cpf")
 	}

@@ -57,7 +57,7 @@ Supabase de desenvolvimento
 - Consulta de CEP usa endpoint interno no Go e chamada server-side ao ViaCEP, sem depender do banco.
 - Frete depende de PostgreSQL para perfis logisticos, caixas reais e selecao de frete. Cotacao externa depende de configuracao SuperFrete.
 - Pedidos dependem do PostgreSQL para criar snapshots historicos, converter carrinho e exibir `/pedido/{id}` por UUID.
-- Pagamentos InfinitePay dependem de PostgreSQL para `order_payments`, de `SITE_URL` HTTPS e de `INFINITEPAY_HANDLE` para iniciar checkout hospedado.
+- Pagamentos InfinitePay dependem de PostgreSQL para `order_payments`, de `SITE_URL` HTTPS e de `INFINITEPAY_HANDLE` para iniciar checkout hospedado, gerar `redirect_url`, gerar `webhook_url` e confirmar por `payment_check`.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -144,7 +144,7 @@ Secrets de runtime no ambiente de hosting:
 - `INFINITEPAY_HANDLE`, necessario para habilitar checkout InfinitePay
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
-- `SITE_URL`, URL publica HTTPS usada como origem permitida e como base do `redirect_url` InfinitePay
+- `SITE_URL`, URL publica HTTPS usada como origem permitida e como base do `redirect_url` e `webhook_url` InfinitePay
 - `SUPERFRETE_ENV`, opcional ate habilitar cotacao real, aceitando `sandbox` ou `production`
 - `SUPERFRETE_API_TOKEN`, secret da SuperFrete
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`, CEP operacional de origem da PrintLab
@@ -280,7 +280,7 @@ Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker custo
 - Revisar migrations.
 - Separar ambientes Supabase de desenvolvimento/staging e producao.
 - Definir politica de aprovacao para migrations de producao.
-- Revisar webhooks.
+- Validar webhook InfinitePay real apos deploy de mudancas de pagamento.
 - Revisar dominio.
 - Revisar observabilidade.
 - Revisar backups.
@@ -290,7 +290,7 @@ Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker custo
 ## Praticas proibidas
 
 - Publicar ambiente de producao com credenciais expostas.
-- Operar comercialmente sem revisar webhooks de pagamento.
+- Operar comercialmente sem validar webhooks de pagamento e alertas de falha.
 - Alterar banco de producao manualmente sem registro.
 - Fazer deploy de funcionalidade financeira sem testes aplicaveis.
 - Executar migrations automaticas em producao sem politica de aprovacao.

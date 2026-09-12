@@ -39,3 +39,29 @@ func TestValidateCheckoutURLUsesExplicitHostAllowlist(t *testing.T) {
 		})
 	}
 }
+
+func TestPaymentWebhookURLUsesCanonicalHTTPSPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		siteURL string
+		want    string
+		wantOK  bool
+	}{
+		{name: "https site", siteURL: "https://printlab.example", want: "https://printlab.example/webhooks/infinitepay", wantOK: true},
+		{name: "trims path and query", siteURL: "https://printlab.example/base?utm=1", want: "https://printlab.example/webhooks/infinitepay", wantOK: true},
+		{name: "http rejected", siteURL: "http://printlab.example", wantOK: false},
+		{name: "missing host rejected", siteURL: "not-a-url", wantOK: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := PaymentWebhookURL(tt.siteURL)
+			if ok != tt.wantOK {
+				t.Fatalf("expected ok=%v, got %v with %q", tt.wantOK, ok, got)
+			}
+			if got != tt.want {
+				t.Fatalf("expected %q, got %q", tt.want, got)
+			}
+		})
+	}
+}

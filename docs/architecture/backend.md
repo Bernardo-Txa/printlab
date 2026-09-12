@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos e inicio de pagamentos IMPLEMENTADOS; webhooks e admin PLANEJADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos e webhook InfinitePay IMPLEMENTADOS; admin PLANEJADO.
 
 ## Responsabilidade
 
@@ -25,6 +25,7 @@ Nesta fase, o backend implementa:
 - `GET /pedido/{id}` para exibir pedido por UUID.
 - `POST /pedido/{id}/pagar` para iniciar ou reutilizar checkout hospedado InfinitePay.
 - `GET /pagamento/retorno` para validar retorno com `payment_check`.
+- `POST /webhooks/infinitepay` para receber webhook InfinitePay e confirmar por `payment_check`.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
@@ -40,7 +41,7 @@ Nesta fase, o backend implementa:
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete e pedidos.
-- Nao ha webhooks ou admin.
+- Nao ha admin.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -153,11 +154,11 @@ O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e re
 
 O client InfinitePay usa `net/http`, timeout explicito, `context.Context`, base URL interna fixa `https://api.checkout.infinitepay.io` e nao adiciona SDK ou dependencia nova.
 
-Checkout URL retornada pelo provedor e aceita somente se for HTTPS no host `checkout.infinitepay.com.br`.
+Checkout URL retornada pelo provedor e aceita somente se for HTTPS nos hosts `checkout.infinitepay.io` ou `checkout.infinitepay.com.br`.
 
 `GET /pagamento/retorno` nao confirma pagamento por redirect. Ele valida parametros seguros, chama `POST /payment_check` e altera `orders.status` para `paid` em transacao somente quando `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
 
-Sem webhook, pagamento feito sem retorno do comprador ao site pode permanecer temporariamente pendente.
+`POST /webhooks/infinitepay` nao confirma pagamento diretamente pelo payload recebido. Ele aceita JSON limitado, valida identificadores, chama `POST /payment_check` e usa a mesma regra transacional do retorno. Pagamentos ja confirmados retornam sucesso sem duplicar atualizacao.
 
 ## Health e readiness
 

@@ -1,6 +1,6 @@
 # InfinitePay
 
-Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; diagnostico seguro implementado; validacao real de link e pagamento pendente.
+Status: IMPLEMENTACAO SERVER-SIDE CONCLUIDA; diagnostico seguro e webhook implementados; link e pagamento reais validados; recebimento real de webhook pendente.
 
 ## Escopo implementado
 
@@ -50,12 +50,13 @@ Payload enviado:
 
 - `handle`;
 - `redirect_url`;
+- `webhook_url`;
 - `order_nsu`;
 - `items`;
 - `customer`;
 - `address`.
 
-Nao enviamos `webhook_url` nesta fase.
+`redirect_url` e `webhook_url` sao derivados de `SITE_URL` no backend. O navegador nunca controla esses valores.
 
 Confirmacao no retorno:
 
@@ -124,6 +125,10 @@ Se o pedido ja estiver `paid`, a rota redireciona de volta para `/pedido/{id}` e
 
 `GET /pagamento/retorno` e idempotente: retornos repetidos para pagamento ja confirmado mantem o pedido pago sem duplicar registros.
 
+`POST /webhooks/infinitepay` e idempotente: webhooks repetidos para pagamento ja confirmado retornam sucesso e nao duplicam atualizacao.
+
+Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente. A aplicacao reutiliza checkout pendente valido e nao regenera link apenas para adicionar webhook.
+
 ## Hosts de checkout
 
 A documentacao publica possui exemplos historicos ou alternativos usando `checkout.infinitepay.com.br`.
@@ -143,8 +148,9 @@ Essa allowlist e aplicada no dominio Go por `ValidateCheckoutURL` e tambem na co
 - O backend compara o total do payload com `orders.total_cents` antes de chamar a InfinitePay.
 - Checkout URL so e aceita com scheme `https` e host autorizado pela allowlist explicita.
 - `GET /pagamento/retorno` usa `Cache-Control: private, no-store`.
+- `POST /webhooks/infinitepay` nao valida `Origin`/`Referer`, porque a chamada vem do provider, mas aceita somente JSON com limite de 64 KiB e responde com `Cache-Control: no-store`.
 - A aplicacao ignora `receipt_url` e `capture_method` vindos do navegador.
-- A confirmacao depende apenas de `payment_check` server-side.
+- O webhook e apenas gatilho; a confirmacao depende apenas de `payment_check` server-side.
 - A comparacao financeira usa `amount` contra `orders.total_cents`; `paid_amount` e persistido, mas pode divergir por juros/tarifas.
 - Logs nao devem conter checkout URL, e-mail, telefone, endereco, query params completos, transaction NSU ou secrets.
 
@@ -187,9 +193,43 @@ payment checkout unavailable provider=infinitepay operation=create_checkout cate
 
 `payment checkout amount mismatch` continua sendo log separado e nao e classificado como indisponibilidade do provider.
 
-## Limitacao sem webhook
+## Webhook InfinitePay
 
-Se o comprador pagar e fechar a InfinitePay antes de clicar em continuar/retornar, a PrintLab pode permanecer temporariamente em `pending_payment`. A Fase 11 devera resolver isso com webhooks validados e idempotentes.
+Endpoint publico:
+
+```text
+POST /webhooks/infinitepay
+```
+
+Payload aceito inicialmente:
+
+- `invoice_slug`;
+- `transaction_nsu`;
+- `order_nsu`;
+- `amount`;
+- `paid_amount`;
+- `installments`;
+- `capture_method`.
+
+`invoice_slug`, `transaction_nsu` e `order_nsu` sao obrigatorios e normalizados. Campos como `receipt_url` e `items` podem existir no payload oficial, mas nao sao armazenados nem usados como fonte de autoridade.
+
+Nao ha assinatura/HMAC documentada no contrato publico consultado. Por isso o endpoint nao trata o webhook como autoridade: ele usa os identificadores recebidos para chamar `POST /payment_check` server-side. Pedido e pagamento so mudam para `paid` quando o provider confirma `success=true`, `paid=true` e `amount` igual ao total congelado do pedido.
+
+Respostas:
+
+- sucesso confirmado ou duplicado ja pago: HTTP 200 com `{"success":true,"message":null}`;
+- payload invalido, pedido inexistente, pagamento ainda pendente, falha temporaria do provider ou divergencia de valor: HTTP 400 com mensagem generica para permitir retry do provider.
+
+Logs seguros esperados:
+
+```text
+payment webhook received
+payment webhook verified order_id=<uuid>
+payment webhook already_paid order_id=<uuid>
+payment webhook pending order_id=<uuid>
+payment webhook unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx
+payment webhook amount mismatch order_id=<uuid> order_number=<numero>
+```
 
 ## Validacao local
 
@@ -208,12 +248,16 @@ Validacao manual local de rotas, sem transacao real:
 ```sh
 curl -i http://localhost:8080/pedido/00000000-0000-0000-0000-000000000000
 curl -i http://localhost:8080/pagamento/retorno
+curl -i -X POST http://localhost:8080/webhooks/infinitepay \
+  -H 'Content-Type: application/json' \
+  -d '{"invoice_slug":"slug","transaction_nsu":"txn","order_nsu":"00000000-0000-0000-0000-000000000000"}'
 ```
 
-Para validar link real, configure `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE` em ambiente controlado. Nao realizar pagamento real sem roteiro aprovado.
+Para validar link real ou webhook real, configure `DATABASE_URL`, `SITE_URL` HTTPS e `INFINITEPAY_HANDLE` em ambiente controlado. Nao realizar pagamento real sem roteiro aprovado.
 
 ## Estado de validacao real
 
-- Checkout/link real InfinitePay: pendente.
-- Pagamento real confirmado via `payment_check`: pendente.
-- Webhook: fora do escopo desta fase.
+- Checkout/link real InfinitePay: validado.
+- Pagamento real confirmado via `payment_check`: validado.
+- Checkout novo contendo `webhook_url`: pendente de validacao controlada apos deploy da Fase 11.
+- Webhook real recebido e confirmacao sem redirect: pendente.

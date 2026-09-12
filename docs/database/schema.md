@@ -695,7 +695,7 @@ Semantica:
 - A API real da InfinitePay retornou `checkout.infinitepay.io` em 2026; o banco e o dominio Go aceitam somente esse host e `checkout.infinitepay.com.br` por allowlist explicita.
 - `paid_amount_cents` e persistido separadamente, mas a confirmacao usa `amount_cents = orders.total_cents`.
 - Checkout abandonado, `paid=false`, timeout ou erro de API mantem status `pending`.
-- Sem webhook, pagamento real sem retorno ao site pode permanecer temporariamente pendente.
+- Webhook InfinitePay aciona `payment_check` server-side e nao cria tabela nova nesta fase.
 
 RLS:
 

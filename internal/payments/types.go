@@ -20,6 +20,9 @@ const (
 	ReturnStatusConfirmed   = "confirmed"
 	ReturnStatusUnavailable = "unavailable"
 
+	ReturnMessageVerified    = "verified"
+	ReturnMessageAlreadyPaid = "already_paid"
+
 	checkoutHostBR      = "checkout.infinitepay.com.br"
 	checkoutHostCurrent = "checkout.infinitepay.io"
 )
@@ -36,6 +39,7 @@ var (
 	ErrInvalidCheckoutURL   = errors.New("invalid checkout url")
 	ErrAmountMismatch       = errors.New("payment amount mismatch")
 	ErrAmountOverflow       = errors.New("payment amount overflow")
+	ErrPaymentNotConfirmed  = errors.New("payment not confirmed")
 	ErrUnavailable          = errors.New("payments unavailable")
 )
 
@@ -85,6 +89,7 @@ type CheckoutShipping struct {
 type CheckoutRequest struct {
 	Handle      string
 	RedirectURL string
+	WebhookURL  string
 	OrderNSU    string
 	Items       []CheckoutItem
 	Customer    CheckoutCustomer
@@ -146,6 +151,16 @@ type ReturnInput struct {
 	Slug           string
 }
 
+type WebhookInput struct {
+	OrderNSU        string
+	TransactionNSU  string
+	InvoiceSlug     string
+	AmountCents     *int64
+	PaidAmountCents *int64
+	Installments    *int
+	CaptureMethod   string
+}
+
 type ReturnResult struct {
 	Status  string
 	OrderID string
@@ -204,6 +219,14 @@ func NormalizeReturnInput(input ReturnInput) (ReturnInput, error) {
 	}, nil
 }
 
+func NormalizeWebhookInput(input WebhookInput) (ReturnInput, error) {
+	return NormalizeReturnInput(ReturnInput{
+		OrderNSU:       input.OrderNSU,
+		TransactionNSU: input.TransactionNSU,
+		Slug:           input.InvoiceSlug,
+	})
+}
+
 func PaymentRedirectURL(siteURL string) (string, bool) {
 	parsed, err := url.Parse(strings.TrimRight(strings.TrimSpace(siteURL), "/"))
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
@@ -214,6 +237,21 @@ func PaymentRedirectURL(siteURL string) (string, bool) {
 	}
 
 	parsed.Path = "/pagamento/retorno"
+	parsed.RawQuery = ""
+	parsed.Fragment = ""
+	return parsed.String(), true
+}
+
+func PaymentWebhookURL(siteURL string) (string, bool) {
+	parsed, err := url.Parse(strings.TrimRight(strings.TrimSpace(siteURL), "/"))
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return "", false
+	}
+	if parsed.Scheme != "https" {
+		return "", false
+	}
+
+	parsed.Path = "/webhooks/infinitepay"
 	parsed.RawQuery = ""
 	parsed.Fragment = ""
 	return parsed.String(), true

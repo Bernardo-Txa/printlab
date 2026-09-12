@@ -21,6 +21,7 @@ type Service struct {
 	gateway     Gateway
 	handle      string
 	redirectURL string
+	webhookURL  string
 	now         func() time.Time
 }
 
@@ -36,11 +37,13 @@ func WithClock(now func() time.Time) ServiceOption {
 
 func NewService(repository Repository, gateway Gateway, handle string, siteURL string, options ...ServiceOption) *Service {
 	redirectURL, _ := PaymentRedirectURL(siteURL)
+	webhookURL, _ := PaymentWebhookURL(siteURL)
 	service := &Service{
 		repository:  repository,
 		gateway:     gateway,
 		handle:      strings.TrimSpace(handle),
 		redirectURL: redirectURL,
+		webhookURL:  webhookURL,
 		now:         time.Now,
 	}
 	for _, option := range options {
@@ -55,7 +58,8 @@ func (s *Service) Available() bool {
 		s.repository != nil &&
 		s.gateway != nil &&
 		s.handle != "" &&
-		s.redirectURL != ""
+		s.redirectURL != "" &&
+		s.webhookURL != ""
 }
 
 func (s *Service) StartCheckout(ctx context.Context, orderID string) (CheckoutStartResult, error) {
@@ -68,7 +72,7 @@ func (s *Service) StartCheckout(ctx context.Context, orderID string) (CheckoutSt
 	}
 
 	return s.repository.CreateOrReuseCheckout(ctx, canonicalOrderID, func(ctx context.Context, order CheckoutOrder) (CheckoutCreated, error) {
-		request, err := BuildCheckoutRequest(order, s.handle, s.redirectURL)
+		request, err := BuildCheckoutRequest(order, s.handle, s.redirectURL, s.webhookURL)
 		if err != nil {
 			return CheckoutCreated{}, err
 		}
@@ -86,12 +90,39 @@ func (s *Service) ConfirmReturn(ctx context.Context, input ReturnInput) (ReturnR
 		return ReturnResult{Status: ReturnStatusUnavailable}, ErrPaymentNotConfigured
 	}
 
+	return s.confirmPayment(ctx, normalized, paymentConfirmationOptions{
+		pendingAsError:    false,
+		amountMismatchLog: "payment amount mismatch",
+	})
+}
+
+func (s *Service) ConfirmWebhook(ctx context.Context, input WebhookInput) (ReturnResult, error) {
+	normalized, err := NormalizeWebhookInput(input)
+	if err != nil {
+		return ReturnResult{Status: ReturnStatusUnavailable}, err
+	}
+	if !s.Available() {
+		return ReturnResult{Status: ReturnStatusUnavailable}, ErrPaymentNotConfigured
+	}
+
+	return s.confirmPayment(ctx, normalized, paymentConfirmationOptions{
+		pendingAsError:    true,
+		amountMismatchLog: "payment webhook amount mismatch",
+	})
+}
+
+type paymentConfirmationOptions struct {
+	pendingAsError    bool
+	amountMismatchLog string
+}
+
+func (s *Service) confirmPayment(ctx context.Context, normalized ReturnInput, options paymentConfirmationOptions) (ReturnResult, error) {
 	target, err := s.repository.PaymentTargetByOrderNSU(ctx, normalized.OrderNSU)
 	if err != nil {
 		return ReturnResult{Status: ReturnStatusUnavailable}, err
 	}
 	if target.OrderStatus == OrderStatusPaid || target.PaymentStatus == PaymentStatusPaid {
-		return ReturnResult{Status: ReturnStatusConfirmed, OrderID: target.OrderID}, nil
+		return ReturnResult{Status: ReturnStatusConfirmed, OrderID: target.OrderID, Message: ReturnMessageAlreadyPaid}, nil
 	}
 
 	check, err := s.gateway.CheckPayment(ctx, PaymentCheckRequest{
@@ -104,14 +135,19 @@ func (s *Service) ConfirmReturn(ctx context.Context, input ReturnInput) (ReturnR
 		return ReturnResult{Status: ReturnStatusUnavailable, OrderID: target.OrderID}, err
 	}
 	if !check.Success || !check.Paid {
-		return ReturnResult{Status: ReturnStatusPending, OrderID: target.OrderID}, nil
+		result := ReturnResult{Status: ReturnStatusPending, OrderID: target.OrderID}
+		if options.pendingAsError {
+			return result, ErrPaymentNotConfirmed
+		}
+
+		return result, nil
 	}
 	if check.AmountCents != target.TotalCents {
-		log.Printf("payment amount mismatch order_id=%s order_number=%d", target.OrderID, target.OrderNumber)
+		log.Printf("%s order_id=%s order_number=%d", options.amountMismatchLog, target.OrderID, target.OrderNumber)
 		return ReturnResult{Status: ReturnStatusUnavailable, OrderID: target.OrderID}, ErrAmountMismatch
 	}
 
-	return s.repository.MarkPaid(ctx, normalized.OrderNSU, VerifiedPayment{
+	result, err := s.repository.MarkPaid(ctx, normalized.OrderNSU, VerifiedPayment{
 		InvoiceSlug:     normalized.Slug,
 		TransactionNSU:  normalized.TransactionNSU,
 		AmountCents:     check.AmountCents,
@@ -119,9 +155,17 @@ func (s *Service) ConfirmReturn(ctx context.Context, input ReturnInput) (ReturnR
 		Installments:    check.Installments,
 		CaptureMethod:   check.CaptureMethod,
 	}, s.now())
+	if err != nil {
+		return result, err
+	}
+	if result.Status == ReturnStatusConfirmed && result.Message == "" {
+		result.Message = ReturnMessageVerified
+	}
+
+	return result, nil
 }
 
-func BuildCheckoutRequest(order CheckoutOrder, handle string, redirectURL string) (CheckoutRequest, error) {
+func BuildCheckoutRequest(order CheckoutOrder, handle string, redirectURL string, webhookURL string) (CheckoutRequest, error) {
 	orderNSU := order.OrderNSU
 	if orderNSU == "" {
 		var ok bool
@@ -140,6 +184,7 @@ func BuildCheckoutRequest(order CheckoutOrder, handle string, redirectURL string
 	request := CheckoutRequest{
 		Handle:      strings.TrimSpace(handle),
 		RedirectURL: strings.TrimSpace(redirectURL),
+		WebhookURL:  strings.TrimSpace(webhookURL),
 		OrderNSU:    orderNSU,
 		Customer: CheckoutCustomer{
 			Name:  strings.TrimSpace(order.Customer.Name),

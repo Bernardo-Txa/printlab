@@ -162,16 +162,19 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Falhas da InfinitePay devem preservar diagnostico seguro com `provider`, `operation`, status HTTP quando houver e categoria controlada, sem body bruto, payload completo, checkout URL completa, PII, NSU de transacao ou secrets.
 - Categorias seguras de falha da InfinitePay incluem `network_error`, `timeout`, status HTTP mapeados, `invalid_json`, `invalid_checkout_url` e `unknown`.
 - `order_nsu` e derivado do UUID do pedido e nao deve ser tratado como autenticacao.
+- `POST /webhooks/infinitepay` aceita chamadas sem `Origin`/`Referer`, exige JSON limitado a 64 KiB e nunca confirma pagamento diretamente pelo payload recebido.
+- Webhook InfinitePay e apenas gatilho para `payment_check` server-side. Pedido so muda para `paid` quando `success=true`, `paid=true` e `amount` iguala `orders.total_cents`.
+- Payload de webhook nao pode gravar `receipt_url`, itens, dados de cliente ou qualquer detalhe de PII.
 - `order_payments` tem RLS habilitado e nenhuma policy publica.
 - Falhas de API, timeout, JSON invalido, retorno com `paid=false` ou abandono de checkout nao podem marcar pedido como pago.
-- Sem webhook, pagamento real sem retorno ao site pode permanecer `pending_payment` ate fase futura.
 
 ## Limites
 
 - Nao ha autenticacao implementada.
 - Nao ha autorizacao implementada.
-- Nao ha webhooks implementados.
-- Processamento de pagamento existe apenas como checkout hospedado InfinitePay e confirmacao por `payment_check`; validacao real controlada ainda esta pendente.
+- Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
+- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
+- Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha upload de imagens, autenticacao administrativa ou escrita publica em Storage.
@@ -193,7 +196,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Aceitar preco, desconto ou frete do cliente como valor final.
 - Enviar token SuperFrete para o navegador ou para base URL configuravel por usuario/env.
 - Inserir caixa ficticia ou dimensao ficticia para forcar cotacao.
-- Processar webhook sem validacao e protecao contra duplicidade.
+- Processar webhook como autoridade direta sem `payment_check` server-side e protecao contra duplicidade.
 - Executar migrations automaticamente no startup do servidor web.
 - Usar Table Editor ou SQL Editor remoto como workflow normal de mudanca de schema.
 - Criar policy publica de `INSERT`, `UPDATE` ou `DELETE` em `storage.objects` para imagens de produto.

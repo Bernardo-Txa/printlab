@@ -1,6 +1,6 @@
 # Fase 10 — Pagamentos InfinitePay
 
-Status: IMPLEMENTACAO CONCLUIDA; validacao real de link e pagamento pendente.
+Status: CONCLUIDA; link real e pagamento real validados antes da Fase 11.
 
 ## Objetivo
 
@@ -24,12 +24,12 @@ Implementar inicio de pagamento hospedado InfinitePay a partir de pedido ja cria
 - Envio de pedido para producao.
 - Etiqueta, postagem, rastreio ou SuperFrete de envio.
 - Painel administrativo.
-- Pagamento real automatico ou validacao manual nao controlada.
+- Webhook ou confirmacao sem retorno do comprador.
 
 ## Validacao
 
 - Implementacao automatizada: concluida por testes locais.
-- Checkout/link real InfinitePay: pendente.
-- Pagamento real confirmado via `payment_check`: pendente.
+- Checkout/link real InfinitePay: validado em producao.
+- Pagamento real confirmado via `payment_check`: validado em producao.
 
-Enquanto a validacao real nao ocorrer, a fase deve ser comunicada como implementacao concluida com validacao real pendente.
+Confirmacao sem retorno do comprador passa a ser tratada pela Fase 11.

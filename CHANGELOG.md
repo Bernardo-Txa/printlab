@@ -71,6 +71,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - ADR-0010 — Pagamento hospedado via InfinitePay.
 - Fase 10.1 — Diagnostico Seguro da Integracao InfinitePay, preservando status HTTP, operacao e categoria sem expor PII, payload, checkout URL completa, transaction NSU ou secrets.
 - Migration `allow_current_infinitepay_checkout_host`, alinhando a constraint `order_payments_checkout_url_host` aos hosts `checkout.infinitepay.io` e `checkout.infinitepay.com.br` aceitos pelo dominio Go.
+- Fase 11 — Webhook InfinitePay, com `webhook_url` no checkout, endpoint `POST /webhooks/infinitepay`, confirmacao por `payment_check` server-side, idempotencia e logs seguros sem PII.
+- ADR-0011 — Confirmacao redundante de pagamentos InfinitePay.
 
 ### Changed
 

@@ -322,9 +322,12 @@ Pagamento:
 
 ```sh
 curl -i http://localhost:8080/pagamento/retorno
+curl -i -X POST http://localhost:8080/webhooks/infinitepay \
+  -H 'Content-Type: application/json' \
+  -d '{"invoice_slug":"slug","transaction_nsu":"txn","order_nsu":"00000000-0000-0000-0000-000000000000"}'
 ```
 
-`POST /pedido/<uuid>/pagar` exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS para criar ou reutilizar checkout InfinitePay. O redirect do navegador nao confirma pagamento; `/pagamento/retorno` chama `payment_check` server-side e so marca o pedido como `paid` quando a InfinitePay confirma `success=true`, `paid=true` e valor igual ao total congelado do pedido. Sem webhook, pagamento real sem retorno ao site pode permanecer temporariamente pendente.
+`POST /pedido/<uuid>/pagar` exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS para criar ou reutilizar checkout InfinitePay. O payload de criacao do link envia `redirect_url` e `webhook_url` gerados no servidor. O redirect do navegador nao confirma pagamento; `/pagamento/retorno` e `/webhooks/infinitepay` chamam `payment_check` server-side e so marcam o pedido como `paid` quando a InfinitePay confirma `success=true`, `paid=true` e valor igual ao total congelado do pedido. Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
 
 ## Supabase local
 

@@ -1,6 +1,6 @@
 # Pedidos
 
-Status: REVISAO, CRIACAO DE PEDIDOS E INICIO DE PAGAMENTO INFINITEPAY IMPLEMENTADOS; validacao real de pagamento pendente.
+Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY E WEBHOOK IMPLEMENTADOS; recebimento real de webhook pendente.
 
 Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. O pedido e criado antes do pagamento, nasce com status `pending_payment` e pode mudar para `paid` somente apos validacao server-side com a InfinitePay.
 
@@ -143,11 +143,11 @@ O payload enviado a InfinitePay e montado apenas a partir do snapshot do pedido:
 
 Antes de chamar a InfinitePay, o backend soma `quantity * unit_price_cents` e o frete e exige igualdade exata com `orders.total_cents`.
 
-O retorno do navegador nunca confirma pagamento. `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` como entrada para `payment_check`. A aplicacao marca `orders.status = 'paid'` somente se a InfinitePay responder `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
+O retorno do navegador nunca confirma pagamento. `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` como entrada para `payment_check`. `POST /webhooks/infinitepay` usa `invoice_slug`, `transaction_nsu` e `order_nsu` para acionar a mesma confirmacao server-side. A aplicacao marca `orders.status = 'paid'` somente se a InfinitePay responder `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
 
 `paid_amount` e persistido separadamente e pode divergir de `amount`.
 
-Sem webhook, se o comprador pagar e fechar a InfinitePay antes de retornar, o pedido pode permanecer temporariamente `pending_payment`.
+O webhook reduz dependencia do comprador clicar em continuar/retornar depois do pagamento. Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
 
 ## Privacidade
 
@@ -157,9 +157,8 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 
 ## Limites
 
-- Validacao real de link InfinitePay ainda esta pendente.
-- Validacao real de pagamento ainda esta pendente.
-- Nao ha webhook de pagamento.
+- Link real InfinitePay e pagamento real foram validados antes da Fase 11.
+- Recebimento real de webhook InfinitePay em producao ainda precisa ser validado.
 - Nao ha etiqueta, postagem ou rastreio.
 - Nao ha painel administrativo.
 - O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.
