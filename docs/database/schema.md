@@ -24,6 +24,8 @@ A Fase 13.2 adiciona `public.admin_order_events` para auditoria transacional de 
 
 A Fase 13.3 nao altera schema. Ela torna administraveis as tabelas ja existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
 
+A Fase 13.3A tambem nao altera schema: `public.product_variants` permanece como modelo interno de configuracoes do produto.
+
 ## Convencoes futuras
 
 - Usar `snake_case` para tabelas, colunas, constraints e indices.
@@ -239,13 +241,13 @@ Indices:
 
 Semantica:
 
-- Um produto pode nao ter variantes.
-- Um produto pode ter varias variantes ativas.
-- No maximo uma variante default pode existir por produto.
-- Variante default deve estar ativa.
+- Um produto pode nao ter configuracoes em `product_variants`.
+- Um produto pode ter varias configuracoes ativas.
+- No maximo uma configuracao default pode existir por produto.
+- Configuracao default deve estar ativa.
 - `sku` e opcional e nao e identificador publico principal.
 - Ordenacao publica: `is_default desc`, `sort_order asc`, `name asc`.
-- O perfil logistico da variante e um override atomico. Se estiver completo, substitui o perfil do produto; se estiver ausente, o frete usa o perfil completo do produto.
+- O perfil logistico da configuracao e um override atomico. Se estiver completo, substitui o perfil do produto; se estiver ausente, o frete usa o perfil completo do produto.
 - Campos logisticos parciais nao sao permitidos e nao devem ser misturados com campos do produto.
 
 RLS:

@@ -40,7 +40,7 @@ IMPLEMENTADO:
 - Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
 - Fase 9 com `orders`, snapshots de pedido e conversao de carrinho por `converted_at`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
-- Selecao publica de variante por query string em `GET /produtos/{slug}?variante=<variant-slug>`.
+- Selecao publica de configuracao por query string em `GET /produtos/{slug}?variante=<variant-slug>` quando houver mais de uma configuracao ativa.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
 - Estrutura inicial de diretorios e documentacao.
@@ -103,7 +103,7 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
-O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete e sem upload de imagens.
+O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete e sem upload de imagens. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas.
 
 ## Responsabilidades do frontend
 
@@ -250,7 +250,7 @@ GET /health -> HTTP 200
 GET /ready -> HTTP 200 quando banco configurado e acessivel; HTTP 503 quando ausente ou indisponivel
 GET /produtos -> catalogo publico SSR; HTTP 503 quando banco estiver indisponivel
 GET /produtos/{slug} -> detalhe publico de produto ativo; HTTP 404 para inexistente, inativo ou slug invalido
-GET /produtos/{slug}?variante={variant-slug} -> detalhe com variante ativa selecionada; HTTP 404 para variante invalida ou indisponivel
+GET /produtos/{slug}?variante={variant-slug} -> detalhe com configuracao ativa selecionada; HTTP 404 para configuracao invalida ou indisponivel
 GET /carrinho -> carrinho SSR; carrinho vazio 200 sem cookie
 POST /carrinho/adicionar -> adiciona/incrementa item e redireciona 303 para /carrinho
 POST /carrinho/itens/{id}/quantidade -> atualiza quantidade e redireciona 303
@@ -397,7 +397,7 @@ Dependencias planejadas, mas ainda nao adicionadas:
 Regras obrigatorias:
 
 - Nunca confiar em dados financeiros recebidos do navegador.
-- Preco efetivo de variante deve ser calculado no backend a partir de `product_variants.price_cents` ou `products.price_cents`.
+- Preco efetivo de configuracao deve ser calculado no backend a partir de `product_variants.price_cents` ou `products.price_cents`.
 - Carrinho nao congela preco; subtotal usa preco atual calculado no backend.
 - Token bruto de carrinho nao deve ser persistido, logado, renderizado em HTML ou usado em URL.
 - CPF, e-mail, telefone e endereco nao devem ser logados nem usados como identificadores publicos.

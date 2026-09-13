@@ -136,9 +136,9 @@ func PrepareAdminProductListItem(item *AdminProductListItem) {
 	}
 	item.VariantCountLabel = strconv.Itoa(item.VariantCount)
 	if item.VariantCount == 1 {
-		item.VariantCountLabel += " variante"
+		item.VariantCountLabel += " configuração"
 	} else {
-		item.VariantCountLabel += " variantes"
+		item.VariantCountLabel += " configurações"
 	}
 	if item.HasShippingProfile {
 		item.ShippingLabel = "Perfil logistico presente"
@@ -147,10 +147,35 @@ func PrepareAdminProductListItem(item *AdminProductListItem) {
 		item.Warnings = append(item.Warnings, "Sem perfil logistico efetivo no produto.")
 	}
 	if item.VariantCount == 0 {
-		item.Warnings = append(item.Warnings, "Sem variantes cadastradas.")
+		item.Warnings = append(item.Warnings, "Sem configurações cadastradas.")
 	}
 	item.DetailURL = "/admin/produtos/" + strings.ToLower(item.ID)
 	item.VariantsURL = item.DetailURL
+}
+
+func PrepareAdminVariantListItems(items []AdminVariantListItem) []AdminVariantListItem {
+	activeCount := 0
+	for _, item := range items {
+		if item.IsActive {
+			activeCount++
+		}
+	}
+
+	for i := range items {
+		item := &items[i]
+		item.StatusLabel = ActiveStatusLabel(item.IsActive)
+		if item.IsDefault {
+			item.DefaultLabel = "Padrão"
+		} else if item.IsActive && activeCount == 1 {
+			item.DefaultLabel = "Única configuração"
+		} else if activeCount > 1 {
+			item.DefaultLabel = "Não padrão"
+		} else {
+			item.DefaultLabel = ""
+		}
+	}
+
+	return items
 }
 
 func ActiveStatusLabel(active bool) string {
@@ -794,7 +819,7 @@ func validateAdminVariantForm(form AdminVariantForm, create bool, productID stri
 		errorsByField.Add("name", "Informe o nome.")
 	}
 	if create && form.IsDefault && !form.IsActive {
-		errorsByField.Add("is_default", "A variante padrao precisa estar ativa.")
+		errorsByField.Add("is_default", "A configuração padrão precisa estar ativa.")
 	}
 	if input.Slug == "" && create {
 		input.Slug = CanonicalSlug(input.Name)

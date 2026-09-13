@@ -1,8 +1,8 @@
 # Catalogo
 
-Status: Catalogo publico, perfis logisticos e gestao administrativa basica IMPLEMENTADOS; validacao real da Fase 13.3 pendente.
+Status: Catalogo publico, perfis logisticos, gestao administrativa basica e refinamento 13.3A de configuracoes IMPLEMENTADOS; validacao real da Fase 13.3 pendente.
 
-O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de variantes.
+O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de configuracoes internas em `product_variants`.
 
 ## Implementado
 
@@ -18,14 +18,14 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Suporte a produto destacado por `is_featured`.
 - Categoria opcional por `category_id`.
 - Empty state honesto quando nao ha produtos publicados.
-- Variantes ativas por produto em `public.product_variants`.
+- Configuracoes internas por produto em `public.product_variants`.
 - Materiais logicos em `public.materials`.
 - Cores logicas em `public.colors`.
 - Receita estimada de producao em `public.variant_filaments`.
 - Imagens gerais de produto e especificas de variante em `public.product_images`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
 - Placeholder visual de marca quando nao existe imagem renderizavel.
-- Selecao publica de variante por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio.
+- Selecao publica de configuracao por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio, somente quando houver mais de uma configuracao ativa.
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
 - Perfil logistico opcional em produtos e variantes para cotacao de frete.
 - Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores e caixas em `/admin`.
@@ -39,8 +39,11 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Produto associado a categoria inativa continua podendo aparecer, mas sem exibir a categoria.
 - O filtro de categoria usa slug, nunca UUID.
 - Slug invalido em rota publica retorna 404.
-- Variante inativa, inexistente, invalida ou pertencente a outro produto retorna 404 quando solicitada explicitamente.
-- Produto sem variantes continua valido e usa o preco-base.
+- Configuracao inativa, inexistente, invalida ou pertencente a outro produto retorna 404 quando solicitada explicitamente.
+- Produto sem configuracao ativa continua valido e usa o preco-base.
+- Produto com exatamente uma configuracao ativa seleciona essa configuracao automaticamente, sem mostrar seletor ou resumo publico de escolha.
+- Produto com duas ou mais configuracoes ativas mostra a escolha publica "Escolha uma opção".
+- A URL com `?variante=<slug>` continua aceita por compatibilidade e para links de configuracao explicita.
 - Material ou cor inativos nao tornam uma receita existente invisivel.
 - Erros de banco retornam mensagem generica e nao expoem detalhes internos.
 
@@ -52,17 +55,21 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 R$ 39,90 -> 3990
 ```
 
-`product_variants.price_cents` e opcional. Quando preenchido, ele sobrescreve o preco-base para aquela variante. Quando `null`, o preco efetivo da variante usa `products.price_cents`.
+`product_variants.price_cents` e opcional. Quando preenchido, ele sobrescreve o preco-base para aquela configuracao. Quando `null`, o preco efetivo da configuracao usa `products.price_cents`.
 
-No catalogo, quando um produto possui variantes ativas, o card usa o menor preco efetivo. Se houver variacao de preco entre variantes ativas, o texto publico usa "A partir de". Se todas as variantes efetivas tiverem o mesmo preco, o card mostra apenas o valor.
+No catalogo, quando um produto possui configuracoes ativas, o card usa o menor preco efetivo. Se houver variacao de preco entre configuracoes ativas, o texto publico usa "A partir de". Se todas as configuracoes efetivas tiverem o mesmo preco, o card mostra apenas o valor.
 
 O frontend nunca envia preco autoritativo e nao calcula o preco efetivo.
 
 No Admin, formularios recebem valores em BRL amigavel, como `39,90`, `39.90` ou `0,00`. O backend converte para centavos inteiros com parser decimal exato, rejeitando negativos, notacao cientifica, texto, mais de duas casas decimais e overflow. Dinheiro nao usa `float32` nem `float64`.
 
-## Variantes
+## Configuracoes
 
-Ordenacao publica de variantes:
+`product_variants` permanece sendo o modelo interno para SKU, preco especifico opcional, tempo estimado de impressao, receita, perfil logistico, status ativo, imagens futuras e snapshots de pedido.
+
+Na interface administrativa, o conceito deve ser apresentado como "Configuracao" ou "Configuracoes do produto". Na loja publica, uma escolha so deve aparecer quando houver mais de uma configuracao ativa.
+
+Ordenacao publica de configuracoes:
 
 ```text
 is_default desc
@@ -70,13 +77,15 @@ sort_order asc
 name asc
 ```
 
-Quando `?variante=` nao e fornecido:
+Quando `?variante=` nao e fornecido e ha configuracoes ativas:
 
-1. seleciona a variante ativa marcada como default;
-2. se nao houver default, seleciona a primeira variante ativa pela ordenacao publica;
-3. se nao houver variantes ativas, o produto continua sem variante selecionada.
+1. seleciona a configuracao ativa marcada como default;
+2. se nao houver default, seleciona a primeira configuracao ativa pela ordenacao publica;
+3. se nao houver configuracoes ativas, o produto continua sem configuracao selecionada.
 
-O slug da variante e unico dentro do produto e nao substitui o slug do produto como URL canonica. A canonical da pagina continua sendo `/produtos/{slug}`.
+Se existir exatamente uma configuracao ativa, ela e efetivamente usada mesmo que dados antigos estejam com `is_default = false`. Essa regra nao exige migration nem atualizacao retroativa.
+
+O slug da configuracao e unico dentro do produto e nao substitui o slug do produto como URL canonica. A canonical da pagina continua sendo `/produtos/{slug}`.
 
 No Admin, slugs vazios podem ser gerados deterministicamente a partir do nome somente na criacao. Em edicao, mudar slug e sempre uma decisao explicita. Conflitos de slug retornam erro amigavel, sem expor detalhe SQL.
 
@@ -114,11 +123,11 @@ Produtos e variantes podem possuir perfil logistico para frete:
 
 Esse perfil representa uma unidade preparada para acondicionamento, nao necessariamente a geometria crua da peca 3D nem a receita de filamento. Exemplo: uma peca pode medir `190 x 85 x 70 mm`, mas seu perfil protegido para envio ser `210 x 105 x 90 mm`.
 
-A variante pode possuir override completo. Se nao possuir, a cotacao usa o perfil completo do produto. Campos parciais nao sao misturados.
+A configuracao pode possuir override completo. Se nao possuir, a cotacao usa o perfil completo do produto. Campos parciais nao sao misturados.
 
 Produto ou variante sem perfil logistico efetivo nao recebe estimativa ficticia no checkout de frete.
 
-No Admin, perfil logistico e atomico: todos os quatro campos precisam estar preenchidos ou todos precisam ficar vazios. A variante com perfil ausente herda o perfil completo do produto; campos isolados de produto e variante nao sao combinados.
+No Admin, perfil logistico e atomico: todos os quatro campos precisam estar preenchidos ou todos precisam ficar vazios. A configuracao com perfil ausente herda o perfil completo do produto; campos isolados de produto e configuracao nao sao combinados.
 
 ## Gestao administrativa
 
@@ -128,7 +137,7 @@ Entidades principais nao possuem hard delete no painel. O Admin ativa ou desativ
 
 Alteracoes de produto, variante, material, cor, receita ou caixa nao atualizam pedidos existentes. `orders`, `order_items`, `order_item_filaments` e `order_shipping_details` permanecem snapshots do momento da compra.
 
-Produtos ativos podem mostrar avisos operacionais no Admin quando nao possuem perfil logistico ou variantes, mas esses avisos nao alteram dados silenciosamente nem bloqueiam regras publicas existentes.
+Produtos ativos podem mostrar avisos operacionais no Admin quando nao possuem perfil logistico ou configuracoes, mas esses avisos nao alteram dados silenciosamente nem bloqueiam regras publicas existentes.
 
 ## Imagens
 
@@ -137,8 +146,8 @@ Produtos ativos podem mostrar avisos operacionais no Admin quando nao possuem pe
 Estrategia publica:
 
 1. card de catalogo usa imagem geral primaria do produto quando existir e houver `SUPABASE_URL`;
-2. detalhe de produto prioriza imagens da variante selecionada;
-3. se a variante nao tiver imagem, usa imagens gerais do produto;
+2. detalhe de produto prioriza imagens da configuracao selecionada;
+3. se a configuracao nao tiver imagem, usa imagens gerais do produto;
 4. se nao houver imagem renderizavel, usa placeholder visual da PrintLab.
 
 Formatos preferidos para operacao:

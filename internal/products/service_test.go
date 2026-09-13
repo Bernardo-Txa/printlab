@@ -162,6 +162,27 @@ func TestProductSelectsFirstVariantWhenNoDefaultExists(t *testing.T) {
 	}
 }
 
+func TestProductSelectsSingleActiveVariantWithoutDefault(t *testing.T) {
+	override := int64(16990)
+	single := activeVariant("teste2", "teste2", false)
+	single.PriceCents = &override
+	service := NewService(&fakeRepository{
+		detail: productDetailFixture([]ProductVariant{single}),
+	})
+
+	detail, err := service.Product(context.Background(), "produto-real", "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if detail.SelectedVariant == nil || detail.SelectedVariant.Slug != "teste2" {
+		t.Fatalf("expected single active variant to be selected, got %#v", detail.SelectedVariant)
+	}
+	if detail.DisplayPriceCents != 16990 || detail.DisplayPriceBRL != "R$ 169,90" {
+		t.Fatalf("expected variant price override, got %d %q", detail.DisplayPriceCents, detail.DisplayPriceBRL)
+	}
+}
+
 func TestProductSelectsExplicitVariant(t *testing.T) {
 	service := NewService(&fakeRepository{
 		detail: productDetailFixture([]ProductVariant{

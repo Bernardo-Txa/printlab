@@ -161,6 +161,30 @@ func TestValidateAdminVariantFormDeactivatingDefaultClearsDefault(t *testing.T) 
 	}
 }
 
+func TestPrepareAdminVariantListItemsLabelsSingleActiveConfiguration(t *testing.T) {
+	items := PrepareAdminVariantListItems([]AdminVariantListItem{
+		{Name: "teste2", IsActive: true, IsDefault: false},
+	})
+
+	if items[0].DefaultLabel != "Única configuração" {
+		t.Fatalf("expected single configuration label, got %q", items[0].DefaultLabel)
+	}
+}
+
+func TestPrepareAdminVariantListItemsLabelsMultipleConfigurations(t *testing.T) {
+	items := PrepareAdminVariantListItems([]AdminVariantListItem{
+		{Name: "Mini", IsActive: true, IsDefault: true},
+		{Name: "Grande", IsActive: true, IsDefault: false},
+	})
+
+	if items[0].DefaultLabel != "Padrão" {
+		t.Fatalf("expected default label, got %q", items[0].DefaultLabel)
+	}
+	if items[1].DefaultLabel != "Não padrão" {
+		t.Fatalf("expected non-default label, got %q", items[1].DefaultLabel)
+	}
+}
+
 func TestNormalizeHexColor(t *testing.T) {
 	got, err := NormalizeHexColor("#ff0000")
 	if err != nil {

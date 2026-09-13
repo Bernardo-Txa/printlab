@@ -26,7 +26,7 @@ Tornar o catalogo e os dados operacionais basicos da PrintLab administraveis pel
 - Peso de receita usa gramas na UI e persiste miligramas inteiros.
 - Material/cor inativo permanece visivel em receita existente e nao aparece em novas escolhas.
 - Perfil logistico de produto e variante e atomico: completo ou ausente.
-- Variante default precisa estar ativa; troca de default remove as demais na mesma transacao.
+- Configuracao default precisa estar ativa; troca de default remove as demais na mesma transacao.
 - Desativar variante default remove `is_default` sem escolher outra automaticamente.
 - Caixa valida dimensoes positivas, peso positivo, `sort_order >= 0` e dimensoes externas maiores ou iguais as internas.
 - Violações conhecidas de unique viram mensagens amigaveis.

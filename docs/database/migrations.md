@@ -64,6 +64,8 @@ Ela cria `public.admin_order_events` com UUID primario, referencia restritiva a 
 
 A Fase 13.3 nao criou migration. A gestao administrativa de catalogo, variantes, receita, materiais, cores e caixas usa as tabelas existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
 
+A Fase 13.3A tambem nao criou migration. O refinamento alterou semantica e UX de configuracoes sem renomear `product_variants`.
+
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
@@ -123,6 +125,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A nona migration real cria sessoes administrativas para a Fase 13.1.
 - A decima migration real cria auditoria operacional administrativa para a Fase 13.2.
 - A Fase 13.3 nao possui migration porque o schema existente atende ao escopo.
+- A Fase 13.3A nao possui migration porque `product_variants` permanece como modelo interno.
 
 ## Praticas recomendadas
 

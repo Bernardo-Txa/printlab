@@ -13,8 +13,9 @@ O carrinho permite que visitantes anonimos escolham produtos e quantidades antes
 - O detalhe de produto envia formulario real de adicionar com `product_slug`, `variant_slug` opcional e `quantity`.
 - Carrinho com itens disponiveis mostra CTA real para `/checkout/dados`.
 - Carrinho com item indisponivel nao permite continuar para dados ate revisao/remocao.
-- Produto com variantes ativas exige variante valida.
-- Produto sem variantes ativas pode ser adicionado com `variant_id = null`.
+- Produto sem configuracao ativa pode ser adicionado com `variant_id = null`.
+- Produto com exatamente uma configuracao ativa resolve essa configuracao no backend mesmo sem escolha manual.
+- Produto com duas ou mais configuracoes ativas exige `variant_slug` valido.
 - Quantidade valida: `1..99`.
 - Carrinho vazio nao cria registro no banco apenas por visita.
 - Carrinho expirado ou cookie desconhecido e tratado como vazio.
@@ -95,7 +96,7 @@ Quando um pedido e criado, a linha de `carts` e preservada com `converted_at` pr
 Ao abrir o carrinho, o preco atual e recalculado:
 
 ```text
-product_variants.price_cents != null -> preco da variante
+product_variants.price_cents != null -> preco da configuracao
 caso contrario -> products.price_cents
 ```
 
@@ -122,11 +123,11 @@ Um item disponivel exige:
 - `products.is_active = true`;
 - quando `variant_id != null`, `product_variants.is_active = true`;
 - quando `variant_id != null`, a variante pertence ao produto;
-- quando `variant_id = null`, o produto nao possui variantes ativas no momento.
+- quando `variant_id = null`, o produto nao possui configuracoes ativas no momento.
 
-Se produto ou variante forem desativados depois da adicao, a linha continua visivel como indisponivel. Itens indisponiveis podem ser removidos, nao entram no subtotal e nao devem seguir para checkout futuro.
+Se produto ou configuracao forem desativados depois da adicao, a linha continua visivel como indisponivel. Itens indisponiveis podem ser removidos, nao entram no subtotal e nao devem seguir para checkout futuro.
 
-Se um produto que estava no carrinho sem variante passar a ter variantes ativas, a linha fica indisponivel. O sistema nao escolhe automaticamente outra variante pelo cliente.
+Se um produto que estava no carrinho sem configuracao passar a ter multiplas configuracoes ativas, a linha fica indisponivel. O sistema nao escolhe automaticamente uma entre varias opcoes pelo cliente.
 
 ## Protecao cross-site
 

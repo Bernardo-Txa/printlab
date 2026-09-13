@@ -55,7 +55,7 @@ Nesta fase, o backend implementa:
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete, pedidos, pagamentos, acompanhamento, sessoes administrativas e auditoria operacional de pedidos.
-- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos, mutacoes auditadas de producao/envio e gestao de catalogo, variantes, receita, materiais, cores e caixas. Alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
+- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos, mutacoes auditadas de producao/envio e gestao de catalogo, configuracoes internas de produto, receita, materiais, cores e caixas. Alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -107,9 +107,9 @@ Nesta fase, o backend implementa:
 
 `GET /produtos/{slug}` valida o slug e busca apenas produto ativo. Slug invalido, produto inexistente e produto inativo retornam HTTP 404.
 
-`GET /produtos/{slug}?variante=<slug>` valida o slug da variante antes de chamar o service. Variante invalida, inexistente, inativa ou pertencente a outro produto retorna HTTP 404.
+`GET /produtos/{slug}?variante=<slug>` valida o slug da configuracao antes de chamar o service. Configuracao invalida, inexistente, inativa ou pertencente a outro produto retorna HTTP 404.
 
-Quando um produto possui variantes ativas, o service escolhe automaticamente a variante default ativa; se nao existir, usa a primeira variante ativa pela ordenacao publica. Produto sem variantes continua valido e usa o preco-base.
+Produto sem configuracao ativa continua valido e usa o preco-base. Produto com exatamente uma configuracao ativa seleciona essa configuracao automaticamente sem expor seletor publico. Quando um produto possui duas ou mais configuracoes ativas, o service escolhe automaticamente a configuracao default ativa; se nao existir, usa a primeira configuracao ativa pela ordenacao publica.
 
 As consultas de catalogo evitam N+1 em Go. A listagem calcula o menor preco efetivo e busca imagem geral primaria em uma consulta. O detalhe carrega produto, variantes, receitas e imagens em consultas separadas e coesas.
 
@@ -119,11 +119,11 @@ Se o banco estiver indisponivel, rotas de catalogo retornam HTTP 503 com respost
 
 `GET /carrinho` renderiza carrinho vazio quando nao ha cookie valido. A rota nao cria registro no banco apenas por leitura.
 
-`POST /carrinho/adicionar` recebe `product_slug`, `variant_slug` opcional e `quantity`. O backend valida slugs, quantidade, produto ativo, variante ativa quando exigida e nao aceita preco do frontend.
+`POST /carrinho/adicionar` recebe `product_slug`, `variant_slug` opcional e `quantity`. O backend valida slugs, quantidade, produto ativo, configuracao ativa quando exigida e nao aceita preco do frontend.
 
-Produto com variantes ativas exige variante valida. Produto sem variantes ativas pode ser adicionado sem variante.
+Produto sem configuracao ativa pode ser adicionado sem `variant_id`. Produto com exatamente uma configuracao ativa resolve essa configuracao no backend. Produto com duas ou mais configuracoes ativas exige `variant_slug` valido.
 
-Adicionar produto/variante ja existente incrementa a linha de forma atomica no SQL e respeita o limite 99.
+Adicionar produto/configuracao ja existente incrementa a linha de forma atomica no SQL e respeita o limite 99.
 
 `POST /carrinho/itens/{id}/quantidade` e `POST /carrinho/itens/{id}/remover` atuam somente quando o item pertence ao carrinho atual. Ambas usam `cart_id` junto de `item_id`.
 

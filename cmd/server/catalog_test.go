@@ -131,6 +131,42 @@ func TestProductWithDefaultVariantReturnsOK(t *testing.T) {
 	if !strings.Contains(body, "Padrao") || !strings.Contains(body, `aria-current="true"`) {
 		t.Fatal("expected default variant to be rendered as selected")
 	}
+	if !strings.Contains(body, "Escolha uma opção") {
+		t.Fatal("expected multiple variants to render public choice")
+	}
+}
+
+func TestProductWithSingleVariantDoesNotRenderPublicSelector(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/produtos/produto-real", nil)
+	rec := httptest.NewRecorder()
+	service := &fakeCatalogService{
+		detail: products.ProductDetail{
+			Product: products.Product{Name: "Produto Real", Slug: "produto-real"},
+			Variants: []products.ProductVariant{
+				{Name: "teste2", Slug: "teste2", EffectivePriceBRL: "R$ 169,90"},
+			},
+			SelectedVariant:   &products.ProductVariant{Name: "teste2", Slug: "teste2", EffectivePriceBRL: "R$ 169,90"},
+			DisplayPriceBRL:   "R$ 169,90",
+			DisplayPriceLabel: "Preco",
+			CanonicalPath:     "/produtos/produto-real",
+		},
+	}
+
+	newTestHandlerWithCatalog(t, service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	body := rec.Body.String()
+	for _, forbidden := range []string{"Escolha uma opção", "Variante", "Configuração"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected single configuration not to render %q publicly", forbidden)
+		}
+	}
+	if !strings.Contains(body, `name="variant_slug" value="teste2"`) {
+		t.Fatal("expected hidden selected configuration to be submitted to cart")
+	}
 }
 
 func TestProductWithVariantQueryReturnsOK(t *testing.T) {
@@ -145,7 +181,7 @@ func TestProductWithVariantQueryReturnsOK(t *testing.T) {
 			},
 			SelectedVariant:   &products.ProductVariant{Name: "Grande", Slug: "grande", EffectivePriceBRL: "R$ 59,90"},
 			DisplayPriceBRL:   "R$ 59,90",
-			DisplayPriceLabel: "Preco da variante",
+			DisplayPriceLabel: "Preco",
 			CanonicalPath:     "/produtos/produto-real",
 		},
 	}

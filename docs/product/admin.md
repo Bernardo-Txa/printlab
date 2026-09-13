@@ -135,6 +135,16 @@ Rotas de catalogo:
 
 A 13.3 torna administraveis categorias, produtos, variantes, receitas estimadas de producao, materiais logicos, cores logicas e caixas fisicas de envio usando as tabelas ja existentes. Nenhuma migration foi criada para esta fase.
 
+A 13.3A refinou a semantica visivel de variantes:
+
+- `product_variants` continua sendo o modelo interno e as rotas continuam usando `/variantes`;
+- o Admin deve chamar esse conceito de "Configuracao" ou "Configuracoes do produto";
+- a pagina de produto usa a secao "Configuracoes do produto" e a acao "Adicionar configuracao";
+- uma unica configuracao ativa aparece como "Unica configuracao" em vez de "Nao default";
+- com duas ou mais configuracoes ativas, o Admin mostra "Padrao" ou "Nao padrao";
+- o formulario usa "Usar como opcao padrao" e explica que isso define a opcao inicialmente selecionada na loja quando houver mais de uma configuracao ativa;
+- nenhuma migration foi necessaria para atualizar registros antigos.
+
 Regras administrativas:
 
 - entidades principais usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, variantes, materiais, cores ou caixas;

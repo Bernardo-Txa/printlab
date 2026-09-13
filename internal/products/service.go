@@ -162,7 +162,7 @@ func (s *Service) prepareProductDetail(detail *ProductDetail, variantSlug string
 		detail.DisplayPriceCents = selected.EffectivePriceCents
 		detail.DisplayPriceBRL = selected.EffectivePriceBRL
 		if selected.PriceCents != nil {
-			detail.DisplayPriceLabel = "Preco da variante"
+			detail.DisplayPriceLabel = "Preco"
 		} else {
 			detail.DisplayPriceLabel = "Preco-base"
 		}

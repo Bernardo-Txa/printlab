@@ -389,6 +389,61 @@ func TestAdminProductsRequireSession(t *testing.T) {
 	}
 }
 
+func TestAdminProductDetailUsesConfigurationCopy(t *testing.T) {
+	productID := "11111111-1111-1111-1111-111111111111"
+	service := &fakeAdminPanelService{
+		available: true,
+		getProductPage: admindomain.AdminProductFormPage{
+			Title:       "Editar produto",
+			Action:      "/admin/produtos/" + productID,
+			SubmitLabel: "Salvar produto",
+			BackURL:     "/admin/produtos",
+			Form: admindomain.AdminProductForm{
+				Name:     "Produto Teste Frete",
+				Slug:     "produto-teste-frete",
+				PriceBRL: "169,90",
+				IsActive: true,
+			},
+			Variants: []admindomain.AdminVariantListItem{
+				{
+					Name:              "teste2",
+					Slug:              "teste2",
+					SKU:               "SKU-TESTE2",
+					PriceLabel:        "R$ 169,90",
+					StatusLabel:       "Ativo",
+					DefaultLabel:      "Única configuração",
+					PrintTimeLabel:    "1h",
+					ShippingLabel:     "Usa perfil logistico do produto",
+					RecipeCount:       1,
+					RecipeWeightLabel: "12 g",
+					DetailURL:         "/admin/produtos/" + productID + "/variantes/22222222-2222-2222-2222-222222222222",
+				},
+			},
+		},
+	}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/produtos/"+productID, nil)
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Configurações do produto", "Adicionar configuração", "Única configuração", "teste2"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected body to contain %q", expected)
+		}
+	}
+	for _, forbidden := range []string{"Nova variante", ">Variantes<", "Não default", "Nao default"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected body not to contain %q", forbidden)
+		}
+	}
+}
+
 func TestAdminCreateProductSameOriginCallsService(t *testing.T) {
 	service := &fakeAdminPanelService{available: true, createProductID: "22222222-2222-2222-2222-222222222222"}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -632,6 +687,8 @@ type fakeAdminPanelService struct {
 	shippingStatus      string
 	shippingActorID     string
 	shippingErr         error
+	getProductPage      admindomain.AdminProductFormPage
+	getProductErr       error
 	createProductCalled bool
 	createProductID     string
 	createProductForm   admindomain.AdminProductForm
@@ -719,7 +776,10 @@ func (s *fakeAdminPanelService) NewAdminProduct(context.Context) (admindomain.Ad
 }
 
 func (s *fakeAdminPanelService) GetAdminProduct(context.Context, string) (admindomain.AdminProductFormPage, error) {
-	return admindomain.AdminProductFormPage{}, nil
+	if s.getProductErr != nil {
+		return admindomain.AdminProductFormPage{}, s.getProductErr
+	}
+	return s.getProductPage, nil
 }
 
 func (s *fakeAdminPanelService) CreateAdminProduct(_ context.Context, form admindomain.AdminProductForm) (string, admindomain.AdminProductFormPage, error) {

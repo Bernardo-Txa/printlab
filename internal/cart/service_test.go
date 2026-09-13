@@ -79,7 +79,7 @@ func TestAddCreatesCartOnFirstValidAdd(t *testing.T) {
 	}
 }
 
-func TestAddProductWithActiveVariantsRequiresVariant(t *testing.T) {
+func TestAddProductWithOneActiveVariantSelectsItWithoutSlug(t *testing.T) {
 	repository := newFakeRepository()
 	repository.products["produto-real"] = ProductForAdd{
 		ID:       "prod-1",
@@ -87,6 +87,31 @@ func TestAddProductWithActiveVariantsRequiresVariant(t *testing.T) {
 		IsActive: true,
 		Variants: []VariantForAdd{
 			{ID: "variant-1", ProductID: "prod-1", Slug: "padrao", IsActive: true},
+		},
+	}
+	service := NewService(repository, WithClock(fixedClock()))
+
+	_, err := service.Add(context.Background(), testHash(1), AddItemInput{
+		ProductSlug: "produto-real",
+		Quantity:    1,
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if repository.lastAddedVariantID == nil || *repository.lastAddedVariantID != "variant-1" {
+		t.Fatalf("expected single active variant to be added, got %#v", repository.lastAddedVariantID)
+	}
+}
+
+func TestAddProductWithMultipleActiveVariantsRequiresVariant(t *testing.T) {
+	repository := newFakeRepository()
+	repository.products["produto-real"] = ProductForAdd{
+		ID:       "prod-1",
+		Slug:     "produto-real",
+		IsActive: true,
+		Variants: []VariantForAdd{
+			{ID: "variant-1", ProductID: "prod-1", Slug: "padrao", IsActive: true},
+			{ID: "variant-2", ProductID: "prod-1", Slug: "grande", IsActive: true},
 		},
 	}
 	service := NewService(repository, WithClock(fixedClock()))
@@ -320,7 +345,7 @@ func TestViewCalculatesCurrentPricesAndKeepsUnavailableItems(t *testing.T) {
 	if view.Lines[1].Available || view.Lines[1].UnavailableReason != "Produto indisponivel." {
 		t.Fatalf("expected inactive product line, got %#v", view.Lines[1])
 	}
-	if view.Lines[2].Available || view.Lines[2].UnavailableReason != "Variante indisponivel." {
+	if view.Lines[2].Available || view.Lines[2].UnavailableReason != "Configuração indisponível." {
 		t.Fatalf("expected inactive variant line, got %#v", view.Lines[2])
 	}
 	if view.Lines[3].Available || !view.Lines[3].RequiresVariantPick {

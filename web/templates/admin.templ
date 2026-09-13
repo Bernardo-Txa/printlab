@@ -372,7 +372,7 @@ templ AdminProducts(page admindomain.AdminProductListPage) {
 											<p><span>Categoria</span><strong>{ product.CategoryLabel }</strong></p>
 											<p><span>Status</span><strong>{ product.StatusLabel }</strong></p>
 											<p><span>Destaque</span><strong>{ product.FeaturedLabel }</strong></p>
-											<p><span>Variantes</span><strong>{ product.VariantCountLabel }</strong></p>
+											<p><span>Configurações</span><strong>{ product.VariantCountLabel }</strong></p>
 											<p><span>Frete</span><strong>{ product.ShippingLabel }</strong></p>
 											<p><span>Imagens</span><strong>Fase 13.4</strong></p>
 										</div>
@@ -427,11 +427,11 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 						if !page.IsNew {
 							<section class="admin-panel" aria-labelledby="admin-product-variants">
 								<div class="admin-heading-row">
-									<h2 id="admin-product-variants">Variantes</h2>
-									<a class="btn-base btn-secondary" href={ page.Action + "/variantes/nova" }>Nova variante</a>
+									<h2 id="admin-product-variants">Configurações do produto</h2>
+									<a class="btn-base btn-secondary" href={ page.Action + "/variantes/nova" }>Adicionar configuração</a>
 								</div>
 								if len(page.Variants) == 0 {
-									<p class="admin-muted">Nenhuma variante cadastrada.</p>
+									<p class="admin-muted">Nenhuma configuração cadastrada.</p>
 								} else {
 									<div class="admin-item-list">
 										for _, variant := range page.Variants {
@@ -448,7 +448,9 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 												</div>
 												<div class="admin-status-grid">
 													<p><span>Status</span><strong>{ variant.StatusLabel }</strong></p>
-													<p><span>Default</span><strong>{ variant.DefaultLabel }</strong></p>
+													if variant.DefaultLabel != "" {
+														<p><span>Padrão</span><strong>{ variant.DefaultLabel }</strong></p>
+													}
 													<p><span>Ordem</span><strong>{ strconv.Itoa(variant.SortOrder) }</strong></p>
 													<p><span>Tempo</span><strong>{ variant.PrintTimeLabel }</strong></p>
 													<p><span>Frete</span><strong>{ variant.ShippingLabel }</strong></p>
@@ -480,7 +482,7 @@ templ AdminCategoryForm(page admindomain.AdminCategoryFormPage) {
 }
 
 templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
-	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Variante administrativa da PrintLab.") {
+	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Configuração administrativa da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell("products") {
@@ -495,9 +497,10 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 							@adminTextField("sku", "SKU", page.Form.SKU, page.Errors.Get("sku"), "text", false)
 							@adminTextField("price", "Preco proprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false)
 							<div class="admin-checkbox-grid">
-								@adminCheckboxField("is_active", "Variante ativa", page.Form.IsActive)
-								@adminCheckboxField("is_default", "Variante default", page.Form.IsDefault)
+								@adminCheckboxField("is_active", "Configuração ativa", page.Form.IsActive)
+								@adminCheckboxField("is_default", "Usar como opção padrão", page.Form.IsDefault)
 							</div>
+							<p class="admin-muted">A opção padrão é selecionada inicialmente na loja quando houver mais de uma configuração ativa.</p>
 							@adminTextField("sort_order", "Ordem", page.Form.SortOrder, page.Errors.Get("sort_order"), "number", true)
 							@adminTextField("print_time_minutes", "Tempo de impressao em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false)
 							@adminShippingProfileFields(page.Form.UseShipping, page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)

@@ -131,13 +131,13 @@ Resposta esperada: HTTP 404.
 
 Sem banco configurado ou com banco indisponivel, as rotas de catalogo retornam resposta generica de indisponibilidade.
 
-Selecao de variante por SSR:
+Selecao de configuracao por SSR:
 
 ```sh
 curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
 ```
 
-O slug de variante e opcional. Variante invalida, inexistente, inativa ou de outro produto retorna HTTP 404. Produto sem variantes continua valido.
+O slug de configuracao e opcional. Configuracao invalida, inexistente, inativa ou de outro produto retorna HTTP 404. Produto sem configuracao ativa continua valido, e produto com uma unica configuracao ativa a resolve automaticamente.
 
 ## Validar carrinho
 

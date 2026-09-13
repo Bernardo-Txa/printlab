@@ -87,6 +87,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com gestao SSR protegida de produtos, categorias, variantes, receita estimada, materiais, cores e caixas fisicas no painel Admin.
 - Parsers administrativos testaveis para preco BRL em centavos e peso de receita em gramas convertido para miligramas, ambos sem `float`.
 - Validacoes administrativas para slugs canonicos, perfis logisticos atomicos, default variant ativa, SKU opcional, cores hex canonicas e caixas com dimensoes externas maiores ou iguais as internas.
+- Fase 13.3A — Refinamento de configuracoes do produto, mantendo `product_variants` como modelo interno e usando "Configuracoes do produto" na UI Admin.
 - ADR-0015 — Gestao administrativa de catalogo sem hard delete.
 
 ### Changed
@@ -128,6 +129,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Shell administrativo passa a incluir navegacao para Produtos, Categorias, Materiais, Cores e Caixas, sem link funcional de imagens.
 - Formularios administrativos passam a aplicar limite de body de 256 KiB.
 - Categorias, produtos, variantes, materiais, cores e caixas passam a ser ativados/inativados no Admin por `is_active`, sem hard delete.
+- Detalhe publico de produto passa a mostrar seletor somente com duas ou mais configuracoes ativas; uma unica configuracao ativa fica transparente para o cliente e continua sendo enviada ao carrinho.
+- Carrinho passa a resolver automaticamente a unica configuracao ativa quando `variant_slug` nao e enviado, mantendo escolha obrigatoria com multiplas configuracoes.
 
 ### Fixed
 

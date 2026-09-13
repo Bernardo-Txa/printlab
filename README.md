@@ -52,6 +52,7 @@ IMPLEMENTADO:
 - Fase 13.1 — Fundacao de Autenticacao Administrativa, com Supabase Auth, autorizacao por UUID, sessao propria, cookie HttpOnly e dashboard inicial protegido em `/admin`.
 - Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com validacao real em producao concluida.
 - Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com implementacao concluida no painel administrativo e validacao real pendente.
+- Fase 13.3A — Refinamento de configuracoes do produto, com seletor publico apenas quando ha duas ou mais configuracoes ativas.
 
 PLANEJADO:
 
@@ -86,7 +87,7 @@ Frontend implementado:
 - Logo de marca em `web/static/images/branding/logo-printlab-primary.png`.
 - Linguagem visual com blocos coloridos, grid tecnico, camadas de impressao e elementos inspirados em laboratorio.
 - Catalogo publico e detalhe de produto renderizados no servidor, sem JavaScript obrigatorio.
-- Selecao de variante por links SSR via `?variante=<slug>`, sem JavaScript obrigatorio.
+- Selecao de configuracao por links SSR via `?variante=<slug>` quando houver mais de uma configuracao ativa, sem JavaScript obrigatorio.
 - Galeria SSR simples com imagem publica de produto/variante quando existir.
 - Card de produto com imagem geral primaria quando existir e placeholder visual de marca como fallback.
 - Carrinho renderizado no servidor, com forms HTML e redirects 303, sem JavaScript obrigatorio.
@@ -121,7 +122,7 @@ Banco implementado:
 - `carts` e `cart_items` persistem carrinhos anonimos sem armazenar token bruto nem precos.
 - `carts.token_hash` armazena `SHA-256` do token de cookie.
 - `cart_items.quantity` e limitado a `1..99`.
-- Subtotais do carrinho sao recalculados a partir do preco atual de produto/variante.
+- Subtotais do carrinho sao recalculados a partir do preco atual de produto/configuracao.
 - `cart_customer_details` e `cart_shipping_addresses` persistem contato e endereco do checkout vinculados ao carrinho anonimo.
 - CPF e CEP sao armazenados como digitos ASCII normalizados; telefone e armazenado em formato canonico brasileiro E.164.
 - Dados de contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
@@ -281,13 +282,13 @@ curl -i http://localhost:8080/produtos
 
 Com banco configurado e migrations aplicadas, a resposta esperada e HTTP 200. Com catalogo vazio, a pagina mostra um empty state honesto. Sem banco ou sem schema aplicado, a rota retorna indisponibilidade generica.
 
-Detalhe de produto com variante:
+Detalhe de produto com configuracao:
 
 ```sh
 curl -i "http://localhost:8080/produtos/<produto>?variante=<variante>"
 ```
 
-O slug de variante e opcional e unico dentro do produto. Produto sem variantes continua usando o preco-base.
+O slug de configuracao e opcional e unico dentro do produto. Produto sem configuracao ativa continua usando o preco-base, e produto com uma unica configuracao ativa a resolve automaticamente.
 
 Carrinho:
 

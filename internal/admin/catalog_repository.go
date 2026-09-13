@@ -374,9 +374,9 @@ func (r *PostgresRepository) NewAdminVariantForm(ctx context.Context, productID 
 	}
 
 	return AdminVariantFormPage{
-		Title:           "Nova variante",
+		Title:           "Adicionar configuração",
 		Action:          "/admin/produtos/" + productID + "/variantes",
-		SubmitLabel:     "Criar variante",
+		SubmitLabel:     "Criar configuração",
 		BackURL:         product.DetailURL,
 		IsNew:           true,
 		Product:         product,
@@ -397,9 +397,9 @@ func (r *PostgresRepository) GetAdminVariantForm(ctx context.Context, productID 
 	}
 
 	page := AdminVariantFormPage{
-		Title:           "Editar variante",
+		Title:           "Editar configuração",
 		Action:          "/admin/produtos/" + productID + "/variantes/" + variantID,
-		SubmitLabel:     "Salvar variante",
+		SubmitLabel:     "Salvar configuração",
 		BackURL:         product.DetailURL,
 		Product:         product,
 		VariantID:       variantID,
@@ -1124,13 +1124,7 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 		if price.Valid {
 			item.PriceLabel = products.FormatBRL(price.Int64)
 		} else {
-			item.PriceLabel = "Herda preco-base"
-		}
-		item.StatusLabel = ActiveStatusLabel(item.IsActive)
-		if item.IsDefault {
-			item.DefaultLabel = "Default"
-		} else {
-			item.DefaultLabel = "Nao default"
+			item.PriceLabel = "Usa preço do produto"
 		}
 		if printTime.Valid {
 			item.PrintTimeLabel = products.FormatPrintTime(int(printTime.Int32))
@@ -1138,7 +1132,7 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 		if item.HasShippingProfile {
 			item.ShippingLabel = "Usa perfil proprio"
 		} else {
-			item.ShippingLabel = "Herda perfil logistico do produto"
+			item.ShippingLabel = "Usa perfil logistico do produto"
 		}
 		item.RecipeWeightLabel = products.FormatWeightGrams(item.RecipeWeightMg)
 		item.DetailURL = "/admin/produtos/" + productID + "/variantes/" + item.ID
@@ -1148,7 +1142,7 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 		return nil, ErrUnavailable
 	}
 
-	return items, nil
+	return PrepareAdminVariantListItems(items), nil
 }
 
 func (r *PostgresRepository) adminProductHeader(ctx context.Context, productID string) (AdminProductHeader, error) {

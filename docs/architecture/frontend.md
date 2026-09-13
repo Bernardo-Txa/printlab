@@ -6,7 +6,7 @@ Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, c
 
 O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
 
-Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
+Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar configuracao por links SSR quando houver escolha publica, sem JavaScript obrigatorio.
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
@@ -45,7 +45,8 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
 - Exibir catalogo e detalhe de produto sem JavaScript obrigatorio.
-- Exibir seletor de variantes como links navegaveis por teclado.
+- Exibir seletor publico de configuracao apenas quando houver duas ou mais configuracoes ativas, com links navegaveis por teclado.
+- Omitir seletor e resumo publico quando houver exatamente uma configuracao ativa; o formulario ainda envia a configuracao internamente ao carrinho.
 - Exibir carrinho com forms HTML e redirects 303, sem JavaScript obrigatorio.
 - Exibir a etapa de dados com formulario HTML, autocomplete nativo, mascaras progressivas, consulta interna de CEP e redirects 303, sem JavaScript obrigatorio.
 - Exibir a etapa de frete com radios HTML, POST tradicional e redirects 303, sem JavaScript obrigatorio.
@@ -53,7 +54,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir pedido criado por UUID com CTA real `Pagar agora` apenas quando InfinitePay estiver configurada; caso contrario mostrar indisponibilidade segura.
 - Exibir pedido pago com `Pagamento confirmado`, sem botao de pagamento.
 - Exibir acompanhamento por `public_tracking_id` com tres cards de progresso: pagamento, producao e envio.
-- Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional, forms POST protegidos para producao/envio e gestao SSR de catalogo, variantes, receita, materiais, cores e caixas, sem signup, login social, lembrar de mim ou recuperacao de senha nesta subfase.
+- Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional, forms POST protegidos para producao/envio e gestao SSR de catalogo, configuracoes do produto, receita, materiais, cores e caixas, sem signup, login social, lembrar de mim ou recuperacao de senha nesta subfase.
 - Incluir meta robots `noindex, nofollow, noarchive` nas paginas privadas/noindex.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.

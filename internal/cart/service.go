@@ -311,12 +311,12 @@ func (s *Service) prepareLine(item StoredItem) (CartLine, error) {
 		line.Available = false
 		line.ProductAvailable = true
 		line.RequiresVariantPick = true
-		line.UnavailableReason = "Escolha uma variante novamente."
+		line.UnavailableReason = "Escolha uma opção novamente."
 	case item.Variant != nil && (!item.Variant.IsActive || item.Variant.ProductID != item.Product.ID):
 		line.Available = false
 		line.ProductAvailable = true
 		line.VariantAvailable = false
-		line.UnavailableReason = "Variante indisponivel."
+		line.UnavailableReason = "Configuração indisponível."
 	default:
 		line.ProductAvailable = true
 		line.VariantAvailable = item.Variant == nil || item.Variant.IsActive
@@ -357,20 +357,23 @@ func (s *Service) prepareImage(image *products.ProductImage) *products.ProductIm
 }
 
 func resolveVariantID(product ProductForAdd, variantSlug string) (*string, error) {
-	hasActiveVariants := false
+	activeVariants := make([]VariantForAdd, 0, len(product.Variants))
 	for _, variant := range product.Variants {
 		if variant.IsActive && variant.ProductID == product.ID {
-			hasActiveVariants = true
-			break
+			activeVariants = append(activeVariants, variant)
 		}
 	}
 
 	if variantSlug == "" {
-		if hasActiveVariants {
+		switch len(activeVariants) {
+		case 0:
+			return nil, nil
+		case 1:
+			variantID := activeVariants[0].ID
+			return &variantID, nil
+		default:
 			return nil, ErrVariantRequired
 		}
-
-		return nil, nil
 	}
 
 	for _, variant := range product.Variants {

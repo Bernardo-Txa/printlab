@@ -102,8 +102,8 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 						</div>
 						if len(detail.Variants) > 1 {
 							<div class="variant-selector-block">
-								<h2>Escolha uma variante</h2>
-								<nav class="variant-selector" aria-label="Selecionar variante">
+								<h2>Escolha uma opção</h2>
+								<nav class="variant-selector" aria-label="Selecionar opção">
 									for _, variant := range detail.Variants {
 										if detail.SelectedVariant != nil && detail.SelectedVariant.Slug == variant.Slug {
 											<a class="variant-option variant-option-active focus-ring" href={ templ.URL("/produtos/" + detail.Product.Slug + "?variante=" + variant.Slug) } aria-current="true">
@@ -118,11 +118,6 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 										}
 									}
 								</nav>
-							</div>
-						} else if detail.SelectedVariant != nil {
-							<div class="variant-summary">
-								<span>Variante</span>
-								<strong>{ detail.SelectedVariant.Name }</strong>
 							</div>
 						}
 						if detail.SelectedVariant != nil && (detail.SelectedVariant.MaterialNames != "" || detail.SelectedVariant.ColorNames != "") {

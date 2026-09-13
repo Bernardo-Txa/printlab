@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1 e 13.2 concluidas. Fase 13 em andamento; Fase 13.3 com implementacao concluida e validacao real pendente; Fases 13.4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1 e 13.2 concluidas. Fase 13 em andamento; Fase 13.3 e refinamento 13.3A com implementacao concluida e validacao real pendente; Fases 13.4 a 17 planejadas.
 
 ## Status das fases
 
@@ -553,6 +553,7 @@ Principais entregas:
 - Validacao de preco BRL sem `float`, slugs canonicos, perfis logisticos atomicos, default variant ativa e caixas com dimensoes externas maiores ou iguais as internas.
 - Segurança Admin preservada: sessao obrigatoria, POST para mutacoes, validacao `Origin`/`Referer`, rejeicao de `Origin: null`, headers privados/noindex e body limitado.
 - Nenhuma migration nova; uso das tabelas existentes.
+- Refinamento 13.3A: `product_variants` permanece como modelo interno, mas a UI Admin usa "Configuracoes do produto" e a loja publica so mostra escolha quando houver duas ou mais configuracoes ativas.
 
 Definition of Done:
 
@@ -560,6 +561,7 @@ Definition of Done:
 - Service e repository Admin implementados sobre schema existente: concluido ✅
 - Testes aplicaveis de parser, validacao, handlers e regressao de repository: concluido ✅
 - Documentacao, plano ativo e ADR atualizados: concluido ✅
+- 13.3A — Semantica publica/Admin de configuracoes refinada sem migration: concluido ✅
 - Validacao real apos deploy: pendente
 
 ## Fase 13.4 — Imagens e Supabase Storage

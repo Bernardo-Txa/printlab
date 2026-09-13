@@ -27,12 +27,13 @@ Este documento registra regras de negocio previstas para a PrintLab. Ele nao rep
 - Dinheiro nao usa `float32` ou `float64`.
 - Produtos ficticios ou seeds demonstrativos nao devem ser inseridos apenas para testar catalogo.
 - Slugs sao os identificadores publicos de categorias e produtos.
-- Produtos podem possuir varias variantes ativas.
-- Uma variante inativa responde publicamente como inexistente.
-- O slug de variante e unico dentro do produto e pode ser usado em `?variante=<slug>`.
-- A ausencia de variante em um produto continua valida.
-- Variante default ativa e escolhida automaticamente quando existir.
-- Sem variante default, a primeira variante ativa pela ordenacao publica e escolhida.
+- Produtos podem possuir configuracoes internas em `product_variants`.
+- Uma configuracao inativa responde publicamente como inexistente quando solicitada explicitamente.
+- O slug de configuracao e unico dentro do produto e pode ser usado em `?variante=<slug>`.
+- A ausencia de configuracao ativa em um produto continua valida.
+- Uma unica configuracao ativa e selecionada automaticamente sem expor escolha publica.
+- Com duas ou mais configuracoes ativas, a configuracao default ativa e escolhida inicialmente quando existir.
+- Sem configuracao default, a primeira configuracao ativa pela ordenacao publica e escolhida.
 - `materials.is_active` nao controla exibicao publica de receitas existentes.
 - `colors.is_active` nao controla exibicao publica de receitas existentes.
 
@@ -59,13 +60,14 @@ Antes de finalizar uma compra, o backend deve:
 - Carrinho expira apos 30 dias.
 - Mutacoes bem-sucedidas renovam a expiracao para `agora + 30 dias`.
 - Quantidade permitida por item: `1..99`.
-- Adicionar o mesmo produto/variante incrementa a quantidade existente.
-- Produto com variantes ativas exige variante valida para adicionar.
-- Produto sem variantes ativas pode ser adicionado sem variante.
+- Adicionar o mesmo produto/configuracao incrementa a quantidade existente.
+- Produto sem configuracao ativa pode ser adicionado sem `variant_id`.
+- Produto com exatamente uma configuracao ativa resolve essa configuracao no backend.
+- Produto com duas ou mais configuracoes ativas exige configuracao valida para adicionar.
 - Navegador nunca determina preco, subtotal ou total.
 - Carrinho nao congela preco; a leitura usa preco atual do catalogo.
 - Carrinho convertido possui `carts.converted_at` preenchido e nao deve ser reutilizado como carrinho ativo.
-- Produto e variante sao revalidados ao adicionar e ao renderizar.
+- Produto e configuracao sao revalidados ao adicionar e ao renderizar.
 - Item indisponivel nao some silenciosamente.
 - Item indisponivel nao entra no subtotal.
 - Depois que um pedido e criado, dados temporarios do carrinho sao removidos e uma nova compra deve usar novo carrinho.
@@ -95,13 +97,13 @@ Valores monetarios nunca devem usar `float32` ou `float64` como representacao ca
 R$ 39,90 -> 3990
 ```
 
-`product_variants.price_cents` pode sobrescrever o preco-base. Quando estiver `null`, o preco efetivo da variante usa `products.price_cents`.
+`product_variants.price_cents` pode sobrescrever o preco-base. Quando estiver `null`, o preco efetivo da configuracao usa `products.price_cents`.
 
 ```text
 Produto base: 3990
-Variante sem preco proprio: 3990
-Variante com price_cents = 5990: 5990
-Variante com price_cents = 0: 0
+Configuracao sem preco proprio: 3990
+Configuracao com price_cents = 5990: 5990
+Configuracao com price_cents = 0: 0
 ```
 
 Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Pagamento InfinitePay usa esses valores congelados; descontos continuam planejados.
@@ -111,11 +113,11 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Frete e sempre calculado no backend.
 - O navegador nunca determina preco de frete, prazo, transportadora, peso ou dimensoes.
 - `POST /checkout/frete` recebe somente `service_code` como escolha do cliente e revalida a cotacao atual antes de persistir.
-- Produtos e variantes possuem perfil logistico em gramas e milimetros, separado da receita de producao 3D.
+- Produtos e configuracoes possuem perfil logistico em gramas e milimetros, separado da receita de producao 3D.
 - Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
-- Se a variante possui perfil logistico completo, ela substitui o perfil do produto.
-- Se a variante nao possui perfil logistico completo, o frete usa o perfil completo do produto.
-- Campos parciais nao sao misturados entre produto e variante.
+- Se a configuracao possui perfil logistico completo, ela substitui o perfil do produto.
+- Se a configuracao nao possui perfil logistico completo, o frete usa o perfil completo do produto.
+- Campos parciais nao sao misturados entre produto e configuracao.
 - Produto sem perfil logistico efetivo nao recebe estimativa ficticia de peso ou dimensoes.
 - A PrintLab so deve cotar com caixas fisicas reais cadastradas em `shipping_boxes`.
 - A caixa menor compativel e escolhida por dimensoes internas considerando rotacao, nunca somente por volume.
@@ -125,7 +127,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Somente a cotacao final com a caixa fisica real e apresentada ao cliente.
 - Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
 - A selecao de frete expira em 30 minutos.
-- A selecao e invalidada por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
+- A selecao e invalidada por `input_hash` quando carrinho, quantidade, configuracao, perfil logistico, CEP, servicos ou caixa mudam.
 - Multi-volume, etiqueta/postagem e rastreio permanecem planejados.
 
 ## Pedidos implementados
@@ -141,7 +143,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - `order_number` e sequencial e serve somente como referencia humana.
 - A rota publica do pedido usa UUID, nao `order_number`.
 - O unico status criado pelo checkout nesta fase e `pending_payment`.
-- Pedido preserva snapshots de produto, variante, preco, quantidade, subtotal, frete, cliente, endereco e receita de producao.
+- Pedido preserva snapshots de produto, configuracao, preco, quantidade, subtotal, frete, cliente, endereco e receita de producao.
 - Snapshots operacionais de producao e embalagem sao preservados no pedido, mas nao sao apresentados na experiencia publica do comprador.
 - O snapshot de producao guarda tempo e peso por unidade, sem multiplicar pela quantidade.
 - `order_item_filaments` nao possui FK para `materials`, `colors` ou `variant_filaments`.
@@ -197,9 +199,9 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - O ator da mutacao operacional e sempre o `Session.AuthUserID` resolvido da sessao administrativa.
 - Mutacoes de producao/envio devem atualizar `order_fulfillment` e inserir `admin_order_events` na mesma transacao PostgreSQL.
 - Auditoria operacional registra somente pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario; nao registra PII de cliente.
-- Catalogo Admin gerencia categorias, produtos, variantes, receita estimada, materiais, cores e caixas por SSR protegido.
+- Catalogo Admin gerencia categorias, produtos, configuracoes do produto, receita estimada, materiais, cores e caixas por SSR protegido.
 - Mutacoes de catalogo Admin exigem POST, sessao valida, validacao de `Origin`/`Referer`, rejeicao de `Origin: null` e limite conservador de body.
-- Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, variantes, materiais, cores ou caixas.
+- Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, configuracoes, materiais, cores ou caixas.
 - `admin_order_events` e exclusivo de pedidos; catalogo nao reutiliza essa auditoria e nao cria tabela de eventos antecipada.
 - Alteracao de valores/dados de pedido, papeis multiplos, upload de imagens e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
 
@@ -218,11 +220,22 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 
 ## Producao 3D
 
-O catalogo representa receita estimada de producao por variante:
+`product_variants` permanece sendo a entidade interna para SKU, preco especifico, tempo estimado, receita, perfil logistico, status ativo e snapshots. Na interface administrativa, o conceito deve ser apresentado como configuracao do produto.
+
+Na loja publica:
+
+- produto sem configuracao ativa continua funcionando como produto simples;
+- produto com exatamente uma configuracao ativa seleciona essa configuracao automaticamente e nao mostra seletor ao cliente;
+- produto com duas ou mais configuracoes ativas mostra escolha publica;
+- `is_default` define a opcao inicialmente selecionada quando houver escolha;
+- se dados antigos nao tiverem default, o fallback deterministico usa a primeira configuracao ativa pela ordenacao publica;
+- a URL `?variante=<slug>` continua suportada por compatibilidade.
+
+O catalogo representa receita estimada de producao por configuracao interna:
 
 ```text
 Produto
-  -> Variante
+  -> Configuracao interna
       -> componente: material + cor + peso estimado
       -> componente: material + cor + peso estimado
 ```
@@ -242,7 +255,7 @@ Receitas ja cadastradas preservam os nomes de material e cor referenciados em `v
 
 No Admin, novos componentes de receita usam somente material e cor ativos. Componentes existentes que apontam para material ou cor inativos continuam carregaveis, podem preservar a referencia atual e podem ter peso, rotulo e ordenacao editados.
 
-O peso total estimado de uma variante deve somar todos os componentes carregados de `variant_filaments`, incluindo componentes que referenciem material ou cor inativos.
+O peso total estimado de uma configuracao deve somar todos os componentes carregados de `variant_filaments`, incluindo componentes que referenciem material ou cor inativos.
 
 Custos derivados como `production_cost`, `material_cost`, `machine_cost`, `profit` e `margin` nao sao persistidos nesta fase. Futuramente eles poderao ser calculados a partir de peso estimado, tempo de maquina, filamento fisico, preco por kg e outros custos aprovados.
 

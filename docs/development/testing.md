@@ -67,12 +67,12 @@ npx supabase --version
 - Peso de filamento soma componentes em miligramas.
 - Formatacao de peso cobre `42000 -> 42 g`, `3250 -> 3,25 g` e `125500 -> 125,5 g`.
 - Formatacao de tempo cobre `60 -> 1h`, `275 -> 4h 35min` e `45 -> 45min`.
-- Selecao de variante cobre default ativa, primeira ativa sem default, explicita valida, inexistente, inativa, de outro produto e produto sem variantes.
+- Selecao de configuracao/variant cobre produto sem configuracao ativa, unica configuracao ativa transparente, default ativa, primeira ativa sem default, explicita valida, inexistente, inativa e de outro produto.
 - Fallback de imagem cobre imagem de variante, imagem geral de produto e placeholder quando `SUPABASE_URL` nao esta disponivel.
 - URL publica de Storage e testada sem baixar arquivos do Supabase.
 - Token de carrinho cobre entropia/tamanho esperado, tokens diferentes, hash SHA-256 e token bruto diferente do hash.
 - Cookie de carrinho cobre `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure`, `MaxAge` e `Expires`.
-- Service de carrinho cobre carrinho inexistente, expirado, criacao no primeiro add, produto sem variante, variante obrigatoria, variante valida, variante inativa, variante de outro produto, produto inativo, produto inexistente, add/increment, limite 99 e quantidade invalida.
+- Service de carrinho cobre carrinho inexistente, expirado, criacao no primeiro add, produto sem configuracao, unica configuracao ativa auto-resolvida, escolha obrigatoria com multiplas configuracoes, configuracao valida, configuracao inativa, configuracao de outro produto, produto inativo, produto inexistente, add/increment, limite 99 e quantidade invalida.
 - Carrinho cobre disponibilidade: produto ativo + variante ativa, produto inativo, variante inativa e produto que passa a exigir variante.
 - Dinheiro no carrinho cobre `price * quantity`, subtotal apenas de itens disponiveis e protecao contra overflow.
 - Mutacoes de item cobrem escopo por `cart_id + item_id`.
@@ -96,6 +96,8 @@ npx supabase --version
 - Handlers Admin cobrem login page, config ausente, POST valido, credenciais invalidas com mensagem generica, origem cross-site rejeitada, `/admin` sem sessao, sessao valida, sessao expirada, cookie aleatorio, logout por POST e GET `/admin/logout` sem efeito.
 - Dashboard Admin cobre contagens de `pending_payment`, `paid + waiting`, `paid + in_production` e `paid + completed + shipping waiting`, sem PII.
 - Handlers Admin de catalogo cobrem sessao obrigatoria, POST same-origin chegando ao service, origem maliciosa rejeitada, `Origin: null` rejeitado e GET em rota de mutacao de receita sem alterar estado.
+- Handler publico de produto cobre que uma unica configuracao ativa nao renderiza seletor publico e ainda envia `variant_slug` oculto ao carrinho.
+- Handler Admin de produto cobre copy "Configuracoes do produto", "Adicionar configuracao" e ausencia de "Nao default" para unica configuracao ativa.
 - Parsers Admin cobrem BRL para centavos, peso em gramas para miligramas, rejeicao de negativos, notacao cientifica, casas decimais excessivas, texto e overflow, sem `float`.
 - Validacoes Admin cobrem perfil logistico parcial rejeitado, override de preco zero, default variant ativa, desativacao de default limpando `is_default`, hex de cor canonico e dimensoes externas de caixa maiores ou iguais as internas.
 - Testes de regressao do repository Admin verificam transacao para troca de default, escopo por `product_id` em mutacoes filhas, `updated_at = now()` em updates e ausencia de `admin_order_events` no catalogo.
