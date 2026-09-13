@@ -1,6 +1,6 @@
 # Acompanhamento seguro do pedido
 
-Status: IMPLEMENTADO NA FASE 12.
+Status: IMPLEMENTADO NA FASE 12; atualizacao administrativa de status operacional implementada na Fase 13.2.
 
 O acompanhamento publico permite que o cliente consulte o estado basico do pedido por um link de capacidade:
 
@@ -79,8 +79,7 @@ Quando o pedido possui `public_tracking_id`, `/pedido/{id}` mostra o link `Acomp
 ## Limites
 
 - Nao ha login de cliente.
-- Nao ha painel administrativo.
 - Nao ha endpoint publico para alterar producao ou envio.
 - Nao ha etiqueta SuperFrete.
 - Nao ha codigo de rastreio de transportadora.
-- Atualizacao de status operacional pertence a fase administrativa futura.
+- Atualizacao de status operacional pertence ao Admin autenticado, nao ao link publico de acompanhamento.

@@ -284,6 +284,8 @@ func (c fakeAuthClient) SignInWithPassword(context.Context, string, string) (Aut
 type fakeRepository struct {
 	sessions  map[string]Session
 	dashboard Dashboard
+	orders    OrderListPage
+	order     OrderDetail
 	err       error
 }
 
@@ -327,4 +329,26 @@ func (r *fakeRepository) Dashboard(context.Context) (Dashboard, error) {
 		return Dashboard{}, r.err
 	}
 	return r.dashboard, nil
+}
+
+func (r *fakeRepository) ListOrders(context.Context, OrderListFilter) (OrderListPage, error) {
+	if r.err != nil {
+		return OrderListPage{}, r.err
+	}
+	return r.orders, nil
+}
+
+func (r *fakeRepository) GetOrder(context.Context, string) (OrderDetail, error) {
+	if r.err != nil {
+		return OrderDetail{}, r.err
+	}
+	return r.order, nil
+}
+
+func (r *fakeRepository) ChangeProductionStatus(context.Context, string, string, string) error {
+	return r.err
+}
+
+func (r *fakeRepository) ChangeShippingStatus(context.Context, string, string, string) error {
+	return r.err
 }

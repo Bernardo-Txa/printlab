@@ -172,4 +172,4 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 - Link real InfinitePay e pagamento real foram validados antes da Fase 11.
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
-- Nao ha painel administrativo.
+- O Admin atual opera pedidos ja criados e nao altera carrinhos ou dados temporarios de checkout.

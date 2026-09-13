@@ -81,6 +81,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration `create_admin_sessions`, adicionando `public.admin_sessions` com hash SHA-256 do token, TTL por `expires_at`, RLS habilitado e nenhuma policy publica.
 - ADR-0013 — Autenticacao administrativa com Supabase Auth e sessao propria.
 - Documentacao `docs/integrations/supabase-auth.md` para fluxo Auth, publishable key, autorizacao por UUID e limites da Fase 13.1.
+- Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com listagem administrativa de pedidos, detalhe operacional protegido, mudancas sequenciais de producao/envio e trilha de auditoria transacional.
+- Migration `create_admin_order_events`, adicionando `public.admin_order_events` com ator administrativo, tipo de evento, status anterior/novo, timestamp, RLS habilitado e nenhuma policy publica.
+- ADR-0014 — Auditoria transacional de operacoes administrativas de pedidos.
 
 ### Changed
 
@@ -116,6 +119,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Criacao de pedido passa a inserir `order_fulfillment` na mesma transacao do pedido.
 - `/admin/login` fica indisponivel de forma segura quando configuracao Admin ou banco estao ausentes, sem impedir a loja publica de iniciar.
 - Paginas administrativas passam a usar `Referrer-Policy: same-origin`, preservando privacidade cross-origin sem impedir origem verificavel em submits administrativos same-origin.
+- Dashboard administrativo passa a apontar metricas operacionais para filtros reais de `/admin/pedidos`.
+- Admin passa a usar o `AuthUserID` da sessao como ator de auditoria em mutacoes de producao/envio.
 
 ### Fixed
 

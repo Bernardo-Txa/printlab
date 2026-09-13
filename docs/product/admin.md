@@ -1,13 +1,13 @@
 # Painel administrativo
 
-Status: Fase 13.1 IMPLEMENTADA; Fases 13.2, 13.3 e 13.4 PLANEJADAS.
+Status: Fases 13.1 e 13.2 IMPLEMENTADAS; validacao real da 13.2 PENDENTE; Fases 13.3 e 13.4 PLANEJADAS.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
 ## Status por subfase
 
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
-- 13.2 — pedidos, producao, envio e auditoria: planejada.
+- 13.2 — pedidos, producao, envio e auditoria: implementacao concluida; validacao real pendente.
 - 13.3 — catalogo, variantes, materiais, cores e caixas: planejada.
 - 13.4 — imagens e Supabase Storage: planejada.
 
@@ -42,6 +42,42 @@ O dashboard inicial e somente leitura e mostra contagens agregadas:
 
 `pending_payment` nao entra como aguardando producao.
 
+## Fase 13.2 implementada
+
+Rotas:
+
+- `GET /admin/pedidos`
+- `GET /admin/pedidos/{order_id}`
+- `POST /admin/pedidos/{order_id}/producao`
+- `POST /admin/pedidos/{order_id}/envio`
+
+A listagem administrativa de pedidos e protegida por sessao admin, usa SSR e nao carrega PII de cliente nem identificadores tecnicos de pagamento. Ela mostra somente numero humano, data, status de pagamento, status de producao, status de envio, total e contagens de itens/unidades.
+
+O detalhe administrativo de pedido e protegido por sessao admin e pode exibir dados necessarios para operacao:
+
+- nome, e-mail, telefone e CPF do cliente;
+- endereco completo de entrega;
+- frete selecionado, caixa, peso e dimensoes;
+- itens, variantes, SKU e snapshots de producao;
+- resumo de pagamento sem `checkout_url`, `transaction_nsu` ou `invoice_slug`;
+- trilha de auditoria operacional.
+
+Mutacoes de producao e envio sao POSTs administrativos, validam `Origin`/`Referer`, exigem sessao valida e usam `Session.AuthUserID` como ator do evento de auditoria.
+
+Transicoes permitidas:
+
+- producao: `waiting` -> `in_production` -> `completed`;
+- envio: `waiting` -> `preparing` -> `shipped` -> `delivered`.
+
+Regras:
+
+- pedido `pending_payment` nao pode iniciar producao;
+- envio so pode sair de `waiting` depois de producao `completed`;
+- nao ha regressao de status;
+- `delivered` e terminal para operacoes de envio;
+- transicao repetida ou stale e tratada como conflito;
+- a atualizacao de `order_fulfillment` e o insert em `admin_order_events` ocorrem na mesma transacao PostgreSQL com lock do pedido.
+
 ## Seguranca
 
 - Nao ha signup administrativo pela aplicacao.
@@ -50,22 +86,22 @@ O dashboard inicial e somente leitura e mostra contagens agregadas:
 - Senha, access token, refresh token, token de sessao e token hash nao devem aparecer em logs ou documentacao.
 - Todas as respostas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`.
 - POSTs administrativos validam `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
-- O dashboard da 13.1 nao carrega nem renderiza CPF, endereco, telefone, e-mail de cliente, `transaction_nsu` ou checkout URL.
+- Dashboard e listagem de pedidos nao carregam nem renderizam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
+- O detalhe de pedido pode renderizar PII operacional somente apos sessao administrativa valida.
+- Eventos de auditoria guardam UUID do usuario Supabase Auth, tipo de evento, status anterior, status novo e horario; nao armazenam PII de cliente.
 
-## Limites da 13.1
+## Limites atuais
 
 - Nao ha CRUD de produtos.
-- Nao ha alteracao de pedidos.
-- Nao ha mutations de producao/envio.
-- Nao ha auditoria operacional.
+- Nao ha alteracao de dados comerciais do pedido, valores, cliente, endereco ou pagamento.
 - Nao ha upload de imagens.
 - Nao ha papeis multiplos.
 - Nao ha MFA obrigatorio nem CAPTCHA/WAF na aplicacao.
 - Nao ha uso de `SUPABASE_SECRET_KEY` ou service role.
+- Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
+- Validacao real da 13.2 em ambiente remoto ainda esta pendente.
 
 ## Decisoes pendentes
 
-- Regras de auditoria da Fase 13.2.
-- Fluxo operacional de producao e envio.
 - Politica de permissoes caso existam multiplos usuarios administrativos.
 - Protecoes adicionais contra abuso/brute force na Fase 14.

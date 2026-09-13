@@ -135,8 +135,9 @@ Banco implementado:
 - `order_fulfillment` guarda status operacional 1:1 de producao e envio do pedido.
 - `orders.public_tracking_id` e UUID aleatorio unico para `/acompanhar/{uuid}`.
 - `admin_sessions` guarda sessoes administrativas transitorias com `SHA-256` do token, TTL de 8 horas e RLS habilitado.
+- `admin_order_events` guarda auditoria operacional de mutacoes administrativas de producao/envio.
 - `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID interno e acompanhamento usa `public_tracking_id`.
-- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete e pedidos sem policies publicas do Data API.
+- RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete, pedidos, pagamentos e admin sem policies publicas do Data API.
 
 Infraestrutura planejada:
 

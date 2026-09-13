@@ -1,12 +1,12 @@
 # Frontend
 
-Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR, CTA real de pagamento, acompanhamento seguro SSR e shell administrativo SSR IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
+Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR, CTA real de pagamento, acompanhamento seguro SSR e admin operacional SSR IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
 
 ## Responsabilidade
 
 O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
 
-Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas iniciais em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
+Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar variante por links SSR, sem JavaScript obrigatorio.
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
@@ -26,7 +26,8 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - A pagina de pedido nao deve exibir CPF completo, endereco completo, telefone ou e-mail completo.
 - A pagina de pedido nao deve exibir checkout URL, `transaction_nsu`, `invoice_slug` ou dados tecnicos da InfinitePay.
 - A pagina de acompanhamento nao deve exibir itens, produtos, valores, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, identificadores de pagamento, peso, dimensoes, filamento, material ou cor.
-- A tela administrativa inicial nao deve renderizar PII, checkout URL, `transaction_nsu` ou dados operacionais detalhados; nesta subfase ela exibe somente contagens agregadas.
+- Dashboard e listagem administrativa de pedidos nao devem renderizar PII, checkout URL, `transaction_nsu`, `invoice_slug` ou dados operacionais detalhados.
+- Detalhe administrativo de pedido pode renderizar PII e dados operacionais completos somente apos sessao administrativa valida.
 - A revisao e a pagina de pedido nao devem exibir SKU interno, tempo de impressao, consumo de filamento, componentes de receita, materiais, cores, caixa fisica, peso ou dimensoes do pacote.
 - A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
 - O formulario de dados usa mascaras progressivas e consulta CEP por endpoint interno da aplicacao; sem JavaScript, o preenchimento manual continua funcionando.
@@ -51,7 +52,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir pedido criado por UUID com CTA real `Pagar agora` apenas quando InfinitePay estiver configurada; caso contrario mostrar indisponibilidade segura.
 - Exibir pedido pago com `Pagamento confirmado`, sem botao de pagamento.
 - Exibir acompanhamento por `public_tracking_id` com tres cards de progresso: pagamento, producao e envio.
-- Exibir Admin inicial com formulario de login, logout e dashboard SSR protegido, sem signup, login social, lembrar de mim ou recuperacao de senha nesta subfase.
+- Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional e forms POST protegidos para producao/envio, sem signup, login social, lembrar de mim ou recuperacao de senha nesta subfase.
 - Incluir meta robots `noindex, nofollow, noarchive` nas paginas privadas/noindex.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
@@ -78,7 +79,7 @@ Templates de catalogo implementados:
 - `web/templates/shipping.templ` para etapa de frete, opcoes cotadas, estado indisponivel e resumo parcial.
 - `web/templates/order.templ` para revisao de checkout, criacao de pedido e pagina de pedido.
 - `web/templates/order.templ` tambem contem a pagina segura de retorno de pagamento e acompanhamento de pedido.
-- `web/templates/admin.templ` para login administrativo, shell inicial e indisponibilidade segura.
+- `web/templates/admin.templ` para login administrativo, shell, dashboard, lista/detalhe de pedidos e indisponibilidade segura.
 - `web/components/product_card.templ` para card reutilizavel, media de produto, galeria SSR e placeholder visual de produto.
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.

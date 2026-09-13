@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12 e 13.1 concluidas. Fase 13 em andamento; Fases 13.2 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12 e 13.1 concluidas. Fase 13 em andamento; Fase 13.2 com implementacao concluida e validacao real pendente; Fases 13.3 a 17 planejadas.
 
 ## Status das fases
 
@@ -28,7 +28,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 12 — Acompanhamento do pedido | Concluida |
 | Fase 13 — Painel administrativo | Em andamento |
 | Fase 13.1 — Autenticacao administrativa | Concluida |
-| Fase 13.2 — Pedidos, producao, envio e auditoria | Planejada |
+| Fase 13.2 — Pedidos, producao, envio e auditoria | Implementacao concluida; validacao real pendente |
 | Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Planejada |
 | Fase 13.4 — Imagens e Supabase Storage | Planejada |
 | Fase 14 — Seguranca | Planejada |
@@ -482,8 +482,8 @@ Definition of Done:
 - 13.1: acesso administrativo protegido: concluido ✅
 - 13.1: permissoes documentadas para unico administrador por UUID: concluido ✅
 - 13.1: testes aplicaveis passam: concluido ✅
-- 13.2: operacoes criticas auditaveis quando necessario: planejado
-- 13.2 a 13.4: funcionalidades internas de operacao: planejado
+- 13.2: operacoes criticas auditaveis quando necessario: implementacao concluida; validacao real pendente
+- 13.3 a 13.4: funcionalidades internas de operacao: planejado
 
 ## Fase 13.1 — Autenticacao administrativa
 
@@ -515,7 +515,25 @@ Definition of Done:
 
 Objetivo: permitir operacao interna de pedidos pagos, status de producao/envio e trilha de auditoria.
 
-Status: Planejada.
+Status: Implementacao concluida; validacao real pendente.
+
+Principais entregas:
+
+- Listagem administrativa autenticada de pedidos em `/admin/pedidos`.
+- Detalhe administrativo autenticado em `/admin/pedidos/{order_id}`.
+- Mutacoes POST para producao e envio com validacao de origem.
+- Transicoes sequenciais de producao e envio sem regressao.
+- Auditoria em `public.admin_order_events` na mesma transacao da atualizacao operacional.
+- Documentacao de produto, seguranca, schema, migrations e ADR.
+
+Definition of Done:
+
+- Admin carrega lista sem PII nem identificadores tecnicos de pagamento: concluido ✅
+- Detalhe autenticado mostra dados operacionais necessarios: concluido ✅
+- Producao/envio respeitam regras de transicao e pagamento: concluido ✅
+- Mutacoes criam auditoria transacional: concluido ✅
+- Testes, template, CSS e documentacao atualizados: concluido ✅
+- Validacao real remota da migration e fluxo admin: pendente
 
 ## Fase 13.3 — Catalogo, variantes, materiais, cores e caixas
 

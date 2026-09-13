@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho, dados de checkout, frete e pedidos IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e admin IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -55,6 +55,12 @@ A nona migration funcional cria sessoes administrativas:
 - `supabase/migrations/20260912110000_create_admin_sessions.sql`
 
 Ela cria `public.admin_sessions` com UUID primario, `auth_user_id`, `token_hash` unico de 32 bytes, `created_at`, `expires_at`, indice por expiracao e RLS habilitado sem policies publicas. Nao cria usuario Auth, nao referencia `auth.users`, nao insere dados e nao armazena token bruto, senha, access token ou refresh token.
+
+A decima migration funcional cria auditoria operacional administrativa:
+
+- `supabase/migrations/20260912130000_create_admin_order_events.sql`
+
+Ela cria `public.admin_order_events` com UUID primario, referencia restritiva a `public.orders`, `actor_auth_user_id`, tipo de evento limitado a mudancas de producao/envio, status anterior/novo, timestamp, indice por pedido/data e RLS habilitado sem policies publicas. Nao referencia `auth.users`, nao insere dados e nao armazena PII de cliente, checkout URL, `transaction_nsu` ou `invoice_slug`.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
@@ -113,6 +119,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A setima migration real foi criada junto da Fase 10 de pagamentos InfinitePay.
 - A oitava migration real corrige a allowlist persistida de host de checkout InfinitePay.
 - A nona migration real cria sessoes administrativas para a Fase 13.1.
+- A decima migration real cria auditoria operacional administrativa para a Fase 13.2.
 
 ## Praticas recomendadas
 

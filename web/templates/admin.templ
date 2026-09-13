@@ -40,39 +40,313 @@ templ AdminDashboard(dashboard admindomain.Dashboard) {
 	@components.PrivateNoIndexLayout("Painel administrativo | PrintLab", "Painel administrativo da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
-				<div class="admin-shell">
-					<aside class="admin-sidebar" aria-label="Navegacao administrativa">
-						<strong>PrintLab Admin</strong>
-						<nav aria-label="Secoes administrativas">
-							<span class="admin-nav-active">Visão geral</span>
-						</nav>
-						<form method="post" action="/admin/logout">
-							<button class="btn-base btn-secondary" type="submit">Sair</button>
-						</form>
-					</aside>
+				@adminShell("dashboard") {
 					<div class="admin-main">
 						<div class="admin-heading">
 							<p class="brand-kicker">Operação</p>
 							<h1>Visão geral</h1>
 						</div>
 						<div class="admin-metrics" aria-label="Resumo operacional">
-							@adminMetric("Aguardando pagamento", dashboard.PendingPayment)
-							@adminMetric("Pagos aguardando produção", dashboard.PaidWaitingProduction)
-							@adminMetric("Em produção", dashboard.InProduction)
-							@adminMetric("Aguardando envio", dashboard.WaitingShipment)
+							@adminMetric("Aguardando pagamento", dashboard.PendingPayment, "/admin/pedidos?status=pending_payment")
+							@adminMetric("Pagos aguardando produção", dashboard.PaidWaitingProduction, "/admin/pedidos?status=waiting_production")
+							@adminMetric("Em produção", dashboard.InProduction, "/admin/pedidos?status=in_production")
+							@adminMetric("Aguardando envio", dashboard.WaitingShipment, "/admin/pedidos?status=waiting_shipment")
 						</div>
 					</div>
-				</div>
+				}
 			}
 		</section>
 	}
 }
 
-templ adminMetric(label string, value int) {
-	<article class="admin-metric">
+templ AdminOrders(page admindomain.OrderListPage) {
+	@components.PrivateNoIndexLayout("Pedidos administrativos | PrintLab", "Pedidos administrativos da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("orders") {
+					<div class="admin-main">
+						<div class="admin-heading admin-heading-row">
+							<div>
+								<p class="brand-kicker">Pedidos</p>
+								<h1>{ page.StatusLabel }</h1>
+							</div>
+						</div>
+						<div class="admin-filters" aria-label="Filtros de pedidos">
+							for _, option := range page.Options {
+								if option.Active {
+									<span class="admin-filter-link admin-filter-active">{ option.Label }</span>
+								} else {
+									<a class="admin-filter-link" href={ option.URL }>{ option.Label }</a>
+								}
+							}
+						</div>
+						if len(page.Orders) == 0 {
+							<div class="admin-empty">
+								<h2>Nenhum pedido neste filtro</h2>
+								<p>Quando houver pedidos nesta etapa, eles aparecerao aqui.</p>
+							</div>
+						} else {
+							<div class="admin-order-list">
+								for _, order := range page.Orders {
+									<article class="admin-order-row">
+										<div class="admin-order-row-header">
+											<div>
+												<a href={ order.DetailURL }>{ order.OrderNumberLabel }</a>
+												<span>{ order.CreatedAtLabel }</span>
+											</div>
+											<strong>{ order.TotalBRL }</strong>
+										</div>
+										<div class="admin-status-grid" aria-label="Status do pedido">
+											<p><span>Pagamento</span><strong>{ order.OrderStatusLabel }</strong></p>
+											<p><span>Producao</span><strong>{ order.ProductionStatusLabel }</strong></p>
+											<p><span>Envio</span><strong>{ order.ShippingStatusLabel }</strong></p>
+										</div>
+										<div class="admin-order-meta">
+											<span>{ strconv.Itoa(order.ItemCount) } itens</span>
+											<span>{ strconv.Itoa(order.UnitCount) } unidades</span>
+											<a href={ order.DetailURL }>Abrir pedido</a>
+										</div>
+									</article>
+								}
+							</div>
+						}
+						if page.HasPrevious || page.HasNext {
+							<nav class="admin-pagination" aria-label="Paginacao de pedidos">
+								if page.HasPrevious {
+									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.PreviousPage) }>Anterior</a>
+								}
+								<span>Pagina { strconv.Itoa(page.Page) }</span>
+								if page.HasNext {
+									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.NextPage) }>Proxima</a>
+								}
+							</nav>
+						}
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, errorMessage string) {
+	@components.PrivateNoIndexLayout("Pedido administrativo | PrintLab", "Detalhe administrativo do pedido PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("orders") {
+					<div class="admin-main">
+						<div class="admin-heading admin-heading-row">
+							<div>
+								<p class="brand-kicker">Pedido</p>
+								<h1>{ detail.OrderNumberLabel }</h1>
+							</div>
+							<div class="admin-heading-actions">
+								<a class="btn-base btn-secondary" href="/admin/pedidos">Voltar</a>
+								if detail.TrackingURL != "" {
+									<a class="btn-base btn-secondary" href={ detail.TrackingURL }>Acompanhamento</a>
+								}
+							</div>
+						</div>
+						if successMessage != "" {
+							<p class="checkout-alert checkout-alert-success">{ successMessage }</p>
+						}
+						if errorMessage != "" {
+							<p class="checkout-alert checkout-alert-error">{ errorMessage }</p>
+						}
+						<div class="admin-status-grid admin-status-grid-wide" aria-label="Status do pedido">
+							<p><span>Pagamento</span><strong>{ detail.OrderStatusLabel }</strong></p>
+							<p><span>Producao</span><strong>{ detail.ProductionStatusLabel }</strong></p>
+							<p><span>Envio</span><strong>{ detail.ShippingStatusLabel }</strong></p>
+							<p><span>Total</span><strong>{ detail.TotalBRL }</strong></p>
+						</div>
+						<section class="admin-panel" aria-labelledby="admin-order-actions">
+							<h2 id="admin-order-actions">Operacao</h2>
+							<div class="admin-action-grid">
+								<div>
+									<h3>Producao</h3>
+									if len(detail.ProductionActions) == 0 {
+										<p>Nenhuma acao de producao disponivel.</p>
+									} else {
+										for _, action := range detail.ProductionActions {
+											<form method="post" action={ "/admin/pedidos/" + detail.ID + "/producao" }>
+												<input type="hidden" name="production_status" value={ action.Status }/>
+												<button class="btn-base btn-primary" type="submit">{ action.Label }</button>
+											</form>
+										}
+									}
+								</div>
+								<div>
+									<h3>Envio</h3>
+									if len(detail.ShippingActions) == 0 {
+										<p>Nenhuma acao de envio disponivel.</p>
+									} else {
+										for _, action := range detail.ShippingActions {
+											<form method="post" action={ "/admin/pedidos/" + detail.ID + "/envio" }>
+												<input type="hidden" name="shipping_status" value={ action.Status }/>
+												<button class="btn-base btn-primary" type="submit">{ action.Label }</button>
+											</form>
+										}
+									}
+								</div>
+							</div>
+						</section>
+						<div class="admin-detail-grid">
+							<section class="admin-panel" aria-labelledby="admin-order-customer">
+								<h2 id="admin-order-customer">Cliente</h2>
+								<div class="admin-field-grid">
+									<p><span>Nome</span><strong>{ detail.Customer.FullName }</strong></p>
+									<p><span>E-mail</span><strong>{ detail.Customer.Email }</strong></p>
+									<p><span>Telefone</span><strong>{ detail.Customer.Phone }</strong></p>
+									<p><span>CPF</span><strong>{ detail.Customer.CPF }</strong></p>
+								</div>
+							</section>
+							<section class="admin-panel" aria-labelledby="admin-order-address">
+								<h2 id="admin-order-address">Entrega</h2>
+								<div class="admin-field-grid">
+									<p><span>Endereco</span><strong>{ detail.Address.LineOne }</strong></p>
+									<p><span>Cidade</span><strong>{ detail.Address.LineTwo }</strong></p>
+									<p><span>Pais</span><strong>{ detail.Address.CountryCode }</strong></p>
+								</div>
+							</section>
+						</div>
+						<div class="admin-detail-grid">
+							<section class="admin-panel" aria-labelledby="admin-order-shipping">
+								<h2 id="admin-order-shipping">Frete</h2>
+								<div class="admin-field-grid">
+									<p><span>Servico</span><strong>{ detail.Shipping.ServiceName }</strong></p>
+									if detail.Shipping.CarrierName != "" {
+										<p><span>Transportadora</span><strong>{ detail.Shipping.CarrierName }</strong></p>
+									}
+									<p><span>Prazo</span><strong>{ detail.Shipping.DeliveryTime }</strong></p>
+									<p><span>Caixa</span><strong>{ detail.Shipping.ShippingBoxName }</strong></p>
+									<p><span>Peso</span><strong>{ detail.Shipping.PackageWeightLabel }</strong></p>
+									<p><span>Dimensoes</span><strong>{ detail.Shipping.DimensionsLabel }</strong></p>
+									<p><span>Preco</span><strong>{ detail.Shipping.PriceBRL }</strong></p>
+									if detail.Shipping.QuotedAtLabel != "" {
+										<p><span>Cotado em</span><strong>{ detail.Shipping.QuotedAtLabel }</strong></p>
+									}
+								</div>
+							</section>
+							<section class="admin-panel" aria-labelledby="admin-order-payment">
+								<h2 id="admin-order-payment">Pagamento</h2>
+								<div class="admin-field-grid">
+									<p><span>Status</span><strong>{ detail.Payment.StatusLabel }</strong></p>
+									if detail.Payment.AmountBRL != "" {
+										<p><span>Valor validado</span><strong>{ detail.Payment.AmountBRL }</strong></p>
+									}
+									if detail.Payment.PaidAmountBRL != "" {
+										<p><span>Valor pago</span><strong>{ detail.Payment.PaidAmountBRL }</strong></p>
+									}
+									if detail.Payment.InstallmentsLabel != "" {
+										<p><span>Parcelas</span><strong>{ detail.Payment.InstallmentsLabel }</strong></p>
+									}
+									if detail.Payment.CaptureMethod != "" {
+										<p><span>Captura</span><strong>{ detail.Payment.CaptureMethod }</strong></p>
+									}
+									if detail.Payment.PaidAtLabel != "" {
+										<p><span>Pago em</span><strong>{ detail.Payment.PaidAtLabel }</strong></p>
+									}
+								</div>
+							</section>
+						</div>
+						<section class="admin-panel" aria-labelledby="admin-order-items">
+							<h2 id="admin-order-items">Itens</h2>
+							<div class="admin-item-list">
+								for _, item := range detail.Items {
+									<article class="admin-item">
+										<div class="admin-order-row-header">
+											<div>
+												<h3>{ item.ProductName }</h3>
+												if item.HasVariant {
+													<span>{ item.VariantName }</span>
+												}
+												if item.SKU != "" {
+													<span>{ item.SKU }</span>
+												}
+											</div>
+											<strong>{ item.LineTotalBRL }</strong>
+										</div>
+										<div class="admin-status-grid">
+											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
+											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
+											if item.UnitPrintTimeMinutes != nil {
+												<p><span>Tempo unitario</span><strong>{ strconv.Itoa(*item.UnitPrintTimeMinutes) } min</strong></p>
+											}
+											if item.UnitEstimatedFilamentWeightLabel != "" {
+												<p><span>Filamento unitario</span><strong>{ item.UnitEstimatedFilamentWeightLabel }</strong></p>
+											}
+										</div>
+										if len(item.Filaments) > 0 {
+											<div class="admin-filaments">
+												for _, filament := range item.Filaments {
+													<p>
+														if filament.HexColor != "" {
+															<span class="admin-swatch" style={ "background-color: " + filament.HexColor }></span>
+														}
+														<strong>{ filament.MaterialName } / { filament.ColorName }</strong>
+														<span>{ filament.EstimatedWeightLabel }</span>
+														if filament.Label != "" {
+															<span>{ filament.Label }</span>
+														}
+													</p>
+												}
+											</div>
+										}
+									</article>
+								}
+							</div>
+						</section>
+						<section class="admin-panel" aria-labelledby="admin-order-events">
+							<h2 id="admin-order-events">Auditoria</h2>
+							if len(detail.Events) == 0 {
+								<p class="admin-muted">Nenhum evento operacional registrado.</p>
+							} else {
+								<div class="admin-event-list">
+									for _, event := range detail.Events {
+										<article class="admin-event">
+											<strong>{ event.EventTypeLabel }</strong>
+											<span>{ event.CreatedAtLabel }</span>
+											<p>{ event.FromStatusLabel } -> { event.ToStatusLabel }</p>
+										</article>
+									}
+								</div>
+							}
+						</section>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ adminMetric(label string, value int, url string) {
+	<a class="admin-metric" href={ url }>
 		<span>{ label }</span>
 		<strong>{ strconv.Itoa(value) }</strong>
-	</article>
+	</a>
+}
+
+templ adminShell(active string) {
+	<div class="admin-shell">
+		<aside class="admin-sidebar" aria-label="Navegacao administrativa">
+			<strong>PrintLab Admin</strong>
+			<nav aria-label="Secoes administrativas">
+				if active == "dashboard" {
+					<span class="admin-nav-active">Visão geral</span>
+				} else {
+					<a class="admin-nav-link" href="/admin">Visão geral</a>
+				}
+				if active == "orders" {
+					<span class="admin-nav-active">Pedidos</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/pedidos">Pedidos</a>
+				}
+			</nav>
+			<form method="post" action="/admin/logout">
+				<button class="btn-base btn-secondary" type="submit">Sair</button>
+			</form>
+		</aside>
+		{ children... }
+	</div>
 }
 
 templ AdminUnavailable() {

@@ -1,6 +1,6 @@
 # Pedidos
 
-Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY, WEBHOOK E ACOMPANHAMENTO SEGURO CONCLUIDOS.
+Status: REVISAO, CRIACAO DE PEDIDOS, PAGAMENTO INFINITEPAY, WEBHOOK, ACOMPANHAMENTO SEGURO E OPERACAO ADMINISTRATIVA DE PRODUCAO/ENVIO CONCLUIDOS.
 
 Pedidos representam compras confirmadas a partir de um carrinho anonimo validado. O pedido e criado antes do pagamento, nasce com status `pending_payment` e pode mudar para `paid` somente apos validacao server-side com a InfinitePay.
 
@@ -28,6 +28,10 @@ Rotas:
 - `GET /pagamento/retorno`: valida retorno com `payment_check` server-side.
 - `POST /webhooks/infinitepay`: valida webhook com `payment_check` server-side.
 - `GET /acompanhar/{public_tracking_id}`: acompanhamento seguro e minimizado do pedido.
+- `GET /admin/pedidos`: listagem administrativa autenticada de pedidos.
+- `GET /admin/pedidos/{order_id}`: detalhe administrativo autenticado do pedido.
+- `POST /admin/pedidos/{order_id}/producao`: mutacao administrativa autenticada do status de producao.
+- `POST /admin/pedidos/{order_id}/envio`: mutacao administrativa autenticada do status de envio.
 
 `/pedido/{id}` aceita somente UUID. `order_number` e sequencial e apropriado para referencia humana, como `#1001`, mas nao e mecanismo de autorizacao.
 
@@ -59,7 +63,7 @@ O pedido copia valores autoritativos no momento da confirmacao:
 
 Componentes de receita continuam entrando no snapshot mesmo quando material ou cor estiverem inativos, preservando a semantica da Fase 5.1.
 
-Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
+Snapshots operacionais de producao e embalagem sao preservados no pedido. Eles nao sao apresentados na experiencia publica do comprador, mas podem ser consultados no detalhe administrativo autenticado.
 
 ## Revisao
 
@@ -170,6 +174,28 @@ Status operacionais:
 
 Enquanto producao nao estiver `completed`, o banco impede envio diferente de `waiting`.
 
+## Operacao administrativa
+
+A Fase 13.2 adiciona operacao administrativa autenticada sobre pedidos ja criados. A listagem em `/admin/pedidos` e intencionalmente minimizada e nao carrega PII de cliente nem identificadores tecnicos de pagamento.
+
+O detalhe em `/admin/pedidos/{order_id}` e restrito a sessao admin e pode exibir dados completos necessarios para producao e envio: contato, CPF, endereco, frete, caixa, peso, dimensoes, itens e snapshots de receita. Ele nao renderiza `checkout_url`, `transaction_nsu` nem `invoice_slug`.
+
+O Admin pode alterar somente status operacionais:
+
+- producao: `waiting` -> `in_production` -> `completed`;
+- envio: `waiting` -> `preparing` -> `shipped` -> `delivered`.
+
+Regras aplicadas pelo backend:
+
+- producao so inicia apos `orders.status = 'paid'`;
+- producao nao pode pular etapa nem regredir;
+- envio so pode iniciar apos producao `completed`;
+- envio nao pode pular etapa nem regredir;
+- `delivered` e terminal;
+- status de pagamento continua sendo alterado somente pelos fluxos InfinitePay server-side.
+
+Cada mutacao operacional cria um evento em `public.admin_order_events` na mesma transacao da atualizacao de `public.order_fulfillment`, com o UUID Supabase Auth do administrador, tipo de evento, status anterior, status novo e horario.
+
 ## Pagamento
 
 `order_payments.order_nsu` e derivado do UUID canonico do pedido. Ele nao contem PII e nao deve ser tratado como mecanismo de autorizacao.
@@ -204,6 +230,6 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 - Link real InfinitePay e pagamento real foram validados antes da Fase 11.
 - Recebimento real de webhook InfinitePay e confirmacao sem redirect foram validados em producao.
 - Nao ha etiqueta, postagem ou rastreio.
-- Nao ha painel administrativo.
+- Painel administrativo altera apenas producao/envio, nao valores, cliente, endereco ou pagamento.
 - Nao ha endpoint publico para alterar producao ou envio.
 - O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.

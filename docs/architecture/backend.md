@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e fundacao administrativa IMPLEMENTADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e operacao administrativa basica IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -29,7 +29,11 @@ Nesta fase, o backend implementa:
 - `GET /acompanhar/{public_tracking_id}` para acompanhamento seguro e minimizado do pedido.
 - `GET /admin/login` para formulario SSR de login administrativo ou indisponibilidade segura quando config Admin estiver ausente.
 - `POST /admin/login` para autenticar e-mail/senha no Supabase Auth, autorizar por UUID e criar sessao propria.
-- `GET /admin` para dashboard administrativo inicial somente leitura.
+- `GET /admin` para dashboard administrativo com contagens agregadas.
+- `GET /admin/pedidos` para listagem administrativa autenticada de pedidos.
+- `GET /admin/pedidos/{orderID}` para detalhe administrativo autenticado de pedido.
+- `POST /admin/pedidos/{orderID}/producao` para avancar status de producao.
+- `POST /admin/pedidos/{orderID}/envio` para avancar status de envio.
 - `POST /admin/logout` para apagar sessao administrativa e limpar cookie.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
@@ -43,12 +47,12 @@ Nesta fase, o backend implementa:
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
 - `internal/orders` tambem expoe a view minimizada de acompanhamento por `public_tracking_id`.
 - `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
-- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side e dashboard agregado.
+- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side, dashboard agregado, consultas administrativas de pedido e mutacoes auditadas de producao/envio.
 
 ## Limites
 
-- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete e pedidos.
-- A Fase 13.1 implementa somente autenticacao, autorizacao, sessao, logout e dashboard inicial. CRUD de produtos, alteracao de pedidos, fulfillment, auditoria e upload de imagens permanecem fora do escopo.
+- O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete, pedidos, pagamentos, acompanhamento, sessoes administrativas e auditoria operacional de pedidos.
+- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos e mutacoes auditadas de producao/envio. CRUD de produtos, alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
@@ -90,6 +94,9 @@ Nesta fase, o backend implementa:
 - Autenticar Admin por Supabase Auth sem armazenar senha, access token ou refresh token na PrintLab.
 - Autorizar Admin por `ADMIN_SUPABASE_USER_ID`, nunca por e-mail.
 - Usar sessao propria com token opaco, hash SHA-256 no PostgreSQL, cookie HttpOnly `SameSite=Strict` e TTL de 8 horas.
+- Validar `Origin`/`Referer` em POSTs administrativos e rejeitar `Origin: null` independentemente de `Referer`.
+- Usar `Session.AuthUserID` como ator de auditoria para mutacoes administrativas.
+- Atualizar producao/envio e inserir auditoria na mesma transacao PostgreSQL com lock do pedido.
 
 ## Catalogo
 
@@ -159,6 +166,14 @@ O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e re
 `GET /pedido/{id}` aceita somente UUID. A pagina mostra status humano, itens, frete e totais, mas nao exibe CPF completo, endereco completo, telefone ou e-mail completo.
 
 `GET /acompanhar/{public_tracking_id}` aceita somente UUID, consulta por `orders.public_tracking_id` e renderiza apenas numero humano, data, status de pagamento, status de producao, status de envio e transportadora/servico comercial quando houver. Identificador invalido e desconhecido retornam 404. A rota usa headers `private, no-store`, `noindex` e `no-referrer` e nao loga o tracking ID.
+
+## Admin
+
+Rotas `/admin/*` usam headers privados/noindex e `Referrer-Policy: same-origin`.
+
+`GET /admin/pedidos` lista pedidos com dados minimizados. `GET /admin/pedidos/{orderID}` carrega o detalhe operacional completo somente apos sessao administrativa valida.
+
+`POST /admin/pedidos/{orderID}/producao` e `POST /admin/pedidos/{orderID}/envio` validam origem, resolvem sessao, usam o `AuthUserID` da sessao como ator e delegam as regras ao pacote `internal/admin`. O repository bloqueia pedido/fulfillment, valida transicao sequencial, atualiza `order_fulfillment` e insere `admin_order_events` na mesma transacao.
 
 ## Pagamentos
 

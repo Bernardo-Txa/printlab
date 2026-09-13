@@ -218,6 +218,164 @@ func TestAdminDashboardRendersForValidSession(t *testing.T) {
 	}
 }
 
+func TestAdminOrdersRendersListWithoutPII(t *testing.T) {
+	createdAt := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	page := admindomain.PrepareOrderListPage(admindomain.OrderListFilter{Status: admindomain.OrderListStatusWaitingShipment, Page: 1}, []admindomain.OrderListItem{
+		{
+			ID:               "11111111-1111-1111-1111-111111111111",
+			OrderNumber:      1001,
+			OrderStatus:      admindomain.OrderStatusPaid,
+			ProductionStatus: admindomain.ProductionStatusCompleted,
+			ShippingStatus:   admindomain.ShippingStatusWaiting,
+			CreatedAt:        createdAt,
+			TotalCents:       12500,
+			ItemCount:        1,
+			UnitCount:        2,
+		},
+	})
+	service := &fakeAdminPanelService{available: true, orders: page}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/pedidos?status=waiting_shipment", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	if !service.listOrdersCalled || service.listFilter.Status != admindomain.OrderListStatusWaitingShipment {
+		t.Fatalf("expected list filter to be forwarded, got %#v", service.listFilter)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Pedidos", "#1001", "Aguardando envio", "R$"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected orders page to contain %q", expected)
+		}
+	}
+	for _, forbidden := range []string{"CPF", "admin@example.com", "transaction_nsu", "checkout_url", "invoice_slug", "Rua "} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected orders list not to expose %q", forbidden)
+		}
+	}
+}
+
+func TestAdminOrderDetailRendersPrivateDataAndActions(t *testing.T) {
+	detail := admindomain.OrderDetail{
+		ID:                 "11111111-1111-1111-1111-111111111111",
+		PublicTrackingID:   "22222222-2222-2222-2222-222222222222",
+		OrderNumber:        1001,
+		OrderStatus:        admindomain.OrderStatusPaid,
+		ProductionStatus:   admindomain.ProductionStatusWaiting,
+		ShippingStatus:     admindomain.ShippingStatusWaiting,
+		CreatedAt:          time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC),
+		ShippingPriceCents: 2500,
+		TotalCents:         12500,
+		Customer: admindomain.OrderCustomer{
+			FullName: "Cliente Teste",
+			Email:    "cliente@example.com",
+			Phone:    "+5511999999999",
+			CPF:      "12345678909",
+		},
+		Address: admindomain.OrderAddress{
+			LineOne:     "Rua Teste, 123",
+			LineTwo:     "Centro - Sao Paulo/SP - CEP 01001-000",
+			CountryCode: "BR",
+		},
+		Shipping: admindomain.OrderShipping{
+			ServiceName:        "PAC",
+			DeliveryTime:       "5 dias uteis",
+			ShippingBoxName:    "Caixa P",
+			PackageWeightLabel: "500 g",
+			DimensionsLabel:    "200 x 100 x 80 mm",
+			PriceBRL:           "R$ 25,00",
+		},
+		Payment: admindomain.OrderPayment{Available: true, Status: "paid", StatusLabel: "Pago"},
+		Items: []admindomain.OrderDetailItem{
+			{ProductName: "Produto", Quantity: 1, UnitPriceBRL: "R$ 100,00", LineTotalBRL: "R$ 100,00"},
+		},
+	}
+	admindomain.PrepareOrderDetail(&detail)
+	service := &fakeAdminPanelService{available: true, order: detail}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/pedidos/"+detail.ID, nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Cliente Teste", "cliente@example.com", "12345678909", "Iniciar producao", "/acompanhar/22222222-2222-2222-2222-222222222222"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected detail to contain %q", expected)
+		}
+	}
+	for _, forbidden := range []string{"transaction_nsu", "checkout_url", "invoice_slug"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected detail not to expose payment identifier %q", forbidden)
+		}
+	}
+}
+
+func TestAdminProductionStatusValidatesOriginAndUsesSessionActor(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	orderID := "11111111-1111-1111-1111-111111111111"
+	form := url.Values{"production_status": {admindomain.ProductionStatusInProduction}}
+	req := httptest.NewRequest(http.MethodPost, "/admin/pedidos/"+orderID+"/producao", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/pedidos/"+orderID+"?ok=producao" {
+		t.Fatalf("expected success redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if !service.productionCalled || service.productionOrderID != orderID || service.productionStatus != admindomain.ProductionStatusInProduction {
+		t.Fatalf("expected production mutation call, got %#v", service)
+	}
+	if service.productionActorID != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("expected session actor id, got %q", service.productionActorID)
+	}
+}
+
+func TestAdminProductionStatusRejectsCrossSiteOrigin(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	orderID := "11111111-1111-1111-1111-111111111111"
+	req := httptest.NewRequest(http.MethodPost, "/admin/pedidos/"+orderID+"/producao", strings.NewReader("production_status=in_production"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.productionCalled {
+		t.Fatal("expected cross-site production mutation not to call service")
+	}
+}
+
+func TestAdminShippingStatusConflictRedirectsToDetail(t *testing.T) {
+	service := &fakeAdminPanelService{available: true, shippingErr: admindomain.ErrTransitionConflict}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	orderID := "11111111-1111-1111-1111-111111111111"
+	req := httptest.NewRequest(http.MethodPost, "/admin/pedidos/"+orderID+"/envio", strings.NewReader("shipping_status=shipped"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/pedidos/"+orderID+"?erro=transicao" {
+		t.Fatalf("expected conflict redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
 func TestAdminDashboardExpiredSessionRedirectsAndClearsCookie(t *testing.T) {
 	service := &fakeAdminPanelService{available: true, resolveErr: admindomain.ErrSessionExpired}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -350,18 +508,36 @@ func mustAdminToken(t *testing.T) string {
 }
 
 type fakeAdminPanelService struct {
-	available     bool
-	loginCalled   bool
-	loginEmail    string
-	loginPassword string
-	loginResult   admindomain.LoginResult
-	loginErr      error
-	resolveCalled bool
-	resolveErr    error
-	logoutCalled  bool
-	logoutErr     error
-	dashboard     admindomain.Dashboard
-	dashboardErr  error
+	available         bool
+	loginCalled       bool
+	loginEmail        string
+	loginPassword     string
+	loginResult       admindomain.LoginResult
+	loginErr          error
+	resolveCalled     bool
+	resolveErr        error
+	logoutCalled      bool
+	logoutErr         error
+	dashboard         admindomain.Dashboard
+	dashboardErr      error
+	listOrdersCalled  bool
+	listFilter        admindomain.OrderListFilter
+	orders            admindomain.OrderListPage
+	ordersErr         error
+	getOrderCalled    bool
+	getOrderID        string
+	order             admindomain.OrderDetail
+	orderErr          error
+	productionCalled  bool
+	productionOrderID string
+	productionStatus  string
+	productionActorID string
+	productionErr     error
+	shippingCalled    bool
+	shippingOrderID   string
+	shippingStatus    string
+	shippingActorID   string
+	shippingErr       error
 }
 
 func (s *fakeAdminPanelService) Available() bool {
@@ -399,6 +575,40 @@ func (s *fakeAdminPanelService) Dashboard(context.Context) (admindomain.Dashboar
 		return admindomain.Dashboard{}, s.dashboardErr
 	}
 	return s.dashboard, nil
+}
+
+func (s *fakeAdminPanelService) ListOrders(_ context.Context, filter admindomain.OrderListFilter) (admindomain.OrderListPage, error) {
+	s.listOrdersCalled = true
+	s.listFilter = filter
+	if s.ordersErr != nil {
+		return admindomain.OrderListPage{}, s.ordersErr
+	}
+	return s.orders, nil
+}
+
+func (s *fakeAdminPanelService) GetOrder(_ context.Context, orderID string) (admindomain.OrderDetail, error) {
+	s.getOrderCalled = true
+	s.getOrderID = orderID
+	if s.orderErr != nil {
+		return admindomain.OrderDetail{}, s.orderErr
+	}
+	return s.order, nil
+}
+
+func (s *fakeAdminPanelService) ChangeProductionStatus(_ context.Context, orderID string, targetStatus string, actorAuthUserID string) error {
+	s.productionCalled = true
+	s.productionOrderID = orderID
+	s.productionStatus = targetStatus
+	s.productionActorID = actorAuthUserID
+	return s.productionErr
+}
+
+func (s *fakeAdminPanelService) ChangeShippingStatus(_ context.Context, orderID string, targetStatus string, actorAuthUserID string) error {
+	s.shippingCalled = true
+	s.shippingOrderID = orderID
+	s.shippingStatus = targetStatus
+	s.shippingActorID = actorAuthUserID
+	return s.shippingErr
 }
 
 func (s *fakeAdminPanelService) WriteCookie(w http.ResponseWriter, token string, expiresAt time.Time) {

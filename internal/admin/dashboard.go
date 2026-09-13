@@ -7,6 +7,9 @@ const (
 	ProductionStatusInProduction = "in_production"
 	ProductionStatusCompleted    = "completed"
 	ShippingStatusWaiting        = "waiting"
+	ShippingStatusPreparing      = "preparing"
+	ShippingStatusShipped        = "shipped"
+	ShippingStatusDelivered      = "delivered"
 )
 
 func DashboardFromOrderStatuses(records []OrderStatusSnapshot) Dashboard {

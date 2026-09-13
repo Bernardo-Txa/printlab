@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,13 @@ type SessionRepository interface {
 
 type DashboardRepository interface {
 	Dashboard(ctx context.Context) (Dashboard, error)
+}
+
+type OrderRepository interface {
+	ListOrders(ctx context.Context, filter OrderListFilter) (OrderListPage, error)
+	GetOrder(ctx context.Context, orderID string) (OrderDetail, error)
+	ChangeProductionStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error
+	ChangeShippingStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error
 }
 
 type CookieOptions struct {
@@ -121,6 +129,7 @@ type Service struct {
 	auth        AuthClient
 	sessions    SessionRepository
 	dashboard   DashboardRepository
+	orders      OrderRepository
 	tokens      *TokenManager
 	adminUserID string
 	now         func() time.Time
@@ -129,11 +138,13 @@ type Service struct {
 func NewService(auth AuthClient, repository interface {
 	SessionRepository
 	DashboardRepository
+	OrderRepository
 }, adminUserID string, options CookieOptions) *Service {
 	return &Service{
 		auth:        auth,
 		sessions:    repository,
 		dashboard:   repository,
+		orders:      repository,
 		tokens:      NewTokenManager(options),
 		adminUserID: normalizeUUID(adminUserID),
 		now:         time.Now,
@@ -145,6 +156,7 @@ func (s *Service) Available() bool {
 		s.auth != nil &&
 		s.sessions != nil &&
 		s.dashboard != nil &&
+		s.orders != nil &&
 		s.tokens != nil &&
 		ValidUUID(s.adminUserID)
 }
@@ -241,6 +253,60 @@ func (s *Service) Dashboard(ctx context.Context) (Dashboard, error) {
 	}
 
 	return s.dashboard.Dashboard(ctx)
+}
+
+func (s *Service) ListOrders(ctx context.Context, filter OrderListFilter) (OrderListPage, error) {
+	if !s.Available() {
+		return OrderListPage{}, ErrUnavailable
+	}
+
+	return s.orders.ListOrders(ctx, NormalizeOrderListFilter(filter))
+}
+
+func (s *Service) GetOrder(ctx context.Context, orderID string) (OrderDetail, error) {
+	if !s.Available() {
+		return OrderDetail{}, ErrUnavailable
+	}
+	orderID = normalizeUUID(orderID)
+	if !ValidUUID(orderID) {
+		return OrderDetail{}, ErrInvalidOrderID
+	}
+
+	return s.orders.GetOrder(ctx, orderID)
+}
+
+func (s *Service) ChangeProductionStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error {
+	if !s.Available() {
+		return ErrUnavailable
+	}
+	orderID = normalizeUUID(orderID)
+	actorAuthUserID = normalizeUUID(actorAuthUserID)
+	targetStatus = strings.TrimSpace(targetStatus)
+	if !ValidUUID(orderID) {
+		return ErrInvalidOrderID
+	}
+	if !ValidUUID(actorAuthUserID) {
+		return ErrInvalidTransition
+	}
+
+	return s.orders.ChangeProductionStatus(ctx, orderID, targetStatus, actorAuthUserID)
+}
+
+func (s *Service) ChangeShippingStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error {
+	if !s.Available() {
+		return ErrUnavailable
+	}
+	orderID = normalizeUUID(orderID)
+	actorAuthUserID = normalizeUUID(actorAuthUserID)
+	targetStatus = strings.TrimSpace(targetStatus)
+	if !ValidUUID(orderID) {
+		return ErrInvalidOrderID
+	}
+	if !ValidUUID(actorAuthUserID) {
+		return ErrInvalidTransition
+	}
+
+	return s.orders.ChangeShippingStatus(ctx, orderID, targetStatus, actorAuthUserID)
 }
 
 func (s *Service) WriteCookie(w http.ResponseWriter, token string, expiresAt time.Time) {

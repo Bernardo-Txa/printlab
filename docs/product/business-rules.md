@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e fundacao administrativa IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e operacao administrativa basica IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -142,7 +142,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - A rota publica do pedido usa UUID, nao `order_number`.
 - O unico status criado pelo checkout nesta fase e `pending_payment`.
 - Pedido preserva snapshots de produto, variante, preco, quantidade, subtotal, frete, cliente, endereco e receita de producao.
-- Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
+- Snapshots operacionais de producao e embalagem sao preservados no pedido, mas nao sao apresentados na experiencia publica do comprador.
 - O snapshot de producao guarda tempo e peso por unidade, sem multiplicar pela quantidade.
 - `order_item_filaments` nao possui FK para `materials`, `colors` ou `variant_filaments`.
 - Depois do commit, dados temporarios de carrinho, cliente, endereco e frete sao removidos.
@@ -179,7 +179,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Logs nao devem registrar `public_tracking_id`.
 - Nao ha endpoint publico para alterar status de producao ou envio.
 
-## Admin 13.1 implementado
+## Admin implementado
 
 - Admin exige login por Supabase Auth com e-mail e senha.
 - A PrintLab autoriza acesso administrativo somente por `ADMIN_SUPABASE_USER_ID`.
@@ -189,9 +189,28 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Access token e refresh token do Supabase nao sao persistidos.
 - Sessao administrativa usa token opaco em cookie HttpOnly e `SHA-256(token)` em `admin_sessions`.
 - Sessao expira em 8 horas e nao possui renovacao automatica nesta fase.
-- Dashboard inicial e somente leitura e mostra apenas contagens agregadas de pedidos.
-- Dashboard inicial nao deve carregar CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, checkout URL ou detalhes operacionais de item/producao.
-- CRUD de produtos, alteracao de pedidos, status de producao/envio, auditoria e upload de imagens permanecem planejados para subfases futuras.
+- Dashboard mostra apenas contagens agregadas de pedidos.
+- Dashboard e listagem administrativa de pedidos nao devem carregar CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug`, checkout URL ou detalhes operacionais de item/producao.
+- Detalhe administrativo autenticado pode exibir PII, endereco, frete completo, itens e snapshots operacionais necessarios para producao/envio.
+- Alteracoes administrativas de producao e envio exigem POST, sessao valida e validacao de `Origin`/`Referer`.
+- `Origin: null` em POST administrativo e rejeitado independentemente de `Referer`.
+- O ator da mutacao operacional e sempre o `Session.AuthUserID` resolvido da sessao administrativa.
+- Mutacoes de producao/envio devem atualizar `order_fulfillment` e inserir `admin_order_events` na mesma transacao PostgreSQL.
+- Auditoria operacional registra somente pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario; nao registra PII de cliente.
+- CRUD de produtos, alteracao de valores/dados de pedido, papeis multiplos, upload de imagens e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
+
+## Status operacionais implementados
+
+- Pedido `pending_payment` nao pode iniciar producao.
+- Producao so pode avancar quando `orders.status = 'paid'`.
+- Producao avanca somente em sequencia: `waiting` -> `in_production` -> `completed`.
+- Producao nao pode regredir nem pular diretamente de `waiting` para `completed`.
+- Envio so pode sair de `waiting` quando producao estiver `completed`.
+- Envio avanca somente em sequencia: `waiting` -> `preparing` -> `shipped` -> `delivered`.
+- Envio nao pode regredir nem pular etapas.
+- `delivered` e terminal para mutacoes de envio.
+- Transicao repetida ou baseada em estado stale deve falhar sem criar evento de auditoria.
+- Status de pagamento continua sendo autoridade exclusiva dos fluxos InfinitePay server-side.
 
 ## Producao 3D
 

@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro e sessoes administrativas IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas e auditoria operacional IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -19,6 +19,8 @@ A Fase 10 adiciona `public.order_payments` para registrar checkout hospedado Inf
 A Fase 12 adiciona `orders.public_tracking_id` e `public.order_fulfillment` para acompanhamento publico seguro com status separados de pagamento, producao e envio.
 
 A Fase 13.1 adiciona `public.admin_sessions` para sessoes administrativas transitorias, sem armazenar senha, token bruto, access token ou refresh token.
+
+A Fase 13.2 adiciona `public.admin_order_events` para auditoria transacional de mutacoes administrativas de producao e envio.
 
 ## Convencoes futuras
 
@@ -1050,6 +1052,50 @@ Semantica:
 - Nao ha FK para `auth.users` nesta fase para reduzir acoplamento ao schema interno do Supabase Auth.
 - A autorizacao continua no backend por comparacao com `ADMIN_SUPABASE_USER_ID`.
 - Sessao expirada e tratada como nao autenticada e pode ser removida oportunisticamente.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
+## Tabela `public.admin_order_events`
+
+Auditoria operacional de mutacoes administrativas de producao e envio.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | nao | `gen_random_uuid()` | Chave primaria do evento. |
+| `order_id` | `uuid` | nao | - | Pedido afetado pela operacao. |
+| `actor_auth_user_id` | `uuid` | nao | - | UUID do usuario Supabase Auth resolvido pela sessao administrativa. |
+| `event_type` | `text` | nao | - | `production_status_changed` ou `shipping_status_changed`. |
+| `from_status` | `text` | nao | - | Status anterior. |
+| `to_status` | `text` | nao | - | Status novo. |
+| `created_at` | `timestamptz` | nao | `now()` | Momento do evento. |
+
+Foreign keys:
+
+- `admin_order_events_order_id_fkey`: `order_id` referencia `public.orders(id)` com `on delete restrict`.
+
+Constraints:
+
+- `admin_order_events_pkey`: chave primaria em `id`.
+- `admin_order_events_event_type_allowed`: limita eventos a `production_status_changed` e `shipping_status_changed`.
+- `admin_order_events_from_status_not_blank`: status anterior nao pode ser blank.
+- `admin_order_events_to_status_not_blank`: status novo nao pode ser blank.
+- `admin_order_events_status_changed`: status anterior e novo devem ser diferentes.
+
+Indices:
+
+- `admin_order_events_order_created_at_idx` em `(order_id, created_at desc)`.
+
+Semantica:
+
+- Cada mutacao administrativa valida de producao/envio deve inserir um evento na mesma transacao que atualiza `public.order_fulfillment`.
+- O ator vem de `Session.AuthUserID`, nao de input do navegador.
+- Eventos nao armazenam CPF, e-mail, telefone, endereco, checkout URL, `transaction_nsu` ou `invoice_slug`.
+- Nao ha FK para `auth.users` para manter baixo acoplamento com o schema interno do Supabase Auth.
 
 RLS:
 

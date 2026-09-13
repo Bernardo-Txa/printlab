@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e fundacao administrativa IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e operacao administrativa basica IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -181,9 +181,16 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Cookie administrativo `printlab_admin_session` usa `HttpOnly`, `SameSite=Strict`, `Path=/admin`, host-only e `Secure` em producao ou quando `SITE_URL` usa HTTPS.
 - Todas as paginas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`, preservando referrer apenas em navegacoes same-origin.
 - `POST /admin/login` e `POST /admin/logout` reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`. `SameSite=Strict` e camada adicional, nao substituta.
+- `GET /admin/pedidos`, `GET /admin/pedidos/{order_id}`, `POST /admin/pedidos/{order_id}/producao` e `POST /admin/pedidos/{order_id}/envio` exigem sessao administrativa valida.
+- POSTs administrativos de producao/envio tambem reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
+- O ator de auditoria operacional vem de `Session.AuthUserID`, nunca de campo de formulario, query string ou header enviado pelo navegador.
+- Mutacoes administrativas de producao/envio atualizam `order_fulfillment` e inserem `admin_order_events` em uma unica transacao PostgreSQL com lock do pedido.
+- Listagem administrativa de pedidos nao deve carregar PII nem identificadores tecnicos de pagamento.
+- Detalhe administrativo de pedido pode renderizar PII operacional somente apos autenticacao e autorizacao administrativas.
+- `admin_order_events` registra pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario, sem PII de cliente.
 - Logs administrativos podem registrar somente eventos genericos como login bem-sucedido, login falho, logout, sessao expirada e erro de repository.
 - Logs administrativos nao devem registrar e-mail, senha, token de sessao, token hash, access token, refresh token, publishable key, secret key, PII de clientes ou connection strings.
-- O dashboard da Fase 13.1 mostra apenas contagens agregadas e nao carrega CPF, endereco, telefone, e-mail de cliente, `transaction_nsu` ou checkout URL.
+- Dashboard e listagem de pedidos mostram apenas informacoes agregadas ou operacionais minimizadas e nao carregam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
 - Supabase Auth possui rate limits proprios; protecoes adicionais contra abuso, CAPTCHA/WAF/rate limiting e revisao de brute force ficam para a Fase 14.
 
 ## Pagamentos InfinitePay
@@ -204,14 +211,14 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 ## Limites
 
 - Autenticacao e autorizacao administrativas basicas estao implementadas apenas para um usuario Supabase Auth autorizado por UUID.
-- Nao ha papeis multiplos, MFA obrigatorio, auditoria operacional, CAPTCHA/WAF, CRUD de produtos, alteracao de pedidos, upload de imagens ou mutations de fulfillment nesta subfase.
+- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA/WAF, CRUD de produtos, alteracao de valores/dados de pedidos ou upload de imagens nesta subfase.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
 - Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
-- Nao ha upload de imagens, escrita publica em Storage, CRUD administrativo, auditoria operacional ou alteracao administrativa de pedidos.
+- Nao ha upload de imagens, escrita publica em Storage, CRUD administrativo de catalogo, alteracao administrativa de valores/dados de pedidos ou postagem/rastreio externo.
 
 ## Praticas recomendadas
 
