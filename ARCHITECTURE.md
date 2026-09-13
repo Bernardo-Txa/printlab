@@ -22,7 +22,7 @@ IMPLEMENTADO:
 - Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
-- Fundacao administrativa em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab e dashboard inicial somente leitura.
+- Painel administrativo em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab, dashboard, lista/detalhe de pedidos e mutacoes auditadas de producao/envio.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -47,7 +47,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Subfases 13.2, 13.3 e 13.4 do painel administrativo.
+- Subfases 13.3 e 13.4 do painel administrativo.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -103,7 +103,7 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
-O painel administrativo da Fase 13.1 tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos.
+O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`.
 
 ## Responsabilidades do frontend
 
@@ -113,7 +113,7 @@ O frontend e responsavel por apresentar HTML, formularios e interacoes progressi
 - IMPLEMENTADO: Tailwind CSS para estilos utilitarios e design tokens.
 - PLANEJADO: HTMX para interacoes HTTP parciais quando houver necessidade real.
 - IMPLEMENTADO: JavaScript proprio minimo para mascaras progressivas e consulta interna de CEP na etapa de dados.
-- IMPLEMENTADO: UI administrativa inicial SSR sem JavaScript obrigatorio.
+- IMPLEMENTADO: UI administrativa SSR sem JavaScript obrigatorio para login, dashboard, lista/detalhe de pedidos e acoes de producao/envio.
 
 O frontend pode melhorar a experiencia do usuario, mas nao decide regras financeiras, disponibilidade final, status de pedido ou confirmacao de pagamento.
 
@@ -205,7 +205,9 @@ A Fase 10 adiciona pagamento:
 
 A Fase 13.1 adiciona `admin_sessions`, tabela transitoria de sessoes administrativas. Ela armazena somente `auth_user_id`, `SHA-256(token)`, timestamps e expiracao; nao referencia `auth.users`, nao guarda token bruto, senha, access token ou refresh token, e tem RLS habilitado sem policies publicas.
 
-Ainda nao existem tabelas de clientes permanentes nem tabelas de CRUD administrativo de produtos/pedidos.
+A Fase 13.2 adiciona `admin_order_events`, tabela de auditoria operacional para mutacoes administrativas de producao/envio. Cada evento registra pedido, ator administrativo, tipo, status anterior, status novo e horario, sem PII de cliente.
+
+Ainda nao existem tabelas de clientes permanentes nem tabelas de CRUD administrativo de produtos.
 
 ## Comunicacao com servicos externos
 

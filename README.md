@@ -50,11 +50,11 @@ IMPLEMENTADO:
 - Fase 11 — Webhooks InfinitePay concluida, com validacao real em producao e pagamento confirmado sem redirect do comprador.
 - Fase 12 — Acompanhamento Seguro do Pedido, com `public_tracking_id`, rota `/acompanhar/{uuid}` e pagina SSR minimizada.
 - Fase 13.1 — Fundacao de Autenticacao Administrativa, com Supabase Auth, autorizacao por UUID, sessao propria, cookie HttpOnly e dashboard inicial protegido em `/admin`.
+- Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com validacao real em producao concluida.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Fase 13.2 — pedidos, producao, envio e auditoria no painel administrativo.
 - Fase 13.3 — catalogo, variantes, materiais, cores e caixas no painel administrativo.
 - Fase 13.4 — imagens e Supabase Storage no painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
@@ -93,7 +93,7 @@ Frontend implementado:
 - Etapa de dados do checkout renderizada no servidor, com forms HTML, autocomplete nativo, mascaras progressivas e consulta de CEP via backend sem JavaScript obrigatorio.
 - Etapa de frete renderizada no servidor, com radios HTML e selecao por POST, sem JavaScript obrigatorio.
 - Etapa de revisao, pagina de pedido e acompanhamento seguro renderizados no servidor, sem JavaScript obrigatorio e sem expor dados operacionais de producao ou embalagem ao comprador.
-- Login administrativo e dashboard inicial renderizados no servidor, sem JavaScript obrigatorio.
+- Login administrativo, dashboard, lista de pedidos e detalhe operacional renderizados no servidor, sem JavaScript obrigatorio.
 
 Banco planejado:
 

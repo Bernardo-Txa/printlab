@@ -81,7 +81,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Migration `create_admin_sessions`, adicionando `public.admin_sessions` com hash SHA-256 do token, TTL por `expires_at`, RLS habilitado e nenhuma policy publica.
 - ADR-0013 — Autenticacao administrativa com Supabase Auth e sessao propria.
 - Documentacao `docs/integrations/supabase-auth.md` para fluxo Auth, publishable key, autorizacao por UUID e limites da Fase 13.1.
-- Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com listagem administrativa de pedidos, detalhe operacional protegido, mudancas sequenciais de producao/envio e trilha de auditoria transacional.
+- Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com listagem administrativa de pedidos, detalhe operacional protegido, mudancas sequenciais de producao/envio, trilha de auditoria transacional e validacao real em producao concluida sem registrar dados pessoais reais.
 - Migration `create_admin_order_events`, adicionando `public.admin_order_events` com ator administrativo, tipo de evento, status anterior/novo, timestamp, RLS habilitado e nenhuma policy publica.
 - ADR-0014 — Auditoria transacional de operacoes administrativas de pedidos.
 

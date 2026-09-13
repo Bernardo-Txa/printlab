@@ -1,6 +1,6 @@
 # Fase 13.2 — Pedidos, producao, envio e auditoria
 
-Status: implementacao concluida; validacao real pendente.
+Status: concluida.
 
 ## Objetivo
 
@@ -38,7 +38,25 @@ Permitir que a PrintLab opere pedidos autenticada pelo Admin, com consulta de da
 - Auditoria criada na mesma transacao da mutacao: concluido.
 - RLS habilitado na nova tabela sem policies publicas: concluido.
 - Testes, templates, CSS e docs atualizados: concluido.
-- Validacao real com Supabase/Vercel: pendente.
+- Validacao real em producao: concluido.
+
+## Validacao real
+
+Validacao real em producao concluida sem registrar CPF, e-mail, telefone, endereco, UUID real do admin, `order_id` interno real ou dados pessoais reais.
+
+Evidencias confirmadas:
+
+- `/admin/pedidos` funcionou.
+- Detalhe administrativo funcionou.
+- Pedido pago avancou producao em sequencia: `waiting` -> `in_production` -> `completed`.
+- Envio avancou em sequencia: `waiting` -> `preparing` -> `shipped` -> `delivered`.
+- `public.order_fulfillment` terminou com `production_status = completed` e `shipping_status = delivered`.
+- `public.admin_order_events` registrou um evento por transicao.
+- Auditoria preservou `from_status`, `to_status` e `created_at`.
+- Acompanhamento publico refletiu os estados.
+- Regras de transicao invalida foram verificadas.
+- Pedido `pending_payment` nao pode iniciar producao.
+- `delivered` e terminal.
 
 ## Validacoes locais
 

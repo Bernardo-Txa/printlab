@@ -1,13 +1,13 @@
 # Painel administrativo
 
-Status: Fases 13.1 e 13.2 IMPLEMENTADAS; validacao real da 13.2 PENDENTE; Fases 13.3 e 13.4 PLANEJADAS.
+Status: Fases 13.1 e 13.2 CONCLUIDAS; Fases 13.3 e 13.4 PLANEJADAS.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
 ## Status por subfase
 
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
-- 13.2 — pedidos, producao, envio e auditoria: implementacao concluida; validacao real pendente.
+- 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
 - 13.3 — catalogo, variantes, materiais, cores e caixas: planejada.
 - 13.4 — imagens e Supabase Storage: planejada.
 
@@ -78,6 +78,24 @@ Regras:
 - transicao repetida ou stale e tratada como conflito;
 - a atualizacao de `order_fulfillment` e o insert em `admin_order_events` ocorrem na mesma transacao PostgreSQL com lock do pedido.
 
+## Validacao real da Fase 13.2
+
+A validacao real em producao foi concluida sem registrar dados pessoais reais, UUID real do admin, `order_id` interno real ou identificadores privados.
+
+Evidencias funcionais confirmadas manualmente:
+
+- `/admin/pedidos` carregou corretamente;
+- detalhe administrativo de pedido carregou corretamente;
+- pedido pago avancou producao em sequencia: `waiting` -> `in_production` -> `completed`;
+- envio avancou em sequencia: `waiting` -> `preparing` -> `shipped` -> `delivered`;
+- `public.order_fulfillment` terminou com `production_status = completed` e `shipping_status = delivered`;
+- `public.admin_order_events` registrou um evento por transicao;
+- auditoria preservou `from_status`, `to_status` e `created_at`;
+- acompanhamento publico refletiu os estados operacionais;
+- transicoes invalidas foram bloqueadas;
+- pedido `pending_payment` nao pode iniciar producao;
+- `delivered` e terminal.
+
 ## Seguranca
 
 - Nao ha signup administrativo pela aplicacao.
@@ -99,7 +117,6 @@ Regras:
 - Nao ha MFA obrigatorio nem CAPTCHA/WAF na aplicacao.
 - Nao ha uso de `SUPABASE_SECRET_KEY` ou service role.
 - Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
-- Validacao real da 13.2 em ambiente remoto ainda esta pendente.
 
 ## Decisoes pendentes
 
