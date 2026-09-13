@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Catalogo e perfis logisticos IMPLEMENTADOS; operacao comercial PLANEJADA.
+Status: Catalogo publico, perfis logisticos e gestao administrativa basica IMPLEMENTADOS; validacao real da Fase 13.3 pendente.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de variantes.
 
@@ -28,6 +28,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Selecao publica de variante por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio.
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
 - Perfil logistico opcional em produtos e variantes para cotacao de frete.
+- Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores e caixas em `/admin`.
 
 ## Regras publicas
 
@@ -57,6 +58,8 @@ No catalogo, quando um produto possui variantes ativas, o card usa o menor preco
 
 O frontend nunca envia preco autoritativo e nao calcula o preco efetivo.
 
+No Admin, formularios recebem valores em BRL amigavel, como `39,90`, `39.90` ou `0,00`. O backend converte para centavos inteiros com parser decimal exato, rejeitando negativos, notacao cientifica, texto, mais de duas casas decimais e overflow. Dinheiro nao usa `float32` nem `float64`.
+
 ## Variantes
 
 Ordenacao publica de variantes:
@@ -75,13 +78,15 @@ Quando `?variante=` nao e fornecido:
 
 O slug da variante e unico dentro do produto e nao substitui o slug do produto como URL canonica. A canonical da pagina continua sendo `/produtos/{slug}`.
 
+No Admin, slugs vazios podem ser gerados deterministicamente a partir do nome somente na criacao. Em edicao, mudar slug e sempre uma decisao explicita. Conflitos de slug retornam erro amigavel, sem expor detalhe SQL.
+
 ## Receita de producao
 
 Uma variante pode possuir varios componentes em `variant_filaments`, cada um com material, cor, peso estimado em miligramas, rotulo opcional e ordenacao.
 
 Receitas existentes sao lidas por referencia. `materials.is_active = false` e `colors.is_active = false` nao removem componentes de `variant_filaments` nem escondem os nomes de material/cor na pagina publica do produto.
 
-O status ativo de material e cor deve ser usado para novas escolhas operacionais futuras. Como ainda nao ha admin ou formulario de configuracao nesta fase, nao existe listagem publica de novas opcoes de material/cor.
+O status ativo de material e cor e usado para novas escolhas administrativas. Se uma receita existente aponta para material ou cor inativo, o Admin continua carregando a referencia atual, indica o estado inativo e permite preservar essa referencia ao editar peso, rotulo ou ordenacao. Novos componentes oferecem somente materiais e cores ativos.
 
 Essa modelagem suporta:
 
@@ -91,6 +96,8 @@ Essa modelagem suporta:
 - calculos futuros de custo sem persistir valores derivados.
 
 Peso e armazenado como inteiro em `estimated_weight_mg`, evitando `float`.
+
+No Admin, peso de receita e digitado em gramas com ate tres casas decimais e convertido exatamente para miligramas. Exemplos: `12` vira `12000 mg`, `12,5` vira `12500 mg` e `0,850` vira `850 mg`.
 
 O peso total estimado soma todos os componentes carregados da receita, inclusive componentes que referenciem material ou cor inativos.
 
@@ -110,6 +117,18 @@ Esse perfil representa uma unidade preparada para acondicionamento, nao necessar
 A variante pode possuir override completo. Se nao possuir, a cotacao usa o perfil completo do produto. Campos parciais nao sao misturados.
 
 Produto ou variante sem perfil logistico efetivo nao recebe estimativa ficticia no checkout de frete.
+
+No Admin, perfil logistico e atomico: todos os quatro campos precisam estar preenchidos ou todos precisam ficar vazios. A variante com perfil ausente herda o perfil completo do produto; campos isolados de produto e variante nao sao combinados.
+
+## Gestao administrativa
+
+A Fase 13.3 usa as tabelas existentes `categories`, `products`, `product_variants`, `materials`, `colors`, `variant_filaments` e `shipping_boxes`. Nenhuma migration foi criada.
+
+Entidades principais nao possuem hard delete no painel. O Admin ativa ou desativa registros por `is_active`, preservando referencias, carrinhos, receitas, caixas logisticas e historico. A excecao operacional e a receita atual em `variant_filaments`: componentes podem ser removidos porque pedidos antigos ja possuem snapshots historicos.
+
+Alteracoes de produto, variante, material, cor, receita ou caixa nao atualizam pedidos existentes. `orders`, `order_items`, `order_item_filaments` e `order_shipping_details` permanecem snapshots do momento da compra.
+
+Produtos ativos podem mostrar avisos operacionais no Admin quando nao possuem perfil logistico ou variantes, mas esses avisos nao alteram dados silenciosamente nem bloqueiam regras publicas existentes.
 
 ## Imagens
 
@@ -131,14 +150,12 @@ Formatos preferidos para operacao:
 
 ## Planejado
 
-- Admin para cadastro.
 - Busca.
 - Avaliacoes.
 - Paginacao complexa.
 - Upload de imagens.
 - Estoque fisico e inventario de filamento.
 - Custos de producao calculados.
-- Pagamento.
 
 ## Limites
 
@@ -148,4 +165,4 @@ Formatos preferidos para operacao:
 - Nao ha estoque unitario de produtos.
 - Nao ha filamento fisico, marca, lote, carretel, preco por kg ou peso disponivel.
 - Nao ha custos derivados persistidos.
-- Nao ha pedido ou pagamento.
+- Nao ha upload, exclusao, reordenacao ou definicao administrativa de imagem primaria; imagens ficam para a Fase 13.4.

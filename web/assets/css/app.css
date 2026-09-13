@@ -1180,6 +1180,79 @@
     @apply mt-2 text-sm text-muted;
   }
 
+  .admin-search-form,
+  .admin-form {
+    @apply mt-8 grid gap-5 rounded-card border border-border bg-surface p-5 shadow-soft;
+  }
+
+  .admin-search-form label,
+  .admin-field span,
+  .admin-fieldset legend {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .admin-search-form > div,
+  .admin-form-actions {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center;
+  }
+
+  .admin-search-form input,
+  .admin-field input,
+  .admin-field select,
+  .admin-field textarea {
+    @apply min-h-12 w-full rounded-control border border-border bg-surface px-4 text-base font-normal text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .admin-field,
+  .admin-fieldset {
+    @apply grid gap-2;
+  }
+
+  .admin-field textarea {
+    @apply min-h-28 py-3;
+  }
+
+  .admin-form-grid,
+  .admin-checkbox-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .admin-fieldset {
+    @apply rounded-card border border-border bg-surface-muted p-4;
+  }
+
+  .admin-checkbox {
+    @apply flex min-h-12 items-center gap-3 rounded-control border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground;
+  }
+
+  .admin-checkbox input {
+    @apply size-5 shrink-0 accent-primary;
+  }
+
+  .admin-error {
+    @apply text-sm font-semibold text-danger;
+  }
+
+  .admin-warning-list {
+    @apply mt-4 grid gap-2;
+  }
+
+  .admin-warning-list p {
+    @apply rounded-control border border-border bg-surface-muted px-3 py-2 text-sm font-semibold text-muted;
+  }
+
+  .admin-inline-form {
+    @apply grid gap-4;
+  }
+
+  .admin-form-compact {
+    @apply shadow-none;
+  }
+
+  .admin-form-compact h3 {
+    @apply text-base font-semibold text-foreground;
+  }
+
   .review-section-header {
     @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
   }

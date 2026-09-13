@@ -376,6 +376,100 @@ func TestAdminShippingStatusConflictRedirectsToDetail(t *testing.T) {
 	}
 }
 
+func TestAdminProductsRequireSession(t *testing.T) {
+	service := &fakeAdminPanelService{available: true, resolveErr: admindomain.ErrUnauthenticated}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/produtos", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/login" {
+		t.Fatalf("expected redirect to login, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+func TestAdminCreateProductSameOriginCallsService(t *testing.T) {
+	service := &fakeAdminPanelService{available: true, createProductID: "22222222-2222-2222-2222-222222222222"}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	form := url.Values{
+		"name":      {"Produto Admin"},
+		"slug":      {"produto-admin"},
+		"price":     {"39,90"},
+		"is_active": {"1"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://printlab.test")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/produtos/22222222-2222-2222-2222-222222222222?ok=salvo" {
+		t.Fatalf("expected create redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if !service.createProductCalled || service.createProductForm.PriceBRL != "39,90" {
+		t.Fatalf("expected create product call, got %#v", service.createProductForm)
+	}
+}
+
+func TestAdminCreateProductRejectsMaliciousOrigin(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos", strings.NewReader("name=Produto"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://evil.example")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.createProductCalled {
+		t.Fatal("service must not be called for cross-site origin")
+	}
+}
+
+func TestAdminCreateProductRejectsOpaqueOrigin(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos", strings.NewReader("name=Produto"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "null")
+	req.Header.Set("Referer", "https://printlab.test/admin/produtos/novo")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.createProductCalled {
+		t.Fatal("service must not be called for opaque origin")
+	}
+}
+
+func TestAdminRecipeMutationDoesNotUseGET(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/produtos/11111111-1111-1111-1111-111111111111/variantes/22222222-2222-2222-2222-222222222222/receita", nil)
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected not found for GET mutation route, got %d", rec.Code)
+	}
+	if service.addRecipeCalled {
+		t.Fatal("GET must not mutate recipe")
+	}
+}
+
 func TestAdminDashboardExpiredSessionRedirectsAndClearsCookie(t *testing.T) {
 	service := &fakeAdminPanelService{available: true, resolveErr: admindomain.ErrSessionExpired}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -508,36 +602,41 @@ func mustAdminToken(t *testing.T) string {
 }
 
 type fakeAdminPanelService struct {
-	available         bool
-	loginCalled       bool
-	loginEmail        string
-	loginPassword     string
-	loginResult       admindomain.LoginResult
-	loginErr          error
-	resolveCalled     bool
-	resolveErr        error
-	logoutCalled      bool
-	logoutErr         error
-	dashboard         admindomain.Dashboard
-	dashboardErr      error
-	listOrdersCalled  bool
-	listFilter        admindomain.OrderListFilter
-	orders            admindomain.OrderListPage
-	ordersErr         error
-	getOrderCalled    bool
-	getOrderID        string
-	order             admindomain.OrderDetail
-	orderErr          error
-	productionCalled  bool
-	productionOrderID string
-	productionStatus  string
-	productionActorID string
-	productionErr     error
-	shippingCalled    bool
-	shippingOrderID   string
-	shippingStatus    string
-	shippingActorID   string
-	shippingErr       error
+	available           bool
+	loginCalled         bool
+	loginEmail          string
+	loginPassword       string
+	loginResult         admindomain.LoginResult
+	loginErr            error
+	resolveCalled       bool
+	resolveErr          error
+	logoutCalled        bool
+	logoutErr           error
+	dashboard           admindomain.Dashboard
+	dashboardErr        error
+	listOrdersCalled    bool
+	listFilter          admindomain.OrderListFilter
+	orders              admindomain.OrderListPage
+	ordersErr           error
+	getOrderCalled      bool
+	getOrderID          string
+	order               admindomain.OrderDetail
+	orderErr            error
+	productionCalled    bool
+	productionOrderID   string
+	productionStatus    string
+	productionActorID   string
+	productionErr       error
+	shippingCalled      bool
+	shippingOrderID     string
+	shippingStatus      string
+	shippingActorID     string
+	shippingErr         error
+	createProductCalled bool
+	createProductID     string
+	createProductForm   admindomain.AdminProductForm
+	createProductErr    error
+	addRecipeCalled     bool
 }
 
 func (s *fakeAdminPanelService) Available() bool {
@@ -609,6 +708,140 @@ func (s *fakeAdminPanelService) ChangeShippingStatus(_ context.Context, orderID 
 	s.shippingStatus = targetStatus
 	s.shippingActorID = actorAuthUserID
 	return s.shippingErr
+}
+
+func (s *fakeAdminPanelService) ListAdminProducts(context.Context, admindomain.AdminProductListFilter) (admindomain.AdminProductListPage, error) {
+	return admindomain.AdminProductListPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminProduct(context.Context) (admindomain.AdminProductFormPage, error) {
+	return admindomain.AdminProductFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) GetAdminProduct(context.Context, string) (admindomain.AdminProductFormPage, error) {
+	return admindomain.AdminProductFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminProduct(_ context.Context, form admindomain.AdminProductForm) (string, admindomain.AdminProductFormPage, error) {
+	s.createProductCalled = true
+	s.createProductForm = form
+	if s.createProductErr != nil {
+		return "", admindomain.AdminProductFormPage{}, s.createProductErr
+	}
+	return s.createProductID, admindomain.AdminProductFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminProduct(context.Context, string, admindomain.AdminProductForm) (admindomain.AdminProductFormPage, error) {
+	return admindomain.AdminProductFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) ListAdminCategories(context.Context) (admindomain.AdminCategoryListPage, error) {
+	return admindomain.AdminCategoryListPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminCategory() admindomain.AdminCategoryFormPage {
+	return admindomain.AdminCategoryFormPage{}
+}
+
+func (s *fakeAdminPanelService) GetAdminCategory(context.Context, string) (admindomain.AdminCategoryFormPage, error) {
+	return admindomain.AdminCategoryFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminCategory(context.Context, admindomain.AdminCategoryForm) (string, admindomain.AdminCategoryFormPage, error) {
+	return "", admindomain.AdminCategoryFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminCategory(context.Context, string, admindomain.AdminCategoryForm) (admindomain.AdminCategoryFormPage, error) {
+	return admindomain.AdminCategoryFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminVariant(context.Context, string) (admindomain.AdminVariantFormPage, error) {
+	return admindomain.AdminVariantFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) GetAdminVariant(context.Context, string, string) (admindomain.AdminVariantFormPage, error) {
+	return admindomain.AdminVariantFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminVariant(context.Context, string, admindomain.AdminVariantForm) (string, admindomain.AdminVariantFormPage, error) {
+	return "", admindomain.AdminVariantFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminVariant(context.Context, string, string, admindomain.AdminVariantForm) (admindomain.AdminVariantFormPage, error) {
+	return admindomain.AdminVariantFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) AddAdminRecipeComponent(context.Context, string, string, admindomain.AdminRecipeForm) error {
+	s.addRecipeCalled = true
+	return nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminRecipeComponent(context.Context, string, string, string, admindomain.AdminRecipeForm) error {
+	return nil
+}
+
+func (s *fakeAdminPanelService) RemoveAdminRecipeComponent(context.Context, string, string, string) error {
+	return nil
+}
+
+func (s *fakeAdminPanelService) ListAdminMaterials(context.Context) (admindomain.AdminMaterialListPage, error) {
+	return admindomain.AdminMaterialListPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminMaterial() admindomain.AdminMaterialFormPage {
+	return admindomain.AdminMaterialFormPage{}
+}
+
+func (s *fakeAdminPanelService) GetAdminMaterial(context.Context, string) (admindomain.AdminMaterialFormPage, error) {
+	return admindomain.AdminMaterialFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminMaterial(context.Context, admindomain.AdminMaterialForm) (string, admindomain.AdminMaterialFormPage, error) {
+	return "", admindomain.AdminMaterialFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminMaterial(context.Context, string, admindomain.AdminMaterialForm) (admindomain.AdminMaterialFormPage, error) {
+	return admindomain.AdminMaterialFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) ListAdminColors(context.Context) (admindomain.AdminColorListPage, error) {
+	return admindomain.AdminColorListPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminColor() admindomain.AdminColorFormPage {
+	return admindomain.AdminColorFormPage{}
+}
+
+func (s *fakeAdminPanelService) GetAdminColor(context.Context, string) (admindomain.AdminColorFormPage, error) {
+	return admindomain.AdminColorFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminColor(context.Context, admindomain.AdminColorForm) (string, admindomain.AdminColorFormPage, error) {
+	return "", admindomain.AdminColorFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminColor(context.Context, string, admindomain.AdminColorForm) (admindomain.AdminColorFormPage, error) {
+	return admindomain.AdminColorFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) ListAdminBoxes(context.Context) (admindomain.AdminBoxListPage, error) {
+	return admindomain.AdminBoxListPage{}, nil
+}
+
+func (s *fakeAdminPanelService) NewAdminBox() admindomain.AdminBoxFormPage {
+	return admindomain.AdminBoxFormPage{}
+}
+
+func (s *fakeAdminPanelService) GetAdminBox(context.Context, string) (admindomain.AdminBoxFormPage, error) {
+	return admindomain.AdminBoxFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) CreateAdminBox(context.Context, admindomain.AdminBoxForm) (string, admindomain.AdminBoxFormPage, error) {
+	return "", admindomain.AdminBoxFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) UpdateAdminBox(context.Context, string, admindomain.AdminBoxForm) (admindomain.AdminBoxFormPage, error) {
+	return admindomain.AdminBoxFormPage{}, nil
 }
 
 func (s *fakeAdminPanelService) WriteCookie(w http.ResponseWriter, token string, expiresAt time.Time) {

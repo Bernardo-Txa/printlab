@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, checkout, pedidos, pagamentos, acompanhamento e Admin 13.1 IMPLEMENTADOS.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, checkout, pedidos, pagamentos, acompanhamento e Admin 13.1-13.3 IMPLEMENTADOS conforme escopo.
 
 ## Estrategia futura
 
@@ -17,7 +17,7 @@ Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, ca
 - Testes de idempotencia.
 - Testes de pagamento.
 - Testes de calculo financeiro.
-- Testes de autenticacao e sessao administrativa.
+- Testes de autenticacao, sessao administrativa e mutacoes administrativas protegidas.
 
 ## Prioridade
 
@@ -95,6 +95,10 @@ npx supabase --version
 - Sessao administrativa cobre sessao valida, inexistente, expirada, usuario autorizado, outro usuario rejeitado e logout removendo sessao.
 - Handlers Admin cobrem login page, config ausente, POST valido, credenciais invalidas com mensagem generica, origem cross-site rejeitada, `/admin` sem sessao, sessao valida, sessao expirada, cookie aleatorio, logout por POST e GET `/admin/logout` sem efeito.
 - Dashboard Admin cobre contagens de `pending_payment`, `paid + waiting`, `paid + in_production` e `paid + completed + shipping waiting`, sem PII.
+- Handlers Admin de catalogo cobrem sessao obrigatoria, POST same-origin chegando ao service, origem maliciosa rejeitada, `Origin: null` rejeitado e GET em rota de mutacao de receita sem alterar estado.
+- Parsers Admin cobrem BRL para centavos, peso em gramas para miligramas, rejeicao de negativos, notacao cientifica, casas decimais excessivas, texto e overflow, sem `float`.
+- Validacoes Admin cobrem perfil logistico parcial rejeitado, override de preco zero, default variant ativa, desativacao de default limpando `is_default`, hex de cor canonico e dimensoes externas de caixa maiores ou iguais as internas.
+- Testes de regressao do repository Admin verificam transacao para troca de default, escopo por `product_id` em mutacoes filhas, `updated_at = now()` em updates e ausencia de `admin_order_events` no catalogo.
 
 ## Teste de integracao PostgreSQL opcional
 

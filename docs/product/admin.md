@@ -1,6 +1,6 @@
 # Painel administrativo
 
-Status: Fases 13.1 e 13.2 CONCLUIDAS; Fases 13.3 e 13.4 PLANEJADAS.
+Status: Fases 13.1 e 13.2 CONCLUIDAS; Fase 13.3 com implementacao concluida e validacao real pendente; Fase 13.4 PLANEJADA.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
@@ -8,7 +8,7 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
 - 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
-- 13.3 — catalogo, variantes, materiais, cores e caixas: planejada.
+- 13.3 — catalogo, variantes, materiais, cores e caixas: implementacao concluida; validacao real pendente.
 - 13.4 — imagens e Supabase Storage: planejada.
 
 ## Fase 13.1 implementada
@@ -96,6 +96,60 @@ Evidencias funcionais confirmadas manualmente:
 - pedido `pending_payment` nao pode iniciar producao;
 - `delivered` e terminal.
 
+## Fase 13.3 implementada
+
+Rotas de catalogo:
+
+- `GET /admin/produtos`
+- `GET /admin/produtos/novo`
+- `POST /admin/produtos`
+- `GET /admin/produtos/{product_id}`
+- `POST /admin/produtos/{product_id}`
+- `GET /admin/produtos/{product_id}/variantes/nova`
+- `POST /admin/produtos/{product_id}/variantes`
+- `GET /admin/produtos/{product_id}/variantes/{variant_id}`
+- `POST /admin/produtos/{product_id}/variantes/{variant_id}`
+- `POST /admin/produtos/{product_id}/variantes/{variant_id}/receita`
+- `POST /admin/produtos/{product_id}/variantes/{variant_id}/receita/{component_id}`
+- `POST /admin/produtos/{product_id}/variantes/{variant_id}/receita/{component_id}/remover`
+- `GET /admin/categorias`
+- `GET /admin/categorias/nova`
+- `POST /admin/categorias`
+- `GET /admin/categorias/{id}`
+- `POST /admin/categorias/{id}`
+- `GET /admin/materiais`
+- `GET /admin/materiais/novo`
+- `POST /admin/materiais`
+- `GET /admin/materiais/{id}`
+- `POST /admin/materiais/{id}`
+- `GET /admin/cores`
+- `GET /admin/cores/nova`
+- `POST /admin/cores`
+- `GET /admin/cores/{id}`
+- `POST /admin/cores/{id}`
+- `GET /admin/caixas`
+- `GET /admin/caixas/nova`
+- `POST /admin/caixas`
+- `GET /admin/caixas/{id}`
+- `POST /admin/caixas/{id}`
+
+A 13.3 torna administraveis categorias, produtos, variantes, receitas estimadas de producao, materiais logicos, cores logicas e caixas fisicas de envio usando as tabelas ja existentes. Nenhuma migration foi criada para esta fase.
+
+Regras administrativas:
+
+- entidades principais usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, variantes, materiais, cores ou caixas;
+- componentes atuais de `variant_filaments` podem ser adicionados, editados ou removidos porque pedidos antigos usam snapshots historicos;
+- alteracoes de catalogo nao atualizam pedidos historicos, itens de pedido, snapshots de receita, frete congelado ou pagamentos;
+- produtos e variantes usam preco em BRL no formulario e persistem centavos inteiros, sem `float`;
+- receita usa gramas na UI Admin e persiste `estimated_weight_mg` como inteiro;
+- materiais e cores inativos continuam carregaveis em receitas existentes e sao indicados como inativos;
+- novas escolhas de receita usam somente materiais e cores ativos;
+- produto ou variante pode ter perfil logistico completo ou nenhum perfil; perfis parciais sao rejeitados;
+- caixa inativa deixa de participar de novas cotacoes, sem apagar selecoes historicas;
+- imagens permanecem fora do escopo e ficam para a Fase 13.4.
+
+Mutacoes de catalogo usam POST, sessao administrativa obrigatoria, validacao centralizada de `Origin`/`Referer`, rejeicao de `Origin: null`, limite de body de 256 KiB e redirecionamento PRG com `303 See Other` em sucesso.
+
 ## Seguranca
 
 - Nao ha signup administrativo pela aplicacao.
@@ -107,16 +161,18 @@ Evidencias funcionais confirmadas manualmente:
 - Dashboard e listagem de pedidos nao carregam nem renderizam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
 - O detalhe de pedido pode renderizar PII operacional somente apos sessao administrativa valida.
 - Eventos de auditoria guardam UUID do usuario Supabase Auth, tipo de evento, status anterior, status novo e horario; nao armazenam PII de cliente.
+- Paginas de catalogo Admin nao fazem join com pedidos e nao carregam PII, dados InfinitePay, `order_id` interno ou URL de checkout.
+- `admin_order_events` continua exclusivo para operacoes de pedidos; a 13.3 nao cria auditoria de catalogo.
 
 ## Limites atuais
 
-- Nao ha CRUD de produtos.
 - Nao ha alteracao de dados comerciais do pedido, valores, cliente, endereco ou pagamento.
 - Nao ha upload de imagens.
 - Nao ha papeis multiplos.
 - Nao ha MFA obrigatorio nem CAPTCHA/WAF na aplicacao.
 - Nao ha uso de `SUPABASE_SECRET_KEY` ou service role.
 - Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
+- Nao ha estoque fisico de filamento, marcas, lotes, carretel, custos calculados ou multiplos admins/papeis.
 
 ## Decisoes pendentes
 

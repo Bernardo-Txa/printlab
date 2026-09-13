@@ -84,6 +84,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com listagem administrativa de pedidos, detalhe operacional protegido, mudancas sequenciais de producao/envio, trilha de auditoria transacional e validacao real em producao concluida sem registrar dados pessoais reais.
 - Migration `create_admin_order_events`, adicionando `public.admin_order_events` com ator administrativo, tipo de evento, status anterior/novo, timestamp, RLS habilitado e nenhuma policy publica.
 - ADR-0014 — Auditoria transacional de operacoes administrativas de pedidos.
+- Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com gestao SSR protegida de produtos, categorias, variantes, receita estimada, materiais, cores e caixas fisicas no painel Admin.
+- Parsers administrativos testaveis para preco BRL em centavos e peso de receita em gramas convertido para miligramas, ambos sem `float`.
+- Validacoes administrativas para slugs canonicos, perfis logisticos atomicos, default variant ativa, SKU opcional, cores hex canonicas e caixas com dimensoes externas maiores ou iguais as internas.
+- ADR-0015 — Gestao administrativa de catalogo sem hard delete.
 
 ### Changed
 
@@ -121,6 +125,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Paginas administrativas passam a usar `Referrer-Policy: same-origin`, preservando privacidade cross-origin sem impedir origem verificavel em submits administrativos same-origin.
 - Dashboard administrativo passa a apontar metricas operacionais para filtros reais de `/admin/pedidos`.
 - Admin passa a usar o `AuthUserID` da sessao como ator de auditoria em mutacoes de producao/envio.
+- Shell administrativo passa a incluir navegacao para Produtos, Categorias, Materiais, Cores e Caixas, sem link funcional de imagens.
+- Formularios administrativos passam a aplicar limite de body de 256 KiB.
+- Categorias, produtos, variantes, materiais, cores e caixas passam a ser ativados/inativados no Admin por `is_active`, sem hard delete.
 
 ### Fixed
 

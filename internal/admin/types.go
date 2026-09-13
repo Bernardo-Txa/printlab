@@ -26,6 +26,11 @@ var (
 	ErrOrderNotFound      = errors.New("admin order not found")
 	ErrInvalidTransition  = errors.New("admin invalid order transition")
 	ErrTransitionConflict = errors.New("admin order transition conflict")
+	ErrInvalidCatalogID   = errors.New("admin invalid catalog id")
+	ErrCatalogNotFound    = errors.New("admin catalog record not found")
+	ErrValidation         = errors.New("admin validation failed")
+	ErrDuplicateSlug      = errors.New("admin duplicate slug")
+	ErrDuplicateSKU       = errors.New("admin duplicate sku")
 	ErrUnavailable        = errors.New("admin unavailable")
 )
 

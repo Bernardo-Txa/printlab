@@ -47,7 +47,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Subfases 13.3 e 13.4 do painel administrativo.
+- Fase 13.4 do painel administrativo para imagens e Supabase Storage.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -103,7 +103,7 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
-O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`.
+O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete e sem upload de imagens.
 
 ## Responsabilidades do frontend
 
@@ -207,7 +207,9 @@ A Fase 13.1 adiciona `admin_sessions`, tabela transitoria de sessoes administrat
 
 A Fase 13.2 adiciona `admin_order_events`, tabela de auditoria operacional para mutacoes administrativas de producao/envio. Cada evento registra pedido, ator administrativo, tipo, status anterior, status novo e horario, sem PII de cliente.
 
-Ainda nao existem tabelas de clientes permanentes nem tabelas de CRUD administrativo de produtos.
+A Fase 13.3 nao adiciona tabelas. O Admin opera `categories`, `products`, `product_variants`, `materials`, `colors`, `variant_filaments` e `shipping_boxes` existentes, usando `is_active` em vez de hard delete para entidades principais.
+
+Ainda nao existem tabelas de clientes permanentes nem tabelas de auditoria de catalogo.
 
 ## Comunicacao com servicos externos
 

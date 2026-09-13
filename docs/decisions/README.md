@@ -43,3 +43,5 @@ Data:
 - [ADR-0011 — Confirmacao redundante de pagamentos InfinitePay](0011-confirmacao-redundante-pagamentos-infinitepay.md)
 - [ADR-0012 — Acompanhamento publico por identificador aleatorio](0012-acompanhamento-publico-por-identificador-aleatorio.md)
 - [ADR-0013 — Autenticacao administrativa com Supabase Auth e sessao propria](0013-autenticacao-administrativa-supabase-auth-sessao-propria.md)
+- [ADR-0014 — Auditoria transacional de operacoes administrativas de pedidos](0014-auditoria-transacional-operacoes-pedidos.md)
+- [ADR-0015 — Gestao administrativa de catalogo sem hard delete](0015-gestao-administrativa-catalogo-sem-hard-delete.md)

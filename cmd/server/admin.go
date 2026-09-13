@@ -13,6 +13,8 @@ import (
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
+const adminMaxFormBodyBytes = 256 << 10
+
 type adminPanelService interface {
 	Available() bool
 	Login(ctx context.Context, email string, password string) (admindomain.LoginResult, error)
@@ -23,6 +25,38 @@ type adminPanelService interface {
 	GetOrder(ctx context.Context, orderID string) (admindomain.OrderDetail, error)
 	ChangeProductionStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error
 	ChangeShippingStatus(ctx context.Context, orderID string, targetStatus string, actorAuthUserID string) error
+	ListAdminProducts(ctx context.Context, filter admindomain.AdminProductListFilter) (admindomain.AdminProductListPage, error)
+	NewAdminProduct(ctx context.Context) (admindomain.AdminProductFormPage, error)
+	GetAdminProduct(ctx context.Context, productID string) (admindomain.AdminProductFormPage, error)
+	CreateAdminProduct(ctx context.Context, form admindomain.AdminProductForm) (string, admindomain.AdminProductFormPage, error)
+	UpdateAdminProduct(ctx context.Context, productID string, form admindomain.AdminProductForm) (admindomain.AdminProductFormPage, error)
+	ListAdminCategories(ctx context.Context) (admindomain.AdminCategoryListPage, error)
+	NewAdminCategory() admindomain.AdminCategoryFormPage
+	GetAdminCategory(ctx context.Context, categoryID string) (admindomain.AdminCategoryFormPage, error)
+	CreateAdminCategory(ctx context.Context, form admindomain.AdminCategoryForm) (string, admindomain.AdminCategoryFormPage, error)
+	UpdateAdminCategory(ctx context.Context, categoryID string, form admindomain.AdminCategoryForm) (admindomain.AdminCategoryFormPage, error)
+	NewAdminVariant(ctx context.Context, productID string) (admindomain.AdminVariantFormPage, error)
+	GetAdminVariant(ctx context.Context, productID string, variantID string) (admindomain.AdminVariantFormPage, error)
+	CreateAdminVariant(ctx context.Context, productID string, form admindomain.AdminVariantForm) (string, admindomain.AdminVariantFormPage, error)
+	UpdateAdminVariant(ctx context.Context, productID string, variantID string, form admindomain.AdminVariantForm) (admindomain.AdminVariantFormPage, error)
+	AddAdminRecipeComponent(ctx context.Context, productID string, variantID string, form admindomain.AdminRecipeForm) error
+	UpdateAdminRecipeComponent(ctx context.Context, productID string, variantID string, componentID string, form admindomain.AdminRecipeForm) error
+	RemoveAdminRecipeComponent(ctx context.Context, productID string, variantID string, componentID string) error
+	ListAdminMaterials(ctx context.Context) (admindomain.AdminMaterialListPage, error)
+	NewAdminMaterial() admindomain.AdminMaterialFormPage
+	GetAdminMaterial(ctx context.Context, materialID string) (admindomain.AdminMaterialFormPage, error)
+	CreateAdminMaterial(ctx context.Context, form admindomain.AdminMaterialForm) (string, admindomain.AdminMaterialFormPage, error)
+	UpdateAdminMaterial(ctx context.Context, materialID string, form admindomain.AdminMaterialForm) (admindomain.AdminMaterialFormPage, error)
+	ListAdminColors(ctx context.Context) (admindomain.AdminColorListPage, error)
+	NewAdminColor() admindomain.AdminColorFormPage
+	GetAdminColor(ctx context.Context, colorID string) (admindomain.AdminColorFormPage, error)
+	CreateAdminColor(ctx context.Context, form admindomain.AdminColorForm) (string, admindomain.AdminColorFormPage, error)
+	UpdateAdminColor(ctx context.Context, colorID string, form admindomain.AdminColorForm) (admindomain.AdminColorFormPage, error)
+	ListAdminBoxes(ctx context.Context) (admindomain.AdminBoxListPage, error)
+	NewAdminBox() admindomain.AdminBoxFormPage
+	GetAdminBox(ctx context.Context, boxID string) (admindomain.AdminBoxFormPage, error)
+	CreateAdminBox(ctx context.Context, form admindomain.AdminBoxForm) (string, admindomain.AdminBoxFormPage, error)
+	UpdateAdminBox(ctx context.Context, boxID string, form admindomain.AdminBoxForm) (admindomain.AdminBoxFormPage, error)
 	WriteCookie(w http.ResponseWriter, token string, expiresAt time.Time)
 	ClearCookie(w http.ResponseWriter)
 }
@@ -50,7 +84,7 @@ func adminLoginHandler(service adminPanelService, siteURL string) http.HandlerFu
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.AdminUnavailable())
 			return
 		}
-		if err := r.ParseForm(); err != nil {
+		if err := parseAdminForm(w, r); err != nil {
 			http.Error(w, "invalid admin request", http.StatusBadRequest)
 			return
 		}
@@ -141,7 +175,7 @@ func adminProductionStatusHandler(service adminPanelService, siteURL string) htt
 		if !ok {
 			return
 		}
-		if err := r.ParseForm(); err != nil {
+		if err := parseAdminForm(w, r); err != nil {
 			http.Error(w, "invalid admin request", http.StatusBadRequest)
 			return
 		}
@@ -163,7 +197,7 @@ func adminShippingStatusHandler(service adminPanelService, siteURL string) http.
 		if !ok {
 			return
 		}
-		if err := r.ParseForm(); err != nil {
+		if err := parseAdminForm(w, r); err != nil {
 			http.Error(w, "invalid admin request", http.StatusBadRequest)
 			return
 		}
@@ -177,6 +211,7 @@ func adminShippingStatusHandler(service adminPanelService, siteURL string) http.
 func adminLogoutHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
+		r.Body = http.MaxBytesReader(w, r.Body, adminMaxFormBodyBytes)
 		if !validMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
@@ -231,6 +266,11 @@ func setAdminPrivateHeaders(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", checkoutPrivateCacheControl)
 	w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive")
 	w.Header().Set("Referrer-Policy", "same-origin")
+}
+
+func parseAdminForm(w http.ResponseWriter, r *http.Request) error {
+	r.Body = http.MaxBytesReader(w, r.Body, adminMaxFormBodyBytes)
+	return r.ParseForm()
 }
 
 func adminPageQuery(r *http.Request) int {

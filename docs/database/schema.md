@@ -22,6 +22,8 @@ A Fase 13.1 adiciona `public.admin_sessions` para sessoes administrativas transi
 
 A Fase 13.2 adiciona `public.admin_order_events` para auditoria transacional de mutacoes administrativas de producao e envio.
 
+A Fase 13.3 nao altera schema. Ela torna administraveis as tabelas ja existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
+
 ## Convencoes futuras
 
 - Usar `snake_case` para tabelas, colunas, constraints e indices.
@@ -1009,6 +1011,27 @@ Dinheiro nao usa `float32` ou `float64`.
 `products.category_id` pode ser `null`. Um produto ativo sem categoria continua aparecendo no catalogo publico.
 
 Se uma categoria for removida, `on delete set null` preserva o produto. Se uma categoria estiver inativa, ela nao aparece nos filtros publicos; o produto ativo associado pode continuar aparecendo na listagem geral sem depender da categoria para existir publicamente.
+
+## Semantica administrativa de catalogo
+
+A Fase 13.3 nao criou migration nova nem tabelas paralelas de catalogo. O Admin opera sobre o schema existente.
+
+Entidades principais de catalogo e logistica nao possuem hard delete operacional no painel:
+
+- `categories`;
+- `products`;
+- `product_variants`;
+- `materials`;
+- `colors`;
+- `shipping_boxes`.
+
+Disponibilidade para novas ofertas, filtros, escolhas ou cotacoes deve usar `is_active`. Registros inativos permanecem no banco para preservar referencias, carrinhos e historico.
+
+`variant_filaments` e excecao operacional: componentes da receita atual podem ser adicionados, editados ou removidos, porque pedidos historicos preservam snapshots em `order_item_filaments`.
+
+Atualizacoes administrativas em tabelas que possuem `updated_at` devem definir `updated_at = now()`. `variant_filaments` nao possui `updated_at` e a 13.3 nao adiciona coluna somente para essa finalidade.
+
+Alteracoes de catalogo, variantes, materiais, cores, receita ou caixas nao atualizam `orders`, `order_items`, `order_item_filaments` nem `order_shipping_details`.
 
 ## Supabase Storage
 

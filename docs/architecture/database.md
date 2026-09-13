@@ -10,6 +10,7 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 - Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments`, `public.order_payments`, `public.admin_sessions` e `public.admin_order_events`.
 - As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento, o acompanhamento seguro, sessoes admin e auditoria operacional.
+- A Fase 13.3 nao cria schema novo; o Admin de catalogo opera sobre tabelas existentes.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -51,6 +52,7 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Criar `order_fulfillment` 1:1 com `orders`, RLS habilitado e sem policies publicas, separando status de producao e envio.
 - Criar `admin_sessions` para sessoes administrativas transitorias, armazenando somente `auth_user_id`, `SHA-256(token)`, `created_at` e `expires_at`, sem FK para `auth.users`.
 - Criar `admin_order_events` para auditoria transacional de mutacoes administrativas de producao/envio, armazenando ator Auth, tipo de evento, status anterior/novo e horario, sem PII de cliente.
+- Usar `is_active` em vez de hard delete para gestao administrativa de categorias, produtos, variantes, materiais, cores e caixas.
 
 ## Runtime de conexao
 
@@ -108,6 +110,7 @@ Pool padrao por instancia:
 - `admin_sessions` guarda sessoes administrativas com token hash de 32 bytes e expiracao curta de 8 horas.
 - `admin_order_events` guarda trilha de auditoria operacional de producao/envio por pedido.
 - RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections`, tabelas de pedido, `order_payments`, `admin_sessions` e `admin_order_events` sem policies publicas.
+- A gestao Admin de catalogo da Fase 13.3 usa essas tabelas sem criar tabela paralela e sem reutilizar `admin_order_events`.
 
 ## Convencoes de schema futuras
 

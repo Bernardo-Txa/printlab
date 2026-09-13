@@ -318,6 +318,549 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 	}
 }
 
+templ AdminProducts(page admindomain.AdminProductListPage) {
+	@components.PrivateNoIndexLayout("Produtos administrativos | PrintLab", "Produtos administrativos da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("products") {
+					<div class="admin-main">
+						<div class="admin-heading admin-heading-row">
+							<div>
+								<p class="brand-kicker">Catalogo</p>
+								<h1>Produtos</h1>
+							</div>
+							<div class="admin-heading-actions">
+								<a class="btn-base btn-primary" href="/admin/produtos/novo">Novo produto</a>
+							</div>
+						</div>
+						<form class="admin-search-form" method="get" action="/admin/produtos">
+							if page.Status != "all" {
+								<input type="hidden" name="status" value={ page.Status }/>
+							}
+							<label for="admin-products-query">Buscar por nome ou slug</label>
+							<div>
+								<input id="admin-products-query" type="search" name="q" value={ page.Query }/>
+								<button class="btn-base btn-secondary" type="submit">Buscar</button>
+							</div>
+						</form>
+						<div class="admin-filters" aria-label="Filtros de produtos">
+							for _, option := range page.Options {
+								if option.Active {
+									<span class="admin-filter-link admin-filter-active">{ option.Label }</span>
+								} else {
+									<a class="admin-filter-link" href={ option.URL }>{ option.Label }</a>
+								}
+							}
+						</div>
+						if len(page.Products) == 0 {
+							<div class="admin-empty">
+								<h2>Nenhum produto encontrado</h2>
+								<p>Os produtos cadastrados aparecerao aqui.</p>
+							</div>
+						} else {
+							<div class="admin-order-list">
+								for _, product := range page.Products {
+									<article class="admin-order-row">
+										<div class="admin-order-row-header">
+											<div>
+												<a href={ product.DetailURL }>{ product.Name }</a>
+												<span>{ product.Slug }</span>
+											</div>
+											<strong>{ product.PriceBRL }</strong>
+										</div>
+										<div class="admin-status-grid">
+											<p><span>Categoria</span><strong>{ product.CategoryLabel }</strong></p>
+											<p><span>Status</span><strong>{ product.StatusLabel }</strong></p>
+											<p><span>Destaque</span><strong>{ product.FeaturedLabel }</strong></p>
+											<p><span>Variantes</span><strong>{ product.VariantCountLabel }</strong></p>
+											<p><span>Frete</span><strong>{ product.ShippingLabel }</strong></p>
+											<p><span>Imagens</span><strong>Fase 13.4</strong></p>
+										</div>
+										if len(product.Warnings) > 0 {
+											<div class="admin-warning-list">
+												for _, warning := range product.Warnings {
+													<p>{ warning }</p>
+												}
+											</div>
+										}
+										<div class="admin-order-meta">
+											<a href={ product.DetailURL }>Editar produto</a>
+										</div>
+									</article>
+								}
+							</div>
+						}
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminProductForm(page admindomain.AdminProductFormPage) {
+	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Produto administrativo da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("products") {
+					<div class="admin-main">
+						@adminFormHeader("Catalogo", page.Title, page.BackURL)
+						if page.Message != "" {
+							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						}
+						<form class="admin-form" method="post" action={ page.Action }>
+							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
+							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							@adminSelectField("category_id", "Categoria", page.Form.CategoryID, page.Categories, page.Errors.Get("category_id"), "Sem categoria")
+							@adminTextField("price", "Preco", page.Form.PriceBRL, page.Errors.Get("price"), "text", true)
+							@adminTextareaField("short_description", "Resumo", page.Form.ShortDescription, page.Errors.Get("short_description"))
+							@adminTextareaField("description", "Descricao", page.Form.Description, page.Errors.Get("description"))
+							<div class="admin-checkbox-grid">
+								@adminCheckboxField("is_active", "Produto ativo", page.Form.IsActive)
+								@adminCheckboxField("is_featured", "Destacado", page.Form.IsFeatured)
+							</div>
+							@adminShippingProfileFields(page.Form.UseShipping, page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
+							<div class="admin-form-actions">
+								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
+								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
+							</div>
+						</form>
+						if !page.IsNew {
+							<section class="admin-panel" aria-labelledby="admin-product-variants">
+								<div class="admin-heading-row">
+									<h2 id="admin-product-variants">Variantes</h2>
+									<a class="btn-base btn-secondary" href={ page.Action + "/variantes/nova" }>Nova variante</a>
+								</div>
+								if len(page.Variants) == 0 {
+									<p class="admin-muted">Nenhuma variante cadastrada.</p>
+								} else {
+									<div class="admin-item-list">
+										for _, variant := range page.Variants {
+											<article class="admin-item">
+												<div class="admin-order-row-header">
+													<div>
+														<a href={ variant.DetailURL }>{ variant.Name }</a>
+														<span>{ variant.Slug }</span>
+														if variant.SKU != "" {
+															<span>{ variant.SKU }</span>
+														}
+													</div>
+													<strong>{ variant.PriceLabel }</strong>
+												</div>
+												<div class="admin-status-grid">
+													<p><span>Status</span><strong>{ variant.StatusLabel }</strong></p>
+													<p><span>Default</span><strong>{ variant.DefaultLabel }</strong></p>
+													<p><span>Ordem</span><strong>{ strconv.Itoa(variant.SortOrder) }</strong></p>
+													<p><span>Tempo</span><strong>{ variant.PrintTimeLabel }</strong></p>
+													<p><span>Frete</span><strong>{ variant.ShippingLabel }</strong></p>
+													<p><span>Receita</span><strong>{ strconv.Itoa(variant.RecipeCount) } componentes / { variant.RecipeWeightLabel }</strong></p>
+												</div>
+											</article>
+										}
+									</div>
+								}
+							</section>
+						}
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminCategories(page admindomain.AdminCategoryListPage) {
+	@adminSimpleEntityList("categories", "Categorias", "/admin/categorias/nova") {
+		for _, item := range page.Categories {
+			@adminEntityCard(item.Name, item.Slug, item.StatusLabel, item.DetailURL, item.Description)
+		}
+	}
+}
+
+templ AdminCategoryForm(page admindomain.AdminCategoryFormPage) {
+	@adminBasicTextForm("categories", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.Errors)
+}
+
+templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
+	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Variante administrativa da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("products") {
+					<div class="admin-main">
+						@adminFormHeader(page.Product.Name, page.Title, page.BackURL)
+						if page.Message != "" {
+							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						}
+						<form class="admin-form" method="post" action={ page.Action }>
+							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
+							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							@adminTextField("sku", "SKU", page.Form.SKU, page.Errors.Get("sku"), "text", false)
+							@adminTextField("price", "Preco proprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false)
+							<div class="admin-checkbox-grid">
+								@adminCheckboxField("is_active", "Variante ativa", page.Form.IsActive)
+								@adminCheckboxField("is_default", "Variante default", page.Form.IsDefault)
+							</div>
+							@adminTextField("sort_order", "Ordem", page.Form.SortOrder, page.Errors.Get("sort_order"), "number", true)
+							@adminTextField("print_time_minutes", "Tempo de impressao em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false)
+							@adminShippingProfileFields(page.Form.UseShipping, page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
+							<div class="admin-form-actions">
+								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
+								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
+							</div>
+						</form>
+						if !page.IsNew {
+							<section class="admin-panel" aria-labelledby="admin-variant-recipe">
+								<h2 id="admin-variant-recipe">Receita de produção</h2>
+								if len(page.Recipe) == 0 {
+									<p class="admin-muted">Nenhum componente cadastrado.</p>
+								} else {
+									<div class="admin-item-list">
+										for _, component := range page.Recipe {
+											<article class="admin-item">
+												<form class="admin-inline-form" method="post" action={ component.UpdateAction }>
+													@adminRecipeFields(component.MaterialID, component.ColorID, component.EstimatedWeightInput, component.Label, component.SortOrderInput, page.MaterialOptions, page.ColorOptions)
+													<button class="btn-base btn-secondary" type="submit">Salvar componente</button>
+												</form>
+												<form method="post" action={ component.RemoveAction }>
+													<button class="btn-base btn-secondary" type="submit">Remover componente</button>
+												</form>
+												<p class="admin-muted">{ component.MaterialLabel } / { component.ColorLabel } — { component.EstimatedWeightLabel }</p>
+											</article>
+										}
+									</div>
+								}
+								<form class="admin-form admin-form-compact" method="post" action={ page.Action + "/receita" }>
+									<h3>Novo componente</h3>
+									@adminRecipeFields(page.RecipeForm.MaterialID, page.RecipeForm.ColorID, page.RecipeForm.EstimatedWeight, page.RecipeForm.Label, page.RecipeForm.SortOrder, page.MaterialOptions, page.ColorOptions)
+									<button class="btn-base btn-primary" type="submit">Adicionar componente</button>
+								</form>
+							</section>
+						}
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminMaterials(page admindomain.AdminMaterialListPage) {
+	@adminSimpleEntityList("materials", "Materiais", "/admin/materiais/novo") {
+		for _, item := range page.Materials {
+			@adminEntityCard(item.Name, item.Slug, item.StatusLabel, item.DetailURL, item.Description)
+		}
+	}
+}
+
+templ AdminMaterialForm(page admindomain.AdminMaterialFormPage) {
+	@adminBasicTextForm("materials", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.Errors)
+}
+
+templ AdminColors(page admindomain.AdminColorListPage) {
+	@components.PrivateNoIndexLayout("Cores administrativas | PrintLab", "Cores administrativas da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("colors") {
+					<div class="admin-main">
+						@adminListHeader("Cores", "/admin/cores/nova")
+						<div class="admin-order-list">
+							for _, item := range page.Colors {
+								<article class="admin-order-row">
+									<div class="admin-order-row-header">
+										<div>
+											<a href={ item.DetailURL }>{ item.Name }</a>
+											<span>{ item.Slug }</span>
+										</div>
+										<strong>{ item.StatusLabel }</strong>
+									</div>
+									<div class="admin-order-meta">
+										if item.HexColor != "" {
+											<span class="admin-swatch" style={ "background-color: " + item.HexColor }></span>
+											<span>{ item.HexColor }</span>
+										} else {
+											<span>Sem hexadecimal</span>
+										}
+									</div>
+								</article>
+							}
+						</div>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminColorForm(page admindomain.AdminColorFormPage) {
+	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Cor administrativa da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("colors") {
+					<div class="admin-main">
+						@adminFormHeader("Catalogo", page.Title, page.BackURL)
+						if page.Message != "" {
+							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						}
+						<form class="admin-form" method="post" action={ page.Action }>
+							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
+							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							@adminTextField("hex_color", "Hexadecimal", page.Form.HexColor, page.Errors.Get("hex_color"), "text", false)
+							@adminCheckboxField("is_active", "Cor ativa", page.Form.IsActive)
+							<div class="admin-form-actions">
+								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
+								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
+							</div>
+						</form>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminBoxes(page admindomain.AdminBoxListPage) {
+	@components.PrivateNoIndexLayout("Caixas administrativas | PrintLab", "Caixas administrativas da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("boxes") {
+					<div class="admin-main">
+						@adminListHeader("Caixas", "/admin/caixas/nova")
+						<div class="admin-order-list">
+							for _, item := range page.Boxes {
+								<article class="admin-order-row">
+									<div class="admin-order-row-header">
+										<div>
+											<a href={ item.DetailURL }>{ item.Name }</a>
+											<span>{ item.Slug }</span>
+										</div>
+										<strong>{ item.StatusLabel }</strong>
+									</div>
+									<div class="admin-status-grid">
+										<p><span>Interna</span><strong>{ item.InternalLabel }</strong></p>
+										<p><span>Externa</span><strong>{ item.ExternalLabel }</strong></p>
+										<p><span>Peso embalagem</span><strong>{ item.WeightLabel }</strong></p>
+										<p><span>Ordem</span><strong>{ strconv.Itoa(item.SortOrder) }</strong></p>
+									</div>
+								</article>
+							}
+						</div>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ AdminBoxForm(page admindomain.AdminBoxFormPage) {
+	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Caixa administrativa da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("boxes") {
+					<div class="admin-main">
+						@adminFormHeader("Frete", page.Title, page.BackURL)
+						if page.Message != "" {
+							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						}
+						<form class="admin-form" method="post" action={ page.Action }>
+							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
+							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							<fieldset>
+								<legend>Dimensoes internas</legend>
+								<div class="admin-form-grid">
+									@adminTextField("internal_height_mm", "Altura interna", page.Form.InternalHeightMM, page.Errors.Get("internal_height_mm"), "number", true)
+									@adminTextField("internal_width_mm", "Largura interna", page.Form.InternalWidthMM, page.Errors.Get("internal_width_mm"), "number", true)
+									@adminTextField("internal_length_mm", "Comprimento interno", page.Form.InternalLengthMM, page.Errors.Get("internal_length_mm"), "number", true)
+								</div>
+							</fieldset>
+							<fieldset>
+								<legend>Dimensoes externas</legend>
+								<div class="admin-form-grid">
+									@adminTextField("external_height_mm", "Altura externa", page.Form.ExternalHeightMM, page.Errors.Get("external_height_mm"), "number", true)
+									@adminTextField("external_width_mm", "Largura externa", page.Form.ExternalWidthMM, page.Errors.Get("external_width_mm"), "number", true)
+									@adminTextField("external_length_mm", "Comprimento externo", page.Form.ExternalLengthMM, page.Errors.Get("external_length_mm"), "number", true)
+								</div>
+							</fieldset>
+							@adminTextField("packaging_weight_g", "Peso da embalagem", page.Form.PackagingWeightG, page.Errors.Get("packaging_weight_g"), "number", true)
+							@adminTextField("sort_order", "Ordem", page.Form.SortOrder, page.Errors.Get("sort_order"), "number", true)
+							@adminCheckboxField("is_active", "Caixa ativa", page.Form.IsActive)
+							<div class="admin-form-actions">
+								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
+								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
+							</div>
+						</form>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ adminFormHeader(kicker string, title string, backURL string) {
+	<div class="admin-heading admin-heading-row">
+		<div>
+			<p class="brand-kicker">{ kicker }</p>
+			<h1>{ title }</h1>
+		</div>
+		<div class="admin-heading-actions">
+			<a class="btn-base btn-secondary" href={ backURL }>Voltar</a>
+		</div>
+	</div>
+}
+
+templ adminListHeader(title string, newURL string) {
+	<div class="admin-heading admin-heading-row">
+		<div>
+			<p class="brand-kicker">Catalogo</p>
+			<h1>{ title }</h1>
+		</div>
+		<div class="admin-heading-actions">
+			<a class="btn-base btn-primary" href={ newURL }>Novo</a>
+		</div>
+	</div>
+}
+
+templ adminTextField(name string, label string, value string, errorMessage string, inputType string, required bool) {
+	<label class="admin-field" for={ "admin-" + name }>
+		<span>{ label }</span>
+		if required {
+			<input id={ "admin-" + name } type={ inputType } name={ name } value={ value } required/>
+		} else {
+			<input id={ "admin-" + name } type={ inputType } name={ name } value={ value }/>
+		}
+		if errorMessage != "" {
+			<small class="admin-error">{ errorMessage }</small>
+		}
+	</label>
+}
+
+templ adminTextareaField(name string, label string, value string, errorMessage string) {
+	<label class="admin-field" for={ "admin-" + name }>
+		<span>{ label }</span>
+		<textarea id={ "admin-" + name } name={ name } rows="4">{ value }</textarea>
+		if errorMessage != "" {
+			<small class="admin-error">{ errorMessage }</small>
+		}
+	</label>
+}
+
+templ adminSelectField(name string, label string, selected string, options []admindomain.AdminSelectOption, errorMessage string, emptyLabel string) {
+	<label class="admin-field" for={ "admin-" + name }>
+		<span>{ label }</span>
+		<select id={ "admin-" + name } name={ name }>
+			if emptyLabel != "" {
+				if selected == "" {
+					<option value="" selected>{ emptyLabel }</option>
+				} else {
+					<option value="">{ emptyLabel }</option>
+				}
+			}
+			for _, option := range options {
+				if option.ID == selected {
+					<option value={ option.ID } selected>{ option.Label }</option>
+				} else {
+					<option value={ option.ID }>{ option.Label }</option>
+				}
+			}
+		</select>
+		if errorMessage != "" {
+			<small class="admin-error">{ errorMessage }</small>
+		}
+	</label>
+}
+
+templ adminCheckboxField(name string, label string, checked bool) {
+	<label class="admin-checkbox">
+		if checked {
+			<input type="checkbox" name={ name } value="1" checked/>
+		} else {
+			<input type="checkbox" name={ name } value="1"/>
+		}
+		<span>{ label }</span>
+	</label>
+}
+
+templ adminShippingProfileFields(useShipping bool, weight string, height string, width string, length string, errors admindomain.AdminFieldErrors) {
+	<fieldset class="admin-fieldset">
+		<legend>Perfil logistico</legend>
+		@adminCheckboxField("use_shipping", "Usar perfil logistico neste registro", useShipping)
+		if errors.Get("shipping_profile") != "" {
+			<small class="admin-error">{ errors.Get("shipping_profile") }</small>
+		}
+		<div class="admin-form-grid">
+			@adminTextField("shipping_weight_g", "Peso em gramas", weight, errors.Get("shipping_weight_g"), "number", false)
+			@adminTextField("shipping_height_mm", "Altura em mm", height, errors.Get("shipping_height_mm"), "number", false)
+			@adminTextField("shipping_width_mm", "Largura em mm", width, errors.Get("shipping_width_mm"), "number", false)
+			@adminTextField("shipping_length_mm", "Comprimento em mm", length, errors.Get("shipping_length_mm"), "number", false)
+		</div>
+	</fieldset>
+}
+
+templ adminRecipeFields(materialID string, colorID string, weight string, label string, sortOrder string, materials []admindomain.AdminSelectOption, colors []admindomain.AdminSelectOption) {
+	<div class="admin-form-grid">
+		@adminSelectField("material_id", "Material", materialID, materials, "", "Selecione")
+		@adminSelectField("color_id", "Cor", colorID, colors, "", "Selecione")
+		@adminTextField("estimated_weight", "Peso em gramas", weight, "", "text", true)
+		@adminTextField("label", "Label", label, "", "text", false)
+		@adminTextField("sort_order", "Ordem", sortOrder, "", "number", true)
+	</div>
+}
+
+templ adminSimpleEntityList(active string, title string, newURL string) {
+	@components.PrivateNoIndexLayout(title + " administrativos | PrintLab", title + " administrativos da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell(active) {
+					<div class="admin-main">
+						@adminListHeader(title, newURL)
+						<div class="admin-order-list">
+							{ children... }
+						</div>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
+templ adminEntityCard(name string, slug string, status string, detailURL string, description string) {
+	<article class="admin-order-row">
+		<div class="admin-order-row-header">
+			<div>
+				<a href={ detailURL }>{ name }</a>
+				<span>{ slug }</span>
+			</div>
+			<strong>{ status }</strong>
+		</div>
+		if description != "" {
+			<p class="admin-muted">{ description }</p>
+		}
+	</article>
+}
+
+templ adminBasicTextForm(active string, title string, action string, backURL string, submitLabel string, message string, name string, slug string, description string, isActive bool, errors admindomain.AdminFieldErrors) {
+	@components.PrivateNoIndexLayout(title + " | PrintLab", title + " administrativo da PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell(active) {
+					<div class="admin-main">
+						@adminFormHeader("Catalogo", title, backURL)
+						if message != "" {
+							<p class="checkout-alert checkout-alert-success">{ message }</p>
+						}
+						<form class="admin-form" method="post" action={ action }>
+							@adminTextField("name", "Nome", name, errors.Get("name"), "text", true)
+							@adminTextField("slug", "Slug", slug, errors.Get("slug"), "text", false)
+							@adminTextareaField("description", "Descricao", description, errors.Get("description"))
+							@adminCheckboxField("is_active", "Ativo", isActive)
+							<div class="admin-form-actions">
+								<button class="btn-base btn-primary" type="submit">{ submitLabel }</button>
+								<a class="btn-base btn-secondary" href={ backURL }>Cancelar</a>
+							</div>
+						</form>
+					</div>
+				}
+			}
+		</section>
+	}
+}
+
 templ adminMetric(label string, value int, url string) {
 	<a class="admin-metric" href={ url }>
 		<span>{ label }</span>
@@ -339,6 +882,31 @@ templ adminShell(active string) {
 					<span class="admin-nav-active">Pedidos</span>
 				} else {
 					<a class="admin-nav-link" href="/admin/pedidos">Pedidos</a>
+				}
+				if active == "products" {
+					<span class="admin-nav-active">Produtos</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/produtos">Produtos</a>
+				}
+				if active == "categories" {
+					<span class="admin-nav-active">Categorias</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/categorias">Categorias</a>
+				}
+				if active == "materials" {
+					<span class="admin-nav-active">Materiais</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/materiais">Materiais</a>
+				}
+				if active == "colors" {
+					<span class="admin-nav-active">Cores</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/cores">Cores</a>
+				}
+				if active == "boxes" {
+					<span class="admin-nav-active">Caixas</span>
+				} else {
+					<a class="admin-nav-link" href="/admin/caixas">Caixas</a>
 				}
 			</nav>
 			<form method="post" action="/admin/logout">

@@ -62,6 +62,8 @@ A decima migration funcional cria auditoria operacional administrativa:
 
 Ela cria `public.admin_order_events` com UUID primario, referencia restritiva a `public.orders`, `actor_auth_user_id`, tipo de evento limitado a mudancas de producao/envio, status anterior/novo, timestamp, indice por pedido/data e RLS habilitado sem policies publicas. Nao referencia `auth.users`, nao insere dados e nao armazena PII de cliente, checkout URL, `transaction_nsu` ou `invoice_slug`.
 
+A Fase 13.3 nao criou migration. A gestao administrativa de catalogo, variantes, receita, materiais, cores e caixas usa as tabelas existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
+
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
@@ -120,6 +122,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A oitava migration real corrige a allowlist persistida de host de checkout InfinitePay.
 - A nona migration real cria sessoes administrativas para a Fase 13.1.
 - A decima migration real cria auditoria operacional administrativa para a Fase 13.2.
+- A Fase 13.3 nao possui migration porque o schema existente atende ao escopo.
 
 ## Praticas recomendadas
 

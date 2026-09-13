@@ -51,11 +51,11 @@ IMPLEMENTADO:
 - Fase 12 — Acompanhamento Seguro do Pedido, com `public_tracking_id`, rota `/acompanhar/{uuid}` e pagina SSR minimizada.
 - Fase 13.1 — Fundacao de Autenticacao Administrativa, com Supabase Auth, autorizacao por UUID, sessao propria, cookie HttpOnly e dashboard inicial protegido em `/admin`.
 - Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com validacao real em producao concluida.
+- Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com implementacao concluida no painel administrativo e validacao real pendente.
 
 PLANEJADO:
 
 - HTMX quando houver interacao real que justifique sua presenca.
-- Fase 13.3 — catalogo, variantes, materiais, cores e caixas no painel administrativo.
 - Fase 13.4 — imagens e Supabase Storage no painel administrativo.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
@@ -200,7 +200,7 @@ Configuracao local ou de hosting para runtime:
 - `SUPERFRETE_SERVICES`: lista de codigos de servico solicitados, por exemplo `1,2,17`.
 - `INFINITEPAY_HANDLE`: InfiniteTag/handle sem `$`, obrigatorio somente para exibir e iniciar pagamento real.
 
-`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase. O Admin da Fase 13.1 nao usa secret key nem service role.
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase. O Admin das Fases 13.1 a 13.3 nao usa secret key nem service role.
 
 O cookie anonimo do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 

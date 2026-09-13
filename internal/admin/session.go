@@ -130,6 +130,7 @@ type Service struct {
 	sessions    SessionRepository
 	dashboard   DashboardRepository
 	orders      OrderRepository
+	catalog     CatalogRepository
 	tokens      *TokenManager
 	adminUserID string
 	now         func() time.Time
@@ -140,11 +141,17 @@ func NewService(auth AuthClient, repository interface {
 	DashboardRepository
 	OrderRepository
 }, adminUserID string, options CookieOptions) *Service {
+	var catalog CatalogRepository
+	if catalogRepository, ok := repository.(CatalogRepository); ok {
+		catalog = catalogRepository
+	}
+
 	return &Service{
 		auth:        auth,
 		sessions:    repository,
 		dashboard:   repository,
 		orders:      repository,
+		catalog:     catalog,
 		tokens:      NewTokenManager(options),
 		adminUserID: normalizeUUID(adminUserID),
 		now:         time.Now,

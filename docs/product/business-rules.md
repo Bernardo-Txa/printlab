@@ -197,7 +197,11 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - O ator da mutacao operacional e sempre o `Session.AuthUserID` resolvido da sessao administrativa.
 - Mutacoes de producao/envio devem atualizar `order_fulfillment` e inserir `admin_order_events` na mesma transacao PostgreSQL.
 - Auditoria operacional registra somente pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario; nao registra PII de cliente.
-- CRUD de produtos, alteracao de valores/dados de pedido, papeis multiplos, upload de imagens e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
+- Catalogo Admin gerencia categorias, produtos, variantes, receita estimada, materiais, cores e caixas por SSR protegido.
+- Mutacoes de catalogo Admin exigem POST, sessao valida, validacao de `Origin`/`Referer`, rejeicao de `Origin: null` e limite conservador de body.
+- Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, variantes, materiais, cores ou caixas.
+- `admin_order_events` e exclusivo de pedidos; catalogo nao reutiliza essa auditoria e nao cria tabela de eventos antecipada.
+- Alteracao de valores/dados de pedido, papeis multiplos, upload de imagens e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
 
 ## Status operacionais implementados
 
@@ -236,9 +240,13 @@ Essa estrutura suporta impressao multicolorida e multimaterial sem gravar `color
 
 Receitas ja cadastradas preservam os nomes de material e cor referenciados em `variant_filaments`, mesmo quando o material ou a cor estiverem inativos. Inativar material ou cor significa retirar a opcao de novas configuracoes operacionais futuras, nao remover componentes de receitas historicas.
 
+No Admin, novos componentes de receita usam somente material e cor ativos. Componentes existentes que apontam para material ou cor inativos continuam carregaveis, podem preservar a referencia atual e podem ter peso, rotulo e ordenacao editados.
+
 O peso total estimado de uma variante deve somar todos os componentes carregados de `variant_filaments`, incluindo componentes que referenciem material ou cor inativos.
 
 Custos derivados como `production_cost`, `material_cost`, `machine_cost`, `profit` e `margin` nao sao persistidos nesta fase. Futuramente eles poderao ser calculados a partir de peso estimado, tempo de maquina, filamento fisico, preco por kg e outros custos aprovados.
+
+Remover componente de `variant_filaments` no Admin afeta somente configuracoes futuras. Pedidos ja criados preservam snapshot proprio em `order_item_filaments`.
 
 ## Estoque e filamento fisico
 

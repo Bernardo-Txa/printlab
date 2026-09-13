@@ -34,6 +34,9 @@ Nesta fase, o backend implementa:
 - `GET /admin/pedidos/{orderID}` para detalhe administrativo autenticado de pedido.
 - `POST /admin/pedidos/{orderID}/producao` para avancar status de producao.
 - `POST /admin/pedidos/{orderID}/envio` para avancar status de envio.
+- `GET /admin/produtos`, `GET /admin/produtos/novo`, `POST /admin/produtos`, `GET /admin/produtos/{productID}` e `POST /admin/produtos/{productID}` para gestao administrativa de produtos.
+- Rotas administrativas de variantes e receita abaixo de `/admin/produtos/{productID}/variantes`.
+- Rotas administrativas de categorias, materiais, cores e caixas em `/admin/categorias`, `/admin/materiais`, `/admin/cores` e `/admin/caixas`.
 - `POST /admin/logout` para apagar sessao administrativa e limpar cookie.
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
@@ -47,12 +50,12 @@ Nesta fase, o backend implementa:
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
 - `internal/orders` tambem expoe a view minimizada de acompanhamento por `public_tracking_id`.
 - `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
-- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side, dashboard agregado, consultas administrativas de pedido e mutacoes auditadas de producao/envio.
+- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side, dashboard agregado, consultas administrativas de pedido, mutacoes auditadas de producao/envio e gestao administrativa de catalogo.
 
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete, pedidos, pagamentos, acompanhamento, sessoes administrativas e auditoria operacional de pedidos.
-- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos e mutacoes auditadas de producao/envio. CRUD de produtos, alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
+- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos, mutacoes auditadas de producao/envio e gestao de catalogo, variantes, receita, materiais, cores e caixas. Alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
 - A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Nao ha upload de imagens pelo app.
