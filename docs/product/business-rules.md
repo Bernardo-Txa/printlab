@@ -194,13 +194,13 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Dashboard mostra apenas contagens agregadas de pedidos.
 - Dashboard e listagem administrativa de pedidos nao devem carregar CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug`, checkout URL ou detalhes operacionais de item/producao.
 - Detalhe administrativo autenticado pode exibir PII, endereco, frete completo, itens e snapshots operacionais necessarios para producao/envio.
-- Alteracoes administrativas de producao e envio exigem POST, sessao valida e validacao de `Origin`/`Referer`.
-- `Origin: null` em POST administrativo e rejeitado independentemente de `Referer`.
+- Alteracoes administrativas de producao e envio exigem POST, sessao valida e validacao administrativa estrita de `Origin`/`Referer`.
+- `Origin: null`, origem cross-site e requests sem `Origin` e sem `Referer` em POST administrativo sao rejeitados.
 - O ator da mutacao operacional e sempre o `Session.AuthUserID` resolvido da sessao administrativa.
 - Mutacoes de producao/envio devem atualizar `order_fulfillment` e inserir `admin_order_events` na mesma transacao PostgreSQL.
 - Auditoria operacional registra somente pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario; nao registra PII de cliente.
 - Catalogo Admin gerencia categorias, produtos, configuracoes do produto, receita estimada, materiais, cores e caixas por SSR protegido.
-- Mutacoes de catalogo Admin exigem POST, sessao valida, validacao de `Origin`/`Referer`, rejeicao de `Origin: null` e limite conservador de body.
+- Mutacoes de catalogo Admin exigem POST, sessao valida, `Origin` same-origin valido ou `Referer` same-origin como fallback quando `Origin` estiver ausente, rejeicao de `Origin: null`, rejeicao de requests sem `Origin` e sem `Referer` e limite conservador de body.
 - Imagens Admin usam upload direto ao Supabase Storage com signed upload URL; o backend valida Admin, produto, configuracao, MIME, tamanho e path antes de finalizar `product_images`.
 - Remocao fisica de imagem ocorre somente para paths gerenciados no bucket `product-images`; associacoes legadas/manuais nao disparam DELETE arbitrario.
 - Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, configuracoes, materiais, cores ou caixas.
@@ -279,4 +279,4 @@ Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_
 
 Imagens podem ser gerais do produto ou especificas de uma variante. A pagina de produto prioriza imagens da variante selecionada; se nao existirem, usa imagens gerais do produto; se nenhuma imagem publica estiver disponivel, usa placeholder visual da PrintLab.
 
-Upload e gestao administrativa de imagens existem somente no painel Admin, por signed upload URL gerada pelo backend apos sessao administrativa e validacao de origem. Nao ha policy publica de escrita em Storage.
+Upload e gestao administrativa de imagens existem somente no painel Admin, por signed upload URL gerada pelo backend apos sessao administrativa e validacao de origem. A finalizacao confirma metadata por `GET /storage/v1/object/info/{bucket}/{path}` e usa `size` e `content_type` do JSON retornado. Nao ha policy publica de escrita em Storage.

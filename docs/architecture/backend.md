@@ -98,7 +98,7 @@ Nesta fase, o backend implementa:
 - Autenticar Admin por Supabase Auth sem armazenar senha, access token ou refresh token na PrintLab.
 - Autorizar Admin por `ADMIN_SUPABASE_USER_ID`, nunca por e-mail.
 - Usar sessao propria com token opaco, hash SHA-256 no PostgreSQL, cookie HttpOnly `SameSite=Strict` e TTL de 8 horas.
-- Validar `Origin`/`Referer` em POSTs administrativos e rejeitar `Origin: null` independentemente de `Referer`.
+- Validar `Origin`/`Referer` em POSTs administrativos, rejeitando `Origin: null`, origem cross-site e requests sem os dois headers.
 - Usar `Session.AuthUserID` como ator de auditoria para mutacoes administrativas.
 - Atualizar producao/envio e inserir auditoria na mesma transacao PostgreSQL com lock do pedido.
 

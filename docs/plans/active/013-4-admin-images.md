@@ -1,6 +1,6 @@
 # Fase 13.4 — Imagens e Supabase Storage
 
-Status: implementacao concluida; validacao real pendente.
+Status: implementacao em correcao; validacao real pendente.
 
 ## Objetivo
 
@@ -53,7 +53,7 @@ Motivos:
 4. Go solicita signed upload URL ao Supabase Storage usando `SUPABASE_SECRET_KEY`.
 5. Browser envia bytes diretamente ao Supabase Storage.
 6. Browser chama a finalizacao no Go.
-7. Go valida novamente, confirma metadata do objeto no Storage e grava `product_images`.
+7. Go valida novamente, confirma metadata do objeto no Storage por `GET /storage/v1/object/info/{bucket}/{path}` e grava `product_images`.
 
 ## Regras implementadas
 
@@ -63,9 +63,12 @@ Motivos:
 - O limite usado pela aplicacao e 5 MB, alinhado ao bucket existente.
 - Cada upload/substituicao cria path novo; nao ha overwrite.
 - `Origin: null` permanece rejeitado nas mutacoes Admin.
+- Mutacoes Admin sem `Origin` e sem `Referer` sao rejeitadas; `Referer` same-origin e apenas fallback quando `Origin` estiver ausente.
 - Imagem especifica de configuracao exige que a configuracao pertenca ao produto.
 - Falha de insert em `product_images` tenta cleanup best-effort do objeto recem-enviado.
+- Falha de update em substituicao tenta cleanup best-effort apenas do objeto novo; o objeto antigo so e removido apos update bem-sucedido.
 - Remocao apaga objeto fisico apenas quando o path e gerenciado no prefixo `products/{product_id}/`.
+- Remocao de imagem gerenciada exige Storage administrativo configurado para evitar remover a associacao sem remover o objeto fisico.
 - Imagens legadas/manuais fora desse prefixo podem ter associacao removida do banco, mas nao geram DELETE arbitrario.
 - `admin_order_events` continua exclusivo para pedidos; auditoria de catalogo fica como evolucao futura.
 
@@ -84,8 +87,8 @@ Motivos:
 
 - Schema e bucket existentes inspecionados.
 - Sem migration criada.
-- Backend Admin, provider Storage, handlers e UI implementados.
-- Testes de config, service de imagens, provider Storage, handlers e static asset adicionados.
+- Backend Admin, provider Storage, handlers e UI em correcao.
+- Testes de config, service de imagens, provider Storage, handlers e static asset em ampliacao.
 - Documentacao, roadmap, ADR, CHANGELOG e env docs atualizados.
 - Validacoes locais executadas antes do commit.
 - Commit e push automaticos conforme AGENTS.md.

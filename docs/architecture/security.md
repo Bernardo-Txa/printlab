@@ -184,10 +184,10 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Nao ha FK para `auth.users`; a autorizacao e feita no backend com o UUID retornado pelo Auth.
 - Cookie administrativo `printlab_admin_session` usa `HttpOnly`, `SameSite=Strict`, `Path=/admin`, host-only e `Secure` em producao ou quando `SITE_URL` usa HTTPS.
 - Todas as paginas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`, preservando referrer apenas em navegacoes same-origin.
-- `POST /admin/login` e `POST /admin/logout` reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`. `SameSite=Strict` e camada adicional, nao substituta.
+- `POST /admin/login` e `POST /admin/logout` reutilizam validacao administrativa estrita de `Origin`/`Referer`; `Origin: null`, cross-site e ausencia simultanea de `Origin` e `Referer` sao rejeitados. `Referer` same-origin e apenas fallback quando `Origin` estiver ausente. `SameSite=Strict` e camada adicional, nao substituta.
 - `GET /admin/pedidos`, `GET /admin/pedidos/{order_id}`, `POST /admin/pedidos/{order_id}/producao` e `POST /admin/pedidos/{order_id}/envio` exigem sessao administrativa valida.
 - Rotas de catalogo Admin em `/admin/produtos`, `/admin/categorias`, `/admin/materiais`, `/admin/cores` e `/admin/caixas` tambem exigem sessao administrativa valida.
-- POSTs administrativos de producao, envio e catalogo reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
+- POSTs administrativos de producao, envio, catalogo e imagens reutilizam validacao administrativa estrita de `Origin`/`Referer`; `Origin: null`, cross-site e ausencia simultanea de `Origin` e `Referer` sao rejeitados.
 - Formularios administrativos possuem limite de body de 256 KiB. Endpoints JSON de imagens possuem limite de 64 KiB e recebem somente metadados; bytes de imagem vao direto do navegador ao Supabase Storage por signed upload URL.
 - O ator de auditoria operacional vem de `Session.AuthUserID`, nunca de campo de formulario, query string ou header enviado pelo navegador.
 - Mutacoes administrativas de producao/envio atualizam `order_fulfillment` e inserem `admin_order_events` em uma unica transacao PostgreSQL com lock do pedido.

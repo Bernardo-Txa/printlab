@@ -83,6 +83,35 @@ func TestAuthorizeAdminImageUploadRejectsVariantFromAnotherProduct(t *testing.T)
 	}
 }
 
+func TestAuthorizeAdminImageReplacementValidatesImageOwnershipAndCreatesSignedURL(t *testing.T) {
+	repo := newImageTestRepository()
+	storage := &fakeStorageClient{signedUpload: SignedUpload{UploadURL: "https://storage.test/upload?token=signed"}}
+	service := newImageTestService(repo, storage)
+
+	authorization, err := service.AuthorizeAdminImageReplacement(context.Background(), repo.productID, repo.imageID, AdminImageUploadMetadata{
+		ContentType: "image/webp",
+		FileSize:    100,
+	})
+	if err != nil {
+		t.Fatalf("expected replacement authorization, got %v", err)
+	}
+	if authorization.ObjectPath == "" || storage.createPath != authorization.ObjectPath {
+		t.Fatalf("expected server-generated replacement path, got %#v", authorization)
+	}
+
+	storage.createPath = ""
+	_, err = service.AuthorizeAdminImageReplacement(context.Background(), repo.productID, "44444444-4444-4444-4444-444444444444", AdminImageUploadMetadata{
+		ContentType: "image/webp",
+		FileSize:    100,
+	})
+	if !errors.Is(err, ErrCatalogNotFound) {
+		t.Fatalf("expected ErrCatalogNotFound for image outside product, got %v", err)
+	}
+	if storage.createPath != "" {
+		t.Fatal("expected unauthorized replacement not to create signed upload")
+	}
+}
+
 func TestFinalizeAdminImageUploadStatsObjectAndCreatesProductImage(t *testing.T) {
 	repo := newImageTestRepository()
 	storage := &fakeStorageClient{object: StorageObject{ContentType: "image/webp", Size: 100}}
@@ -129,6 +158,75 @@ func TestFinalizeAdminImageUploadCleansUpObjectWhenInsertFails(t *testing.T) {
 	}
 }
 
+func TestFinalizeAdminImageReplacementUpdatesImageAndDeletesOldManagedObject(t *testing.T) {
+	repo := newImageTestRepository()
+	oldPath := "products/" + repo.productID + "/old.jpg"
+	newPath := "products/" + repo.productID + "/new.webp"
+	repo.replaceOldImage = AdminProductImage{StoragePath: oldPath}
+	storage := &fakeStorageClient{object: StorageObject{ContentType: "image/webp", Size: 100}}
+	service := newImageTestService(repo, storage)
+
+	err := service.FinalizeAdminImageReplacement(context.Background(), repo.productID, repo.imageID, AdminImageFinalizeInput{
+		ObjectPath:  newPath,
+		ContentType: "image/webp",
+		FileSize:    100,
+		AltText:     "Nova foto",
+		SortOrder:   4,
+		IsPrimary:   true,
+	})
+	if err != nil {
+		t.Fatalf("expected replacement success, got %v", err)
+	}
+	if !repo.replaceImageCalled || repo.replacedImage.StoragePath != newPath || repo.replacedImage.AltText != "Nova foto" {
+		t.Fatalf("expected new object to be persisted, got %#v", repo.replacedImage)
+	}
+	if len(storage.deletedPaths) != 1 || storage.deletedPaths[0] != oldPath {
+		t.Fatalf("expected old managed object cleanup after update, got %#v", storage.deletedPaths)
+	}
+}
+
+func TestFinalizeAdminImageReplacementUpdateFailureCleansNewObjectAndKeepsOldObject(t *testing.T) {
+	repo := newImageTestRepository()
+	oldPath := "products/" + repo.productID + "/old.jpg"
+	newPath := "products/" + repo.productID + "/new.png"
+	repo.replaceOldImage = AdminProductImage{StoragePath: oldPath}
+	repo.replaceImageErr = ErrUnavailable
+	storage := &fakeStorageClient{object: StorageObject{ContentType: "image/png", Size: 100}}
+	service := newImageTestService(repo, storage)
+
+	err := service.FinalizeAdminImageReplacement(context.Background(), repo.productID, repo.imageID, AdminImageFinalizeInput{
+		ObjectPath:  newPath,
+		ContentType: "image/png",
+		FileSize:    100,
+	})
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("expected update failure, got %v", err)
+	}
+	if len(storage.deletedPaths) != 1 || storage.deletedPaths[0] != newPath {
+		t.Fatalf("expected cleanup of only new object, got %#v", storage.deletedPaths)
+	}
+}
+
+func TestFinalizeAdminImageReplacementDoesNotDeleteLegacyOldObject(t *testing.T) {
+	repo := newImageTestRepository()
+	newPath := "products/" + repo.productID + "/new.jpg"
+	repo.replaceOldImage = AdminProductImage{StoragePath: "legacy/manual-image.jpg"}
+	storage := &fakeStorageClient{object: StorageObject{ContentType: "image/jpeg", Size: 100}}
+	service := newImageTestService(repo, storage)
+
+	err := service.FinalizeAdminImageReplacement(context.Background(), repo.productID, repo.imageID, AdminImageFinalizeInput{
+		ObjectPath:  newPath,
+		ContentType: "image/jpeg",
+		FileSize:    100,
+	})
+	if err != nil {
+		t.Fatalf("expected replacement success, got %v", err)
+	}
+	if len(storage.deletedPaths) != 0 {
+		t.Fatalf("expected legacy old object not to be deleted, got %#v", storage.deletedPaths)
+	}
+}
+
 func TestFinalizeAdminImageUploadRejectsInvalidObjectMetadata(t *testing.T) {
 	repo := newImageTestRepository()
 	storage := &fakeStorageClient{object: StorageObject{ContentType: "image/png", Size: 100}}
@@ -151,35 +249,89 @@ func TestRemoveAdminProductImageDeletesOnlyManagedStorageObject(t *testing.T) {
 	productID := "11111111-1111-1111-1111-111111111111"
 	repo := newImageTestRepository()
 	repo.deletedImage = AdminProductImage{StoragePath: "products/" + productID + "/random.jpg"}
+	repo.page.Images = []AdminProductImage{{ID: repo.imageID, StoragePath: repo.deletedImage.StoragePath}}
 	storage := &fakeStorageClient{}
 	service := newImageTestService(repo, storage)
 
 	if err := service.RemoveAdminProductImage(context.Background(), productID, "33333333-3333-3333-3333-333333333333"); err != nil {
 		t.Fatalf("expected managed remove success, got %v", err)
 	}
-	if storage.deletedPath != repo.deletedImage.StoragePath {
-		t.Fatalf("expected managed object delete, got %q", storage.deletedPath)
+	if storage.deletedPath != repo.deletedImage.StoragePath || !repo.deleteImageCalled {
+		t.Fatalf("expected managed object delete and DB delete, got path=%q delete=%v", storage.deletedPath, repo.deleteImageCalled)
 	}
 
 	repo.deletedImage = AdminProductImage{StoragePath: "legacy/manual-image.jpg"}
+	repo.page.Images = []AdminProductImage{{ID: repo.imageID, StoragePath: repo.deletedImage.StoragePath}}
+	repo.deleteImageCalled = false
 	storage.deletedPath = ""
+	storage.deletedPaths = nil
 	if err := service.RemoveAdminProductImage(context.Background(), productID, "33333333-3333-3333-3333-333333333333"); err != nil {
 		t.Fatalf("expected legacy remove success, got %v", err)
 	}
-	if storage.deletedPath != "" {
-		t.Fatalf("expected legacy image not to delete storage object, got %q", storage.deletedPath)
+	if storage.deletedPath != "" || !repo.deleteImageCalled {
+		t.Fatalf("expected legacy association delete without storage delete, got path=%q delete=%v", storage.deletedPath, repo.deleteImageCalled)
+	}
+}
+
+func TestRemoveAdminProductImageRequiresStorageForManagedObject(t *testing.T) {
+	repo := newImageTestRepository()
+	service := newImageTestService(repo, nil)
+
+	err := service.RemoveAdminProductImage(context.Background(), repo.productID, repo.imageID)
+	if !errors.Is(err, ErrStorageUnavailable) {
+		t.Fatalf("expected ErrStorageUnavailable, got %v", err)
+	}
+	if repo.deleteImageCalled {
+		t.Fatal("expected managed image association to remain when storage is unavailable")
+	}
+}
+
+func TestUpdateAdminProductImageOrder(t *testing.T) {
+	repo := newImageTestRepository()
+	service := newImageTestService(repo, &fakeStorageClient{})
+
+	err := service.UpdateAdminProductImageOrder(context.Background(), repo.productID, repo.imageID, "7")
+	if err != nil {
+		t.Fatalf("expected order update success, got %v", err)
+	}
+	if !repo.updateImageOrderCalled || repo.imageOrderInput.ProductID != repo.productID || repo.imageOrderInput.ID != repo.imageID || repo.imageOrderInput.SortOrder != 7 {
+		t.Fatalf("unexpected order input: %#v", repo.imageOrderInput)
+	}
+
+	err = service.UpdateAdminProductImageOrder(context.Background(), repo.productID, repo.imageID, "-1")
+	if !errors.Is(err, ErrValidation) {
+		t.Fatalf("expected ErrValidation for negative order, got %v", err)
+	}
+}
+
+func TestMarkAdminProductImagePrimary(t *testing.T) {
+	repo := newImageTestRepository()
+	service := newImageTestService(repo, &fakeStorageClient{})
+
+	err := service.MarkAdminProductImagePrimary(context.Background(), repo.productID, repo.imageID)
+	if err != nil {
+		t.Fatalf("expected mark primary success, got %v", err)
+	}
+	if !repo.markImagePrimaryCalled || repo.markProductID != repo.productID || repo.markImageID != repo.imageID {
+		t.Fatalf("unexpected mark primary call: product=%q image=%q called=%v", repo.markProductID, repo.markImageID, repo.markImagePrimaryCalled)
 	}
 }
 
 func newImageTestService(repo *imageTestRepository, storage *fakeStorageClient) *Service {
+	options := []ServiceOption{
+		WithAdminSupabaseURL("https://example.supabase.co"),
+		WithAdminImageRandom(bytes.NewReader(bytes.Repeat([]byte{0x44}, adminImageRandomBytes))),
+	}
+	if storage != nil {
+		options = append(options, WithStorageClient(storage))
+	}
+
 	return NewService(
 		fakeAuthClient{userID: testAdminUserID},
 		repo,
 		testAdminUserID,
 		CookieOptions{},
-		WithStorageClient(storage),
-		WithAdminSupabaseURL("https://example.supabase.co"),
-		WithAdminImageRandom(bytes.NewReader(bytes.Repeat([]byte{0x44}, adminImageRandomBytes))),
+		options...,
 	)
 }
 
@@ -190,6 +342,7 @@ type fakeStorageClient struct {
 	createPath   string
 	statCalled   bool
 	deletedPath  string
+	deletedPaths []string
 }
 
 func (c *fakeStorageClient) CreateSignedUpload(_ context.Context, _ string, objectPath string) (SignedUpload, error) {
@@ -214,25 +367,42 @@ func (c *fakeStorageClient) StatObject(context.Context, string, string) (Storage
 
 func (c *fakeStorageClient) DeleteObject(_ context.Context, _ string, objectPath string) error {
 	c.deletedPath = objectPath
+	c.deletedPaths = append(c.deletedPaths, objectPath)
 	return c.err
 }
 
 type imageTestRepository struct {
 	*fakeRepository
-	page                AdminProductImagesPage
-	allowedVariantID    string
-	ensureVariantCalled bool
-	ensureVariantErr    error
-	createImageCalled   bool
-	createdImage        AdminImageCreateInput
-	createImageErr      error
-	deletedImage        AdminProductImage
+	productID              string
+	imageID                string
+	page                   AdminProductImagesPage
+	allowedVariantID       string
+	ensureVariantCalled    bool
+	ensureVariantErr       error
+	createImageCalled      bool
+	createdImage           AdminImageCreateInput
+	createImageErr         error
+	replaceImageCalled     bool
+	replacedImage          AdminImageReplaceInput
+	replaceOldImage        AdminProductImage
+	replaceImageErr        error
+	deleteImageCalled      bool
+	deletedImage           AdminProductImage
+	updateImageOrderCalled bool
+	imageOrderInput        AdminImageOrderInput
+	markImagePrimaryCalled bool
+	markProductID          string
+	markImageID            string
 }
 
 func newImageTestRepository() *imageTestRepository {
 	productID := "11111111-1111-1111-1111-111111111111"
+	imageID := "33333333-3333-3333-3333-333333333333"
+	image := AdminProductImage{ID: imageID, ProductID: productID, StoragePath: "products/" + productID + "/old.jpg"}
 	return &imageTestRepository{
 		fakeRepository: newFakeRepository(),
+		productID:      productID,
+		imageID:        imageID,
 		page: AdminProductImagesPage{
 			Product: AdminProductHeader{
 				ID:        productID,
@@ -240,8 +410,10 @@ func newImageTestRepository() *imageTestRepository {
 				Slug:      "produto",
 				DetailURL: "/admin/produtos/" + productID,
 			},
+			Images: []AdminProductImage{image},
 		},
-		deletedImage: AdminProductImage{StoragePath: "products/" + productID + "/random.jpg"},
+		replaceOldImage: image,
+		deletedImage:    image,
 	}
 }
 
@@ -278,16 +450,27 @@ func (r *imageTestRepository) CreateAdminProductImage(_ context.Context, input A
 	}
 	return "33333333-3333-3333-3333-333333333333", nil
 }
-func (r *imageTestRepository) ReplaceAdminProductImage(context.Context, AdminImageReplaceInput) (AdminProductImage, error) {
-	return AdminProductImage{}, nil
+func (r *imageTestRepository) ReplaceAdminProductImage(_ context.Context, input AdminImageReplaceInput) (AdminProductImage, error) {
+	r.replaceImageCalled = true
+	r.replacedImage = input
+	if r.replaceImageErr != nil {
+		return r.replaceOldImage, r.replaceImageErr
+	}
+	return r.replaceOldImage, nil
 }
 func (r *imageTestRepository) DeleteAdminProductImage(context.Context, string, string) (AdminProductImage, error) {
+	r.deleteImageCalled = true
 	return r.deletedImage, nil
 }
-func (r *imageTestRepository) UpdateAdminProductImageOrder(context.Context, AdminImageOrderInput) error {
+func (r *imageTestRepository) UpdateAdminProductImageOrder(_ context.Context, input AdminImageOrderInput) error {
+	r.updateImageOrderCalled = true
+	r.imageOrderInput = input
 	return nil
 }
-func (r *imageTestRepository) MarkAdminProductImagePrimary(context.Context, string, string) error {
+func (r *imageTestRepository) MarkAdminProductImagePrimary(_ context.Context, productID string, imageID string) error {
+	r.markImagePrimaryCalled = true
+	r.markProductID = productID
+	r.markImageID = imageID
 	return nil
 }
 func (r *imageTestRepository) ListAdminCategories(context.Context) (AdminCategoryListPage, error) {

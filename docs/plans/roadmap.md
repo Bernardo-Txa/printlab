@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2 e 13.3 concluidas. Fase 13 em andamento; Fase 13.4 com implementacao concluida e validacao real pendente; Fases 14 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2 e 13.3 concluidas. Fase 13 em andamento; Fase 13.4 com implementacao em correcao e validacao real pendente; Fases 14 a 17 planejadas.
 
 ## Status das fases
 
@@ -30,7 +30,7 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 13.1 — Autenticacao administrativa | Concluida |
 | Fase 13.2 — Pedidos, producao, envio e auditoria | Concluida |
 | Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Concluida |
-| Fase 13.4 — Imagens e Supabase Storage | Implementacao concluida; validacao real pendente |
+| Fase 13.4 — Imagens e Supabase Storage | Implementacao em correcao; validacao real pendente |
 | Fase 14 — Seguranca | Planejada |
 | Fase 15 — Testes e observabilidade | Planejada |
 | Fase 16 — SEO e performance | Planejada |
@@ -484,7 +484,7 @@ Definition of Done:
 - 13.1: testes aplicaveis passam: concluido ✅
 - 13.2: operacoes criticas auditaveis quando necessario: concluido ✅
 - 13.3: catalogo administrativo sem hard delete: concluido ✅
-- 13.4: imagens e Supabase Storage: implementacao concluida; validacao real pendente
+- 13.4: imagens e Supabase Storage: implementacao em correcao; validacao real pendente
 
 ## Fase 13.1 — Autenticacao administrativa
 
@@ -568,7 +568,7 @@ Definition of Done:
 
 Objetivo: permitir upload e gestao segura de imagens de catalogo.
 
-Status: Implementacao concluida; validacao real pendente.
+Status: Implementacao em correcao; validacao real pendente.
 
 Principais entregas:
 
@@ -577,7 +577,7 @@ Principais entregas:
 - Autorizacao e finalizacao pelo Go Admin antes/depois do upload.
 - Uso server-side de `SUPABASE_SECRET_KEY`, somente apos sessao Admin e validacao `Origin`/`Referer`.
 - Validacao de produto, configuracao, MIME e tamanho antes da autorizacao.
-- Confirmacao de objeto no Storage antes de inserir/atualizar `public.product_images`.
+- Confirmacao de objeto no Storage por `GET /storage/v1/object/info/{bucket}/{path}` e metadata JSON antes de inserir/atualizar `public.product_images`.
 - Remocao, substituicao, ordenacao e imagem principal.
 - Preservacao de imagens legadas/manuais sem DELETE arbitrario.
 - Nenhuma migration nova; uso de `product_images.storage_path`, `sort_order` e `is_primary` existentes.

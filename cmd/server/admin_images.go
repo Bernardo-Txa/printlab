@@ -60,7 +60,7 @@ func adminImageReplaceURLHandler(service adminPanelService, siteURL string) http
 func adminImageAuthorizationHandler(service adminPanelService, siteURL string, replacement bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -112,7 +112,7 @@ func adminImageReplaceFinalizeHandler(service adminPanelService, siteURL string)
 func adminImageFinalizeJSONHandler(service adminPanelService, siteURL string, replacement bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -174,7 +174,7 @@ func adminImagePrimaryHandler(service adminPanelService, siteURL string) http.Ha
 func adminImageFormMutationHandler(service adminPanelService, siteURL string, mutate func(*http.Request) error, okCode string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

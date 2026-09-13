@@ -184,6 +184,62 @@ func TestValidMutationSourceAllowsConfiguredSiteURL(t *testing.T) {
 	}
 }
 
+func TestValidAdminMutationSource(t *testing.T) {
+	tests := []struct {
+		name    string
+		origin  string
+		referer string
+		want    bool
+	}{
+		{
+			name:   "same origin",
+			origin: "https://preview.printlab.test",
+			want:   true,
+		},
+		{
+			name:   "configured site url",
+			origin: "https://printlab.test",
+			want:   true,
+		},
+		{
+			name:   "cross site",
+			origin: "https://evil.example",
+			want:   false,
+		},
+		{
+			name:    "opaque origin ignores same origin referer",
+			origin:  "null",
+			referer: "https://preview.printlab.test/admin/login",
+			want:    false,
+		},
+		{
+			name:    "referer fallback",
+			referer: "https://preview.printlab.test/admin/login",
+			want:    true,
+		},
+		{
+			name: "missing source headers",
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "https://preview.printlab.test/admin/login", nil)
+			if tt.origin != "" {
+				req.Header.Set("Origin", tt.origin)
+			}
+			if tt.referer != "" {
+				req.Header.Set("Referer", tt.referer)
+			}
+
+			if got := validAdminMutationSource(req, "https://printlab.test"); got != tt.want {
+				t.Fatalf("validAdminMutationSource() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestValidMutationSourceRejectsOpaqueOriginWithSameOriginReferer(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
 	req.Header.Set("Origin", "null")

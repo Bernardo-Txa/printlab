@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -116,11 +115,12 @@ func (c *SupabaseStorageClient) StatObject(ctx context.Context, bucket string, o
 	}
 
 	endpoint := c.storageEndpoint("/object/info/" + escapeStoragePath(bucket) + "/" + escapeStoragePath(objectPath))
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return StorageObject{}, ErrStorageUnavailable
 	}
 	c.authorize(req)
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -132,17 +132,26 @@ func (c *SupabaseStorageClient) StatObject(ctx context.Context, bucket string, o
 		return StorageObject{}, ErrInvalidImagePath
 	}
 
-	var size int64
-	if contentLength := strings.TrimSpace(resp.Header.Get("Content-Length")); contentLength != "" {
-		parsedSize, err := strconv.ParseInt(contentLength, 10, 64)
-		if err != nil || parsedSize < 0 {
-			return StorageObject{}, ErrInvalidImagePath
-		}
-		size = parsedSize
+	var payload struct {
+		Size        json.Number `json:"size"`
+		ContentType string      `json:"content_type"`
+	}
+	decoder := json.NewDecoder(io.LimitReader(resp.Body, 16<<10))
+	decoder.UseNumber()
+	if err := decoder.Decode(&payload); err != nil {
+		return StorageObject{}, ErrInvalidImagePath
+	}
+	size, err := payload.Size.Int64()
+	if err != nil || size <= 0 {
+		return StorageObject{}, ErrInvalidImagePath
+	}
+	contentType := strings.TrimSpace(payload.ContentType)
+	if contentType == "" {
+		return StorageObject{}, ErrInvalidImagePath
 	}
 
 	return StorageObject{
-		ContentType: resp.Header.Get("Content-Type"),
+		ContentType: contentType,
 		Size:        size,
 	}, nil
 }

@@ -175,6 +175,14 @@ func (s *Service) RemoveAdminProductImage(ctx context.Context, productID string,
 		return ErrInvalidCatalogID
 	}
 
+	currentImage, err := s.getAdminProductImage(ctx, productID, imageID)
+	if err != nil {
+		return err
+	}
+	if s.storage == nil && ManagedAdminImagePath(productID, currentImage.StoragePath) {
+		return ErrStorageUnavailable
+	}
+
 	image, err := s.catalog.DeleteAdminProductImage(ctx, productID, imageID)
 	if err != nil {
 		return err
@@ -293,6 +301,25 @@ func (s *Service) ensureAdminProductImage(ctx context.Context, productID string,
 	}
 
 	return ErrCatalogNotFound
+}
+
+func (s *Service) getAdminProductImage(ctx context.Context, productID string, imageID string) (AdminProductImage, error) {
+	productID = normalizeUUID(productID)
+	imageID = normalizeUUID(imageID)
+	if !ValidUUID(productID) || !ValidUUID(imageID) {
+		return AdminProductImage{}, ErrInvalidCatalogID
+	}
+	page, err := s.catalog.GetAdminProductImagesPage(ctx, productID)
+	if err != nil {
+		return AdminProductImage{}, err
+	}
+	for _, image := range page.Images {
+		if normalizeUUID(image.ID) == imageID {
+			return image, nil
+		}
+	}
+
+	return AdminProductImage{}, ErrCatalogNotFound
 }
 
 func (s *Service) prepareAdminProductImagesPage(page *AdminProductImagesPage) {

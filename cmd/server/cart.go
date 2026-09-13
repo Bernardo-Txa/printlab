@@ -266,6 +266,22 @@ func validMutationSource(r *http.Request, siteURL string) bool {
 	return true
 }
 
+func validAdminMutationSource(r *http.Request, siteURL string) bool {
+	if r == nil {
+		return false
+	}
+
+	if origin := r.Header.Get("Origin"); origin != "" {
+		return allowedRequestSource(origin, r, siteURL)
+	}
+
+	if referer := r.Header.Get("Referer"); referer != "" {
+		return allowedRequestSource(referer, r, siteURL)
+	}
+
+	return false
+}
+
 func allowedRequestSource(rawSource string, r *http.Request, siteURL string) bool {
 	source, err := url.Parse(strings.TrimSpace(rawSource))
 	if err != nil || source.Host == "" || !webScheme(source.Scheme) {

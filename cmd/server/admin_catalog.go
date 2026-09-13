@@ -48,7 +48,7 @@ func adminNewProductHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateProductHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -93,7 +93,7 @@ func adminProductDetailHandler(service adminPanelService) http.HandlerFunc {
 func adminUpdateProductHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -149,7 +149,7 @@ func adminNewCategoryHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateCategoryHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -200,7 +200,7 @@ func adminNewVariantHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateVariantHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -246,7 +246,7 @@ func adminVariantDetailHandler(service adminPanelService) http.HandlerFunc {
 func adminUpdateVariantHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -312,7 +312,7 @@ func adminNewMaterialHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateMaterialHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -365,7 +365,7 @@ func adminNewColorHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateColorHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -418,7 +418,7 @@ func adminNewBoxHandler(service adminPanelService) http.HandlerFunc {
 func adminCreateBoxHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -475,7 +475,7 @@ func adminSimpleGetHandler(service adminPanelService, load func(r *http.Request)
 func adminSimplePostHandler(service adminPanelService, siteURL string, save func(r *http.Request) (templComponent, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -503,7 +503,7 @@ func adminSimplePostHandler(service adminPanelService, siteURL string, save func
 func adminRecipeMutationHandler(service adminPanelService, siteURL string, mutate func(r *http.Request) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

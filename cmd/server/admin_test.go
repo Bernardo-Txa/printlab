@@ -143,6 +143,23 @@ func TestAdminLoginRejectsOpaqueOriginWithoutReferer(t *testing.T) {
 	}
 }
 
+func TestAdminLoginRejectsMissingOriginAndReferer(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("email=admin@example.com&password=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.loginCalled {
+		t.Fatal("expected login without origin and referer not to call service")
+	}
+}
+
 func TestAdminLoginRejectsCrossSiteOrigin(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")

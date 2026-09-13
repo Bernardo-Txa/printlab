@@ -142,3 +142,6 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 ### Fixed
 
 - `POST /admin/login` deixa de induzir `Origin: null` em submits administrativos same-origin normais; origins opacos continuam rejeitados.
+- `StatObject` do Supabase Storage passa a consultar metadata real por `GET /storage/v1/object/info/{bucket}/{path}` e JSON `size`/`content_type`, sem usar headers da resposta como metadata do arquivo.
+- Mutacoes administrativas passam a rejeitar requests sem `Origin` e sem `Referer`, preservando fallback por `Referer` same-origin apenas quando `Origin` estiver ausente.
+- Remocao de imagem gerenciada no Admin deixa de remover associacao quando Storage administrativo nao esta configurado, evitando promessa de remocao completa sem `SUPABASE_SECRET_KEY`.

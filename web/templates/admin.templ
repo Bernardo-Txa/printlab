@@ -616,9 +616,17 @@ templ AdminProductImages(page admindomain.AdminProductImagesPage) {
 															<button class="btn-base btn-secondary" type="submit">Substituir imagem</button>
 														</form>
 													}
-													<form method="post" action={ image.RemoveAction }>
-														<button class="btn-base btn-secondary" type="submit">Remover imagem</button>
-													</form>
+													if image.ManagedStorageObject && !page.StorageConfigured {
+														<p class="admin-muted">Configure o Storage administrativo para remover esta imagem gerenciada.</p>
+													} else {
+														<form method="post" action={ image.RemoveAction }>
+															if image.ManagedStorageObject {
+																<button class="btn-base btn-secondary" type="submit">Remover imagem</button>
+															} else {
+																<button class="btn-base btn-secondary" type="submit">Remover associação</button>
+															}
+														</form>
+													}
 												</div>
 											</div>
 										</article>

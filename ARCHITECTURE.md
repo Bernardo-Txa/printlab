@@ -40,7 +40,7 @@ IMPLEMENTADO:
 - Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
 - Fase 9 com `orders`, snapshots de pedido e conversao de carrinho por `converted_at`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
-- Fase 13.4 do painel administrativo para imagens e Supabase Storage implementada, com validacao real pendente.
+- Fase 13.4 do painel administrativo para imagens e Supabase Storage em correcao, com validacao real pendente.
 - Selecao publica de configuracao por query string em `GET /produtos/{slug}?variante=<variant-slug>` quando houver mais de uma configuracao ativa.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
@@ -223,7 +223,7 @@ A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fix
 
 A integracao Supabase Auth para Admin usa `net/http`, timeout explicito e `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` com header `apikey: SUPABASE_PUBLISHABLE_KEY`. A publishable key identifica a aplicacao, nao concede autorizacao administrativa. A autorizacao da PrintLab compara o UUID retornado por Supabase Auth com `ADMIN_SUPABASE_USER_ID`.
 
-A integracao Supabase Storage para Admin usa `SUPABASE_SECRET_KEY` apenas no backend, depois da sessao Admin e da validacao `Origin`/`Referer`. O backend gera signed upload URL para o bucket `product-images`; o navegador envia os bytes diretamente ao Supabase e depois chama a finalizacao server-side para gravar `product_images`.
+A integracao Supabase Storage para Admin usa `SUPABASE_SECRET_KEY` apenas no backend, depois da sessao Admin e da validacao `Origin`/`Referer`. O backend gera signed upload URL para o bucket `product-images`; o navegador envia os bytes diretamente ao Supabase e depois chama a finalizacao server-side. Na finalizacao, o backend confirma o objeto com `GET /storage/v1/object/info/{bucket}/{path}` e usa o JSON de metadata (`size` e `content_type`) antes de gravar `product_images`.
 
 ## Boundaries
 

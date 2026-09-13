@@ -101,7 +101,7 @@ npx supabase --version
 - Parsers Admin cobrem BRL para centavos, peso em gramas para miligramas, rejeicao de negativos, notacao cientifica, casas decimais excessivas, texto e overflow, sem `float`.
 - Validacoes Admin cobrem perfil logistico parcial rejeitado, override de preco zero, default variant ativa, desativacao de default limpando `is_default`, hex de cor canonico e dimensoes externas de caixa maiores ou iguais as internas.
 - Testes de regressao do repository Admin verificam transacao para troca de default, escopo por `product_id` em mutacoes filhas, `updated_at = now()` em updates e ausencia de `admin_order_events` no catalogo.
-- Admin 13.4 cobre validacao de MIME/tamanho, path gerado server-side, associacao de configuracao ao produto, signed upload sem Supabase real, finalizacao com metadata do objeto, cleanup best-effort em falha de insert, remocao de objeto gerenciado e preservacao de imagens legadas.
+- Admin 13.4 cobre validacao de MIME/tamanho, path gerado server-side, associacao de configuracao ao produto, signed upload sem Supabase real, finalizacao com metadata JSON de `GET /object/info`, substituicao com cleanup seguro, remocao de objeto gerenciado somente com Storage configurado, preservacao de imagens legadas, ordenacao, imagem principal, escopo produto/imagem e rejeicao de POST Admin sem `Origin` e sem `Referer`.
 
 ## Teste de integracao PostgreSQL opcional
 

@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo, Supabase Auth administrativo e gestao administrativa de imagens IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo e Supabase Auth administrativo IMPLEMENTADOS; gestao administrativa de imagens em correcao, com validacao real pendente.
 
 ## Arquitetura planejada
 
@@ -206,6 +206,8 @@ Uso proibido:
 
 Nao ha policy publica de upload. Upload, substituicao e delete sao operacoes administrativas feitas pelo backend com `SUPABASE_SECRET_KEY`, somente apos validar sessao Admin, `Origin`/`Referer`, produto, configuracao, MIME e tamanho.
 
+Na finalizacao de upload/substituicao, o backend consulta `GET /storage/v1/object/info/{bucket}/{path}` e usa o JSON de metadata retornado pelo Supabase Storage. Os campos obrigatorios sao `size` e `content_type`; headers da resposta JSON nao sao usados como metadata do arquivo.
+
 Na Fase 13.4, a aplicacao aceita apenas `image/jpeg`, `image/png` e `image/webp`, embora o bucket historicamente tambem permita `image/avif`. O limite aplicado pelo backend e 5 MB para ficar coerente com `file_size_limit = 5242880` configurado no bucket existente.
 
 Fluxo da Fase 13.4:
@@ -215,6 +217,7 @@ Browser Admin -> Go Admin: metadados
 Go Admin -> Supabase Storage: criar signed upload URL
 Browser Admin -> Supabase Storage: arquivo
 Browser Admin -> Go Admin: finalizar
+Go Admin -> Supabase Storage: confirmar metadata por GET /object/info
 Go Admin -> PostgreSQL: inserir/atualizar product_images
 ```
 

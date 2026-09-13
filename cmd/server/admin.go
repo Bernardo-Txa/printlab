@@ -84,7 +84,7 @@ func adminLoginPageHandler(service adminPanelService) http.HandlerFunc {
 func adminLoginHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -175,7 +175,7 @@ func adminOrderDetailHandler(service adminPanelService) http.HandlerFunc {
 func adminProductionStatusHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -197,7 +197,7 @@ func adminProductionStatusHandler(service adminPanelService, siteURL string) htt
 func adminShippingStatusHandler(service adminPanelService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -220,7 +220,7 @@ func adminLogoutHandler(service adminPanelService, siteURL string) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		setAdminPrivateHeaders(w)
 		r.Body = http.MaxBytesReader(w, r.Body, adminMaxFormBodyBytes)
-		if !validMutationSource(r, siteURL) {
+		if !validAdminMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

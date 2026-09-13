@@ -1,6 +1,6 @@
 # Painel administrativo
 
-Status: Fases 13.1, 13.2 e 13.3 CONCLUIDAS; Fase 13.4 com implementacao concluida e validacao real pendente.
+Status: Fases 13.1, 13.2 e 13.3 CONCLUIDAS; Fase 13.4 com implementacao em correcao e validacao real pendente.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
@@ -9,7 +9,7 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
 - 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
 - 13.3 — catalogo, variantes, materiais, cores e caixas: concluida com validacao real em producao.
-- 13.4 — imagens e Supabase Storage: implementacao concluida; validacao real pendente.
+- 13.4 — imagens e Supabase Storage: implementacao em correcao; validacao real pendente.
 
 ## Fase 13.1 implementada
 
@@ -158,7 +158,7 @@ Regras administrativas:
 - caixa inativa deixa de participar de novas cotacoes, sem apagar selecoes historicas;
 - na Fase 13.3, imagens permaneceram fora do escopo e foram implementadas depois na Fase 13.4.
 
-Mutacoes de catalogo usam POST, sessao administrativa obrigatoria, validacao centralizada de `Origin`/`Referer`, rejeicao de `Origin: null`, limite de body de 256 KiB e redirecionamento PRG com `303 See Other` em sucesso.
+Mutacoes de catalogo usam POST, sessao administrativa obrigatoria, validacao administrativa estrita de `Origin`/`Referer`, rejeicao de `Origin: null`, rejeicao de requests sem os dois headers, limite de body de 256 KiB e redirecionamento PRG com `303 See Other` em sucesso.
 
 ## Validacao real da Fase 13.3
 
@@ -173,7 +173,7 @@ Evidencias funcionais confirmadas:
 - comportamento com multiplas configuracoes e default validado;
 - `product_variants` permanece modelo interno, mas a UI usa "Configuracao" para o administrador.
 
-## Fase 13.4 implementada
+## Fase 13.4 em correcao
 
 Rotas de imagens:
 
@@ -205,7 +205,7 @@ O upload nao envia bytes pelo backend Go/Vercel. O fluxo e:
 4. Go solicita signed upload URL ao Supabase Storage usando `SUPABASE_SECRET_KEY`.
 5. Browser envia o arquivo diretamente ao Supabase Storage.
 6. Browser chama a finalizacao no Go.
-7. Go confirma o objeto no Storage e cria/atualiza `public.product_images`.
+7. Go confirma o objeto no Storage por `GET /storage/v1/object/info/{bucket}/{path}`, usa `size` e `content_type` do JSON retornado e cria/atualiza `public.product_images`.
 
 Regras:
 
@@ -218,6 +218,7 @@ Regras:
 - Imagem de Configuracao exige que a Configuracao pertenca ao mesmo produto.
 - Falha de INSERT/UPDATE apos upload tenta cleanup best-effort do objeto recem-enviado.
 - Remocao fisica so ocorre para path gerenciado e validado no prefixo `products/{product_id}/`.
+- Remocao de imagem gerenciada exige Storage administrativo configurado; sem `SUPABASE_SECRET_KEY`, a UI nao promete remocao completa desse objeto.
 - Imagens legadas/manuais fora desse prefixo podem ter associacao removida do banco, mas nao geram DELETE arbitrario.
 
 `public.product_images` ja possuia `storage_path`, `sort_order` e `is_primary`; por isso nenhuma migration foi criada para a 13.4.
@@ -229,7 +230,7 @@ Regras:
 - E-mail nao e autorizacao administrativa; o UUID do usuario e a fonte estavel.
 - Senha, access token, refresh token, token de sessao e token hash nao devem aparecer em logs ou documentacao.
 - Todas as respostas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`.
-- POSTs administrativos validam `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
+- POSTs administrativos exigem `Origin` same-origin valido ou, quando `Origin` estiver ausente, `Referer` same-origin como fallback; `Origin: null`, cross-site e ausencia simultanea de `Origin` e `Referer` sao rejeitados.
 - Dashboard e listagem de pedidos nao carregam nem renderizam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
 - O detalhe de pedido pode renderizar PII operacional somente apos sessao administrativa valida.
 - Eventos de auditoria guardam UUID do usuario Supabase Auth, tipo de evento, status anterior, status novo e horario; nao armazenam PII de cliente.

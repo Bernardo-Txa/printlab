@@ -53,7 +53,7 @@ IMPLEMENTADO:
 - Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com validacao real em producao concluida.
 - Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com validacao real em producao concluida.
 - Fase 13.3A — Refinamento de configuracoes do produto, com seletor publico apenas quando ha duas ou mais configuracoes ativas e validacao real concluida.
-- Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com implementacao concluida e validacao real pendente.
+- Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com implementacao em correcao e validacao real pendente.
 
 PLANEJADO:
 

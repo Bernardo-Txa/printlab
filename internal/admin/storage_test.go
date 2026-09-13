@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -51,8 +52,8 @@ func TestSupabaseStorageClientCreateSignedUpload(t *testing.T) {
 
 func TestSupabaseStorageClientStatObject(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodHead {
-			t.Fatalf("expected HEAD, got %s", r.Method)
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
 		}
 		if r.URL.Path != "/storage/v1/object/info/product-images/products/11111111-1111-1111-1111-111111111111/random.webp" {
 			t.Fatalf("unexpected path %s", r.URL.Path)
@@ -60,9 +61,13 @@ func TestSupabaseStorageClientStatObject(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer sb_secret_test" {
 			t.Fatal("expected secret authorization header")
 		}
-		w.Header().Set("Content-Type", "image/webp")
-		w.Header().Set("Content-Length", "1234")
-		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", "9999")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"name":         "products/11111111-1111-1111-1111-111111111111/random.webp",
+			"size":         1234,
+			"content_type": "image/webp",
+		})
 	}))
 	defer server.Close()
 
@@ -73,6 +78,25 @@ func TestSupabaseStorageClientStatObject(t *testing.T) {
 	}
 	if object.ContentType != "image/webp" || object.Size != 1234 {
 		t.Fatalf("unexpected object metadata: %#v", object)
+	}
+}
+
+func TestSupabaseStorageClientStatObjectRejectsMissingJSONMetadata(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		w.Header().Set("Content-Type", "image/webp")
+		w.Header().Set("Content-Length", "1234")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"name":"products/11111111-1111-1111-1111-111111111111/random.webp"}`))
+	}))
+	defer server.Close()
+
+	client := newTestStorageClient(t, server.URL, server.Client())
+	_, err := client.StatObject(t.Context(), AdminImageBucket, "products/11111111-1111-1111-1111-111111111111/random.webp")
+	if !errors.Is(err, ErrInvalidImagePath) {
+		t.Fatalf("expected ErrInvalidImagePath, got %v", err)
 	}
 }
 

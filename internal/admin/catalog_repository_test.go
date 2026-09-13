@@ -47,6 +47,29 @@ func TestAdminCatalogRepositoryScopesChildMutations(t *testing.T) {
 	}
 }
 
+func TestAdminCatalogRepositoryScopesImageMutationsByProductAndImage(t *testing.T) {
+	source := readAdminCatalogRepository(t)
+	for _, marker := range []string{
+		"func (r *PostgresRepository) ReplaceAdminProductImage",
+		"func (r *PostgresRepository) DeleteAdminProductImage",
+		"func (r *PostgresRepository) UpdateAdminProductImageOrder",
+		"func (r *PostgresRepository) MarkAdminProductImagePrimary",
+	} {
+		body, ok := adminFunctionSource(source, marker)
+		if !ok {
+			t.Fatalf("expected %s", marker)
+		}
+		for _, expected := range []string{
+			"product_id = $1::uuid",
+			"id = $2::uuid",
+		} {
+			if !strings.Contains(body, expected) {
+				t.Fatalf("expected %s to contain %q", marker, expected)
+			}
+		}
+	}
+}
+
 func TestAdminCatalogRepositoryDoesNotUseOrderAuditForCatalog(t *testing.T) {
 	source := readAdminCatalogRepository(t)
 	for _, forbidden := range []string{"admin_order_events", "admin_catalog_events", "select *"} {
