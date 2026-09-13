@@ -115,11 +115,24 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			if err != nil {
 				log.Print("admin authentication unavailable")
 			} else {
+				adminRepository := admindomain.NewPostgresRepository(db.Pool())
+				var storageClient admindomain.StorageClient
+				if cfg.SupabaseStorageConfigured {
+					storageClient, err = admindomain.NewSupabaseStorageClient(admindomain.SupabaseStorageClientConfig{
+						SupabaseURL: cfg.SupabaseURL,
+						SecretKey:   cfg.SupabaseSecretKey,
+					})
+					if err != nil {
+						log.Print("admin storage unavailable")
+					}
+				}
 				adminPanel = admindomain.NewService(
 					authClient,
-					admindomain.NewPostgresRepository(db.Pool()),
+					adminRepository,
 					cfg.AdminSupabaseUserID,
 					admindomain.CookieOptions{Secure: secureCartCookies(cfg)},
+					admindomain.WithAdminSupabaseURL(cfg.SupabaseURL),
+					admindomain.WithStorageClient(storageClient),
 				)
 			}
 		}
@@ -175,6 +188,14 @@ func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogServi
 	mux.HandleFunc("POST /admin/produtos", adminCreateProductHandler(adminPanel, siteURL))
 	mux.HandleFunc("GET /admin/produtos/{productID}", adminProductDetailHandler(adminPanel))
 	mux.HandleFunc("POST /admin/produtos/{productID}", adminUpdateProductHandler(adminPanel, siteURL))
+	mux.HandleFunc("GET /admin/produtos/{productID}/imagens", adminProductImagesHandler(adminPanel))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/upload-url", adminImageUploadURLHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/finalizar", adminImageFinalizeHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/{imageID}/substituir-url", adminImageReplaceURLHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/{imageID}/finalizar-substituicao", adminImageReplaceFinalizeHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/{imageID}/remover", adminImageRemoveHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/{imageID}/ordem", adminImageOrderHandler(adminPanel, siteURL))
+	mux.HandleFunc("POST /admin/produtos/{productID}/imagens/{imageID}/principal", adminImagePrimaryHandler(adminPanel, siteURL))
 	mux.HandleFunc("GET /admin/produtos/{productID}/variantes/nova", adminNewVariantHandler(adminPanel))
 	mux.HandleFunc("POST /admin/produtos/{productID}/variantes", adminCreateVariantHandler(adminPanel, siteURL))
 	mux.HandleFunc("GET /admin/produtos/{productID}/variantes/{variantID}", adminVariantDetailHandler(adminPanel))

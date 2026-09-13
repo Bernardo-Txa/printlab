@@ -40,6 +40,7 @@ IMPLEMENTADO:
 - Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
 - Fase 9 com `orders`, snapshots de pedido e conversao de carrinho por `converted_at`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
+- Fase 13.4 do painel administrativo para imagens e Supabase Storage implementada, com validacao real pendente.
 - Selecao publica de configuracao por query string em `GET /produtos/{slug}?variante=<variant-slug>` quando houver mais de uma configuracao ativa.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
@@ -47,7 +48,6 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Fase 13.4 do painel administrativo para imagens e Supabase Storage.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Diagrama textual
@@ -103,7 +103,7 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
-O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete e sem upload de imagens. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas.
+O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas. A Fase 13.4 adicionou gestao administrativa de imagens com upload direto ao Supabase Storage e finalizacao server-side em `product_images`.
 
 ## Responsabilidades do frontend
 
@@ -113,7 +113,7 @@ O frontend e responsavel por apresentar HTML, formularios e interacoes progressi
 - IMPLEMENTADO: Tailwind CSS para estilos utilitarios e design tokens.
 - PLANEJADO: HTMX para interacoes HTTP parciais quando houver necessidade real.
 - IMPLEMENTADO: JavaScript proprio minimo para mascaras progressivas e consulta interna de CEP na etapa de dados.
-- IMPLEMENTADO: UI administrativa SSR sem JavaScript obrigatorio para login, dashboard, lista/detalhe de pedidos e acoes de producao/envio.
+- IMPLEMENTADO: UI administrativa SSR para login, dashboard, lista/detalhe de pedidos, acoes de producao/envio, catalogo e imagens; a tela de imagens usa JavaScript nativo somente para upload direto ao Supabase Storage.
 
 O frontend pode melhorar a experiencia do usuario, mas nao decide regras financeiras, disponibilidade final, status de pedido ou confirmacao de pagamento.
 
@@ -207,7 +207,7 @@ A Fase 13.1 adiciona `admin_sessions`, tabela transitoria de sessoes administrat
 
 A Fase 13.2 adiciona `admin_order_events`, tabela de auditoria operacional para mutacoes administrativas de producao/envio. Cada evento registra pedido, ator administrativo, tipo, status anterior, status novo e horario, sem PII de cliente.
 
-A Fase 13.3 nao adiciona tabelas. O Admin opera `categories`, `products`, `product_variants`, `materials`, `colors`, `variant_filaments` e `shipping_boxes` existentes, usando `is_active` em vez de hard delete para entidades principais.
+A Fase 13.3 nao adiciona tabelas. O Admin opera `categories`, `products`, `product_variants`, `materials`, `colors`, `variant_filaments` e `shipping_boxes` existentes, usando `is_active` em vez de hard delete para entidades principais. A Fase 13.4 tambem nao adiciona tabelas; ela usa `product_images.storage_path`, `sort_order` e `is_primary` existentes para gerenciar imagens do bucket `product-images`.
 
 Ainda nao existem tabelas de clientes permanentes nem tabelas de auditoria de catalogo.
 
@@ -222,6 +222,8 @@ A integracao ViaCEP usa `net/http`, timeout explicito de aproximadamente 3 segun
 A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fixa `https://api.checkout.infinitepay.io`, `POST /links` para checkout hospedado e `POST /payment_check` para confirmacao server-side. O handle vem de `INFINITEPAY_HANDLE`; nao ha token/API secret no frontend. O webhook InfinitePay e aceito em `POST /webhooks/infinitepay`, mas serve apenas como gatilho para `payment_check`.
 
 A integracao Supabase Auth para Admin usa `net/http`, timeout explicito e `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` com header `apikey: SUPABASE_PUBLISHABLE_KEY`. A publishable key identifica a aplicacao, nao concede autorizacao administrativa. A autorizacao da PrintLab compara o UUID retornado por Supabase Auth com `ADMIN_SUPABASE_USER_ID`.
+
+A integracao Supabase Storage para Admin usa `SUPABASE_SECRET_KEY` apenas no backend, depois da sessao Admin e da validacao `Origin`/`Referer`. O backend gera signed upload URL para o bucket `product-images`; o navegador envia os bytes diretamente ao Supabase e depois chama a finalizacao server-side para gravar `product_images`.
 
 ## Boundaries
 

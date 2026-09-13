@@ -131,22 +131,47 @@ type Service struct {
 	dashboard   DashboardRepository
 	orders      OrderRepository
 	catalog     CatalogRepository
+	storage     StorageClient
 	tokens      *TokenManager
 	adminUserID string
+	supabaseURL string
+	imageRandom io.Reader
 	now         func() time.Time
+}
+
+type ServiceOption func(*Service)
+
+func WithStorageClient(storage StorageClient) ServiceOption {
+	return func(service *Service) {
+		service.storage = storage
+	}
+}
+
+func WithAdminSupabaseURL(supabaseURL string) ServiceOption {
+	return func(service *Service) {
+		service.supabaseURL = strings.TrimRight(strings.TrimSpace(supabaseURL), "/")
+	}
+}
+
+func WithAdminImageRandom(random io.Reader) ServiceOption {
+	return func(service *Service) {
+		if random != nil {
+			service.imageRandom = random
+		}
+	}
 }
 
 func NewService(auth AuthClient, repository interface {
 	SessionRepository
 	DashboardRepository
 	OrderRepository
-}, adminUserID string, options CookieOptions) *Service {
+}, adminUserID string, options CookieOptions, serviceOptions ...ServiceOption) *Service {
 	var catalog CatalogRepository
 	if catalogRepository, ok := repository.(CatalogRepository); ok {
 		catalog = catalogRepository
 	}
 
-	return &Service{
+	service := &Service{
 		auth:        auth,
 		sessions:    repository,
 		dashboard:   repository,
@@ -154,8 +179,14 @@ func NewService(auth AuthClient, repository interface {
 		catalog:     catalog,
 		tokens:      NewTokenManager(options),
 		adminUserID: normalizeUUID(adminUserID),
+		imageRandom: rand.Reader,
 		now:         time.Now,
 	}
+	for _, option := range serviceOptions {
+		option(service)
+	}
+
+	return service
 }
 
 func (s *Service) Available() bool {

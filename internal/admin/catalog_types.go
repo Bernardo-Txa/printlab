@@ -69,6 +69,7 @@ type AdminProductListItem struct {
 	Warnings           []string
 	DetailURL          string
 	VariantsURL        string
+	ImagesURL          string
 }
 
 type AdminProductHeader struct {
@@ -105,6 +106,96 @@ type AdminProductFormPage struct {
 	Categories  []AdminSelectOption
 	Variants    []AdminVariantListItem
 	Message     string
+	ImagesURL   string
+}
+
+type AdminProductImagesPage struct {
+	Product             AdminProductHeader
+	Images              []AdminProductImage
+	VariantOptions      []AdminImageVariantOption
+	UploadAction        string
+	MaxFileSizeBytes    int64
+	MaxFileSizeLabel    string
+	AllowedContentTypes string
+	StorageConfigured   bool
+	Message             string
+	ErrorMessage        string
+}
+
+type AdminProductImage struct {
+	ID                    string
+	ProductID             string
+	VariantID             string
+	StoragePath           string
+	AltText               string
+	URL                   string
+	SortOrder             int
+	SortOrderInput        string
+	IsPrimary             bool
+	ScopeLabel            string
+	AssociationLabel      string
+	ManagedStorageObject  bool
+	ReplaceUploadAction   string
+	ReplaceFinalizeAction string
+	RemoveAction          string
+	OrderAction           string
+	PrimaryAction         string
+}
+
+type AdminImageVariantOption struct {
+	ID     string
+	Label  string
+	Active bool
+}
+
+type AdminImageUploadMetadata struct {
+	VariantID   string
+	ContentType string
+	FileSize    int64
+	Filename    string
+}
+
+type AdminImageUploadAuthorization struct {
+	UploadURL        string
+	ObjectPath       string
+	ContentType      string
+	MaxFileSizeBytes int64
+}
+
+type AdminImageFinalizeInput struct {
+	VariantID   string
+	ObjectPath  string
+	ContentType string
+	FileSize    int64
+	AltText     string
+	SortOrder   int
+	IsPrimary   bool
+	Filename    string
+}
+
+type AdminImageCreateInput struct {
+	ProductID   string
+	VariantID   string
+	StoragePath string
+	AltText     string
+	SortOrder   int
+	IsPrimary   bool
+}
+
+type AdminImageReplaceInput struct {
+	ID          string
+	ProductID   string
+	VariantID   string
+	StoragePath string
+	AltText     string
+	SortOrder   int
+	IsPrimary   bool
+}
+
+type AdminImageOrderInput struct {
+	ID        string
+	ProductID string
+	SortOrder int
 }
 
 type AdminCategoryListPage struct {

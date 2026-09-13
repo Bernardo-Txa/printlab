@@ -374,7 +374,7 @@ templ AdminProducts(page admindomain.AdminProductListPage) {
 											<p><span>Destaque</span><strong>{ product.FeaturedLabel }</strong></p>
 											<p><span>Configurações</span><strong>{ product.VariantCountLabel }</strong></p>
 											<p><span>Frete</span><strong>{ product.ShippingLabel }</strong></p>
-											<p><span>Imagens</span><strong>Fase 13.4</strong></p>
+											<p><span>Imagens</span><strong><a href={ product.ImagesURL }>Gerenciar</a></strong></p>
 										</div>
 										if len(product.Warnings) > 0 {
 											<div class="admin-warning-list">
@@ -425,6 +425,13 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 							</div>
 						</form>
 						if !page.IsNew {
+							<section class="admin-panel" aria-labelledby="admin-product-images">
+								<div class="admin-heading-row">
+									<h2 id="admin-product-images">Imagens do produto</h2>
+									<a class="btn-base btn-secondary" href={ page.ImagesURL }>Gerenciar imagens</a>
+								</div>
+								<p class="admin-muted">Envie, substitua, ordene e associe imagens ao produto ou a uma configuração específica.</p>
+							</section>
 							<section class="admin-panel" aria-labelledby="admin-product-variants">
 								<div class="admin-heading-row">
 									<h2 id="admin-product-variants">Configurações do produto</h2>
@@ -466,6 +473,164 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 				}
 			}
 		</section>
+	}
+}
+
+templ AdminProductImages(page admindomain.AdminProductImagesPage) {
+	@components.PrivateNoIndexLayout("Imagens do produto | PrintLab", "Imagens administrativas do produto PrintLab.") {
+		<section class="admin-section">
+			@components.Container() {
+				@adminShell("products") {
+					<div class="admin-main">
+						<div class="admin-heading admin-heading-row">
+							<div>
+								<p class="brand-kicker">Catalogo</p>
+								<h1>Imagens de { page.Product.Name }</h1>
+							</div>
+							<div class="admin-heading-actions">
+								<a class="btn-base btn-secondary" href={ page.Product.DetailURL }>Voltar ao produto</a>
+							</div>
+						</div>
+						if page.Message != "" {
+							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						}
+						if page.ErrorMessage != "" {
+							<p class="checkout-alert checkout-alert-error">{ page.ErrorMessage }</p>
+						}
+						if !page.StorageConfigured {
+							<p class="checkout-alert checkout-alert-error">Storage administrativo indisponível. Configure SUPABASE_SECRET_KEY no backend para enviar ou substituir imagens.</p>
+						}
+						if page.StorageConfigured {
+							<section class="admin-panel" aria-labelledby="admin-image-upload">
+								<h2 id="admin-image-upload">Nova imagem</h2>
+								<form class="admin-form admin-image-upload-form" data-admin-image-upload data-upload-url={ page.UploadAction } data-finalize-url={ "/admin/produtos/" + page.Product.ID + "/imagens/finalizar" } data-max-size={ strconv.FormatInt(page.MaxFileSizeBytes, 10) }>
+									<label class="admin-field">
+										<span>Arquivo</span>
+										<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" required/>
+										<small>{ page.AllowedContentTypes } ate { page.MaxFileSizeLabel }.</small>
+									</label>
+									<label class="admin-field">
+										<span>Aplicar a</span>
+										<select name="variant_id">
+											<option value="">Produto inteiro</option>
+											for _, option := range page.VariantOptions {
+												<option value={ option.ID }>{ option.Label }</option>
+											}
+										</select>
+									</label>
+									<div class="admin-form-grid">
+										<label class="admin-field">
+											<span>Texto alternativo</span>
+											<input type="text" name="alt_text"/>
+										</label>
+										<label class="admin-field">
+											<span>Ordem</span>
+											<input type="number" name="sort_order" value="0" min="0" required/>
+										</label>
+									</div>
+									@adminCheckboxField("is_primary", "Usar como imagem principal", true)
+									<p class="admin-image-status" data-admin-image-status></p>
+									<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" hidden></progress>
+									<div class="admin-form-actions">
+										<button class="btn-base btn-primary" type="submit">Enviar imagem</button>
+									</div>
+								</form>
+							</section>
+						}
+						<section class="admin-panel" aria-labelledby="admin-image-list">
+							<h2 id="admin-image-list">Imagens cadastradas</h2>
+							if len(page.Images) == 0 {
+								<p class="admin-muted">Nenhuma imagem cadastrada.</p>
+							} else {
+								<div class="admin-image-list">
+									for _, image := range page.Images {
+										<article class="admin-image-card">
+											<div class="admin-image-preview">
+												if image.URL != "" {
+													<img src={ image.URL } alt={ image.AltText } loading="lazy"/>
+												} else {
+													<span>Imagem em preparo</span>
+												}
+											</div>
+											<div class="admin-image-content">
+												<div class="admin-order-row-header">
+													<div>
+														<h3>{ image.ScopeLabel }</h3>
+														<span>{ image.AssociationLabel }</span>
+														if image.AltText != "" {
+															<span>{ image.AltText }</span>
+														}
+													</div>
+													if image.IsPrimary {
+														<strong>Principal</strong>
+													}
+												</div>
+												<div class="admin-status-grid">
+													<p><span>Ordem</span><strong>{ image.SortOrderInput }</strong></p>
+													<p><span>Storage</span><strong>{ image.StoragePath }</strong></p>
+												</div>
+												<div class="admin-image-actions">
+													<form class="admin-inline-form" method="post" action={ image.OrderAction }>
+														<label class="admin-field">
+															<span>Ordem</span>
+															<input type="number" name="sort_order" value={ image.SortOrderInput } min="0" required/>
+														</label>
+														<button class="btn-base btn-secondary" type="submit">Salvar ordem</button>
+													</form>
+													if !image.IsPrimary {
+														<form method="post" action={ image.PrimaryAction }>
+															<button class="btn-base btn-secondary" type="submit">Marcar principal</button>
+														</form>
+													}
+													if page.StorageConfigured {
+														<form class="admin-form admin-image-upload-form" data-admin-image-upload data-upload-url={ image.ReplaceUploadAction } data-finalize-url={ image.ReplaceFinalizeAction } data-max-size={ strconv.FormatInt(page.MaxFileSizeBytes, 10) }>
+															<h4>Substituir</h4>
+															<label class="admin-field">
+																<span>Arquivo</span>
+																<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" required/>
+															</label>
+															<label class="admin-field">
+																<span>Aplicar a</span>
+																<select name="variant_id">
+																	if image.VariantID == "" {
+																		<option value="" selected>Produto inteiro</option>
+																	} else {
+																		<option value="">Produto inteiro</option>
+																	}
+																	for _, option := range page.VariantOptions {
+																		if option.ID == image.VariantID {
+																			<option value={ option.ID } selected>{ option.Label }</option>
+																		} else {
+																			<option value={ option.ID }>{ option.Label }</option>
+																		}
+																	}
+																</select>
+															</label>
+															<input type="hidden" name="alt_text" value={ image.AltText }/>
+															<input type="hidden" name="sort_order" value={ image.SortOrderInput }/>
+															if image.IsPrimary {
+																<input type="hidden" name="is_primary" value="1"/>
+															}
+															<p class="admin-image-status" data-admin-image-status></p>
+															<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" hidden></progress>
+															<button class="btn-base btn-secondary" type="submit">Substituir imagem</button>
+														</form>
+													}
+													<form method="post" action={ image.RemoveAction }>
+														<button class="btn-base btn-secondary" type="submit">Remover imagem</button>
+													</form>
+												</div>
+											</div>
+										</article>
+									}
+								</div>
+							}
+						</section>
+					</div>
+				}
+			}
+		</section>
+		<script src="/static/js/admin-images.js" defer></script>
 	}
 }
 

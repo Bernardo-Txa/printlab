@@ -89,6 +89,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Validacoes administrativas para slugs canonicos, perfis logisticos atomicos, default variant ativa, SKU opcional, cores hex canonicas e caixas com dimensoes externas maiores ou iguais as internas.
 - Fase 13.3A — Refinamento de configuracoes do produto, mantendo `product_variants` como modelo interno e usando "Configuracoes do produto" na UI Admin.
 - ADR-0015 — Gestao administrativa de catalogo sem hard delete.
+- Fase 13.4 — Imagens e Supabase Storage no Admin, com subpagina de imagens por produto, upload direto ao Storage por signed upload URL, finalizacao server-side em `product_images`, substituicao sem overwrite, remocao segura, ordenacao e imagem principal.
+- Provider Supabase Storage testavel via `net/http`, sem chamadas reais a Supabase nos testes.
+- Suporte a `SUPABASE_SECRET_KEY` server-side com prefixo `sb_secret_` para operacoes administrativas de Storage.
+- ADR-0016 — Upload direto administrativo para Supabase Storage.
 
 ### Changed
 
@@ -131,6 +135,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Categorias, produtos, variantes, materiais, cores e caixas passam a ser ativados/inativados no Admin por `is_active`, sem hard delete.
 - Detalhe publico de produto passa a mostrar seletor somente com duas ou mais configuracoes ativas; uma unica configuracao ativa fica transparente para o cliente e continua sendo enviada ao carrinho.
 - Carrinho passa a resolver automaticamente a unica configuracao ativa quando `variant_slug` nao e enviado, mantendo escolha obrigatoria com multiplas configuracoes.
+- Fase 13.3 e refinamento 13.3A passam a constar como validados em producao pelo responsavel.
+- Admin passa a incluir gestao de imagens no produto; a tela usa JavaScript nativo apenas para upload direto ao Supabase Storage.
+- README, setup/deploy e documentacao Supabase passam a listar `SUPABASE_SECRET_KEY` como secret server-side necessaria para imagens Admin.
 
 ### Fixed
 

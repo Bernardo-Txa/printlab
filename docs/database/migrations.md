@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e admin IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes/imagens, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e admin IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -65,6 +65,8 @@ Ela cria `public.admin_order_events` com UUID primario, referencia restritiva a 
 A Fase 13.3 nao criou migration. A gestao administrativa de catalogo, variantes, receita, materiais, cores e caixas usa as tabelas existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
 
 A Fase 13.3A tambem nao criou migration. O refinamento alterou semantica e UX de configuracoes sem renomear `product_variants`.
+
+A Fase 13.4 nao criou migration. A gestao administrativa de imagens usa `public.product_images` e o bucket `product-images` criados na Fase 5.
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 

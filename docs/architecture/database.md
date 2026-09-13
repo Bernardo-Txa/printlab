@@ -10,7 +10,7 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 - Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments`, `public.order_payments`, `public.admin_sessions` e `public.admin_order_events`.
 - As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento, o acompanhamento seguro, sessoes admin e auditoria operacional.
-- A Fase 13.3 nao cria schema novo; o Admin de catalogo opera sobre tabelas existentes.
+- A Fase 13.3 nao cria schema novo; o Admin de catalogo opera sobre tabelas existentes. A Fase 13.4 tambem nao cria schema novo; a gestao de imagens usa `public.product_images` existente.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
 - A conexao depende de `DATABASE_URL` em runtime.
@@ -111,6 +111,7 @@ Pool padrao por instancia:
 - `admin_order_events` guarda trilha de auditoria operacional de producao/envio por pedido.
 - RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections`, tabelas de pedido, `order_payments`, `admin_sessions` e `admin_order_events` sem policies publicas.
 - A gestao Admin de catalogo da Fase 13.3 usa essas tabelas sem criar tabela paralela e sem reutilizar `admin_order_events`.
+- A gestao Admin de imagens da Fase 13.4 usa `product_images.storage_path`, `sort_order` e `is_primary` existentes, sem migration nova.
 
 ## Convencoes de schema futuras
 

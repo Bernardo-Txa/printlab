@@ -146,6 +146,7 @@ Secrets de runtime no ambiente de hosting:
 - `DB_MAX_CONNS`, opcional, default `4`
 - `SUPABASE_URL`, opcional e nao secret, usada para montar URLs publicas do bucket `product-images`
 - `SUPABASE_PUBLISHABLE_KEY`, opcional e nao administrativa, usada para login Admin via Supabase Auth
+- `SUPABASE_SECRET_KEY`, secret server-side com prefixo `sb_secret_`, necessaria para signed upload/delete de imagens no Admin
 - `ADMIN_SUPABASE_USER_ID`, opcional, UUID do unico usuario Supabase Auth autorizado no Admin
 - `SITE_URL`, URL publica HTTPS usada como origem permitida e como base do `redirect_url` e `webhook_url` InfinitePay
 - `SUPERFRETE_ENV`, opcional ate habilitar cotacao real, aceitando `sandbox` ou `production`
@@ -161,6 +162,8 @@ Se a configuracao SuperFrete estiver ausente, a aplicacao continua iniciando e a
 Se `INFINITEPAY_HANDLE` ou `SITE_URL` HTTPS estiverem ausentes, a aplicacao continua iniciando e as rotas existentes continuam funcionando. A pagina de pedido nao exibe botao falso de pagamento e mostra indisponibilidade segura.
 
 Se `SUPABASE_PUBLISHABLE_KEY`, `ADMIN_SUPABASE_USER_ID`, `SUPABASE_URL` ou `DATABASE_URL` estiverem ausentes, a aplicacao publica continua iniciando. `/admin/login` apresenta indisponibilidade segura e nao revela qual configuracao esta faltando.
+
+Se `SUPABASE_SECRET_KEY` estiver ausente, upload/substituicao/remocao fisica de imagens no Admin fica indisponivel, mas a loja publica e o restante do painel continuam iniciando.
 
 O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 

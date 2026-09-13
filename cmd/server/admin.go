@@ -30,6 +30,14 @@ type adminPanelService interface {
 	GetAdminProduct(ctx context.Context, productID string) (admindomain.AdminProductFormPage, error)
 	CreateAdminProduct(ctx context.Context, form admindomain.AdminProductForm) (string, admindomain.AdminProductFormPage, error)
 	UpdateAdminProduct(ctx context.Context, productID string, form admindomain.AdminProductForm) (admindomain.AdminProductFormPage, error)
+	GetAdminProductImages(ctx context.Context, productID string) (admindomain.AdminProductImagesPage, error)
+	AuthorizeAdminImageUpload(ctx context.Context, productID string, metadata admindomain.AdminImageUploadMetadata) (admindomain.AdminImageUploadAuthorization, error)
+	FinalizeAdminImageUpload(ctx context.Context, productID string, input admindomain.AdminImageFinalizeInput) (string, error)
+	AuthorizeAdminImageReplacement(ctx context.Context, productID string, imageID string, metadata admindomain.AdminImageUploadMetadata) (admindomain.AdminImageUploadAuthorization, error)
+	FinalizeAdminImageReplacement(ctx context.Context, productID string, imageID string, input admindomain.AdminImageFinalizeInput) error
+	RemoveAdminProductImage(ctx context.Context, productID string, imageID string) error
+	UpdateAdminProductImageOrder(ctx context.Context, productID string, imageID string, sortOrder string) error
+	MarkAdminProductImagePrimary(ctx context.Context, productID string, imageID string) error
 	ListAdminCategories(ctx context.Context) (admindomain.AdminCategoryListPage, error)
 	NewAdminCategory() admindomain.AdminCategoryFormPage
 	GetAdminCategory(ctx context.Context, categoryID string) (admindomain.AdminCategoryFormPage, error)

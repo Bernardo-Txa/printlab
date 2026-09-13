@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e operacao administrativa basica IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e operacao administrativa com imagens IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -71,7 +71,7 @@ Antes de finalizar uma compra, o backend deve:
 - Item indisponivel nao some silenciosamente.
 - Item indisponivel nao entra no subtotal.
 - Depois que um pedido e criado, dados temporarios do carrinho sao removidos e uma nova compra deve usar novo carrinho.
-- Pagamento permanece planejado.
+- Pagamento ocorre depois da criacao do pedido, via checkout hospedado InfinitePay.
 
 ## Dados de checkout implementados
 
@@ -201,9 +201,11 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Auditoria operacional registra somente pedido, UUID do usuario Auth, tipo de evento, status anterior, status novo e horario; nao registra PII de cliente.
 - Catalogo Admin gerencia categorias, produtos, configuracoes do produto, receita estimada, materiais, cores e caixas por SSR protegido.
 - Mutacoes de catalogo Admin exigem POST, sessao valida, validacao de `Origin`/`Referer`, rejeicao de `Origin: null` e limite conservador de body.
+- Imagens Admin usam upload direto ao Supabase Storage com signed upload URL; o backend valida Admin, produto, configuracao, MIME, tamanho e path antes de finalizar `product_images`.
+- Remocao fisica de imagem ocorre somente para paths gerenciados no bucket `product-images`; associacoes legadas/manuais nao disparam DELETE arbitrario.
 - Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, configuracoes, materiais, cores ou caixas.
 - `admin_order_events` e exclusivo de pedidos; catalogo nao reutiliza essa auditoria e nao cria tabela de eventos antecipada.
-- Alteracao de valores/dados de pedido, papeis multiplos, upload de imagens e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
+- Alteracao de valores/dados de pedido, papeis multiplos e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
 
 ## Status operacionais implementados
 
@@ -277,4 +279,4 @@ Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_
 
 Imagens podem ser gerais do produto ou especificas de uma variante. A pagina de produto prioriza imagens da variante selecionada; se nao existirem, usa imagens gerais do produto; se nenhuma imagem publica estiver disponivel, usa placeholder visual da PrintLab.
 
-Upload de imagens, admin de imagens e policies de escrita permanecem fora do escopo desta fase.
+Upload e gestao administrativa de imagens existem somente no painel Admin, por signed upload URL gerada pelo backend apos sessao administrativa e validacao de origem. Nao ha policy publica de escrita em Storage.

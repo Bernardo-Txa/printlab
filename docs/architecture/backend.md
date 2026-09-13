@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e operacao administrativa basica IMPLEMENTADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e operacao administrativa com imagens IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -35,6 +35,7 @@ Nesta fase, o backend implementa:
 - `POST /admin/pedidos/{orderID}/producao` para avancar status de producao.
 - `POST /admin/pedidos/{orderID}/envio` para avancar status de envio.
 - `GET /admin/produtos`, `GET /admin/produtos/novo`, `POST /admin/produtos`, `GET /admin/produtos/{productID}` e `POST /admin/produtos/{productID}` para gestao administrativa de produtos.
+- Rotas administrativas de imagens abaixo de `/admin/produtos/{productID}/imagens`, com autorizacao de signed upload, finalizacao, substituicao, remocao, ordenacao e imagem principal.
 - Rotas administrativas de variantes e receita abaixo de `/admin/produtos/{productID}/variantes`.
 - Rotas administrativas de categorias, materiais, cores e caixas em `/admin/categorias`, `/admin/materiais`, `/admin/cores` e `/admin/caixas`.
 - `POST /admin/logout` para apagar sessao administrativa e limpar cookie.
@@ -50,15 +51,15 @@ Nesta fase, o backend implementa:
 - `internal/orders` para revisao, fingerprint, criacao transacional e snapshot de pedidos.
 - `internal/orders` tambem expoe a view minimizada de acompanhamento por `public_tracking_id`.
 - `internal/payments` para client InfinitePay, regras de pagamento e repository PostgreSQL.
-- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side, dashboard agregado, consultas administrativas de pedido, mutacoes auditadas de producao/envio e gestao administrativa de catalogo.
+- `internal/admin` para cliente Supabase Auth, token/cookie administrativo, sessao server-side, dashboard agregado, consultas administrativas de pedido, mutacoes auditadas de producao/envio, gestao administrativa de catalogo e provider Supabase Storage para imagens.
 
 ## Limites
 
 - O schema de negocio implementado cobre catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, perfis logisticos, caixas fisicas, selecao de frete, pedidos, pagamentos, acompanhamento, sessoes administrativas e auditoria operacional de pedidos.
-- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos, mutacoes auditadas de producao/envio e gestao de catalogo, configuracoes internas de produto, receita, materiais, cores e caixas. Alteracao de valores/dados do pedido, integracao de postagem/rastreio e upload de imagens permanecem fora do escopo.
-- A integracao comercial externa implementada nesta fase e somente cotacao SuperFrete. Etiqueta, postagem e rastreio permanecem fora do escopo.
+- Admin implementa autenticacao, autorizacao, sessao, logout, dashboard, listagem/detalhe de pedidos, mutacoes auditadas de producao/envio, gestao de catalogo, configuracoes internas de produto, receita, materiais, cores, caixas e imagens publicas do catalogo via upload direto ao Supabase Storage. Alteracao de valores/dados do pedido e integracao de postagem/rastreio permanecem fora do escopo.
+- Integracoes externas implementadas incluem cotacao SuperFrete, pagamentos InfinitePay, webhook InfinitePay, ViaCEP, Supabase Auth e Supabase Storage. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
-- Nao ha upload de imagens pelo app.
+- Upload de imagens existe apenas na tela Admin de imagens, usando signed upload URL e finalizacao server-side; o backend nao recebe os bytes do arquivo.
 
 ## Decisoes
 

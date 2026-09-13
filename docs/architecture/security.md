@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e operacao administrativa basica IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e operacao administrativa com imagens IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -57,11 +57,13 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 
 `DATABASE_URL` e secret e deve ser configurada apenas em `.env` local ignorado pelo Git ou em secrets do ambiente de hosting. A aplicacao nao deve imprimir `DATABASE_URL`, senha, host privado, project ref ou connection string em logs, respostas HTTP ou mensagens publicas de erro.
 
-`SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao.
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada para conexao PostgreSQL da aplicacao nem como credencial primaria da aplicacao.
+
+`SUPABASE_SECRET_KEY` e usada somente no backend para operacoes administrativas de Supabase Storage da Fase 13.4. Ela deve usar o prefixo `sb_secret_`, ficar apenas em `.env` local ignorado pelo Git ou nas variaveis do hosting, e nunca ser logada, renderizada, enviada ao navegador, colocada em URL ou documentada com valor real.
 
 `SUPERFRETE_API_TOKEN` e secret operacional. Ele deve existir somente em `.env` local ignorado pelo Git ou nas variaveis de ambiente do hosting. O token nao deve ser logado, renderizado, armazenado no banco, enviado ao navegador, colocado em URL ou exposto em mensagens de erro.
 
-`SUPABASE_PUBLISHABLE_KEY` identifica a aplicacao perante o Supabase e nao concede autorizacao administrativa. Mesmo assim, valores reais nao devem ser escritos em documentacao, testes ou logs. `SUPABASE_SECRET_KEY` e `SUPABASE_SERVICE_ROLE_KEY` nao sao usadas pela Fase 13.1.
+`SUPABASE_PUBLISHABLE_KEY` identifica a aplicacao perante o Supabase e nao concede autorizacao administrativa. Mesmo assim, valores reais nao devem ser escritos em documentacao, testes ou logs.
 
 ## Catalogo publico
 
@@ -78,7 +80,9 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - `product_images.storage_path` deve ser caminho relativo de bucket, nunca URL absoluta.
 - URLs publicas de imagens sao montadas centralizadamente no backend a partir de `SUPABASE_URL` e do bucket `product-images`.
 - O bucket `product-images` e publico para leitura de imagens de catalogo, mas nao existe policy publica de upload, update ou delete.
-- `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
+- Upload administrativo de imagens usa signed upload URL gerada pelo backend apos sessao Admin, `Origin`/`Referer`, produto, configuracao, MIME e tamanho serem validados.
+- O backend gera o object path; o navegador nao escolhe bucket/path arbitrario.
+- `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao.
 
 ## Carrinho anonimo
 
@@ -184,7 +188,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - `GET /admin/pedidos`, `GET /admin/pedidos/{order_id}`, `POST /admin/pedidos/{order_id}/producao` e `POST /admin/pedidos/{order_id}/envio` exigem sessao administrativa valida.
 - Rotas de catalogo Admin em `/admin/produtos`, `/admin/categorias`, `/admin/materiais`, `/admin/cores` e `/admin/caixas` tambem exigem sessao administrativa valida.
 - POSTs administrativos de producao, envio e catalogo reutilizam validacao centralizada de `Origin`/`Referer`; `Origin: null` e rejeitado independentemente de `Referer`.
-- Formularios administrativos possuem limite de body de 256 KiB; a Fase 13.3 nao possui upload de arquivo.
+- Formularios administrativos possuem limite de body de 256 KiB. Endpoints JSON de imagens possuem limite de 64 KiB e recebem somente metadados; bytes de imagem vao direto do navegador ao Supabase Storage por signed upload URL.
 - O ator de auditoria operacional vem de `Session.AuthUserID`, nunca de campo de formulario, query string ou header enviado pelo navegador.
 - Mutacoes administrativas de producao/envio atualizam `order_fulfillment` e inserem `admin_order_events` em uma unica transacao PostgreSQL com lock do pedido.
 - Listagem administrativa de pedidos nao deve carregar PII nem identificadores tecnicos de pagamento.
@@ -215,14 +219,14 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 ## Limites
 
 - Autenticacao e autorizacao administrativas basicas estao implementadas apenas para um usuario Supabase Auth autorizado por UUID.
-- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA/WAF, alteracao de valores/dados de pedidos ou upload de imagens nesta subfase.
+- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA/WAF ou alteracao de valores/dados de pedidos nesta subfase.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
 - Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
-- Nao ha upload de imagens, escrita publica em Storage, alteracao administrativa de valores/dados de pedidos ou postagem/rastreio externo.
+- Nao ha escrita publica em Storage, alteracao administrativa de valores/dados de pedidos ou postagem/rastreio externo. Upload de imagens existe apenas no Admin, com signed upload URL e finalizacao server-side.
 
 ## Praticas recomendadas
 

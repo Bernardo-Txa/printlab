@@ -1,6 +1,6 @@
 # Painel administrativo
 
-Status: Fases 13.1 e 13.2 CONCLUIDAS; Fase 13.3 com implementacao concluida e validacao real pendente; Fase 13.4 PLANEJADA.
+Status: Fases 13.1, 13.2 e 13.3 CONCLUIDAS; Fase 13.4 com implementacao concluida e validacao real pendente.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
@@ -8,8 +8,8 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
 - 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
-- 13.3 — catalogo, variantes, materiais, cores e caixas: implementacao concluida; validacao real pendente.
-- 13.4 — imagens e Supabase Storage: planejada.
+- 13.3 — catalogo, variantes, materiais, cores e caixas: concluida com validacao real em producao.
+- 13.4 — imagens e Supabase Storage: implementacao concluida; validacao real pendente.
 
 ## Fase 13.1 implementada
 
@@ -156,9 +156,71 @@ Regras administrativas:
 - novas escolhas de receita usam somente materiais e cores ativos;
 - produto ou variante pode ter perfil logistico completo ou nenhum perfil; perfis parciais sao rejeitados;
 - caixa inativa deixa de participar de novas cotacoes, sem apagar selecoes historicas;
-- imagens permanecem fora do escopo e ficam para a Fase 13.4.
+- na Fase 13.3, imagens permaneceram fora do escopo e foram implementadas depois na Fase 13.4.
 
 Mutacoes de catalogo usam POST, sessao administrativa obrigatoria, validacao centralizada de `Origin`/`Referer`, rejeicao de `Origin: null`, limite de body de 256 KiB e redirecionamento PRG com `303 See Other` em sucesso.
+
+## Validacao real da Fase 13.3
+
+A validacao real em producao da Fase 13.3 e do refinamento 13.3A foi concluida pelo responsavel.
+
+Evidencias funcionais confirmadas:
+
+- carrinho validado com configuracoes;
+- Admin validado para catalogo/configuracoes;
+- produto com uma unica configuracao ativa nao expoe seletor artificial;
+- produtos com multiplas configuracoes continuam oferecendo escolha publica;
+- comportamento com multiplas configuracoes e default validado;
+- `product_variants` permanece modelo interno, mas a UI usa "Configuracao" para o administrador.
+
+## Fase 13.4 implementada
+
+Rotas de imagens:
+
+- `GET /admin/produtos/{product_id}/imagens`
+- `POST /admin/produtos/{product_id}/imagens/upload-url`
+- `POST /admin/produtos/{product_id}/imagens/finalizar`
+- `POST /admin/produtos/{product_id}/imagens/{image_id}/substituir-url`
+- `POST /admin/produtos/{product_id}/imagens/{image_id}/finalizar-substituicao`
+- `POST /admin/produtos/{product_id}/imagens/{image_id}/remover`
+- `POST /admin/produtos/{product_id}/imagens/{image_id}/ordem`
+- `POST /admin/produtos/{product_id}/imagens/{image_id}/principal`
+
+A tela de imagens permite:
+
+- visualizar thumbnails cadastradas;
+- associar imagem ao produto inteiro;
+- associar imagem opcionalmente a uma Configuracao;
+- enviar nova imagem;
+- substituir imagem sem sobrescrever o object path anterior;
+- alterar ordem;
+- marcar imagem principal;
+- remover associacao e, quando seguro, remover objeto gerenciado no Storage.
+
+O upload nao envia bytes pelo backend Go/Vercel. O fluxo e:
+
+1. Browser Admin envia ao Go somente metadados do arquivo.
+2. Go valida sessao Admin, `Origin`/`Referer`, produto, Configuracao, MIME e tamanho.
+3. Go gera object path imprevisivel em `products/{product_uuid}/{random}.ext`.
+4. Go solicita signed upload URL ao Supabase Storage usando `SUPABASE_SECRET_KEY`.
+5. Browser envia o arquivo diretamente ao Supabase Storage.
+6. Browser chama a finalizacao no Go.
+7. Go confirma o objeto no Storage e cria/atualiza `public.product_images`.
+
+Regras:
+
+- MIME aceitos pela aplicacao: `image/jpeg`, `image/png`, `image/webp`.
+- SVG, GIF, PDF, video e arquivos genericos nao sao aceitos.
+- A extensao e gerada pelo backend a partir do MIME validado: `.jpg`, `.png` ou `.webp`.
+- O nome original do arquivo nao define o object path.
+- O limite da aplicacao e 5 MB por imagem, alinhado ao bucket `product-images` ja existente.
+- Cada substituicao cria novo path; nao ha overwrite no mesmo objeto.
+- Imagem de Configuracao exige que a Configuracao pertenca ao mesmo produto.
+- Falha de INSERT/UPDATE apos upload tenta cleanup best-effort do objeto recem-enviado.
+- Remocao fisica so ocorre para path gerenciado e validado no prefixo `products/{product_id}/`.
+- Imagens legadas/manuais fora desse prefixo podem ter associacao removida do banco, mas nao geram DELETE arbitrario.
+
+`public.product_images` ja possuia `storage_path`, `sort_order` e `is_primary`; por isso nenhuma migration foi criada para a 13.4.
 
 ## Seguranca
 
@@ -172,17 +234,21 @@ Mutacoes de catalogo usam POST, sessao administrativa obrigatoria, validacao cen
 - O detalhe de pedido pode renderizar PII operacional somente apos sessao administrativa valida.
 - Eventos de auditoria guardam UUID do usuario Supabase Auth, tipo de evento, status anterior, status novo e horario; nao armazenam PII de cliente.
 - Paginas de catalogo Admin nao fazem join com pedidos e nao carregam PII, dados InfinitePay, `order_id` interno ou URL de checkout.
-- `admin_order_events` continua exclusivo para operacoes de pedidos; a 13.3 nao cria auditoria de catalogo.
+- A 13.4 usa `SUPABASE_SECRET_KEY` somente no backend e apenas apos validar sessao Admin, origem e escopo da operacao.
+- `SUPABASE_SECRET_KEY` nunca deve aparecer em HTML, JavaScript, logs, responses ou documentacao com valor real.
+- Endpoints de imagem nao aceitam bucket/path arbitrario enviado pelo cliente; o backend gera o path e limita ao bucket `product-images`.
+- Signed upload URL/token e entregue apenas ao Admin autenticado e nao e persistido.
+- `admin_order_events` continua exclusivo para operacoes de pedidos; auditoria de catalogo/imagens pode ser avaliada futuramente em estrutura propria.
 
 ## Limites atuais
 
 - Nao ha alteracao de dados comerciais do pedido, valores, cliente, endereco ou pagamento.
-- Nao ha upload de imagens.
 - Nao ha papeis multiplos.
 - Nao ha MFA obrigatorio nem CAPTCHA/WAF na aplicacao.
-- Nao ha uso de `SUPABASE_SECRET_KEY` ou service role.
 - Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
 - Nao ha estoque fisico de filamento, marcas, lotes, carretel, custos calculados ou multiplos admins/papeis.
+- Nao ha crop, compressao avancada, bulk upload, thumbnails persistidos multiplos ou DAM.
+- A Fase 13.4 ainda nao foi validada em producao.
 
 ## Decisoes pendentes
 

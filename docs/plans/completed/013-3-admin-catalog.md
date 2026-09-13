@@ -1,6 +1,6 @@
 # Fase 13.3 — Catalogo, variantes, materiais, cores e caixas
 
-Status: implementacao concluida; validacao real pendente.
+Status: concluida.
 
 ## Objetivo
 
@@ -61,5 +61,9 @@ Tornar o catalogo e os dados operacionais basicos da PrintLab administraveis pel
 - Testes de parsers, validacoes, handlers e regressao de repository: concluido.
 - Documentacao de produto, schema, seguranca, roadmap, plano e ADR atualizada: concluido.
 - Nenhuma migration criada: concluido.
-- Validacoes locais executadas: pendente ate fechamento do commit.
-- Validacao real em producao: pendente.
+- Validacoes locais executadas: concluido.
+- Validacao real em producao pelo responsavel: concluido.
+
+## Validacao real
+
+A validacao real em producao foi concluida pelo responsavel junto com o refinamento 13.3A. Foram confirmados carrinho, Admin, comportamento com multiplas configuracoes, default de configuracao e ausencia de seletor artificial quando existe uma unica configuracao ativa.

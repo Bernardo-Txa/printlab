@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e fundacao administrativa IMPLEMENTADOS.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento, Admin e gestao administrativa de imagens IMPLEMENTADOS.
 
 ## Requisitos
 
@@ -27,6 +27,7 @@ Variaveis de runtime:
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
 - `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images` e para login Admin quando configurado.
 - `SUPABASE_PUBLISHABLE_KEY`: publishable key Supabase. Opcional; usada no login Admin.
+- `SUPABASE_SECRET_KEY`: secret server-side Supabase com prefixo `sb_secret_`. Necessaria para upload/substituicao/remocao de imagens no Admin 13.4; nunca versionar valor real.
 - `ADMIN_SUPABASE_USER_ID`: UUID do unico usuario Supabase Auth autorizado no Admin.
 - `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
 - `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
@@ -40,6 +41,8 @@ Sem `DATABASE_URL`, o servidor inicia, `GET /` funciona, `GET /health` retorna 2
 Sem `SUPABASE_URL`, catalogo e detalhe continuam funcionando; imagens cadastradas caem no placeholder visual porque a URL publica nao pode ser montada.
 
 Sem `SUPABASE_PUBLISHABLE_KEY` ou `ADMIN_SUPABASE_USER_ID`, a aplicacao publica continua iniciando. `/admin/login` retorna pagina de indisponibilidade segura sem revelar qual variavel esta ausente.
+
+Sem `SUPABASE_SECRET_KEY`, a aplicacao publica e o restante do Admin continuam iniciando, mas a tela administrativa de imagens nao autoriza uploads/substituicoes no Storage.
 
 Sem configuracao SuperFrete, a rota `/checkout/frete` nao faz chamada externa e exibe estado de indisponibilidade depois que carrinho e dados forem resolvidos. Se qualquer variavel SuperFrete for preenchida, todas as variaveis obrigatorias precisam estar validas para evitar configuracao parcial.
 

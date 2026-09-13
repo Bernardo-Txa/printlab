@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1 e 13.2 concluidas. Fase 13 em andamento; Fase 13.3 e refinamento 13.3A com implementacao concluida e validacao real pendente; Fases 13.4 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2 e 13.3 concluidas. Fase 13 em andamento; Fase 13.4 com implementacao concluida e validacao real pendente; Fases 14 a 17 planejadas.
 
 ## Status das fases
 
@@ -29,8 +29,8 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 13 — Painel administrativo | Em andamento |
 | Fase 13.1 — Autenticacao administrativa | Concluida |
 | Fase 13.2 — Pedidos, producao, envio e auditoria | Concluida |
-| Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Implementacao concluida; validacao real pendente |
-| Fase 13.4 — Imagens e Supabase Storage | Planejada |
+| Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Concluida |
+| Fase 13.4 — Imagens e Supabase Storage | Implementacao concluida; validacao real pendente |
 | Fase 14 — Seguranca | Planejada |
 | Fase 15 — Testes e observabilidade | Planejada |
 | Fase 16 — SEO e performance | Planejada |
@@ -483,8 +483,8 @@ Definition of Done:
 - 13.1: permissoes documentadas para unico administrador por UUID: concluido ✅
 - 13.1: testes aplicaveis passam: concluido ✅
 - 13.2: operacoes criticas auditaveis quando necessario: concluido ✅
-- 13.3: catalogo administrativo sem hard delete: implementacao concluida; validacao real pendente
-- 13.4: imagens e Supabase Storage: planejado
+- 13.3: catalogo administrativo sem hard delete: concluido ✅
+- 13.4: imagens e Supabase Storage: implementacao concluida; validacao real pendente
 
 ## Fase 13.1 — Autenticacao administrativa
 
@@ -540,7 +540,7 @@ Definition of Done:
 
 Objetivo: permitir gestao interna do catalogo e dados operacionais basicos relacionados.
 
-Status: Implementacao concluida; validacao real pendente.
+Status: Concluida.
 
 Principais entregas:
 
@@ -562,13 +562,35 @@ Definition of Done:
 - Testes aplicaveis de parser, validacao, handlers e regressao de repository: concluido ✅
 - Documentacao, plano ativo e ADR atualizados: concluido ✅
 - 13.3A — Semantica publica/Admin de configuracoes refinada sem migration: concluido ✅
-- Validacao real apos deploy: pendente
+- Validacao real em producao pelo responsavel: concluido ✅
 
 ## Fase 13.4 — Imagens e Supabase Storage
 
 Objetivo: permitir upload e gestao segura de imagens de catalogo.
 
-Status: Planejada.
+Status: Implementacao concluida; validacao real pendente.
+
+Principais entregas:
+
+- Subpagina de imagens em `/admin/produtos/{product_id}/imagens`.
+- Upload direto navegador -> Supabase Storage com signed upload URL/token.
+- Autorizacao e finalizacao pelo Go Admin antes/depois do upload.
+- Uso server-side de `SUPABASE_SECRET_KEY`, somente apos sessao Admin e validacao `Origin`/`Referer`.
+- Validacao de produto, configuracao, MIME e tamanho antes da autorizacao.
+- Confirmacao de objeto no Storage antes de inserir/atualizar `public.product_images`.
+- Remocao, substituicao, ordenacao e imagem principal.
+- Preservacao de imagens legadas/manuais sem DELETE arbitrario.
+- Nenhuma migration nova; uso de `product_images.storage_path`, `sort_order` e `is_primary` existentes.
+
+Definition of Done:
+
+- Schema `product_images` e bucket `product-images` inspecionados: concluido ✅
+- Provider Supabase Storage testavel sem chamadas reais em testes: concluido ✅
+- Rotas Admin e UI SSR implementadas com JavaScript nativo restrito ao upload: concluido ✅
+- `SUPABASE_SECRET_KEY` documentada e validada pelo prefixo `sb_secret_`: concluido ✅
+- Testes de config, Storage, service, handlers e assets estaticos: concluido ✅
+- Documentacao, plano ativo e ADR atualizados: concluido ✅
+- Validacao real apos deploy: pendente
 
 ## Fase 14 — Seguranca
 

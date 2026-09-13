@@ -32,6 +32,10 @@ var (
 	ErrDuplicateSlug      = errors.New("admin duplicate slug")
 	ErrDuplicateSKU       = errors.New("admin duplicate sku")
 	ErrUnavailable        = errors.New("admin unavailable")
+	ErrStorageUnavailable = errors.New("admin storage unavailable")
+	ErrInvalidImageType   = errors.New("admin invalid image type")
+	ErrImageTooLarge      = errors.New("admin image too large")
+	ErrInvalidImagePath   = errors.New("admin invalid image path")
 )
 
 type AuthUser struct {

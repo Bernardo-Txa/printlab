@@ -1,12 +1,12 @@
 # Frontend
 
-Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR, CTA real de pagamento, acompanhamento seguro SSR e admin operacional SSR IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
+Status: fundacao visual, catalogo SSR, selecao SSR de variantes, carrinho SSR, checkout SSR ate revisao, pedido SSR, CTA real de pagamento, acompanhamento seguro SSR e admin operacional com imagens IMPLEMENTADOS; interacoes HTMX futuras PLANEJADAS.
 
 ## Responsabilidade
 
 O frontend apresenta paginas HTML renderizadas no servidor. A experiencia deve ser simples, rapida e acessivel.
 
-Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar configuracao por links SSR quando houver escolha publica, sem JavaScript obrigatorio.
+Nesta fase, a homepage em `GET /`, o catalogo em `GET /produtos`, o detalhe de produto em `GET /produtos/{slug}`, o carrinho em `GET /carrinho`, as etapas de dados, frete e revisao do checkout, a pagina de pedido em `GET /pedido/{id}`, a pagina de retorno de pagamento em `GET /pagamento/retorno`, o acompanhamento em `GET /acompanhar/{public_tracking_id}` e as paginas administrativas em `/admin` sao renderizados com `templ`, usando Tailwind CSS compilado localmente. O detalhe aceita `?variante=<slug>` para trocar configuracao por links SSR quando houver escolha publica, sem JavaScript obrigatorio. A tela Admin de imagens usa JavaScript nativo pequeno e especifico para upload direto ao Supabase Storage.
 
 A logo oficial inicial da PrintLab foi integrada ao header e ao hero da homepage. Ela deve ser tratada como fonte de verdade visual nesta etapa, sem redesenho ou alteracao do conteudo da imagem.
 
@@ -28,7 +28,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - A pagina de acompanhamento nao deve exibir itens, produtos, valores, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, identificadores de pagamento, peso, dimensoes, filamento, material ou cor.
 - Dashboard, listagem administrativa de pedidos e telas administrativas de catalogo nao devem renderizar PII, checkout URL, `transaction_nsu`, `invoice_slug` ou dados operacionais detalhados de pagamento.
 - Detalhe administrativo de pedido pode renderizar PII e dados operacionais completos somente apos sessao administrativa valida.
-- Telas administrativas de catalogo nao devem depender de JavaScript obrigatorio nem implementar upload de imagens nesta fase.
+- Telas administrativas gerais de catalogo nao devem depender de JavaScript obrigatorio; a subpagina de imagens e a excecao tecnica controlada, usando JavaScript nativo apenas para upload direto ao Supabase Storage.
 - A revisao e a pagina de pedido nao devem exibir SKU interno, tempo de impressao, consumo de filamento, componentes de receita, materiais, cores, caixa fisica, peso ou dimensoes do pacote.
 - A UI de frete nao precisa expor caixa fisica, dimensoes internas/externas ou peso operacional ao consumidor.
 - O formulario de dados usa mascaras progressivas e consulta CEP por endpoint interno da aplicacao; sem JavaScript, o preenchimento manual continua funcionando.
@@ -54,7 +54,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir pedido criado por UUID com CTA real `Pagar agora` apenas quando InfinitePay estiver configurada; caso contrario mostrar indisponibilidade segura.
 - Exibir pedido pago com `Pagamento confirmado`, sem botao de pagamento.
 - Exibir acompanhamento por `public_tracking_id` com tres cards de progresso: pagamento, producao e envio.
-- Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional, forms POST protegidos para producao/envio e gestao SSR de catalogo, configuracoes do produto, receita, materiais, cores e caixas, sem signup, login social, lembrar de mim ou recuperacao de senha nesta subfase.
+- Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional, forms POST protegidos para producao/envio, gestao SSR de catalogo, configuracoes do produto, receita, materiais, cores, caixas e imagens de catalogo. A tela de imagens usa JavaScript nativo apenas para upload direto ao Supabase Storage, sem transformar o Admin em SPA.
 - Incluir meta robots `noindex, nofollow, noarchive` nas paginas privadas/noindex.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
@@ -70,6 +70,7 @@ web/templates/           paginas templ
 web/assets/css/app.css   CSS fonte e design tokens
 web/static/css/app.css   CSS compilado, embutido no binario e servido pela aplicacao
 web/static/js/checkout.js   melhoria progressiva de mascaras e consulta CEP para checkout
+web/static/js/admin-images.js   upload direto de imagens Admin para Supabase Storage
 web/static/images/branding/logo-printlab-primary.png   logo oficial inicial da marca
 ```
 

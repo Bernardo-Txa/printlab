@@ -1,6 +1,6 @@
 # Fase 13.3A — Refinamento de configuracoes do produto
 
-Status: implementacao concluida; validacao real pendente.
+Status: concluida.
 
 ## Objetivo
 
@@ -53,4 +53,14 @@ Na loja publica, uma escolha so aparece quando houver duas ou mais configuracoes
 - Testes de produto, carrinho, Admin e handlers atualizados.
 - Documentacao atualizada.
 - Validacoes locais executadas antes do commit.
-- Validacao real pos-deploy pendente.
+- Validacao real em producao pelo responsavel concluida.
+
+## Validacao real
+
+A validacao real em producao confirmou:
+
+- produto com uma unica configuracao ativa nao expoe seletor artificial;
+- produtos com multiplas configuracoes continuam oferecendo escolha publica;
+- configuracao default funciona como opcao inicial quando ha mais de uma configuracao ativa;
+- carrinho preserva a configuracao resolvida;
+- Admin usa a terminologia "Configuracao" sem alterar o modelo interno `product_variants`.

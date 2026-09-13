@@ -26,6 +26,13 @@ type CatalogRepository interface {
 	GetAdminProductForm(ctx context.Context, productID string) (AdminProductFormPage, error)
 	CreateAdminProduct(ctx context.Context, input AdminProductSaveInput) (string, error)
 	UpdateAdminProduct(ctx context.Context, input AdminProductSaveInput) error
+	GetAdminProductImagesPage(ctx context.Context, productID string) (AdminProductImagesPage, error)
+	EnsureAdminImageVariant(ctx context.Context, productID string, variantID string) error
+	CreateAdminProductImage(ctx context.Context, input AdminImageCreateInput) (string, error)
+	ReplaceAdminProductImage(ctx context.Context, input AdminImageReplaceInput) (AdminProductImage, error)
+	DeleteAdminProductImage(ctx context.Context, productID string, imageID string) (AdminProductImage, error)
+	UpdateAdminProductImageOrder(ctx context.Context, input AdminImageOrderInput) error
+	MarkAdminProductImagePrimary(ctx context.Context, productID string, imageID string) error
 	ListAdminCategories(ctx context.Context) (AdminCategoryListPage, error)
 	GetAdminCategoryForm(ctx context.Context, categoryID string) (AdminCategoryFormPage, error)
 	CreateAdminCategory(ctx context.Context, input AdminCategorySaveInput) (string, error)
@@ -151,6 +158,7 @@ func PrepareAdminProductListItem(item *AdminProductListItem) {
 	}
 	item.DetailURL = "/admin/produtos/" + strings.ToLower(item.ID)
 	item.VariantsURL = item.DetailURL
+	item.ImagesURL = item.DetailURL + "/imagens"
 }
 
 func PrepareAdminVariantListItems(items []AdminVariantListItem) []AdminVariantListItem {

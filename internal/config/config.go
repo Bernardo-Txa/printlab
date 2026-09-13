@@ -25,6 +25,7 @@ var (
 	ErrInvalidSuperFreteContactEmail     = errors.New("invalid SUPERFRETE_CONTACT_EMAIL")
 	ErrInvalidSuperFreteServices         = errors.New("invalid SUPERFRETE_SERVICES")
 	ErrInvalidInfinitePayHandle          = errors.New("invalid INFINITEPAY_HANDLE")
+	ErrInvalidSupabaseSecretKey          = errors.New("invalid SUPABASE_SECRET_KEY")
 )
 
 var infinitePayHandlePattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
@@ -39,6 +40,8 @@ type Config struct {
 	DBMaxConns                  int32
 	SupabaseURL                 string
 	SupabasePublishableKey      string
+	SupabaseSecretKey           string
+	SupabaseStorageConfigured   bool
 	AdminSupabaseUserID         string
 	AdminAuthConfigured         bool
 	SuperFreteConfigured        bool
@@ -87,6 +90,10 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 
 	supabaseURL := strings.TrimRight(strings.TrimSpace(value(lookup, "SUPABASE_URL")), "/")
 	supabasePublishableKey := strings.TrimSpace(value(lookup, "SUPABASE_PUBLISHABLE_KEY"))
+	supabaseSecretKey, err := parseSupabaseSecretKey(lookup)
+	if err != nil {
+		return Config{}, err
+	}
 	adminSupabaseUserID := normalizeOptionalUUID(value(lookup, "ADMIN_SUPABASE_USER_ID"))
 
 	return Config{
@@ -99,6 +106,8 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		DBMaxConns:                  dbMaxConns,
 		SupabaseURL:                 supabaseURL,
 		SupabasePublishableKey:      supabasePublishableKey,
+		SupabaseSecretKey:           supabaseSecretKey,
+		SupabaseStorageConfigured:   supabaseStorageConfigured(supabaseURL, supabaseSecretKey),
 		AdminSupabaseUserID:         adminSupabaseUserID,
 		AdminAuthConfigured:         adminAuthConfigured(supabaseURL, supabasePublishableKey, adminSupabaseUserID),
 		SuperFreteConfigured:        superFrete.configured,
@@ -155,7 +164,27 @@ func adminAuthConfigured(supabaseURL string, publishableKey string, adminUserID 
 		return false
 	}
 
-	parsed, err := url.Parse(strings.TrimSpace(supabaseURL))
+	return validHTTPURL(supabaseURL)
+}
+
+func parseSupabaseSecretKey(lookup envLookup) (string, error) {
+	secretKey := strings.TrimSpace(value(lookup, "SUPABASE_SECRET_KEY"))
+	if secretKey == "" {
+		return "", nil
+	}
+	if !strings.HasPrefix(secretKey, "sb_secret_") {
+		return "", ErrInvalidSupabaseSecretKey
+	}
+
+	return secretKey, nil
+}
+
+func supabaseStorageConfigured(supabaseURL string, secretKey string) bool {
+	return strings.TrimSpace(secretKey) != "" && validHTTPURL(supabaseURL)
+}
+
+func validHTTPURL(value string) bool {
+	parsed, err := url.Parse(strings.TrimSpace(value))
 	return err == nil && parsed.Scheme != "" && parsed.Host != "" && (parsed.Scheme == "http" || parsed.Scheme == "https")
 }
 

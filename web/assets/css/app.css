@@ -1253,6 +1253,46 @@
     @apply text-base font-semibold text-foreground;
   }
 
+  .admin-image-list {
+    @apply mt-6 grid gap-5;
+  }
+
+  .admin-image-card {
+    @apply grid gap-5 rounded-card border border-border bg-surface p-5 shadow-soft lg:grid-cols-[14rem_1fr];
+  }
+
+  .admin-image-preview {
+    @apply flex aspect-square min-h-44 items-center justify-center overflow-hidden rounded-card border border-border bg-surface-muted text-center text-sm font-semibold text-muted;
+  }
+
+  .admin-image-preview img {
+    @apply h-full w-full object-cover;
+  }
+
+  .admin-image-content {
+    @apply min-w-0;
+  }
+
+  .admin-image-actions {
+    @apply mt-5 grid gap-4;
+  }
+
+  .admin-image-upload-form h4 {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .admin-image-status {
+    @apply min-h-5 text-sm font-semibold text-muted;
+  }
+
+  .admin-image-status-error {
+    @apply text-danger;
+  }
+
+  .admin-image-progress {
+    @apply h-3 w-full overflow-hidden rounded-control border border-border bg-surface-muted accent-primary;
+  }
+
   .review-section-header {
     @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
   }

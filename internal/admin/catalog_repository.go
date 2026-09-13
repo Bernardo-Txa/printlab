@@ -175,8 +175,263 @@ func (r *PostgresRepository) GetAdminProductForm(ctx context.Context, productID 
 	page.Title = "Editar produto"
 	page.Action = "/admin/produtos/" + productID
 	page.SubmitLabel = "Salvar produto"
+	page.ImagesURL = page.Action + "/imagens"
 
 	return page, nil
+}
+
+func (r *PostgresRepository) GetAdminProductImagesPage(ctx context.Context, productID string) (AdminProductImagesPage, error) {
+	if r == nil || r.pool == nil {
+		return AdminProductImagesPage{}, ErrUnavailable
+	}
+	product, err := r.adminProductHeader(ctx, productID)
+	if err != nil {
+		return AdminProductImagesPage{}, err
+	}
+	variants, err := r.adminImageVariantOptions(ctx, productID)
+	if err != nil {
+		return AdminProductImagesPage{}, err
+	}
+	images, err := r.adminProductImages(ctx, productID, product.Name)
+	if err != nil {
+		return AdminProductImagesPage{}, err
+	}
+
+	return AdminProductImagesPage{
+		Product:        product,
+		VariantOptions: variants,
+		Images:         images,
+	}, nil
+}
+
+func (r *PostgresRepository) EnsureAdminImageVariant(ctx context.Context, productID string, variantID string) error {
+	if r == nil || r.pool == nil {
+		return ErrUnavailable
+	}
+	var exists bool
+	err := r.pool.QueryRow(ctx, `
+		select exists (
+			select 1
+			from public.product_variants
+			where product_id = $1::uuid
+				and id = $2::uuid
+		)
+	`, productID, variantID).Scan(&exists)
+	if err != nil {
+		return ErrUnavailable
+	}
+	if !exists {
+		return ErrCatalogNotFound
+	}
+
+	return nil
+}
+
+func (r *PostgresRepository) CreateAdminProductImage(ctx context.Context, input AdminImageCreateInput) (string, error) {
+	if r == nil || r.pool == nil {
+		return "", ErrUnavailable
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return "", ErrUnavailable
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	if input.IsPrimary {
+		if err := unsetPrimaryImage(ctx, tx, input.ProductID, input.VariantID, ""); err != nil {
+			return "", err
+		}
+	}
+
+	var id string
+	err = tx.QueryRow(ctx, `
+		insert into public.product_images (
+			product_id,
+			variant_id,
+			storage_path,
+			alt_text,
+			sort_order,
+			is_primary
+		) values (
+			$1::uuid,
+			$2::uuid,
+			$3,
+			$4,
+			$5,
+			$6
+		)
+		returning id::text
+	`, input.ProductID, nullableUUID(input.VariantID), input.StoragePath, nullableText(input.AltText), input.SortOrder, input.IsPrimary).Scan(&id)
+	if err != nil {
+		return "", mapCatalogError(err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", ErrUnavailable
+	}
+
+	return id, nil
+}
+
+func (r *PostgresRepository) ReplaceAdminProductImage(ctx context.Context, input AdminImageReplaceInput) (AdminProductImage, error) {
+	if r == nil || r.pool == nil {
+		return AdminProductImage{}, ErrUnavailable
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return AdminProductImage{}, ErrUnavailable
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	oldImage, err := scanAdminProductImage(tx.QueryRow(ctx, `
+		select
+			id::text,
+			product_id::text,
+			coalesce(variant_id::text, ''),
+			storage_path,
+			coalesce(alt_text, ''),
+			sort_order,
+			is_primary,
+			''
+		from public.product_images
+		where product_id = $1::uuid
+			and id = $2::uuid
+		for update
+	`, input.ProductID, input.ID))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminProductImage{}, ErrCatalogNotFound
+		}
+		return AdminProductImage{}, ErrUnavailable
+	}
+
+	if input.IsPrimary {
+		if err := unsetPrimaryImage(ctx, tx, input.ProductID, input.VariantID, input.ID); err != nil {
+			return AdminProductImage{}, err
+		}
+	}
+
+	tag, err := tx.Exec(ctx, `
+		update public.product_images
+		set
+			variant_id = $3::uuid,
+			storage_path = $4,
+			alt_text = $5,
+			sort_order = $6,
+			is_primary = $7
+		where product_id = $1::uuid
+			and id = $2::uuid
+	`, input.ProductID, input.ID, nullableUUID(input.VariantID), input.StoragePath, nullableText(input.AltText), input.SortOrder, input.IsPrimary)
+	if err != nil {
+		return AdminProductImage{}, mapCatalogError(err)
+	}
+	if tag.RowsAffected() != 1 {
+		return AdminProductImage{}, ErrCatalogNotFound
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return AdminProductImage{}, ErrUnavailable
+	}
+
+	return oldImage, nil
+}
+
+func (r *PostgresRepository) DeleteAdminProductImage(ctx context.Context, productID string, imageID string) (AdminProductImage, error) {
+	if r == nil || r.pool == nil {
+		return AdminProductImage{}, ErrUnavailable
+	}
+	image, err := scanAdminProductImage(r.pool.QueryRow(ctx, `
+		delete from public.product_images
+		where product_id = $1::uuid
+			and id = $2::uuid
+		returning
+			id::text,
+			product_id::text,
+			coalesce(variant_id::text, ''),
+			storage_path,
+			coalesce(alt_text, ''),
+			sort_order,
+			is_primary,
+			''
+	`, productID, imageID))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminProductImage{}, ErrCatalogNotFound
+		}
+		return AdminProductImage{}, ErrUnavailable
+	}
+
+	return image, nil
+}
+
+func (r *PostgresRepository) UpdateAdminProductImageOrder(ctx context.Context, input AdminImageOrderInput) error {
+	if r == nil || r.pool == nil {
+		return ErrUnavailable
+	}
+	tag, err := r.pool.Exec(ctx, `
+		update public.product_images
+		set sort_order = $3
+		where product_id = $1::uuid
+			and id = $2::uuid
+	`, input.ProductID, input.ID, input.SortOrder)
+	if err != nil {
+		return mapCatalogError(err)
+	}
+	if tag.RowsAffected() != 1 {
+		return ErrCatalogNotFound
+	}
+
+	return nil
+}
+
+func (r *PostgresRepository) MarkAdminProductImagePrimary(ctx context.Context, productID string, imageID string) error {
+	if r == nil || r.pool == nil {
+		return ErrUnavailable
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return ErrUnavailable
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	var variantID string
+	err = tx.QueryRow(ctx, `
+		select coalesce(variant_id::text, '')
+		from public.product_images
+		where product_id = $1::uuid
+			and id = $2::uuid
+		for update
+	`, productID, imageID).Scan(&variantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrCatalogNotFound
+		}
+		return ErrUnavailable
+	}
+	if err := unsetPrimaryImage(ctx, tx, productID, variantID, imageID); err != nil {
+		return err
+	}
+	tag, err := tx.Exec(ctx, `
+		update public.product_images
+		set is_primary = true
+		where product_id = $1::uuid
+			and id = $2::uuid
+	`, productID, imageID)
+	if err != nil {
+		return mapCatalogError(err)
+	}
+	if tag.RowsAffected() != 1 {
+		return ErrCatalogNotFound
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return ErrUnavailable
+	}
+
+	return nil
 }
 
 func (r *PostgresRepository) CreateAdminProduct(ctx context.Context, input AdminProductSaveInput) (string, error) {
@@ -1143,6 +1398,144 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 	}
 
 	return PrepareAdminVariantListItems(items), nil
+}
+
+func (r *PostgresRepository) adminImageVariantOptions(ctx context.Context, productID string) ([]AdminImageVariantOption, error) {
+	rows, err := r.pool.Query(ctx, `
+		select id::text, name, is_active
+		from public.product_variants
+		where product_id = $1::uuid
+		order by is_active desc, is_default desc, sort_order asc, name asc, id asc
+	`, productID)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+
+	var options []AdminImageVariantOption
+	for rows.Next() {
+		var option AdminImageVariantOption
+		if err := rows.Scan(&option.ID, &option.Label, &option.Active); err != nil {
+			return nil, ErrUnavailable
+		}
+		if !option.Active {
+			option.Label += " — inativa"
+		}
+		options = append(options, option)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, ErrUnavailable
+	}
+
+	return options, nil
+}
+
+func (r *PostgresRepository) adminProductImages(ctx context.Context, productID string, productName string) ([]AdminProductImage, error) {
+	rows, err := r.pool.Query(ctx, `
+		select
+			pi.id::text,
+			pi.product_id::text,
+			coalesce(pi.variant_id::text, ''),
+			pi.storage_path,
+			coalesce(pi.alt_text, ''),
+			pi.sort_order,
+			pi.is_primary,
+			coalesce(v.name, '')
+		from public.product_images pi
+		left join public.product_variants v
+			on v.id = pi.variant_id
+			and v.product_id = pi.product_id
+		where pi.product_id = $1::uuid
+		order by
+			case when pi.variant_id is null then 0 else 1 end,
+			coalesce(v.sort_order, 0) asc,
+			coalesce(v.name, '') asc,
+			pi.is_primary desc,
+			pi.sort_order asc,
+			pi.created_at asc,
+			pi.id asc
+	`, productID)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+
+	var images []AdminProductImage
+	for rows.Next() {
+		image, err := scanAdminProductImage(rows)
+		if err != nil {
+			return nil, ErrUnavailable
+		}
+		if image.VariantID == "" {
+			image.AssociationLabel = productName
+		}
+		images = append(images, image)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, ErrUnavailable
+	}
+
+	return images, nil
+}
+
+type adminImageScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanAdminProductImage(scanner adminImageScanner) (AdminProductImage, error) {
+	var image AdminProductImage
+	if err := scanner.Scan(
+		&image.ID,
+		&image.ProductID,
+		&image.VariantID,
+		&image.StoragePath,
+		&image.AltText,
+		&image.SortOrder,
+		&image.IsPrimary,
+		&image.AssociationLabel,
+	); err != nil {
+		return AdminProductImage{}, err
+	}
+	if image.VariantID != "" && image.AssociationLabel == "" {
+		image.AssociationLabel = "Configuração removida"
+	}
+
+	return image, nil
+}
+
+type adminImageExecQuerier interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+}
+
+func unsetPrimaryImage(ctx context.Context, tx adminImageExecQuerier, productID string, variantID string, exceptImageID string) error {
+	if exceptImageID == "" {
+		_, err := tx.Exec(ctx, `
+			update public.product_images
+			set is_primary = false
+			where product_id = $1::uuid
+				and variant_id is not distinct from $2::uuid
+				and is_primary = true
+		`, productID, nullableUUID(variantID))
+		if err != nil {
+			return ErrUnavailable
+		}
+
+		return nil
+	}
+
+	_, err := tx.Exec(ctx, `
+		update public.product_images
+		set is_primary = false
+		where product_id = $1::uuid
+			and variant_id is not distinct from $2::uuid
+			and id <> $3::uuid
+			and is_primary = true
+	`, productID, nullableUUID(variantID), exceptImageID)
+	if err != nil {
+		return ErrUnavailable
+	}
+
+	return nil
 }
 
 func (r *PostgresRepository) adminProductHeader(ctx context.Context, productID string) (AdminProductHeader, error) {

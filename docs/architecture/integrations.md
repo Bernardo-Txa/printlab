@@ -1,6 +1,6 @@
 # Integracoes
 
-Status: SuperFrete IMPLEMENTADO e VALIDADO em Sandbox para cotacao de frete; InfinitePay IMPLEMENTADO com link, pagamento e webhook reais validados; Supabase Auth IMPLEMENTADO para Admin 13.1; demais integracoes comerciais PLANEJADAS.
+Status: SuperFrete IMPLEMENTADO e VALIDADO em Sandbox para cotacao de frete; InfinitePay IMPLEMENTADO com link, pagamento e webhook reais validados; Supabase Auth IMPLEMENTADO para Admin; Supabase Storage IMPLEMENTADO para imagens Admin com validacao real pendente; demais integracoes comerciais PLANEJADAS.
 
 ## Responsabilidade
 

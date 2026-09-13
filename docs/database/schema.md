@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas e auditoria operacional IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, imagens, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas e auditoria operacional IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -25,6 +25,8 @@ A Fase 13.2 adiciona `public.admin_order_events` para auditoria transacional de 
 A Fase 13.3 nao altera schema. Ela torna administraveis as tabelas ja existentes `public.categories`, `public.products`, `public.product_variants`, `public.materials`, `public.colors`, `public.variant_filaments` e `public.shipping_boxes`.
 
 A Fase 13.3A tambem nao altera schema: `public.product_variants` permanece como modelo interno de configuracoes do produto.
+
+A Fase 13.4 nao altera schema: a gestao administrativa de imagens usa `public.product_images` e o bucket `product-images` existentes.
 
 ## Convencoes futuras
 
@@ -1035,6 +1037,8 @@ Atualizacoes administrativas em tabelas que possuem `updated_at` devem definir `
 
 Alteracoes de catalogo, variantes, materiais, cores, receita ou caixas nao atualizam `orders`, `order_items`, `order_item_filaments` nem `order_shipping_details`.
 
+A gestao administrativa de imagens da Fase 13.4 usa `product_images.storage_path`, `sort_order` e `is_primary` existentes. Nao ha tabela de auditoria de catalogo/imagens nesta fase; `admin_order_events` permanece exclusivo para pedidos.
+
 ## Supabase Storage
 
 O bucket `product-images` e configurado por migration em `storage.buckets` para imagens publicas de catalogo.
@@ -1044,6 +1048,8 @@ O bucket `product-images` e configurado por migration em `storage.buckets` para 
 - `allowed_mime_types = image/avif, image/webp, image/jpeg, image/png`.
 - `avif_autodetection = true`.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
+
+A aplicacao Admin 13.4 aceita apenas `image/jpeg`, `image/png` e `image/webp` e aplica limite de 5 MB, alinhado ao bucket existente.
 
 ## Tabela `public.admin_sessions`
 

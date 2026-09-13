@@ -525,6 +525,91 @@ func TestAdminRecipeMutationDoesNotUseGET(t *testing.T) {
 	}
 }
 
+func TestAdminProductImagesRequireSession(t *testing.T) {
+	service := &fakeAdminPanelService{available: true, resolveErr: admindomain.ErrUnauthenticated}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/produtos/11111111-1111-1111-1111-111111111111/imagens", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	assertAdminRedirectToLogin(t, rec)
+}
+
+func TestAdminImageUploadURLRejectsCrossSiteOrigin(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos/11111111-1111-1111-1111-111111111111/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://evil.example")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.imageAuthCalled {
+		t.Fatal("service must not be called for cross-site image upload authorization")
+	}
+}
+
+func TestAdminImageUploadURLRespondsWithoutSecret(t *testing.T) {
+	service := &fakeAdminPanelService{
+		available: true,
+		imageAuthResponse: admindomain.AdminImageUploadAuthorization{
+			UploadURL:        "https://example.supabase.co/storage/v1/object/upload/sign/product-images/products/11111111-1111-1111-1111-111111111111/random.png?token=signed-token",
+			ObjectPath:       "products/11111111-1111-1111-1111-111111111111/random.png",
+			ContentType:      "image/png",
+			MaxFileSizeBytes: admindomain.AdminImageMaxBytes,
+		},
+	}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos/11111111-1111-1111-1111-111111111111/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10,"filename":"../../bad.svg"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://printlab.test")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !service.imageAuthCalled || service.imageAuthMetadata.Filename != "../../bad.svg" {
+		t.Fatalf("expected upload metadata to be forwarded, got %#v", service.imageAuthMetadata)
+	}
+	body := rec.Body.String()
+	for _, forbidden := range []string{"sb_secret_", "Authorization", "apikey"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected response not to contain %q, got %s", forbidden, body)
+		}
+	}
+	if !strings.Contains(body, `"object_path"`) || !strings.Contains(body, `"upload_url"`) {
+		t.Fatalf("expected upload response, got %s", body)
+	}
+}
+
+func TestAdminImageFinalizeCallsService(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/produtos/11111111-1111-1111-1111-111111111111/imagens/finalizar", strings.NewReader(`{"object_path":"products/11111111-1111-1111-1111-111111111111/random.webp","content_type":"image/webp","file_size":10,"alt_text":"Foto","sort_order":2,"is_primary":true}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://printlab.test")
+	req.AddCookie(&http.Cookie{Name: admindomain.CookieName, Value: mustAdminToken(t)})
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !service.imageFinalizeCalled || service.imageFinalizeInput.ObjectPath == "" || !service.imageFinalizeInput.IsPrimary {
+		t.Fatalf("expected finalize input, got %#v", service.imageFinalizeInput)
+	}
+}
+
 func TestAdminDashboardExpiredSessionRedirectsAndClearsCookie(t *testing.T) {
 	service := &fakeAdminPanelService{available: true, resolveErr: admindomain.ErrSessionExpired}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -694,6 +779,22 @@ type fakeAdminPanelService struct {
 	createProductForm   admindomain.AdminProductForm
 	createProductErr    error
 	addRecipeCalled     bool
+	productImagesPage   admindomain.AdminProductImagesPage
+	productImagesErr    error
+	imageAuthCalled     bool
+	imageAuthMetadata   admindomain.AdminImageUploadMetadata
+	imageAuthResponse   admindomain.AdminImageUploadAuthorization
+	imageAuthErr        error
+	imageFinalizeCalled bool
+	imageFinalizeInput  admindomain.AdminImageFinalizeInput
+	imageFinalizeErr    error
+	imageRemoveCalled   bool
+	imageRemoveErr      error
+	imageOrderCalled    bool
+	imageOrderValue     string
+	imageOrderErr       error
+	imagePrimaryCalled  bool
+	imagePrimaryErr     error
 }
 
 func (s *fakeAdminPanelService) Available() bool {
@@ -793,6 +894,57 @@ func (s *fakeAdminPanelService) CreateAdminProduct(_ context.Context, form admin
 
 func (s *fakeAdminPanelService) UpdateAdminProduct(context.Context, string, admindomain.AdminProductForm) (admindomain.AdminProductFormPage, error) {
 	return admindomain.AdminProductFormPage{}, nil
+}
+
+func (s *fakeAdminPanelService) GetAdminProductImages(context.Context, string) (admindomain.AdminProductImagesPage, error) {
+	if s.productImagesErr != nil {
+		return admindomain.AdminProductImagesPage{}, s.productImagesErr
+	}
+	return s.productImagesPage, nil
+}
+
+func (s *fakeAdminPanelService) AuthorizeAdminImageUpload(_ context.Context, _ string, metadata admindomain.AdminImageUploadMetadata) (admindomain.AdminImageUploadAuthorization, error) {
+	s.imageAuthCalled = true
+	s.imageAuthMetadata = metadata
+	if s.imageAuthErr != nil {
+		return admindomain.AdminImageUploadAuthorization{}, s.imageAuthErr
+	}
+	return s.imageAuthResponse, nil
+}
+
+func (s *fakeAdminPanelService) FinalizeAdminImageUpload(_ context.Context, _ string, input admindomain.AdminImageFinalizeInput) (string, error) {
+	s.imageFinalizeCalled = true
+	s.imageFinalizeInput = input
+	if s.imageFinalizeErr != nil {
+		return "", s.imageFinalizeErr
+	}
+	return "33333333-3333-3333-3333-333333333333", nil
+}
+
+func (s *fakeAdminPanelService) AuthorizeAdminImageReplacement(_ context.Context, _ string, _ string, metadata admindomain.AdminImageUploadMetadata) (admindomain.AdminImageUploadAuthorization, error) {
+	return s.AuthorizeAdminImageUpload(context.Background(), "", metadata)
+}
+
+func (s *fakeAdminPanelService) FinalizeAdminImageReplacement(_ context.Context, _ string, _ string, input admindomain.AdminImageFinalizeInput) error {
+	s.imageFinalizeCalled = true
+	s.imageFinalizeInput = input
+	return s.imageFinalizeErr
+}
+
+func (s *fakeAdminPanelService) RemoveAdminProductImage(context.Context, string, string) error {
+	s.imageRemoveCalled = true
+	return s.imageRemoveErr
+}
+
+func (s *fakeAdminPanelService) UpdateAdminProductImageOrder(_ context.Context, _ string, _ string, sortOrder string) error {
+	s.imageOrderCalled = true
+	s.imageOrderValue = sortOrder
+	return s.imageOrderErr
+}
+
+func (s *fakeAdminPanelService) MarkAdminProductImagePrimary(context.Context, string, string) error {
+	s.imagePrimaryCalled = true
+	return s.imagePrimaryErr
 }
 
 func (s *fakeAdminPanelService) ListAdminCategories(context.Context) (admindomain.AdminCategoryListPage, error) {

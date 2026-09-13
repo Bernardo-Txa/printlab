@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo e Supabase Auth administrativo IMPLEMENTADOS.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo, Supabase Auth administrativo e gestao administrativa de imagens IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -28,6 +28,7 @@ Supabase PostgreSQL
 - Supabase Data API nao sera a interface primaria da aplicacao.
 - Supabase Storage armazena imagens publicas de catalogo no bucket `product-images`.
 - Supabase Auth autentica credenciais administrativas da Fase 13.1.
+- A Fase 13.4 usa signed upload URL para upload direto do Browser Admin ao Supabase Storage.
 - Migrations versionadas serao aplicadas ao Supabase remoto de desenvolvimento pelo GitHub Actions quando houver alteracao em `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
 - O workflow usa `supabase/setup-cli@v1` com Supabase CLI `2.117.0` fixado, executa `supabase link`, roda `supabase db push --dry-run` e so depois executa `supabase db push`.
 - `pgx.QueryExecModeExec` e usado para evitar dependencia de prepared statement cache incompativel com transaction pooling.
@@ -47,6 +48,7 @@ As variaveis abaixo existem como placeholders em `.env.example` e devem ser revi
 - `DB_MAX_CONNS`
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `ADMIN_SUPABASE_USER_ID`
 
 `DATABASE_URL` e a unica fonte de verdade da conexao PostgreSQL.
@@ -55,9 +57,11 @@ As variaveis abaixo existem como placeholders em `.env.example` e devem ser revi
 
 `SUPABASE_PUBLISHABLE_KEY` e opcional e nao concede privilegios administrativos. Ela e usada no header `apikey` da chamada Auth de login.
 
+`SUPABASE_SECRET_KEY` e opcional fora do fluxo de imagens, mas necessaria para a Fase 13.4. Ela deve usar a nova chave com prefixo `sb_secret_`, existir somente server-side e nunca aparecer em HTML, JavaScript, response, logs ou documentacao com valor real. A aplicacao rejeita valores que nao tenham esse prefixo.
+
 `ADMIN_SUPABASE_USER_ID` e o UUID do unico usuario Supabase Auth autorizado nesta subfase.
 
-`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao nesta fase.
+`SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao. A Fase 13.4 usa `SUPABASE_SECRET_KEY`.
 
 ## Supabase CLI local
 
@@ -189,6 +193,7 @@ Uso permitido:
 
 - imagens publicas de produto;
 - imagens publicas especificas de variante.
+- upload administrativo direto com signed upload URL apos autorizacao do Go.
 
 Uso proibido:
 
@@ -199,7 +204,26 @@ Uso proibido:
 - invoices;
 - secrets.
 
-Nao ha policy publica de upload. Upload, admin autenticado e regras de escrita permanecem futuros.
+Nao ha policy publica de upload. Upload, substituicao e delete sao operacoes administrativas feitas pelo backend com `SUPABASE_SECRET_KEY`, somente apos validar sessao Admin, `Origin`/`Referer`, produto, configuracao, MIME e tamanho.
+
+Na Fase 13.4, a aplicacao aceita apenas `image/jpeg`, `image/png` e `image/webp`, embora o bucket historicamente tambem permita `image/avif`. O limite aplicado pelo backend e 5 MB para ficar coerente com `file_size_limit = 5242880` configurado no bucket existente.
+
+Fluxo da Fase 13.4:
+
+```text
+Browser Admin -> Go Admin: metadados
+Go Admin -> Supabase Storage: criar signed upload URL
+Browser Admin -> Supabase Storage: arquivo
+Browser Admin -> Go Admin: finalizar
+Go Admin -> PostgreSQL: inserir/atualizar product_images
+```
+
+Configuracao manual recomendada no Dashboard Supabase, caso precise revisar o bucket:
+
+- bucket `product-images` publico para leitura;
+- sem policy publica de insert, update ou delete;
+- max file size coerente com 5 MB;
+- allowed MIME types contendo `image/jpeg`, `image/png` e `image/webp`.
 
 ## Auth administrativo
 

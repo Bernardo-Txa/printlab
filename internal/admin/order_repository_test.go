@@ -88,9 +88,20 @@ func TestAdminOrderListAvoidsPIIAndPaymentIdentifiers(t *testing.T) {
 }
 
 func adminFunctionSource(source string, marker string) (string, bool) {
-	start := strings.Index(source, marker)
-	if start == -1 {
-		return "", false
+	start := -1
+	offset := 0
+	for {
+		index := strings.Index(source[offset:], marker)
+		if index == -1 {
+			return "", false
+		}
+		candidate := offset + index
+		next := candidate + len(marker)
+		if next < len(source) && source[next] == '(' {
+			start = candidate
+			break
+		}
+		offset = candidate + len(marker)
 	}
 
 	functionSource := source[start:]

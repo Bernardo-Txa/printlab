@@ -128,6 +128,45 @@ func TestLoadReadsAdminAuthConfig(t *testing.T) {
 	}
 }
 
+func TestLoadReadsSupabaseSecretKey(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPABASE_URL":        " https://example.supabase.co/ ",
+		"SUPABASE_SECRET_KEY": " sb_secret_test ",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.SupabaseSecretKey != "sb_secret_test" {
+		t.Fatalf("expected trimmed Supabase secret key, got %q", cfg.SupabaseSecretKey)
+	}
+	if !cfg.SupabaseStorageConfigured {
+		t.Fatal("expected Supabase Storage to be configured")
+	}
+}
+
+func TestLoadRejectsLegacySupabaseServiceRoleAsSecretKey(t *testing.T) {
+	_, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPABASE_SECRET_KEY": "service_role_legacy",
+	}))
+	if !errors.Is(err, ErrInvalidSupabaseSecretKey) {
+		t.Fatalf("expected ErrInvalidSupabaseSecretKey, got %v", err)
+	}
+}
+
+func TestLoadLeavesSupabaseStorageUnconfiguredWhenIncomplete(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SUPABASE_SECRET_KEY": "sb_secret_test",
+	}))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if cfg.SupabaseStorageConfigured {
+		t.Fatal("expected Supabase Storage to be unconfigured without URL")
+	}
+}
+
 func TestLoadLeavesAdminAuthUnconfiguredWhenIncompleteOrInvalid(t *testing.T) {
 	tests := []map[string]string{
 		{

@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Catalogo publico, perfis logisticos, gestao administrativa basica e refinamento 13.3A de configuracoes IMPLEMENTADOS; validacao real da Fase 13.3 pendente.
+Status: Catalogo publico, perfis logisticos, gestao administrativa, imagens Admin e refinamento 13.3A de configuracoes IMPLEMENTADOS; validacao real da Fase 13.3 concluida.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de configuracoes internas em `product_variants`.
 
@@ -28,7 +28,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Selecao publica de configuracao por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio, somente quando houver mais de uma configuracao ativa.
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
 - Perfil logistico opcional em produtos e variantes para cotacao de frete.
-- Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores e caixas em `/admin`.
+- Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores, caixas e imagens em `/admin`.
 
 ## Regras publicas
 
@@ -65,7 +65,7 @@ No Admin, formularios recebem valores em BRL amigavel, como `39,90`, `39.90` ou 
 
 ## Configuracoes
 
-`product_variants` permanece sendo o modelo interno para SKU, preco especifico opcional, tempo estimado de impressao, receita, perfil logistico, status ativo, imagens futuras e snapshots de pedido.
+`product_variants` permanece sendo o modelo interno para SKU, preco especifico opcional, tempo estimado de impressao, receita, perfil logistico, status ativo, imagens especificas e snapshots de pedido.
 
 Na interface administrativa, o conceito deve ser apresentado como "Configuracao" ou "Configuracoes do produto". Na loja publica, uma escolha so deve aparecer quando houver mais de uma configuracao ativa.
 
@@ -153,16 +153,16 @@ Estrategia publica:
 Formatos preferidos para operacao:
 
 - WebP como formato inicial preferencial;
-- AVIF quando apropriado;
 - JPEG;
 - PNG quando transparencia for necessaria.
+
+Na Fase 13.4, o Admin permite enviar, substituir, remover, ordenar e marcar imagem principal. A aplicacao aceita somente `image/jpeg`, `image/png` e `image/webp`, com limite de 5 MB, path gerado pelo backend e upload direto ao Supabase Storage por signed upload URL.
 
 ## Planejado
 
 - Busca.
 - Avaliacoes.
 - Paginacao complexa.
-- Upload de imagens.
 - Estoque fisico e inventario de filamento.
 - Custos de producao calculados.
 
@@ -170,8 +170,7 @@ Formatos preferidos para operacao:
 
 - Nao ha seed ficticio.
 - Nao ha produto demonstrativo.
-- Nao ha upload de imagem.
 - Nao ha estoque unitario de produtos.
 - Nao ha filamento fisico, marca, lote, carretel, preco por kg ou peso disponivel.
 - Nao ha custos derivados persistidos.
-- Nao ha upload, exclusao, reordenacao ou definicao administrativa de imagem primaria; imagens ficam para a Fase 13.4.
+- Nao ha crop, compressao avancada, bulk upload, thumbnails persistidos multiplos, upload de AVIF pelo Admin ou DAM.
