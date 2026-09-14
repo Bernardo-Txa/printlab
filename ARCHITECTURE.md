@@ -23,7 +23,7 @@ IMPLEMENTADO:
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
 - Painel administrativo em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab, dashboard, lista/detalhe de pedidos e mutacoes auditadas de producao/envio.
-- Hardening base de seguranca com headers globais, CSP, limite global de body, timeouts HTTP e validacao de `SITE_URL`.
+- Hardening base de seguranca com headers globais, CSP, limite global de body, timeouts HTTP e validacao/canonicalizacao de `SITE_URL`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.

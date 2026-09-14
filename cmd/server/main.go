@@ -252,7 +252,7 @@ func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalo
 	mux.HandleFunc("POST /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
-	return securityMiddleware(mux, supabaseURL)
+	return securityMiddleware(mux, siteURL, supabaseURL)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

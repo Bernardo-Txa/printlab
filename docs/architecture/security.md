@@ -66,6 +66,8 @@ Em ambientes de producao (`APP_ENV=production`/`prod` ou `VERCEL_ENV=production`
 
 Comparacoes de origem baseadas em `SITE_URL` devem usar `scheme://host`. Comparar apenas host nao e suficiente quando a origem configurada diferencia HTTP e HTTPS.
 
+Quando `SITE_URL` estiver configurada e valida, `GET` e `HEAD` recebidos por host diferente do host canonico devem redirecionar para a origem de `SITE_URL`, preservando path e query string. O destino do redirect deve derivar exclusivamente de `SITE_URL`, nunca do `Host` recebido. Requests `POST` nao devem receber redirect automatico de canonicalizacao; a defesa esperada e servir a pagina de formulario pelo host canonico desde o `GET` anterior e manter a validacao atual de `Origin`/`Referer`.
+
 ## Retencao de dados transientes
 
 A Fase 14.1 adiciona uma migration Supabase Cron para limpar diariamente, em UTC, dados transientes expirados:

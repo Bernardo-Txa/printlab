@@ -108,6 +108,7 @@ Nesta fase, o backend implementa:
 - Construir CSP sem `unsafe-eval`, com origem Supabase derivada somente de `SUPABASE_URL` por esquema e host.
 - Usar `http.Server` com timeouts explicitos em vez de `http.ListenAndServe` direto.
 - Validar `SITE_URL` no carregamento de config quando preenchida, exigindo HTTPS em producao e rejeitando userinfo ou fragment.
+- Redirecionar `GET` e `HEAD` de hosts nao canonicos para a origem de `SITE_URL`, preservando path/query e sem derivar destino do `Host` recebido.
 - Comparar origem configurada por `SITE_URL` usando `scheme://host`.
 
 ## Catalogo
@@ -222,6 +223,8 @@ O middleware global aplica:
 Admin e acompanhamento publico podem sobrescrever `Referrer-Policy` e definem seus proprios headers de cache/robots. O middleware global nao deve definir `Cache-Control` nem `X-Robots-Tag`.
 
 `SUPABASE_URL` alimenta a CSP somente como origem `scheme://host`. Caminho, query string, credenciais e fragments nao devem entrar na policy.
+
+Quando `SITE_URL` estiver preenchida, o middleware tambem canonicaliza `GET` e `HEAD` para o host configurado antes do roteador. `POST` permanece sem redirect automatico e continua protegido por validacao de `Origin`/`Referer`.
 
 ## Health e readiness
 

@@ -4,7 +4,7 @@ Status: em andamento.
 
 ## Fase 14.1 — Hardening base de seguranca
 
-Status: implementada; validacao real pendente.
+Status: implementada; validacao real em andamento.
 
 ## Objetivo
 
@@ -39,6 +39,7 @@ Reduzir superficie de ataque da aplicacao antes de ampliar uso real, sem alterar
   - host obrigatorio;
   - userinfo e fragment rejeitados;
   - em `APP_ENV=production`/`prod` ou `VERCEL_ENV=production`/`prod`, exige `https`.
+- Canonicalizacao de `GET` e `HEAD` para a origem configurada em `SITE_URL`, preservando path/query e sem usar `Host` recebido para construir destino.
 - Comparacao de origem configurada por `SITE_URL` passa a considerar `scheme://host`.
 - Migration Supabase Cron para limpar diariamente dados transientes expirados:
   - `public.admin_sessions where expires_at <= now()`;
@@ -118,7 +119,7 @@ MFA nao foi implementado na 14.1. Uma Fase 14.2 pode avaliar TOTP/AAL2 se o risc
 - Migration Supabase Cron append-only criada e coberta por teste estrutural.
 - Documentacao de seguranca, backend, database, migrations, roadmap e CHANGELOG atualizada.
 - Validacoes locais executadas antes do commit.
-- Validacao real de deploy e headers remotos pendente.
+- Validacao real de deploy e headers remotos em andamento.
 
 ## Validacoes executadas
 

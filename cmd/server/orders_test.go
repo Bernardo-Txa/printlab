@@ -258,6 +258,12 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 			t.Fatalf("expected order page not to render payment technical data %q", forbiddenPaymentData)
 		}
 	}
+	if !strings.Contains(body, `action="/pedido/`+orderID+`/pagar"`) {
+		t.Fatal("expected payment form to use local order payment action")
+	}
+	if strings.Contains(body, `action="https://`) {
+		t.Fatal("expected payment form not to use absolute action")
+	}
 }
 
 func TestOrderPageWithoutPaymentConfigShowsSafeUnavailableState(t *testing.T) {
@@ -496,6 +502,28 @@ func TestStartPaymentValidOrderRedirectsToInfinitePay(t *testing.T) {
 	}
 }
 
+func TestStartPaymentPostOnCanonicalHostReachesHandler(t *testing.T) {
+	payment := &fakePaymentService{
+		available: true,
+		startResult: paymentsdomain.CheckoutStartResult{
+			OrderID:     orderID,
+			CheckoutURL: "https://checkout.infinitepay.com.br/checkout-slug",
+		},
+	}
+	req := httptest.NewRequest(http.MethodPost, "https://www.printlab3d.com.br/pedido/"+orderID+"/pagar", nil)
+	req.Header.Set("Origin", "https://www.printlab3d.com.br")
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://www.printlab3d.com.br").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rec.Code)
+	}
+	if payment.startCalls != 1 {
+		t.Fatalf("expected canonical POST to reach payment handler once, got %d", payment.startCalls)
+	}
+}
+
 func TestStartPaymentPaidOrderRedirectsBackToOrder(t *testing.T) {
 	payment := &fakePaymentService{
 		available:   true,
@@ -690,7 +718,7 @@ func TestPaymentWebhookValidJSONReturnsOK(t *testing.T) {
 }
 
 func TestPaymentWebhookGetMethodNotAllowed(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/webhooks/infinitepay", nil)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/webhooks/infinitepay", nil)
 	rec := httptest.NewRecorder()
 
 	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, &fakePaymentService{available: true}, nil, "https://printlab.test").ServeHTTP(rec, req)

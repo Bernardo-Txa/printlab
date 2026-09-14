@@ -9,17 +9,47 @@ import (
 
 const globalMaxRequestBodyBytes = 1 << 20
 
-func securityMiddleware(next http.Handler, supabaseURL string) http.Handler {
+func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) http.Handler {
 	policy := contentSecurityPolicy(supabaseURL)
+	canonical, hasCanonical := configuredSiteURL(siteURL)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		setGlobalSecurityHeaders(w.Header(), policy)
+		if hasCanonical {
+			if destination, ok := canonicalHostRedirectURL(r, canonical); ok {
+				http.Redirect(w, r, destination, http.StatusPermanentRedirect)
+				return
+			}
+		}
 		if !limitRequestBody(w, r) {
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func canonicalHostRedirectURL(r *http.Request, canonical *url.URL) (string, bool) {
+	if r == nil || r.URL == nil || canonical == nil || !canonicalRedirectMethod(r.Method) || sameHost(r.Host, canonical.Host) {
+		return "", false
+	}
+
+	destination := url.URL{
+		Scheme:   canonical.Scheme,
+		Host:     canonical.Host,
+		Path:     r.URL.Path,
+		RawPath:  r.URL.RawPath,
+		RawQuery: r.URL.RawQuery,
+	}
+	if destination.Path == "" {
+		destination.Path = "/"
+	}
+
+	return destination.String(), true
+}
+
+func canonicalRedirectMethod(method string) bool {
+	return method == http.MethodGet || method == http.MethodHead
 }
 
 func setGlobalSecurityHeaders(header http.Header, contentSecurityPolicy string) {

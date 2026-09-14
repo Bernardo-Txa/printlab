@@ -21,6 +21,63 @@ func TestGlobalSecurityHeaders(t *testing.T) {
 	}
 }
 
+func TestCanonicalHostRedirectsGETToConfiguredSiteURL(t *testing.T) {
+	handler := newHandlerWithServicesAndOrdersAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "https://www.printlab3d.com.br", "")
+	req := httptest.NewRequest(http.MethodGet, "https://printlab3d.com.br/produtos/produto-real?a=1", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusPermanentRedirect {
+		t.Fatalf("expected status %d, got %d", http.StatusPermanentRedirect, rec.Code)
+	}
+	if got := rec.Header().Get("Location"); got != "https://www.printlab3d.com.br/produtos/produto-real?a=1" {
+		t.Fatalf("expected canonical redirect preserving path and query, got %q", got)
+	}
+}
+
+func TestCanonicalHostDoesNotRedirectConfiguredHost(t *testing.T) {
+	handler := newHandlerWithServicesAndOrdersAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "https://www.printlab3d.com.br", "")
+	req := httptest.NewRequest(http.MethodGet, "https://www.printlab3d.com.br/health", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected canonical host to reach handler with status %d, got %d", http.StatusOK, rec.Code)
+	}
+}
+
+func TestCanonicalHostAllowsConfiguredLocalhost(t *testing.T) {
+	handler := newHandlerWithServicesAndOrdersAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "http://localhost:8080", "")
+	req := httptest.NewRequest(http.MethodGet, "http://localhost:8080/health", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected localhost canonical host to reach handler with status %d, got %d", http.StatusOK, rec.Code)
+	}
+}
+
+func TestCanonicalHostRedirectDestinationIgnoresRequestHost(t *testing.T) {
+	handler := newHandlerWithServicesAndOrdersAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "https://www.printlab3d.com.br", "")
+	req := httptest.NewRequest(http.MethodGet, "https://malicious.example/checkout/revisao?step=3", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusPermanentRedirect {
+		t.Fatalf("expected status %d, got %d", http.StatusPermanentRedirect, rec.Code)
+	}
+	if got := rec.Header().Get("Location"); got != "https://www.printlab3d.com.br/checkout/revisao?step=3" {
+		t.Fatalf("expected redirect destination to use only SITE_URL origin, got %q", got)
+	}
+	if strings.Contains(rec.Header().Get("Location"), "malicious.example") {
+		t.Fatalf("expected redirect destination host not to use request host, got %q", rec.Header().Get("Location"))
+	}
+}
+
 func TestGlobalSecurityHeadersIncludeConfiguredSupabaseOrigin(t *testing.T) {
 	handler := newHandlerWithServicesAndOrdersAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "https://example.supabase.co/path")
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -188,5 +245,8 @@ func assertGlobalSecurityHeaders(t *testing.T, rec *httptest.ResponseRecorder) {
 	}
 	if strings.Contains(csp, "unsafe-eval") {
 		t.Fatalf("expected CSP without unsafe-eval, got %q", csp)
+	}
+	if !strings.Contains(csp, "form-action 'self'") {
+		t.Fatalf("expected CSP to keep form-action self, got %q", csp)
 	}
 }

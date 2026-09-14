@@ -799,7 +799,21 @@ func newTestHandlerWithAdmin(t *testing.T, adminPanel adminPanelService, siteURL
 	}
 	t.Cleanup(db.Close)
 
-	return newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, nil, nil, nil, nil, adminPanel, siteURL)
+	handler := newHandlerWithServicesAndOrders(db, nil, nil, nil, nil, nil, nil, nil, nil, adminPanel, siteURL)
+	configured, ok := configuredSiteURL(siteURL)
+	if !ok {
+		return handler
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Host == "example.com" {
+			request := r.Clone(r.Context())
+			request.Host = configured.Host
+			handler.ServeHTTP(w, request)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func assertAdminHeaders(t *testing.T, rec *httptest.ResponseRecorder) {

@@ -54,7 +54,7 @@ IMPLEMENTADO:
 - Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com validacao real em producao concluida.
 - Fase 13.3A — Refinamento de configuracoes do produto, com seletor publico apenas quando ha duas ou mais configuracoes ativas e validacao real concluida.
 - Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com validacao real em producao concluida.
-- Fase 14.1 — Hardening base de seguranca, com headers globais, CSP, limite global de body, timeouts HTTP, validacao de `SITE_URL` e limpeza diaria de dados transientes por Supabase Cron.
+- Fase 14.1 — Hardening base de seguranca, com headers globais, CSP, limite global de body, timeouts HTTP, validacao/canonicalizacao de `SITE_URL` e limpeza diaria de dados transientes por Supabase Cron.
 
 PLANEJADO:
 

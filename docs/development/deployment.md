@@ -173,6 +173,10 @@ O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCE
 
 Quando `SITE_URL` estiver preenchida, a aplicacao exige URL absoluta `http` ou `https`, host obrigatorio, sem userinfo e sem fragment. Em `APP_ENV=production`/`prod` ou `VERCEL_ENV=production`/`prod`, `SITE_URL` precisa ser HTTPS.
 
+`SITE_URL` de producao deve apontar para a origem canonica `https://www.printlab3d.com.br`. A aplicacao redireciona `GET` e `HEAD` servidos por outro host para essa origem, preservando path e query string, e nao redireciona `POST` automaticamente.
+
+Na Vercel, configurar `www.printlab3d.com.br` como dominio primario/canonico do projeto e configurar `printlab3d.com.br` como redirect para `www.printlab3d.com.br` na area Project Settings -> Domains. Nao inventar configuracao de DNS no repositorio; seguir as instrucoes exibidas pela Vercel para os registros do dominio.
+
 `Strict-Transport-Security` e preload nao foram habilitados na Fase 14.1. Antes da operacao comercial, validar dominio definitivo, HTTPS e subdominios antes de decidir HSTS/preload.
 
 Rate limiting deve ser configurado operacionalmente por Vercel Firewall/WAF depois de observar trafego real. Comecar em modo log/observacao para `POST /admin/login`, `GET /api/cep/{cep}`, `GET/POST /checkout/frete` e `POST /webhooks/infinitepay`; so depois ativar rate limit, challenge ou deny.
