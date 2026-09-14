@@ -125,6 +125,24 @@ func TestAdminLoginRejectsOpaqueOriginWithSameOriginReferer(t *testing.T) {
 	}
 }
 
+func TestAdminLoginRejectsSameHostSchemeMismatchWithConfiguredSiteURL(t *testing.T) {
+	service := &fakeAdminPanelService{available: true}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", strings.NewReader("email=admin@example.com&password=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "http://printlab.test")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if service.loginCalled {
+		t.Fatal("expected scheme mismatch not to call login service")
+	}
+}
+
 func TestAdminLoginRejectsOpaqueOriginWithoutReferer(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -624,6 +642,68 @@ func TestAdminImageFinalizeCallsService(t *testing.T) {
 	}
 	if !service.imageFinalizeCalled || service.imageFinalizeInput.ObjectPath == "" || !service.imageFinalizeInput.IsPrimary {
 		t.Fatalf("expected finalize input, got %#v", service.imageFinalizeInput)
+	}
+}
+
+func TestDecodeAdminJSONAcceptsSingleValidJSON(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/admin/produtos/id/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10}`))
+	rec := httptest.NewRecorder()
+
+	var input adminImageUploadRequest
+	if !decodeAdminJSON(rec, req, &input) {
+		t.Fatalf("expected single valid JSON to be accepted, got status %d", rec.Code)
+	}
+	if input.ContentType != "image/png" || input.FileSize != 10 {
+		t.Fatalf("expected decoded input, got %#v", input)
+	}
+}
+
+func TestDecodeAdminJSONAcceptsSingleValidJSONWithTrailingWhitespace(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/admin/produtos/id/imagens/upload-url", strings.NewReader("{\"content_type\":\"image/png\",\"file_size\":10}\n \t"))
+	rec := httptest.NewRecorder()
+
+	var input adminImageUploadRequest
+	if !decodeAdminJSON(rec, req, &input) {
+		t.Fatalf("expected valid JSON with trailing whitespace to be accepted, got status %d", rec.Code)
+	}
+}
+
+func TestDecodeAdminJSONRejectsTwoJSONObjects(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/admin/produtos/id/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10} {"content_type":"image/webp","file_size":11}`))
+	rec := httptest.NewRecorder()
+
+	var input adminImageUploadRequest
+	if decodeAdminJSON(rec, req, &input) {
+		t.Fatal("expected two JSON objects to be rejected")
+	}
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestDecodeAdminJSONRejectsTrailingGarbage(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/admin/produtos/id/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10} garbage`))
+	rec := httptest.NewRecorder()
+
+	var input adminImageUploadRequest
+	if decodeAdminJSON(rec, req, &input) {
+		t.Fatal("expected trailing garbage to be rejected")
+	}
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestDecodeAdminJSONRejectsTrailingWhitespaceAboveLimit(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/admin/produtos/id/imagens/upload-url", strings.NewReader(`{"content_type":"image/png","file_size":10}`+strings.Repeat(" ", adminMaxJSONBodyBytes)))
+	rec := httptest.NewRecorder()
+
+	var input adminImageUploadRequest
+	if decodeAdminJSON(rec, req, &input) {
+		t.Fatal("expected oversized trailing whitespace to be rejected")
+	}
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected status %d, got %d", http.StatusRequestEntityTooLarge, rec.Code)
 	}
 }
 

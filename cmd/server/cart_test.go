@@ -193,6 +193,24 @@ func TestValidMutationSourceRejectsConfiguredSiteURLSchemeMismatch(t *testing.T)
 	}
 }
 
+func TestValidAdminMutationSourceRejectsSameHostSchemeMismatchWithConfiguredSiteURL(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/admin/login", nil)
+	req.Header.Set("Origin", "http://printlab.test")
+
+	if validAdminMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected same-host admin origin to require configured SITE_URL scheme")
+	}
+}
+
+func TestValidAdminMutationSourceAllowsLocalhostHTTPWithConfiguredSiteURL(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "http://localhost/admin/login", nil)
+	req.Header.Set("Origin", "http://localhost")
+
+	if !validAdminMutationSource(req, "http://localhost") {
+		t.Fatal("expected local HTTP admin origin to be allowed when SITE_URL uses HTTP")
+	}
+}
+
 func TestValidAdminMutationSource(t *testing.T) {
 	tests := []struct {
 		name    string

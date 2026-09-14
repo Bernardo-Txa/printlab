@@ -288,20 +288,39 @@ func allowedRequestSource(rawSource string, r *http.Request, siteURL string) boo
 		return false
 	}
 
-	if sameHost(source.Host, r.Host) {
-		return true
+	if configured, ok := configuredSiteURL(siteURL); ok {
+		if sameOrigin(source, configured) {
+			return true
+		}
+		return sameHost(source.Host, r.Host) && sameScheme(source.Scheme, configured.Scheme)
 	}
 
-	configured, err := url.Parse(strings.TrimSpace(siteURL))
-	if err == nil && sameOrigin(source, configured) {
-		return true
+	return sameHost(source.Host, r.Host) && requestSchemeAllowsSource(r, source)
+}
+
+func configuredSiteURL(rawURL string) (*url.URL, bool) {
+	configured, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil || configured.Host == "" || configured.User != nil || !webScheme(configured.Scheme) {
+		return nil, false
 	}
 
-	return false
+	return configured, true
 }
 
 func webScheme(scheme string) bool {
 	return scheme == "http" || scheme == "https"
+}
+
+func requestSchemeAllowsSource(r *http.Request, source *url.URL) bool {
+	if r == nil || r.URL == nil || !webScheme(r.URL.Scheme) {
+		return true
+	}
+
+	return sameScheme(source.Scheme, r.URL.Scheme)
+}
+
+func sameScheme(left string, right string) bool {
+	return strings.EqualFold(strings.TrimSpace(left), strings.TrimSpace(right))
 }
 
 func sameHost(left string, right string) bool {
@@ -314,7 +333,7 @@ func sameOrigin(left *url.URL, right *url.URL) bool {
 	}
 
 	return webScheme(left.Scheme) && webScheme(right.Scheme) &&
-		strings.EqualFold(left.Scheme, right.Scheme) &&
+		sameScheme(left.Scheme, right.Scheme) &&
 		sameHost(left.Host, right.Host)
 }
 

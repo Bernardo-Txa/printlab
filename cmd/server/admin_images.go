@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -210,6 +211,16 @@ func decodeAdminJSON(w http.ResponseWriter, r *http.Request, dest any) bool {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(dest); err != nil {
+		if isMaxBytesError(err) {
+			writeAdminJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "invalid_request"})
+			return false
+		}
+		writeAdminJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_request"})
+		return false
+	}
+
+	var extra json.RawMessage
+	if err := decoder.Decode(&extra); err != io.EOF {
 		if isMaxBytesError(err) {
 			writeAdminJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "invalid_request"})
 			return false
