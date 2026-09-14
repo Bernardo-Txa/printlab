@@ -23,7 +23,13 @@ import (
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
-const readyTimeout = 3 * time.Second
+const (
+	readyTimeout            = 3 * time.Second
+	serverReadHeaderTimeout = 5 * time.Second
+	serverReadTimeout       = 15 * time.Second
+	serverWriteTimeout      = 30 * time.Second
+	serverIdleTimeout       = 60 * time.Second
+)
 
 func main() {
 	cfg, err := config.Load()
@@ -47,8 +53,21 @@ func main() {
 	addr := ":" + cfg.Port
 	log.Printf("printlab web listening on %s", addr)
 
-	if err := http.ListenAndServe(addr, newHandler(db, cfg)); err != nil {
+	server := newHTTPServer(addr, newHandler(db, cfg))
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server stopped: %v", err)
+	}
+}
+
+func newHTTPServer(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: serverReadHeaderTimeout,
+		ReadTimeout:       serverReadTimeout,
+		WriteTimeout:      serverWriteTimeout,
+		IdleTimeout:       serverIdleTimeout,
 	}
 }
 
@@ -138,9 +157,9 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 		}
 	}
 
-	return newHandlerWithServicesAndOrders(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+	return newHandlerWithServicesAndOrdersAndSupabaseURL(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
-	}), postalCodeLookup, payment, adminPanel, cfg.SiteURL)
+	}), postalCodeLookup, payment, adminPanel, cfg.SiteURL, cfg.SupabaseURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
@@ -152,6 +171,10 @@ func newHandlerWithServices(db *database.Database, catalog catalogService, shopp
 }
 
 func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, adminPanel adminPanelService, siteURL string) http.Handler {
+	return newHandlerWithServicesAndOrdersAndSupabaseURL(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartCookies, postalCodeLookup, payment, adminPanel, siteURL, "")
+}
+
+func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, adminPanel adminPanelService, siteURL string, supabaseURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -229,7 +252,7 @@ func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogServi
 	mux.HandleFunc("POST /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
-	return mux
+	return securityMiddleware(mux, supabaseURL)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

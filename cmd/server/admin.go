@@ -93,7 +93,7 @@ func adminLoginHandler(service adminPanelService, siteURL string) http.HandlerFu
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 
@@ -184,7 +184,7 @@ func adminProductionStatusHandler(service adminPanelService, siteURL string) htt
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 
@@ -206,7 +206,7 @@ func adminShippingStatusHandler(service adminPanelService, siteURL string) http.
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 

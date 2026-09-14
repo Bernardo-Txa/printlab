@@ -1,6 +1,6 @@
 # Supabase
 
-Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo e Supabase Auth administrativo IMPLEMENTADOS; gestao administrativa de imagens em correcao, com validacao real pendente.
+Status: fundacao, catalogo, variantes, carrinho, dados de checkout, frete, Storage de catalogo, Supabase Auth administrativo, gestao administrativa de imagens e Supabase Cron de limpeza transiente IMPLEMENTADOS.
 
 ## Arquitetura planejada
 
@@ -29,6 +29,7 @@ Supabase PostgreSQL
 - Supabase Storage armazena imagens publicas de catalogo no bucket `product-images`.
 - Supabase Auth autentica credenciais administrativas da Fase 13.1.
 - A Fase 13.4 usa signed upload URL para upload direto do Browser Admin ao Supabase Storage.
+- Supabase Cron/`pg_cron` executa limpeza diaria de sessoes Admin e carrinhos expirados.
 - Migrations versionadas serao aplicadas ao Supabase remoto de desenvolvimento pelo GitHub Actions quando houver alteracao em `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
 - O workflow usa `supabase/setup-cli@v1` com Supabase CLI `2.117.0` fixado, executa `supabase link`, roda `supabase db push --dry-run` e so depois executa `supabase db push`.
 - `pgx.QueryExecModeExec` e usado para evitar dependencia de prepared statement cache incompativel com transaction pooling.
@@ -38,6 +39,7 @@ Supabase PostgreSQL
 - A terceira migration de negocio cria `carts` e `cart_items`, sem seed ficticio.
 - A quarta migration de negocio cria `cart_customer_details` e `cart_shipping_addresses`, sem seed ficticio e sem PII.
 - A quinta migration de negocio adiciona perfis logisticos, `shipping_boxes` e `cart_shipping_selections`, sem seed ficticio.
+- A migration de limpeza transiente da Fase 14.1 habilita `pg_cron` e agenda `printlab_transient_data_cleanup`, sem chamadas HTTP e sem secrets.
 - Nenhuma policy publica de upload, update ou delete em `storage.objects` e criada.
 
 ## Variaveis previstas
@@ -143,6 +145,7 @@ O carrinho anonimo usa PostgreSQL via backend Go. O frontend nao acessa `carts` 
 - `cart_items` armazena produto, variante opcional e quantidade.
 - Precos e subtotais sao recalculados em leitura pelo backend.
 - Carrinhos expiram apos 30 dias.
+- Carrinhos expirados sao removidos pelo job diario `printlab_transient_data_cleanup`; dados temporarios sao removidos por cascade e pedidos historicos sao preservados.
 
 A migration `20260909194855_create_carts.sql` deve ser aplicada ao Supabase DEV pelo workflow `Supabase Migrations`, com dry-run antes da aplicacao. Ela nao insere carrinhos ou itens ficticios.
 
@@ -251,6 +254,27 @@ user.id == ADMIN_SUPABASE_USER_ID
 Qualquer outro usuario autenticado recebe a mesma mensagem publica generica de credenciais invalidas e nao recebe sessao.
 
 Sessoes administrativas ficam em `public.admin_sessions` com token hash SHA-256, TTL de 8 horas e RLS habilitado sem policies publicas.
+
+Sessoes expiradas sao removidas pelo job diario `printlab_transient_data_cleanup`. A resolucao de sessao tambem pode remover sessoes expiradas oportunisticamente.
+
+## Supabase Cron
+
+A Fase 14.1 adiciona a migration `20260913140000_schedule_transient_data_cleanup.sql`.
+
+Ela executa:
+
+```sql
+create extension if not exists pg_cron;
+```
+
+E agenda o job `printlab_transient_data_cleanup` diariamente as 03:17 UTC.
+
+Escopo permitido do job:
+
+- apagar `public.admin_sessions` com `expires_at <= now()`;
+- apagar `public.carts` com `expires_at <= now()`.
+
+O job nao deve fazer chamadas HTTP, nao deve usar secrets, nao deve apagar pedidos e nao deve tocar em snapshots, pagamentos, fulfillment ou eventos administrativos. A preservacao de pedidos depende de `orders.source_cart_id on delete set null`.
 
 ## Estrutura local
 

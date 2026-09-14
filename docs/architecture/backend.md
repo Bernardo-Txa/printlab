@@ -1,6 +1,6 @@
 # Backend
 
-Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro e operacao administrativa com imagens IMPLEMENTADOS.
+Status: fundacao HTTP, banco, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos, webhook InfinitePay, acompanhamento seguro, operacao administrativa com imagens e hardening base de seguranca IMPLEMENTADOS.
 
 ## Responsabilidade
 
@@ -42,6 +42,7 @@ Nesta fase, o backend implementa:
 - `GET /health` para liveness.
 - `GET /ready` para readiness de banco.
 - `/static/...` para assets embutidos.
+- Middleware global de seguranca com headers, CSP e limite absoluto de body.
 - `internal/config` para ler configuracao.
 - `internal/database` para criar `pgxpool.Pool`.
 - `internal/products` para modelos, service e repository PostgreSQL do catalogo, variantes, receita estimada e imagens.
@@ -60,6 +61,8 @@ Nesta fase, o backend implementa:
 - Integracoes externas implementadas incluem cotacao SuperFrete, pagamentos InfinitePay, webhook InfinitePay, ViaCEP, Supabase Auth e Supabase Storage. Etiqueta, postagem e rastreio permanecem fora do escopo.
 - A homepage ainda nao depende obrigatoriamente do PostgreSQL.
 - Upload de imagens existe apenas na tela Admin de imagens, usando signed upload URL e finalizacao server-side; o backend nao recebe os bytes do arquivo.
+- O teto global de body HTTP e 1 MiB. Limites especificos menores continuam existindo para Admin forms (256 KiB), Admin image JSON (64 KiB) e webhook InfinitePay (64 KiB).
+- Rate limiting nao e implementado dentro do Go nesta fase; protecoes contra abuso devem ser operacionais, via Vercel Firewall/WAF, apos observacao de trafego real.
 
 ## Decisoes
 
@@ -101,6 +104,11 @@ Nesta fase, o backend implementa:
 - Validar `Origin`/`Referer` em POSTs administrativos, rejeitando `Origin: null`, origem cross-site e requests sem os dois headers.
 - Usar `Session.AuthUserID` como ator de auditoria para mutacoes administrativas.
 - Atualizar producao/envio e inserir auditoria na mesma transacao PostgreSQL com lock do pedido.
+- Aplicar headers globais de seguranca antes do roteador HTTP, permitindo que rotas sensiveis sobrescrevam apenas headers especificos ja documentados.
+- Construir CSP sem `unsafe-eval`, com origem Supabase derivada somente de `SUPABASE_URL` por esquema e host.
+- Usar `http.Server` com timeouts explicitos em vez de `http.ListenAndServe` direto.
+- Validar `SITE_URL` no carregamento de config quando preenchida, exigindo HTTPS em producao e rejeitando userinfo ou fragment.
+- Comparar origem configurada por `SITE_URL` usando `scheme://host`.
 
 ## Catalogo
 
@@ -175,6 +183,8 @@ O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e re
 
 Rotas `/admin/*` usam headers privados/noindex e `Referrer-Policy: same-origin`.
 
+As rotas Admin tambem recebem os headers globais de seguranca da Fase 14.1. Os headers privados/noindex e o `Referrer-Policy: same-origin` continuam sendo definidos pelos handlers Admin e prevalecem sobre o default global.
+
 `GET /admin/pedidos` lista pedidos com dados minimizados. `GET /admin/pedidos/{orderID}` carrega o detalhe operacional completo somente apos sessao administrativa valida.
 
 `POST /admin/pedidos/{orderID}/producao` e `POST /admin/pedidos/{orderID}/envio` validam origem, resolvem sessao, usam o `AuthUserID` da sessao como ator e delegam as regras ao pacote `internal/admin`. O repository bloqueia pedido/fulfillment, valida transicao sequencial, atualiza `order_fulfillment` e insere `admin_order_events` na mesma transacao.
@@ -190,6 +200,28 @@ Checkout URL retornada pelo provedor e aceita somente se for HTTPS nos hosts `ch
 `GET /pagamento/retorno` nao confirma pagamento por redirect. Ele valida parametros seguros, chama `POST /payment_check` e altera `orders.status` para `paid` em transacao somente quando `success=true`, `paid=true` e `amount` igual a `orders.total_cents`.
 
 `POST /webhooks/infinitepay` nao confirma pagamento diretamente pelo payload recebido. Ele aceita JSON limitado, valida identificadores, chama `POST /payment_check` e usa a mesma regra transacional do retorno. Pagamentos ja confirmados retornam sucesso sem duplicar atualizacao.
+
+## Hardening HTTP
+
+O servidor principal deve ser criado com `http.Server` e timeouts conservadores:
+
+- `ReadHeaderTimeout`: 5s;
+- `ReadTimeout`: 15s;
+- `WriteTimeout`: 30s;
+- `IdleTimeout`: 60s.
+
+O middleware global aplica:
+
+- `X-Content-Type-Options: nosniff`;
+- `X-Frame-Options: DENY`;
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- CSP restritiva;
+- teto absoluto de 1 MiB para corpo de request.
+
+Admin e acompanhamento publico podem sobrescrever `Referrer-Policy` e definem seus proprios headers de cache/robots. O middleware global nao deve definir `Cache-Control` nem `X-Robots-Tag`.
+
+`SUPABASE_URL` alimenta a CSP somente como origem `scheme://host`. Caminho, query string, credenciais e fragments nao devem entrar na policy.
 
 ## Health e readiness
 
@@ -208,6 +240,7 @@ Checkout URL retornada pelo provedor e aceita somente se for HTTPS nos hosts `ch
 - Fechar `pgxpool.Pool` no encerramento do processo.
 - Usar parametros PostgreSQL para entradas externas.
 - Listar colunas explicitamente em SQL.
+- Adicionar teste de header, limite de body ou CSP ao criar nova superficie HTTP sensivel.
 
 ## Praticas proibidas
 
@@ -220,3 +253,5 @@ Checkout URL retornada pelo provedor e aceita somente se for HTTPS nos hosts `ch
 - Logar `DATABASE_URL`, senha, token ou connection string.
 - Usar `SELECT *`.
 - Concatenar valores externos em SQL.
+- Remover ou enfraquecer headers globais sem registrar decisao arquitetural.
+- Implementar rate limiter em memoria no Go para endpoints sensiveis sem plano operacional aprovado.

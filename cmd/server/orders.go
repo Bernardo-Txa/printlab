@@ -64,7 +64,7 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 		}
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "invalid order request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid order request", err)
 			return
 		}
 

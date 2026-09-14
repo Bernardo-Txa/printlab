@@ -1,6 +1,6 @@
 # Integracoes
 
-Status: SuperFrete IMPLEMENTADO e VALIDADO em Sandbox para cotacao de frete; InfinitePay IMPLEMENTADO com link, pagamento e webhook reais validados; Supabase Auth IMPLEMENTADO para Admin; Supabase Storage para imagens Admin em correcao com validacao real pendente; demais integracoes comerciais PLANEJADAS.
+Status: SuperFrete IMPLEMENTADO e VALIDADO em Sandbox para cotacao de frete; InfinitePay IMPLEMENTADO com link, pagamento e webhook reais validados; Supabase Auth IMPLEMENTADO para Admin; Supabase Storage para imagens Admin VALIDADO em producao; Supabase Cron IMPLEMENTADO para limpeza transiente; demais integracoes comerciais PLANEJADAS.
 
 ## Responsabilidade
 
@@ -11,8 +11,10 @@ Integracoes externas devem permitir calculo de frete, pagamentos e outros servic
 - SuperFrete foi implementado apenas para cotacao server-side de frete.
 - Sandbox SuperFrete real foi validado manualmente para cotacao, pacote planejado, caixa real compativel, modalidades e selecao persistida.
 - Nenhuma etiqueta, postagem ou rastreio foi implementado.
-- Pagamento InfinitePay foi implementado como checkout hospedado server-side com confirmacao por `payment_check`; link real e pagamento real foram validados, e recebimento real de webhook ainda precisa de validacao controlada.
-- Supabase Auth foi implementado somente para login administrativo por e-mail/senha; signup, service role e CRUD administrativo permanecem fora do escopo.
+- Pagamento InfinitePay foi implementado como checkout hospedado server-side com confirmacao por `payment_check`; link real, pagamento real e webhook real foram validados.
+- Supabase Auth foi implementado somente para login administrativo por e-mail/senha; signup, MFA, service role e RBAC permanecem fora do escopo.
+- Supabase Storage foi implementado para imagens Admin com signed upload URL e finalizacao server-side, validado em producao.
+- Supabase Cron foi implementado somente para limpeza diaria de `admin_sessions` e `carts` expirados.
 
 ## Decisoes
 
@@ -22,6 +24,7 @@ Integracoes externas devem permitir calculo de frete, pagamentos e outros servic
 - InfinitePay e usado para checkout hospedado, retorno e webhook, sempre com validacao server-side via `payment_check`.
 - Supabase hospedara PostgreSQL.
 - Supabase Auth autentica credenciais administrativas; a autorizacao real da PrintLab usa `ADMIN_SUPABASE_USER_ID`.
+- Supabase Cron usa `pg_cron` via migration versionada e nao faz chamadas HTTP nem usa secrets.
 - O backend Go fara chamadas para servicos externos quando necessario.
 
 ## Praticas recomendadas

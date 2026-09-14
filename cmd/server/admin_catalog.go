@@ -56,7 +56,7 @@ func adminCreateProductHandler(service adminPanelService, siteURL string) http.H
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		id, page, err := service.CreateAdminProduct(r.Context(), adminProductFormFromRequest(r))
@@ -101,7 +101,7 @@ func adminUpdateProductHandler(service adminPanelService, siteURL string) http.H
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		productID := r.PathValue("productID")
@@ -157,7 +157,7 @@ func adminCreateCategoryHandler(service adminPanelService, siteURL string) http.
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		id, page, err := service.CreateAdminCategory(r.Context(), adminCategoryFormFromRequest(r))
@@ -208,7 +208,7 @@ func adminCreateVariantHandler(service adminPanelService, siteURL string) http.H
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		productID := r.PathValue("productID")
@@ -254,7 +254,7 @@ func adminUpdateVariantHandler(service adminPanelService, siteURL string) http.H
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		productID := r.PathValue("productID")
@@ -320,7 +320,7 @@ func adminCreateMaterialHandler(service adminPanelService, siteURL string) http.
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		id, page, err := service.CreateAdminMaterial(r.Context(), adminMaterialFormFromRequest(r))
@@ -373,7 +373,7 @@ func adminCreateColorHandler(service adminPanelService, siteURL string) http.Han
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		id, page, err := service.CreateAdminColor(r.Context(), adminColorFormFromRequest(r))
@@ -426,7 +426,7 @@ func adminCreateBoxHandler(service adminPanelService, siteURL string) http.Handl
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		id, page, err := service.CreateAdminBox(r.Context(), adminBoxFormFromRequest(r))
@@ -483,7 +483,7 @@ func adminSimplePostHandler(service adminPanelService, siteURL string, save func
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		component, redirectURL, err := save(r)
@@ -511,7 +511,7 @@ func adminRecipeMutationHandler(service adminPanelService, siteURL string, mutat
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 		productID := r.PathValue("productID")

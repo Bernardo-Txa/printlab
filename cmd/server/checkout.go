@@ -61,7 +61,7 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 		}
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "invalid customer details", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid customer details", err)
 			return
 		}
 

@@ -1,6 +1,6 @@
 # Testes
 
-Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, checkout, pedidos, pagamentos, acompanhamento e Admin 13.1-13.4 IMPLEMENTADOS conforme escopo.
+Status: estrategia PLANEJADA; testes de fundacao, banco, catalogo, variantes, carrinho, checkout, pedidos, pagamentos, acompanhamento, Admin 13.1-13.4 e hardening 14.1 IMPLEMENTADOS conforme escopo.
 
 ## Estrategia futura
 
@@ -30,9 +30,13 @@ Valores monetarios nunca deverao utilizar `float32` ou `float64` como representa
 ```sh
 templ generate
 npm run css:build
+gofmt -w .
+go mod tidy
 go test ./...
 go vet ./...
 go build ./...
+govulncheck ./...
+npm audit
 npx supabase --version
 ```
 
@@ -102,6 +106,8 @@ npx supabase --version
 - Validacoes Admin cobrem perfil logistico parcial rejeitado, override de preco zero, default variant ativa, desativacao de default limpando `is_default`, hex de cor canonico e dimensoes externas de caixa maiores ou iguais as internas.
 - Testes de regressao do repository Admin verificam transacao para troca de default, escopo por `product_id` em mutacoes filhas, `updated_at = now()` em updates e ausencia de `admin_order_events` no catalogo.
 - Admin 13.4 cobre validacao de MIME/tamanho, path gerado server-side, associacao de configuracao ao produto, signed upload sem Supabase real, finalizacao com metadata JSON de `GET /object/info`, substituicao com cleanup seguro, remocao de objeto gerenciado somente com Storage configurado, preservacao de imagens legadas, ordenacao, imagem principal, escopo produto/imagem e rejeicao de POST Admin sem `Origin` e sem `Referer`.
+- Hardening 14.1 cobre headers globais de seguranca, preservacao de `Referrer-Policy` especifica em Admin e acompanhamento publico, CSP sem `unsafe-eval`, origem Supabase derivada somente de `SUPABASE_URL`, timeouts do `http.Server`, limite global de 1 MiB para `Content-Length` conhecido e tamanho real sem `Content-Length` confiavel, preservacao do limite menor de JSON de imagens Admin, validacao de `SITE_URL` e comparacao por `scheme://host`.
+- Migration de limpeza transiente cobre `pg_cron`, nome do job, agenda diaria UTC, deletes permitidos em `admin_sessions` e `carts`, bloqueio de deletes em tabelas de pedido e confirmacao estrutural dos FKs que preservam pedidos.
 
 ## Teste de integracao PostgreSQL opcional
 

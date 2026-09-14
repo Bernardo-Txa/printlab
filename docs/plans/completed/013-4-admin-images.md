@@ -1,6 +1,6 @@
 # Fase 13.4 — Imagens e Supabase Storage
 
-Status: implementacao em correcao; validacao real pendente.
+Status: concluida e validada em producao.
 
 ## Objetivo
 
@@ -72,6 +72,24 @@ Motivos:
 - Imagens legadas/manuais fora desse prefixo podem ter associacao removida do banco, mas nao geram DELETE arbitrario.
 - `admin_order_events` continua exclusivo para pedidos; auditoria de catalogo fica como evolucao futura.
 
+## Validacao real em producao
+
+A validacao real em producao da Fase 13.4 foi concluida pelo responsavel sem registrar dados pessoais reais, `SUPABASE_SECRET_KEY`, token de signed upload, UUID administrativo real ou URLs privadas completas.
+
+Evidencias funcionais confirmadas:
+
+- upload pela tela Admin;
+- envio direto do browser ao Supabase Storage por signed upload URL;
+- finalizacao server-side no Go;
+- exibicao publica da imagem no catalogo;
+- associacao da imagem ao produto;
+- associacao opcional da imagem a Configuracao;
+- substituicao de imagem sem overwrite;
+- marcacao de imagem principal;
+- ordenacao de imagens;
+- remocao de associacao;
+- limpeza fisica do objeto gerenciado no Storage quando aplicavel.
+
 ## Fora do escopo
 
 - Editor/crop/compressao avancada.
@@ -80,19 +98,15 @@ Motivos:
 - Bucket novo, S3, Cloudinary, Vercel Blob ou CDN proprio.
 - Upload de SVG, PDF, video ou documentos.
 - Auditoria generica de catalogo.
-- Validacao real em producao da 13.4.
 - Fase 14.
 
 ## Definition of Done
 
 - Schema e bucket existentes inspecionados.
 - Sem migration criada.
-- Backend Admin, provider Storage, handlers e UI em correcao.
-- Testes de config, service de imagens, provider Storage, handlers e static asset em ampliacao.
+- Backend Admin, provider Storage, handlers e UI implementados.
+- Testes de config, service de imagens, provider Storage, handlers e static asset ampliados.
 - Documentacao, roadmap, ADR, CHANGELOG e env docs atualizados.
 - Validacoes locais executadas antes do commit.
+- Validacao real em producao concluida.
 - Commit e push automaticos conforme AGENTS.md.
-
-## Pendencia
-
-Apos deploy, configurar `SUPABASE_SECRET_KEY` na Vercel e validar com um produto real de desenvolvimento, sem registrar dados pessoais, secrets, token de signed upload ou UUID administrativo real.

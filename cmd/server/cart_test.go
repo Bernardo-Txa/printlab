@@ -184,6 +184,15 @@ func TestValidMutationSourceAllowsConfiguredSiteURL(t *testing.T) {
 	}
 }
 
+func TestValidMutationSourceRejectsConfiguredSiteURLSchemeMismatch(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "https://preview.printlab.test/carrinho/adicionar", nil)
+	req.Header.Set("Origin", "http://printlab.test")
+
+	if validMutationSource(req, "https://printlab.test") {
+		t.Fatal("expected configured SITE_URL comparison to require scheme and host")
+	}
+}
+
 func TestValidAdminMutationSource(t *testing.T) {
 	tests := []struct {
 		name    string

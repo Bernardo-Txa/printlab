@@ -76,6 +76,17 @@ func TestHealthHandler(t *testing.T) {
 	}
 }
 
+func TestHTTPServerTimeouts(t *testing.T) {
+	server := newHTTPServer(":0", http.NotFoundHandler())
+
+	if server.ReadHeaderTimeout != serverReadHeaderTimeout ||
+		server.ReadTimeout != serverReadTimeout ||
+		server.WriteTimeout != serverWriteTimeout ||
+		server.IdleTimeout != serverIdleTimeout {
+		t.Fatalf("expected conservative server timeouts, got %#v", server)
+	}
+}
+
 func TestReadyWithoutDatabaseURL(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ready", nil)
 	rec := httptest.NewRecorder()

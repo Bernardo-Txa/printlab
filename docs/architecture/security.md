@@ -1,10 +1,124 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro e operacao administrativa com imagens IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro, operacao administrativa com imagens e hardening base da Fase 14.1 IMPLEMENTADOS.
 
 ## Responsabilidade
 
 Seguranca deve orientar arquitetura, codigo, banco, integracoes e operacao. As regras abaixo sao obrigatorias para qualquer fase futura.
+
+## Hardening base HTTP
+
+A Fase 14.1 adiciona uma camada global de seguranca antes do roteador HTTP.
+
+Todas as respostas devem receber, salvo decisao especifica documentada:
+
+- `X-Content-Type-Options: nosniff`;
+- `X-Frame-Options: DENY`;
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- `Content-Security-Policy` restritiva.
+
+A CSP base e:
+
+```text
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: <SUPABASE_ORIGIN>; connect-src 'self' <SUPABASE_ORIGIN>; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+```
+
+`<SUPABASE_ORIGIN>` deve ser derivado exclusivamente de `SUPABASE_URL`, usando apenas esquema e host. Quando `SUPABASE_URL` estiver ausente ou invalida, nenhuma origem externa deve ser adicionada a `img-src` ou `connect-src`. A CSP nao deve usar `unsafe-eval`.
+
+Headers especificos de paginas sensiveis continuam prevalecendo:
+
+- Admin preserva `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`;
+- acompanhamento publico preserva `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: no-referrer`.
+
+`Strict-Transport-Security` e `preload` nao foram habilitados na 14.1. A decisao fica para preparacao final de producao, depois de dominio definitivo, HTTPS validado e confirmacao de que nao ha subdominio ou fluxo legitimo dependente de HTTP.
+
+## Limites de request e timeouts
+
+A aplicacao possui um teto global de 1 MiB para corpo de request. Requests com `Content-Length` conhecido acima desse limite devem receber `413 Request Entity Too Large`. Requests sem tamanho confiavel sao envelopados com `http.MaxBytesReader` antes do roteador.
+
+Limites menores por rota continuam sendo a fonte de controle especifica:
+
+- formularios Admin: 256 KiB;
+- JSON de imagens Admin: 64 KiB;
+- webhook InfinitePay: 64 KiB.
+
+O servidor HTTP deve ser criado com `http.Server` e timeouts explicitos:
+
+- `ReadHeaderTimeout`: 5s;
+- `ReadTimeout`: 15s;
+- `WriteTimeout`: 30s;
+- `IdleTimeout`: 60s.
+
+Clientes externos tambem possuem timeouts explicitos:
+
+- ViaCEP: 3s;
+- SuperFrete: 8s;
+- InfinitePay: 8s;
+- Supabase Auth: 8s;
+- Supabase Storage: 10s.
+
+## Configuracao de origem publica
+
+`SITE_URL` e opcional, mas quando preenchida deve ser uma URL absoluta com esquema `http` ou `https`, host obrigatorio, sem userinfo e sem fragment.
+
+Em ambientes de producao (`APP_ENV=production`/`prod` ou `VERCEL_ENV=production`/`prod`), `SITE_URL` deve usar `https`. URLs locais `http://localhost` e equivalentes continuam permitidas fora de producao.
+
+Comparacoes de origem baseadas em `SITE_URL` devem usar `scheme://host`. Comparar apenas host nao e suficiente quando a origem configurada diferencia HTTP e HTTPS.
+
+## Retencao de dados transientes
+
+A Fase 14.1 adiciona uma migration Supabase Cron para limpar diariamente, em UTC, dados transientes expirados:
+
+- `public.admin_sessions where expires_at <= now()`;
+- `public.carts where expires_at <= now()`.
+
+A limpeza de carrinhos depende dos FKs ja existentes com `ON DELETE CASCADE` para `cart_items`, `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections`. `orders.source_cart_id` usa `ON DELETE SET NULL`, portanto pedidos, snapshots, pagamentos, fulfillment e eventos administrativos devem ser preservados.
+
+Jobs de limpeza nao devem fazer chamadas HTTP, usar secrets ou apagar tabelas historicas de pedidos.
+
+## Rate limiting e WAF
+
+A Fase 14.1 nao implementa rate limiter dentro do Go. Endpoints sensiveis e/ou caros devem ser protegidos operacionalmente por Vercel Firewall/WAF depois de medir trafego real.
+
+Endpoints prioritarios:
+
+- `POST /admin/login`;
+- `GET /api/cep/{cep}`;
+- `GET /checkout/frete`;
+- `POST /checkout/frete`;
+- `POST /webhooks/infinitepay`;
+- operacoes administrativas de Storage;
+- chamadas server-side a SuperFrete, ViaCEP, InfinitePay e Supabase Auth.
+
+Rollout recomendado:
+
+1. criar regras por path/metodo em modo observacao/log;
+2. medir volume real, falsos positivos, origens e padroes de erro;
+3. definir limites diferentes por criticidade e custo;
+4. ativar acao de rate limit, challenge ou deny de forma incremental;
+5. validar checkout, webhook financeiro e login administrativo apos ativacao.
+
+## Supabase Auth e MFA
+
+O fluxo `Browser -> Go -> Supabase Auth` pode fazer tentativas de login parecerem concentradas no IP server-side perante os limites do Supabase Auth. A mitigacao oficial de IP forwarding exige header `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 apenas documenta esse risco; ela nao adiciona o header nem altera o fluxo de credenciais.
+
+MFA nao foi implementado na 14.1. Uma Fase 14.2 pode avaliar TOTP/AAL2 se o risco justificar. Pontos obrigatorios dessa avaliacao:
+
+- usar challenge/verify antes de criar a sessao propria da PrintLab;
+- decidir como manter temporariamente o estado entre primeiro fator e desafio sem persistir access token ou refresh token desnecessariamente;
+- evitar lockout do unico administrador;
+- testar credenciais invalidas, fator ausente, challenge expirado e sessao nao elevada.
+
+## Banco, logs e dependencias
+
+Todas as tabelas de negocio e operacionais criadas ate a Fase 14.1 mantem RLS habilitado sem policies publicas. A aplicacao acessa dados server-side via connection string do backend; novas policies publicas exigem ADR ou documentacao especifica de arquitetura.
+
+Como `DATABASE_URL` real e secret e nao deve ser lida nem impressa, a Fase 14.1 nao altera privilegios do usuario de banco em runtime. Antes do go-live comercial, a Fase 17 deve verificar operacionalmente se a connection string usa uma role com privilegios minimos suficientes para a aplicacao, em vez de uma role ampla demais.
+
+Logs devem continuar sem PII, secrets, tokens, connection strings, URLs de checkout completas, signed upload URLs, `transaction_nsu`, `invoice_slug`, CPF, e-mail completo, telefone, endereco ou `public_tracking_id`.
+
+Dependencias devem ser revisadas com `go mod tidy`, `go test ./...`, `go vet ./...`, `go build ./...`, `govulncheck ./...` quando disponivel e `npm audit` antes do fechamento da fase.
 
 ## Regras financeiras
 
@@ -116,7 +230,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - A consulta progressiva de CEP deve ser server-side. O navegador chama apenas endpoint interno, e logs nao devem registrar CEP consultado nem endereco retornado.
 - O endpoint interno de CEP deve retornar somente rua, bairro, cidade e UF, sem repassar codigos administrativos do provedor externo.
 - Dados temporarios sao removidos por `ON DELETE CASCADE` quando o carrinho for removido.
-- Limpeza programada de carrinhos expirados e PII associada e requisito obrigatorio antes do go-live comercial.
+- Carrinhos expirados e PII temporaria associada sao removidos pelo job diario de Supabase Cron da Fase 14.1.
 
 ## Frete
 
@@ -199,7 +313,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Logs administrativos podem registrar somente eventos genericos como login bem-sucedido, login falho, logout, sessao expirada e erro de repository.
 - Logs administrativos nao devem registrar e-mail, senha, token de sessao, token hash, access token, refresh token, publishable key, secret key, PII de clientes ou connection strings.
 - Dashboard e listagem de pedidos mostram apenas informacoes agregadas ou operacionais minimizadas e nao carregam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
-- Supabase Auth possui rate limits proprios; protecoes adicionais contra abuso, CAPTCHA/WAF/rate limiting e revisao de brute force ficam para a Fase 14.
+- Supabase Auth possui rate limits proprios; protecoes adicionais contra abuso devem ser configuradas operacionalmente por Vercel Firewall/WAF apos observacao de trafego real.
 
 ## Pagamentos InfinitePay
 
@@ -219,7 +333,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 ## Limites
 
 - Autenticacao e autorizacao administrativas basicas estao implementadas apenas para um usuario Supabase Auth autorizado por UUID.
-- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA/WAF ou alteracao de valores/dados de pedidos nesta subfase.
+- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA, rate limiter em Go ou alteracao de valores/dados de pedidos nesta subfase.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
@@ -237,6 +351,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Revisar dependencias antes de adiciona-las.
 - Usar `TEST_DATABASE_URL` para testes opcionais de integracao com banco, nunca `DATABASE_URL` de producao.
 - Validar paths de Storage antes de montar URL publica de imagem.
+- Revisar headers globais, CSP e limites de body apos cada nova rota publica ou administrativa.
+- Configurar protecoes de Vercel Firewall/WAF inicialmente em modo observacao antes de bloquear trafego.
 
 ## Praticas proibidas
 

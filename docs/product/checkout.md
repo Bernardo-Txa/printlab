@@ -95,7 +95,7 @@ O backend nao deve logar CPF, e-mail completo, telefone, endereco ou token do ca
 
 Contato e endereco sao lidos por uma unica consulta SQL com `JOIN`, para observar um snapshot consistente do PostgreSQL. Se houver estado parcial anomalo, como contato sem endereco ou endereco sem contato, o backend trata como dados ausentes e nao preenche o formulario com PII incompleta.
 
-Quando o carrinho for removido, `ON DELETE CASCADE` remove `cart_customer_details` e `cart_shipping_addresses`. A limpeza programada de carrinhos expirados e PII associada e pendencia obrigatoria antes do go-live comercial.
+Quando o carrinho for removido, `ON DELETE CASCADE` remove `cart_customer_details` e `cart_shipping_addresses`. Carrinhos expirados e PII temporaria associada sao removidos pelo job diario `printlab_transient_data_cleanup`.
 
 ## Frete
 

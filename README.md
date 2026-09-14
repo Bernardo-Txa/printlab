@@ -53,7 +53,8 @@ IMPLEMENTADO:
 - Fase 13.2 — Pedidos, Producao, Envio e Auditoria, com validacao real em producao concluida.
 - Fase 13.3 — Catalogo, Variantes, Materiais, Cores e Caixas, com validacao real em producao concluida.
 - Fase 13.3A — Refinamento de configuracoes do produto, com seletor publico apenas quando ha duas ou mais configuracoes ativas e validacao real concluida.
-- Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com implementacao em correcao e validacao real pendente.
+- Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com validacao real em producao concluida.
+- Fase 14.1 — Hardening base de seguranca, com headers globais, CSP, limite global de body, timeouts HTTP, validacao de `SITE_URL` e limpeza diaria de dados transientes por Supabase Cron.
 
 PLANEJADO:
 
@@ -68,6 +69,7 @@ Backend:
 
 - Go.
 - `net/http` da biblioteca padrao.
+- `http.Server` com timeouts explicitos.
 - `pgx/v5` com `pgxpool` para PostgreSQL.
 - Dependencias externas somente quando houver justificativa real.
 
@@ -137,6 +139,7 @@ Banco implementado:
 - `orders.public_tracking_id` e UUID aleatorio unico para `/acompanhar/{uuid}`.
 - `admin_sessions` guarda sessoes administrativas transitorias com `SHA-256` do token, TTL de 8 horas e RLS habilitado.
 - `admin_order_events` guarda auditoria operacional de mutacoes administrativas de producao/envio.
+- Supabase Cron remove diariamente `admin_sessions` expiradas e `carts` expirados, preservando pedidos historicos.
 - `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID interno e acompanhamento usa `public_tracking_id`.
 - RLS esta habilitado nas tabelas de catalogo, variantes, carrinho, dados temporarios de checkout, frete, pedidos, pagamentos e admin sem policies publicas do Data API.
 
@@ -153,6 +156,7 @@ Infraestrutura implementada para desenvolvimento:
 - Execucao automatica apenas em mudancas de `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
 - Supabase CLI fixado em `2.117.0`, com `supabase db push --dry-run` antes de `supabase db push`.
 - `vercel.json` minimo com `regions: ["gru1"]`.
+- Headers globais de seguranca e CSP sao aplicados pelo backend Go; WAF/rate limiting ficam para configuracao operacional na Vercel apos observacao de trafego.
 
 ## Arquitetura resumida
 
@@ -188,7 +192,7 @@ Para o workflow remoto de migrations Supabase, o responsavel pelo projeto deve c
 
 Configuracao local ou de hosting para runtime:
 
-- `SITE_URL`: URL publica da aplicacao. Opcional, usada como origem permitida em mutacoes de carrinho.
+- `SITE_URL`: URL publica da aplicacao. Opcional, usada como origem permitida em mutacoes. Quando preenchida, deve ser absoluta, `http` ou `https`, com host, sem userinfo e sem fragment; em producao exige `https`.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.

@@ -1,6 +1,6 @@
 # Setup de desenvolvimento
 
-Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento, Admin e gestao administrativa de imagens IMPLEMENTADOS.
+Status: fundacao visual, banco, catalogo, variantes, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento, Admin, gestao administrativa de imagens e hardening base IMPLEMENTADOS.
 
 ## Requisitos
 
@@ -22,7 +22,7 @@ Variaveis de runtime:
 
 - `APP_ENV`: ambiente da aplicacao.
 - `PORT`: porta HTTP, default `8080`.
-- `SITE_URL`: URL publica da aplicacao quando necessaria, usada tambem como origem permitida em mutacoes de carrinho.
+- `SITE_URL`: URL publica da aplicacao quando necessaria, usada tambem como origem permitida em mutacoes. Deve ser absoluta, `http` ou `https`, com host, sem userinfo e sem fragment; em producao exige `https`.
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: maximo de conexoes do pool por instancia, default `4`.
 - `SUPABASE_URL`: URL publica do projeto Supabase. Opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images` e para login Admin quando configurado.
@@ -48,7 +48,9 @@ Sem configuracao SuperFrete, a rota `/checkout/frete` nao faz chamada externa e 
 
 Sem `INFINITEPAY_HANDLE` ou sem `SITE_URL` HTTPS, a aplicacao continua iniciando e a pagina de pedido mostra pagamento temporariamente indisponivel, sem panic e sem botao falso.
 
-Na Vercel, `VERCEL_ENV=production` tambem e considerado para marcar o cookie do carrinho como `Secure`. Localmente, `SITE_URL=http://localhost:8080` permite validar formularios sem exigir HTTPS.
+Na Vercel, `VERCEL_ENV=production` tambem e considerado para marcar cookies como `Secure` e exigir `SITE_URL` HTTPS quando preenchida. Localmente, `SITE_URL=http://localhost:8080` permite validar formularios sem exigir HTTPS.
+
+Todas as rotas recebem headers globais de seguranca e CSP. Admin e acompanhamento publico preservam seus headers privados/noindex/referrer especificos.
 
 Secrets exigidos no GitHub Actions para migrations:
 
@@ -105,6 +107,14 @@ Resposta esperada:
 ```text
 ok
 ```
+
+Headers globais de seguranca:
+
+```sh
+curl -I http://localhost:8080/health
+```
+
+A resposta deve incluir `X-Content-Type-Options`, `X-Frame-Options`, `Permissions-Policy`, `Referrer-Policy` e `Content-Security-Policy`.
 
 ## Validar readiness
 

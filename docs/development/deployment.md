@@ -59,6 +59,7 @@ Supabase de desenvolvimento
 - Pedidos dependem do PostgreSQL para criar snapshots historicos, converter carrinho e exibir `/pedido/{id}` por UUID.
 - Pagamentos InfinitePay dependem de PostgreSQL para `order_payments`, de `SITE_URL` HTTPS e de `INFINITEPAY_HANDLE` para iniciar checkout hospedado, gerar `redirect_url`, gerar `webhook_url` e confirmar por `payment_check`.
 - Admin 13.1 depende de PostgreSQL para `admin_sessions` e de `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_SUPABASE_USER_ID` para login real.
+- Hardening 14.1 aplica headers globais, CSP, limite global de body e timeouts HTTP em todas as rotas.
 - Sem secrets reais.
 - Workflow de CI/CD para migrations Supabase configurado em `.github/workflows/supabase-migrations.yml`.
 
@@ -124,6 +125,8 @@ A Fase 9 cria `create_orders`, adicionando `carts.converted_at` e tabelas de ped
 
 A Fase 10 cria `add_order_payments`, adicionando `order_payments` e permitindo `orders.status = 'paid'`. Ela deve ser aplicada pelo workflow sem seed de pagamentos, checkout URLs, transacoes ou dados ficticios.
 
+A Fase 14.1 cria `schedule_transient_data_cleanup`, habilitando Supabase Cron/`pg_cron` e agendando limpeza diaria de `admin_sessions` e `carts` expirados. Ela nao deve apagar pedidos, snapshots, pagamentos, fulfillment ou eventos administrativos.
+
 ## Runtime PostgreSQL
 
 ```text
@@ -141,6 +144,7 @@ PostgreSQL
 
 Secrets de runtime no ambiente de hosting:
 
+- `APP_ENV`, opcional; `production` ou `prod` ativa regras de producao.
 - `DATABASE_URL`
 - `INFINITEPAY_HANDLE`, necessario para habilitar checkout InfinitePay
 - `DB_MAX_CONNS`, opcional, default `4`
@@ -166,6 +170,12 @@ Se `SUPABASE_PUBLISHABLE_KEY`, `ADMIN_SUPABASE_USER_ID`, `SUPABASE_URL` ou `DATA
 Se `SUPABASE_SECRET_KEY` estiver ausente, upload/substituicao/remocao fisica de imagens no Admin fica indisponivel, mas a loja publica e o restante do painel continuam iniciando.
 
 O cookie do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
+
+Quando `SITE_URL` estiver preenchida, a aplicacao exige URL absoluta `http` ou `https`, host obrigatorio, sem userinfo e sem fragment. Em `APP_ENV=production`/`prod` ou `VERCEL_ENV=production`/`prod`, `SITE_URL` precisa ser HTTPS.
+
+`Strict-Transport-Security` e preload nao foram habilitados na Fase 14.1. Antes da operacao comercial, validar dominio definitivo, HTTPS e subdominios antes de decidir HSTS/preload.
+
+Rate limiting deve ser configurado operacionalmente por Vercel Firewall/WAF depois de observar trafego real. Comecar em modo log/observacao para `POST /admin/login`, `GET /api/cep/{cep}`, `GET/POST /checkout/frete` e `POST /webhooks/infinitepay`; so depois ativar rate limit, challenge ou deny.
 
 `SUPABASE_URL` pode ficar ausente enquanto nao houver imagens reais cadastradas. Nesse caso, catalogo e detalhe continuam funcionando com placeholder visual. Bucket/schema implementados nao significam imagem real validada.
 
@@ -274,6 +284,16 @@ curl -i https://printlab-pied.vercel.app/admin/login
 
 Sem config Admin, a resposta esperada e HTTP 503 com indisponibilidade segura. Com config Admin real feita manualmente na Vercel e usuario criado no Supabase Auth, validar login pelo navegador sem registrar e-mail, senha, user UUID real, token de sessao ou tokens Supabase em logs/documentacao.
 
+Depois da Fase 14.1, validar hardening sem criar dados reais automaticamente:
+
+```sh
+curl -I https://printlab-pied.vercel.app/health
+curl -I https://printlab-pied.vercel.app/admin/login
+curl -I https://printlab-pied.vercel.app/acompanhar/00000000-0000-0000-0000-000000000000
+```
+
+Validar presenca dos headers globais, CSP sem `unsafe-eval`, `Referrer-Policy: same-origin` no Admin e `Referrer-Policy: no-referrer` no acompanhamento quando uma pagina valida for acessada. Conferir no Supabase que o job `printlab_transient_data_cleanup` existe em `cron.job`, sem registrar secrets ou dados pessoais.
+
 ## Vercel
 
 `vercel.json` contem apenas:
@@ -301,8 +321,9 @@ Nao ha builds, rewrites, routes, outputDirectory, installCommand ou Docker custo
 - Revisar observabilidade.
 - Revisar backups.
 - Revisar seguranca.
-- Implementar limpeza programada de carrinhos expirados e PII associada.
-- Implementar limpeza operacional de sessoes administrativas expiradas.
+- Validar limpeza programada de carrinhos expirados, PII temporaria associada e sessoes administrativas expiradas.
+- Configurar Vercel Firewall/WAF em modo observacao antes de ativar rate limits ou bloqueios.
+- Decidir HSTS/preload somente apos dominio definitivo e HTTPS validado.
 
 ## Praticas proibidas
 

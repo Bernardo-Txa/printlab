@@ -69,6 +69,7 @@ Por isso a implementacao:
 - usa `X-Robots-Tag: noindex, nofollow, noarchive`;
 - renderiza `<meta name="robots" content="noindex, nofollow, noarchive">`;
 - usa `Referrer-Policy: no-referrer`.
+- tambem recebe os headers globais de seguranca e CSP da Fase 14.1.
 
 ## Relacao com `/pedido/{id}`
 

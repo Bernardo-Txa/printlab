@@ -44,6 +44,10 @@ A aplicacao usa `SUPABASE_PUBLISHABLE_KEY`, nao usa `SUPABASE_SECRET_KEY` nem se
 - `admin_sessions` precisa de limpeza operacional futura para sessoes expiradas.
 - Fase 14 deve revisar brute force, CAPTCHA/WAF/rate limiting adicional e MFA.
 
+## Atualizacao Fase 14.1
+
+`admin_sessions` expiradas sao removidas pelo job diario `printlab_transient_data_cleanup` via Supabase Cron. A revisao de abuso documentou estrategia de Vercel Firewall/WAF apos observacao de trafego real; MFA, RBAC e CAPTCHA continuam fora do escopo implementado.
+
 ## Referencias
 
 - https://supabase.com/docs/guides/auth

@@ -1,6 +1,6 @@
 # Supabase Auth
 
-Status: IMPLEMENTADO NA FASE 13.1 para autenticacao administrativa.
+Status: IMPLEMENTADO NA FASE 13.1 para autenticacao administrativa; riscos de rate limit e MFA avaliados/documentados na Fase 14.1.
 
 ## Escopo
 
@@ -86,10 +86,16 @@ A aplicacao nao revela se o usuario existe, se a senha falhou ou se o usuario au
 
 Logs nao devem registrar e-mail, senha, token de sessao, hash, access token, refresh token, publishable key, secret key ou PII.
 
-Supabase Auth possui rate limits proprios. Revisao de abuso, brute force, CAPTCHA/WAF e protecoes adicionais fica planejada para a Fase 14.
+Supabase Auth possui rate limits proprios. Como a PrintLab usa o fluxo `Browser -> Go -> Supabase Auth`, tentativas de login podem ser vistas pelo Supabase como trafego vindo do IP server-side da aplicacao. A mitigacao oficial de IP forwarding exige `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 documenta o risco, mas nao adiciona o header nem troca a credencial do fluxo Auth.
+
+Protecao contra abuso e brute force deve ser configurada operacionalmente por Vercel Firewall/WAF apos observacao de trafego real, com cuidado para nao bloquear o unico administrador legitimo.
+
+MFA nao esta implementado. Uma fase futura pode avaliar TOTP/AAL2 com challenge/verify antes da sessao propria da PrintLab, evitando persistir access token ou refresh token desnecessariamente e planejando recuperacao para evitar lockout.
 
 ## Referencias oficiais
 
 - https://supabase.com/docs/guides/auth
 - https://supabase.com/docs/guides/auth/passwords
 - https://supabase.com/docs/guides/getting-started/api-keys
+- https://supabase.com/docs/guides/auth/rate-limits
+- https://supabase.com/docs/guides/auth/auth-mfa

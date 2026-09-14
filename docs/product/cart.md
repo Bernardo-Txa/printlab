@@ -85,7 +85,7 @@ Carrinhos anonimos expiram apos 30 dias.
 
 Ao modificar o carrinho com sucesso, o backend renova `expires_at` para `agora + 30 dias` e renova o cookie.
 
-Nao ha job de limpeza nesta fase. Remocao fisica de carrinhos expirados podera ser implementada futuramente.
+O job diario `printlab_transient_data_cleanup` remove carrinhos expirados. Dados temporarios vinculados ao carrinho sao removidos por `ON DELETE CASCADE`; pedidos historicos permanecem preservados por snapshots proprios e `orders.source_cart_id` pode ficar `null`.
 
 Quando um pedido e criado, a linha de `carts` e preservada com `converted_at` preenchido para manter a relacao historica por `source_cart_id`. Na mesma transacao, `cart_items`, `cart_customer_details`, `cart_shipping_addresses` e `cart_shipping_selections` sao removidos porque o pedido passa a ser o snapshot definitivo.
 
@@ -133,7 +133,7 @@ Se um produto que estava no carrinho sem configuracao passar a ter multiplas con
 
 Mutacoes do carrinho usam POST, cookie `SameSite=Lax` e validacao centralizada de `Origin`/`Referer`.
 
-Quando `Origin` esta presente, a origem precisa bater com o host da request ou com `SITE_URL`. O valor opaco `Origin: null` nao e tratado como origem confiavel. Quando `Origin` esta ausente e `Referer` esta presente, o `Referer` e usado como fallback. Requests sem ambos sao aceitos para preservar compatibilidade com navegadores/proxies, apoiados pelo `SameSite=Lax`.
+Quando `Origin` esta presente, a origem precisa bater com o host da request ou com a origem configurada em `SITE_URL` por `scheme://host`. O valor opaco `Origin: null` nao e tratado como origem confiavel. Quando `Origin` esta ausente e `Referer` esta presente, o `Referer` e usado como fallback. Requests sem ambos sao aceitos para preservar compatibilidade com navegadores/proxies, apoiados pelo `SameSite=Lax`.
 
 Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras.
 

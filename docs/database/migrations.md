@@ -1,6 +1,6 @@
 # Migrations
 
-Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes/imagens, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento e admin IMPLEMENTADAS.
+Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes/imagens, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento, admin e limpeza transiente IMPLEMENTADAS.
 
 A primeira migration funcional do projeto cria o catalogo basico:
 
@@ -68,6 +68,12 @@ A Fase 13.3A tambem nao criou migration. O refinamento alterou semantica e UX de
 
 A Fase 13.4 nao criou migration. A gestao administrativa de imagens usa `public.product_images` e o bucket `product-images` criados na Fase 5.
 
+A decima primeira migration funcional agenda limpeza de dados transientes:
+
+- `supabase/migrations/20260913140000_schedule_transient_data_cleanup.sql`
+
+Ela habilita `pg_cron` e agenda o job diario `printlab_transient_data_cleanup` para remover apenas `public.admin_sessions` expiradas e `public.carts` expirados. Dados temporarios de carrinho sao removidos pelos FKs `ON DELETE CASCADE`; pedidos sao preservados porque `orders.source_cart_id` usa `ON DELETE SET NULL`.
+
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
@@ -128,6 +134,8 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - A decima migration real cria auditoria operacional administrativa para a Fase 13.2.
 - A Fase 13.3 nao possui migration porque o schema existente atende ao escopo.
 - A Fase 13.3A nao possui migration porque `product_variants` permanece como modelo interno.
+- A Fase 13.4 nao possui migration porque `product_images` e o bucket `product-images` ja existiam.
+- A decima primeira migration real agenda limpeza transiente da Fase 14.1 com Supabase Cron.
 
 ## Praticas recomendadas
 
@@ -141,6 +149,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - O workflow de CI nao executa reset remoto.
 - `supabase/config.toml` mantem seed desabilitado nesta fase.
 - Configuracao de bucket em `storage.buckets` pode fazer parte de migration quando for infraestrutura aprovada e sem dados ficticios de negocio.
+- Jobs de `pg_cron` devem ter nome estavel, horario UTC documentado, escopo minimo e testes estruturais quando alterarem dados.
 
 ## Antes de aprovar uma migration
 
@@ -148,6 +157,7 @@ A aplicacao Go nao executa migrations no startup. Nao existe AutoMigrate, migrat
 - O impacto em codigo e dados foi entendido.
 - Testes aplicaveis foram planejados ou executados.
 - O caminho de rollback foi discutido quando necessario.
+- Para jobs agendados, o impacto de retencao e preservacao de historico foi documentado.
 
 ## Secrets do CI
 

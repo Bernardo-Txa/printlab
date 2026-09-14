@@ -26,6 +26,7 @@ var (
 	ErrInvalidSuperFreteServices         = errors.New("invalid SUPERFRETE_SERVICES")
 	ErrInvalidInfinitePayHandle          = errors.New("invalid INFINITEPAY_HANDLE")
 	ErrInvalidSupabaseSecretKey          = errors.New("invalid SUPABASE_SECRET_KEY")
+	ErrInvalidSiteURL                    = errors.New("invalid SITE_URL")
 )
 
 var infinitePayHandlePattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
@@ -88,6 +89,13 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 		return Config{}, err
 	}
 
+	appEnv := strings.TrimSpace(value(lookup, "APP_ENV"))
+	vercelEnv := strings.TrimSpace(value(lookup, "VERCEL_ENV"))
+	siteURL, err := parseSiteURL(lookup, appEnv, vercelEnv)
+	if err != nil {
+		return Config{}, err
+	}
+
 	supabaseURL := strings.TrimRight(strings.TrimSpace(value(lookup, "SUPABASE_URL")), "/")
 	supabasePublishableKey := strings.TrimSpace(value(lookup, "SUPABASE_PUBLISHABLE_KEY"))
 	supabaseSecretKey, err := parseSupabaseSecretKey(lookup)
@@ -97,10 +105,10 @@ func loadFromEnv(lookup envLookup) (Config, error) {
 	adminSupabaseUserID := normalizeOptionalUUID(value(lookup, "ADMIN_SUPABASE_USER_ID"))
 
 	return Config{
-		AppEnv:                      strings.TrimSpace(value(lookup, "APP_ENV")),
-		VercelEnv:                   strings.TrimSpace(value(lookup, "VERCEL_ENV")),
+		AppEnv:                      appEnv,
+		VercelEnv:                   vercelEnv,
 		Port:                        port,
-		SiteURL:                     strings.TrimSpace(value(lookup, "SITE_URL")),
+		SiteURL:                     siteURL,
 		DatabaseURL:                 databaseURL,
 		DatabaseConfigured:          databaseConfigured,
 		DBMaxConns:                  dbMaxConns,
@@ -139,6 +147,29 @@ func parseDBMaxConns(lookup envLookup) (int32, error) {
 	}
 
 	return int32(value), nil
+}
+
+func parseSiteURL(lookup envLookup, appEnv string, vercelEnv string) (string, error) {
+	siteURL := strings.TrimSpace(value(lookup, "SITE_URL"))
+	if siteURL == "" {
+		return "", nil
+	}
+
+	parsed, err := url.Parse(siteURL)
+	if err != nil ||
+		parsed.Scheme == "" ||
+		parsed.Host == "" ||
+		parsed.User != nil ||
+		parsed.Fragment != "" ||
+		!webScheme(parsed.Scheme) {
+		return "", ErrInvalidSiteURL
+	}
+
+	if parsed.Scheme != "https" && (productionEnv(appEnv) || productionEnv(vercelEnv)) {
+		return "", ErrInvalidSiteURL
+	}
+
+	return siteURL, nil
 }
 
 func validateDatabaseURL(databaseURL string) (bool, error) {
@@ -186,6 +217,15 @@ func supabaseStorageConfigured(supabaseURL string, secretKey string) bool {
 func validHTTPURL(value string) bool {
 	parsed, err := url.Parse(strings.TrimSpace(value))
 	return err == nil && parsed.Scheme != "" && parsed.Host != "" && (parsed.Scheme == "http" || parsed.Scheme == "https")
+}
+
+func webScheme(scheme string) bool {
+	return scheme == "http" || scheme == "https"
+}
+
+func productionEnv(value string) bool {
+	value = strings.ToLower(strings.TrimSpace(value))
+	return value == "production" || value == "prod"
 }
 
 func normalizeOptionalUUID(value string) string {

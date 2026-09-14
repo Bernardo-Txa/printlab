@@ -182,7 +182,7 @@ func adminImageFormMutationHandler(service adminPanelService, siteURL string, mu
 			return
 		}
 		if err := parseAdminForm(w, r); err != nil {
-			http.Error(w, "invalid admin request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid admin request", err)
 			return
 		}
 
@@ -210,6 +210,10 @@ func decodeAdminJSON(w http.ResponseWriter, r *http.Request, dest any) bool {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(dest); err != nil {
+		if isMaxBytesError(err) {
+			writeAdminJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "invalid_request"})
+			return false
+		}
 		writeAdminJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_request"})
 		return false
 	}

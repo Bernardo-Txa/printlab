@@ -211,6 +211,59 @@ func TestLoadReadsOptionalSiteAndRuntimeEnvironment(t *testing.T) {
 	}
 }
 
+func TestLoadAllowsLocalHTTPSiteURLOutsideProduction(t *testing.T) {
+	cfg, err := loadFromEnv(mapLookup(map[string]string{
+		"SITE_URL": " http://localhost:8080 ",
+	}))
+	if err != nil {
+		t.Fatalf("expected local HTTP SITE_URL outside production to be accepted, got %v", err)
+	}
+
+	if cfg.SiteURL != "http://localhost:8080" {
+		t.Fatalf("expected trimmed local SITE_URL, got %q", cfg.SiteURL)
+	}
+}
+
+func TestLoadRejectsInvalidSiteURL(t *testing.T) {
+	for _, value := range []string{
+		"not a url",
+		"/relative",
+		"//printlab.example",
+		"ftp://printlab.example",
+		"https://user:pass@printlab.example",
+		"https://printlab.example/#fragment",
+	} {
+		t.Run(value, func(t *testing.T) {
+			_, err := loadFromEnv(mapLookup(map[string]string{"SITE_URL": value}))
+			if !errors.Is(err, ErrInvalidSiteURL) {
+				t.Fatalf("expected ErrInvalidSiteURL, got %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadRejectsHTTPSiteURLInProduction(t *testing.T) {
+	for _, runtime := range []struct {
+		key   string
+		value string
+	}{
+		{key: "APP_ENV", value: "production"},
+		{key: "APP_ENV", value: "prod"},
+		{key: "VERCEL_ENV", value: "production"},
+		{key: "VERCEL_ENV", value: "prod"},
+	} {
+		t.Run(runtime.key+"="+runtime.value, func(t *testing.T) {
+			_, err := loadFromEnv(mapLookup(map[string]string{
+				runtime.key: runtime.value,
+				"SITE_URL":  "http://printlab.example",
+			}))
+			if !errors.Is(err, ErrInvalidSiteURL) {
+				t.Fatalf("expected ErrInvalidSiteURL, got %v", err)
+			}
+		})
+	}
+}
+
 func TestLoadAllowsMissingSuperFreteConfig(t *testing.T) {
 	cfg, err := loadFromEnv(mapLookup(map[string]string{}))
 	if err != nil {

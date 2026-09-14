@@ -250,11 +250,6 @@ func isJSONContentType(contentType string) bool {
 	return mediaType == "application/json"
 }
 
-func isMaxBytesError(err error) bool {
-	var maxBytesError *http.MaxBytesError
-	return errors.As(err, &maxBytesError)
-}
-
 func methodNotAllowedHandler(allowedMethod string) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Allow", allowedMethod)

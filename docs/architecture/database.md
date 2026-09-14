@@ -1,6 +1,6 @@
 # Banco de dados
 
-Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas e auditoria operacional IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
+Status: fundacao PostgreSQL/Supabase, catalogo, variantes, producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas, auditoria operacional e limpeza automatica de dados transientes IMPLEMENTADOS; demais schemas de negocio PLANEJADOS.
 
 ## Responsabilidade
 
@@ -9,7 +9,7 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 ## Limites
 
 - Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments`, `public.order_payments`, `public.admin_sessions` e `public.admin_order_events`.
-- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento, o acompanhamento seguro, sessoes admin e auditoria operacional.
+- As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento, o acompanhamento seguro, sessoes admin, auditoria operacional e job diario de limpeza transiente.
 - A Fase 13.3 nao cria schema novo; o Admin de catalogo opera sobre tabelas existentes. A Fase 13.4 tambem nao cria schema novo; a gestao de imagens usa `public.product_images` existente.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
 - Ha acesso PostgreSQL server-side com `pgx/v5` e `pgxpool`.
@@ -53,6 +53,10 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 - Criar `admin_sessions` para sessoes administrativas transitorias, armazenando somente `auth_user_id`, `SHA-256(token)`, `created_at` e `expires_at`, sem FK para `auth.users`.
 - Criar `admin_order_events` para auditoria transacional de mutacoes administrativas de producao/envio, armazenando ator Auth, tipo de evento, status anterior/novo e horario, sem PII de cliente.
 - Usar `is_active` em vez de hard delete para gestao administrativa de categorias, produtos, variantes, materiais, cores e caixas.
+- Habilitar `pg_cron` via migration apenas para limpeza de dados transientes expirados.
+- Agendar job diario `printlab_transient_data_cleanup`, em UTC, para remover `admin_sessions` e `carts` expirados.
+- Preservar historico de pedidos quando carrinhos expirados forem removidos: `orders.source_cart_id` deve usar `ON DELETE SET NULL`, enquanto tabelas temporarias de carrinho usam `ON DELETE CASCADE`.
+- Jobs de banco nao devem fazer chamadas HTTP, carregar secrets ou apagar tabelas historicas de pedidos.
 
 ## Runtime de conexao
 
@@ -109,9 +113,28 @@ Pool padrao por instancia:
 - `order_payments` guarda checkout InfinitePay, status de pagamento, `order_nsu`, retorno confirmado e valores validados.
 - `admin_sessions` guarda sessoes administrativas com token hash de 32 bytes e expiracao curta de 8 horas.
 - `admin_order_events` guarda trilha de auditoria operacional de producao/envio por pedido.
+- `pg_cron` agenda limpeza diaria de `admin_sessions` expiradas e `carts` expirados.
 - RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections`, tabelas de pedido, `order_payments`, `admin_sessions` e `admin_order_events` sem policies publicas.
 - A gestao Admin de catalogo da Fase 13.3 usa essas tabelas sem criar tabela paralela e sem reutilizar `admin_order_events`.
 - A gestao Admin de imagens da Fase 13.4 usa `product_images.storage_path`, `sort_order` e `is_primary` existentes, sem migration nova.
+
+## Limpeza transiente
+
+A migration `schedule_transient_data_cleanup` cria o job Supabase Cron `printlab_transient_data_cleanup`, agendado diariamente as 03:17 UTC.
+
+O job executa somente:
+
+- `delete from public.admin_sessions where expires_at <= now()`;
+- `delete from public.carts where expires_at <= now()`.
+
+Ao apagar carrinhos expirados, o banco remove por cascade apenas dados temporarios vinculados ao carrinho:
+
+- `cart_items`;
+- `cart_customer_details`;
+- `cart_shipping_addresses`;
+- `cart_shipping_selections`.
+
+Pedidos e historicos permanecem preservados. `orders.source_cart_id` fica `NULL` quando o carrinho original deixa de existir; snapshots de cliente, endereco, frete, itens, pagamento, fulfillment e eventos administrativos continuam em tabelas de pedido.
 
 ## Convencoes de schema futuras
 
@@ -154,7 +177,7 @@ Tabelas como `filament_spools`, `filament_inventory`, `filament_batches`, `purch
 
 ## IDs
 
-`categories`, `products`, `product_variants`, `carts`, `cart_items`, `shipping_boxes`, `orders`, `order_items`, `order_item_filaments`, `admin_sessions` e `admin_order_events` usam UUID. `cart_customer_details`, `cart_shipping_addresses`, `cart_shipping_selections`, `order_fulfillment`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details` usam a chave primaria da entidade pai por serem relacoes 1:1. `orders.public_tracking_id` usa UUID aleatorio separado para acompanhamento. `orders.order_number` usa `bigint identity` sequencial apenas para referencia humana. Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+`categories`, `products`, `product_variants`, `carts`, `cart_items`, `shipping_boxes`, `orders`, `order_items`, `order_item_filaments`, `admin_sessions` e `admin_order_events` usam UUID. `cart_customer_details`, `cart_shipping_addresses`, `cart_shipping_selections`, `order_fulfillment`, `order_customer_details`, `order_shipping_addresses` e `order_shipping_details` usam a chave primaria da entidade pai por serem relacoes 1:1. `orders.public_tracking_id` usa UUID aleatorio separado para acompanhamento. `orders.order_number` usa `bigint identity` sequencial apenas para referencia humana. Novas extensoes PostgreSQL exigem necessidade atual documentada; `pg_cron` foi aprovado na Fase 14.1 para limpeza transiente.
 
 ## RLS e Data API
 

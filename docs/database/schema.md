@@ -1,6 +1,6 @@
 # Schema de banco
 
-Status: catalogo, variantes, receita de producao, imagens, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas e auditoria operacional IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
+Status: catalogo, variantes, receita de producao, imagens, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento seguro, sessoes administrativas, auditoria operacional e limpeza transiente IMPLEMENTADOS; demais entidades de negocio PLANEJADAS.
 
 A Fase 4 criou o catalogo basico com categorias e produtos. A Fase 5 adiciona variantes, materiais, cores, receita estimada de producao 3D e imagens publicas de catalogo.
 
@@ -27,6 +27,8 @@ A Fase 13.3 nao altera schema. Ela torna administraveis as tabelas ja existentes
 A Fase 13.3A tambem nao altera schema: `public.product_variants` permanece como modelo interno de configuracoes do produto.
 
 A Fase 13.4 nao altera schema: a gestao administrativa de imagens usa `public.product_images` e o bucket `product-images` existentes.
+
+A Fase 14.1 habilita `pg_cron` e agenda limpeza diaria de `public.admin_sessions` e `public.carts` expirados. Ela nao cria tabela de negocio nova.
 
 ## Convencoes futuras
 
@@ -339,7 +341,8 @@ Semantica:
 - Carrinho com `converted_at` preenchido e tratado como inexistente para novas compras.
 - Mutacoes bem-sucedidas renovam `expires_at` para `agora + 30 dias`.
 - Ao criar pedido, o carrinho e preservado como origem historica e dados temporarios associados sao removidos na mesma transacao.
-- Nao ha job de limpeza nesta fase.
+- Carrinhos expirados sao removidos pelo job diario `printlab_transient_data_cleanup`.
+- A remocao de carrinho apaga por cascade apenas dados temporarios vinculados ao carrinho; pedidos preservam historico com `orders.source_cart_id` definido como `null`.
 
 RLS:
 
@@ -1083,6 +1086,7 @@ Semantica:
 - Nao ha FK para `auth.users` nesta fase para reduzir acoplamento ao schema interno do Supabase Auth.
 - A autorizacao continua no backend por comparacao com `ADMIN_SUPABASE_USER_ID`.
 - Sessao expirada e tratada como nao autenticada e pode ser removida oportunisticamente.
+- Sessoes expiradas tambem sao removidas diariamente pelo job `printlab_transient_data_cleanup`.
 
 RLS:
 
@@ -1165,7 +1169,7 @@ O preco-base de produto foi implementado em `products.price_cents`. Subtotal de 
 
 `categories`, `products` e `orders` usam UUID como identificador tecnico. `orders.public_tracking_id` usa UUID aleatorio separado para acompanhamento publico minimizado. `orders.order_number` usa `bigint identity` sequencial apenas como referencia humana.
 
-Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual.
+Nenhuma extensao PostgreSQL deve ser habilitada sem necessidade atual documentada. `pg_cron` foi habilitado na Fase 14.1 exclusivamente para limpeza transiente.
 
 ## RLS e Data API
 
@@ -1177,7 +1181,6 @@ RLS continua util como camada complementar futura, mas nao substitui validacao s
 
 - Avaliar tabela de eventos de pagamento somente se houver necessidade operacional futura.
 - Refinar operacao de produtos sob demanda quando houver modulo de producao.
-- Definir upload/admin de imagens.
 - Definir estoque fisico e inventario de filamento.
 - Definir calculo de custos de producao a partir de insumos e tempo.
-- Implementar limpeza programada de carrinhos expirados e PII associada antes do go-live comercial.
+- Validar operacionalmente o job diario de limpeza transiente apos deploy.

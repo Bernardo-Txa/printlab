@@ -199,7 +199,7 @@ func removeCartItemHandler(service cartService, cookies *cartdomain.CookieManage
 
 func quantityFromRequest(w http.ResponseWriter, r *http.Request) (int, bool) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "invalid cart request", http.StatusBadRequest)
+		writeInvalidBodyError(w, "invalid cart request", err)
 		return 0, false
 	}
 
@@ -293,7 +293,7 @@ func allowedRequestSource(rawSource string, r *http.Request, siteURL string) boo
 	}
 
 	configured, err := url.Parse(strings.TrimSpace(siteURL))
-	if err == nil && configured.Host != "" && sameHost(source.Host, configured.Host) {
+	if err == nil && sameOrigin(source, configured) {
 		return true
 	}
 
@@ -306,6 +306,16 @@ func webScheme(scheme string) bool {
 
 func sameHost(left string, right string) bool {
 	return strings.EqualFold(strings.TrimSpace(left), strings.TrimSpace(right))
+}
+
+func sameOrigin(left *url.URL, right *url.URL) bool {
+	if left == nil || right == nil {
+		return false
+	}
+
+	return webScheme(left.Scheme) && webScheme(right.Scheme) &&
+		strings.EqualFold(left.Scheme, right.Scheme) &&
+		sameHost(left.Host, right.Host)
 }
 
 func validUUID(value string) bool {

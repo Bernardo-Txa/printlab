@@ -93,6 +93,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Provider Supabase Storage testavel via `net/http`, sem chamadas reais a Supabase nos testes.
 - Suporte a `SUPABASE_SECRET_KEY` server-side com prefixo `sb_secret_` para operacoes administrativas de Storage.
 - ADR-0016 — Upload direto administrativo para Supabase Storage.
+- Fase 13.4 — Imagens e Supabase Storage validada em producao, incluindo upload direto, finalizacao, exibicao publica, associacao, substituicao, imagem principal, ordenacao, remocao e limpeza fisica quando aplicavel.
+- Fase 14.1 — Hardening base de seguranca, com headers globais, CSP restritiva, teto global de 1 MiB para body, timeouts HTTP explicitos, validacao de `SITE_URL` e migration Supabase Cron para limpeza transiente.
+- Testes de regressao para headers globais, preservacao de headers Admin/acompanhamento, CSP Supabase, limite global de body, limite menor de Admin image JSON, `SITE_URL` e migration de limpeza.
 
 ### Changed
 
@@ -138,6 +141,11 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 13.3 e refinamento 13.3A passam a constar como validados em producao pelo responsavel.
 - Admin passa a incluir gestao de imagens no produto; a tela usa JavaScript nativo apenas para upload direto ao Supabase Storage.
 - README, setup/deploy e documentacao Supabase passam a listar `SUPABASE_SECRET_KEY` como secret server-side necessaria para imagens Admin.
+- Fase 13 passa a constar como concluida; Fase 14 passa a constar como em andamento com 14.1 implementada e validacao real pendente.
+- Comparacao com `SITE_URL` passa a usar origem `scheme://host`, preservando HTTP local em desenvolvimento e exigindo HTTPS em producao.
+- Documentacao de seguranca passa a recomendar Vercel Firewall/WAF em rollout por observacao para rate limiting, sem implementar rate limiter em Go.
+- HSTS/preload e MFA ficam documentados como avaliacoes futuras, sem ativacao na 14.1.
+- `golang.org/x/text` atualizado para versao corrigida apos finding alcancavel do `govulncheck`; `golang.org/x/sync` acompanhou a resolucao indireta de modulos.
 
 ### Fixed
 
@@ -145,3 +153,5 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - `StatObject` do Supabase Storage passa a consultar metadata real por `GET /storage/v1/object/info/{bucket}/{path}` e JSON `size`/`content_type`, sem usar headers da resposta como metadata do arquivo.
 - Mutacoes administrativas passam a rejeitar requests sem `Origin` e sem `Referer`, preservando fallback por `Referer` same-origin apenas quando `Origin` estiver ausente.
 - Remocao de imagem gerenciada no Admin deixa de remover associacao quando Storage administrativo nao esta configurado, evitando promessa de remocao completa sem `SUPABASE_SECRET_KEY`.
+- Requests com `Content-Length` conhecido acima de 1 MiB passam a ser rejeitados antes dos handlers, reduzindo superficie para corpos excessivos sem remover limites especificos menores.
+- Finding `GO-2026-5970` eliminado; nova execucao de `govulncheck` retornou sem vulnerabilidades.

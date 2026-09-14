@@ -63,7 +63,7 @@ func selectShippingHandler(service checkoutShippingService, cookies *cartdomain.
 		}
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "invalid shipping request", http.StatusBadRequest)
+			writeInvalidBodyError(w, "invalid shipping request", err)
 			return
 		}
 

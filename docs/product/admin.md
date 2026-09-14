@@ -1,6 +1,6 @@
 # Painel administrativo
 
-Status: Fases 13.1, 13.2 e 13.3 CONCLUIDAS; Fase 13.4 com implementacao em correcao e validacao real pendente.
+Status: Fases 13.1, 13.2, 13.3 e 13.4 CONCLUIDAS; Fase 13 concluida.
 
 O painel administrativo concentrara funcionalidades internas de operacao da PrintLab em subfases pequenas.
 
@@ -9,7 +9,7 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 - 13.1 — autenticacao, autorizacao, sessao e shell administrativo: concluida.
 - 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
 - 13.3 — catalogo, variantes, materiais, cores e caixas: concluida com validacao real em producao.
-- 13.4 — imagens e Supabase Storage: implementacao em correcao; validacao real pendente.
+- 13.4 — imagens e Supabase Storage: concluida com validacao real em producao.
 
 ## Fase 13.1 implementada
 
@@ -173,7 +173,7 @@ Evidencias funcionais confirmadas:
 - comportamento com multiplas configuracoes e default validado;
 - `product_variants` permanece modelo interno, mas a UI usa "Configuracao" para o administrador.
 
-## Fase 13.4 em correcao
+## Fase 13.4 implementada
 
 Rotas de imagens:
 
@@ -223,6 +223,24 @@ Regras:
 
 `public.product_images` ja possuia `storage_path`, `sort_order` e `is_primary`; por isso nenhuma migration foi criada para a 13.4.
 
+## Validacao real da Fase 13.4
+
+A validacao real em producao da Fase 13.4 foi concluida pelo responsavel sem registrar dados pessoais reais, UUID administrativo real, `SUPABASE_SECRET_KEY`, token de signed upload ou URLs privadas completas.
+
+Evidencias funcionais confirmadas:
+
+- upload pela tela Admin;
+- envio direto do browser ao Supabase Storage por signed upload URL;
+- finalizacao server-side no Go;
+- exibicao publica da imagem no catalogo;
+- associacao da imagem ao produto;
+- associacao opcional da imagem a Configuracao;
+- substituicao de imagem sem overwrite;
+- marcacao de imagem principal;
+- ordenacao de imagens;
+- remocao de associacao;
+- limpeza fisica do objeto gerenciado no Storage quando aplicavel.
+
 ## Seguranca
 
 - Nao ha signup administrativo pela aplicacao.
@@ -230,6 +248,7 @@ Regras:
 - E-mail nao e autorizacao administrativa; o UUID do usuario e a fonte estavel.
 - Senha, access token, refresh token, token de sessao e token hash nao devem aparecer em logs ou documentacao.
 - Todas as respostas `/admin` usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`.
+- Alem dos headers privados do Admin, a aplicacao aplica headers globais de hardening da Fase 14.1, incluindo `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy` e CSP restritiva.
 - POSTs administrativos exigem `Origin` same-origin valido ou, quando `Origin` estiver ausente, `Referer` same-origin como fallback; `Origin: null`, cross-site e ausencia simultanea de `Origin` e `Referer` sao rejeitados.
 - Dashboard e listagem de pedidos nao carregam nem renderizam CPF, endereco, telefone, e-mail de cliente, `transaction_nsu`, `invoice_slug` ou checkout URL.
 - O detalhe de pedido pode renderizar PII operacional somente apos sessao administrativa valida.
@@ -245,13 +264,13 @@ Regras:
 
 - Nao ha alteracao de dados comerciais do pedido, valores, cliente, endereco ou pagamento.
 - Nao ha papeis multiplos.
-- Nao ha MFA obrigatorio nem CAPTCHA/WAF na aplicacao.
+- Nao ha MFA obrigatorio, CAPTCHA ou rate limiter em Go na aplicacao.
 - Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
 - Nao ha estoque fisico de filamento, marcas, lotes, carretel, custos calculados ou multiplos admins/papeis.
 - Nao ha crop, compressao avancada, bulk upload, thumbnails persistidos multiplos ou DAM.
-- A Fase 13.4 ainda nao foi validada em producao.
+- MFA, RBAC e protecoes WAF/rate limiting operacional ficam para avaliacao posterior da Fase 14.
 
 ## Decisoes pendentes
 
 - Politica de permissoes caso existam multiplos usuarios administrativos.
-- Protecoes adicionais contra abuso/brute force na Fase 14.
+- Protecoes adicionais contra abuso/brute force via Vercel Firewall/WAF apos observacao de trafego real.

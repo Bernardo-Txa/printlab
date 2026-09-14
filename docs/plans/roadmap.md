@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2 e 13.3 concluidas. Fase 13 em andamento; Fase 13.4 com implementacao em correcao e validacao real pendente; Fases 14 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2, 13.3 e 13.4 concluidas. Fase 13 concluida. Fase 14 em andamento; Fase 14.1 implementada com validacao real pendente. Fases 15 a 17 planejadas.
 
 ## Status das fases
 
@@ -26,12 +26,13 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 10.1 — Diagnostico Seguro InfinitePay | Concluida |
 | Fase 11 — Webhooks de pagamento | Concluida |
 | Fase 12 — Acompanhamento do pedido | Concluida |
-| Fase 13 — Painel administrativo | Em andamento |
+| Fase 13 — Painel administrativo | Concluida |
 | Fase 13.1 — Autenticacao administrativa | Concluida |
 | Fase 13.2 — Pedidos, producao, envio e auditoria | Concluida |
 | Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Concluida |
-| Fase 13.4 — Imagens e Supabase Storage | Implementacao em correcao; validacao real pendente |
-| Fase 14 — Seguranca | Planejada |
+| Fase 13.4 — Imagens e Supabase Storage | Concluida |
+| Fase 14 — Seguranca | Em andamento |
+| Fase 14.1 — Hardening base de seguranca | Implementada; validacao real pendente |
 | Fase 15 — Testes e observabilidade | Planejada |
 | Fase 16 — SEO e performance | Planejada |
 | Fase 17 — Preparacao para producao | Planejada |
@@ -484,7 +485,7 @@ Definition of Done:
 - 13.1: testes aplicaveis passam: concluido ✅
 - 13.2: operacoes criticas auditaveis quando necessario: concluido ✅
 - 13.3: catalogo administrativo sem hard delete: concluido ✅
-- 13.4: imagens e Supabase Storage: implementacao em correcao; validacao real pendente
+- 13.4: imagens e Supabase Storage: concluido ✅
 
 ## Fase 13.1 — Autenticacao administrativa
 
@@ -568,7 +569,7 @@ Definition of Done:
 
 Objetivo: permitir upload e gestao segura de imagens de catalogo.
 
-Status: Implementacao em correcao; validacao real pendente.
+Status: Concluida e validada em producao.
 
 Principais entregas:
 
@@ -590,19 +591,24 @@ Definition of Done:
 - `SUPABASE_SECRET_KEY` documentada e validada pelo prefixo `sb_secret_`: concluido ✅
 - Testes de config, Storage, service, handlers e assets estaticos: concluido ✅
 - Documentacao, plano ativo e ADR atualizados: concluido ✅
-- Validacao real apos deploy: pendente
+- Validacao real em producao concluida: concluido ✅
 
 ## Fase 14 — Seguranca
 
 Objetivo: revisar seguranca antes de ampliar uso real.
 
+Status: Em andamento.
+
 Principais entregas:
 
-- Revisao de secrets.
-- Revisao de autenticacao e autorizacao.
-- Revisao de webhooks.
-- Revisao de dependencias.
-- Checklist de operacao segura.
+- Revisao de secrets e configuracoes sensiveis.
+- Revisao de autenticacao, autorizacao e sessoes.
+- Revisao de webhooks e endpoints publicos sensiveis.
+- Headers globais de seguranca e CSP.
+- Timeouts HTTP conservadores.
+- Limites globais e especificos de corpo de request.
+- Limpeza automatica de dados transientes expirados.
+- Checklist de operacao segura, rate limiting e WAF.
 
 Dependencias: fases com dados sensiveis ou financeiros implementadas.
 
@@ -612,6 +618,32 @@ Definition of Done:
 - Fluxos financeiros revisados.
 - Permissoes revisadas.
 - Pendencias criticas enderecadas ou bloqueadas explicitamente.
+
+## Fase 14.1 — Hardening base de seguranca
+
+Objetivo: aplicar controles basicos de seguranca sem alterar fluxos de negocio, Admin, Storage ou pagamento ja validados.
+
+Status: Implementada; validacao real pendente.
+
+Principais entregas:
+
+- Headers globais: `nosniff`, `DENY` para frame, `Permissions-Policy`, `Referrer-Policy` global e CSP restritiva.
+- Preservacao de `Referrer-Policy`, `Cache-Control` e `X-Robots-Tag` especificos de Admin e acompanhamento publico.
+- CSP sem `unsafe-eval`; origem Supabase adicionada somente quando derivavel de `SUPABASE_URL`.
+- Teto global de 1 MiB para corpo de requests, sem remover limites menores ja existentes por rota.
+- `http.Server` com `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout` e `IdleTimeout` explicitos.
+- Validacao central de `SITE_URL`, com HTTPS obrigatorio em producao e HTTP local preservado em desenvolvimento.
+- Comparacao de origem configurada por `SITE_URL` usando `scheme://host`.
+- Migration Supabase Cron diaria para limpar `admin_sessions` e `carts` expirados.
+- Auditoria documentada de rate limiting/WAF, Supabase Auth, MFA futura, HSTS futuro, webhook, tracking, Storage, logs, RLS e dependencias.
+
+Definition of Done:
+
+- Codigo de hardening implementado: concluido ✅
+- Testes automatizados de headers, CSP, body limit, `SITE_URL` e migration: concluido ✅
+- Documentacao atualizada: concluido ✅
+- Validacoes locais executadas antes do commit: concluido ✅
+- Validacao real apos deploy: pendente
 
 ## Fase 15 — Testes e observabilidade
 

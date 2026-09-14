@@ -23,6 +23,7 @@ IMPLEMENTADO:
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
 - Painel administrativo em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab, dashboard, lista/detalhe de pedidos e mutacoes auditadas de producao/envio.
+- Hardening base de seguranca com headers globais, CSP, limite global de body, timeouts HTTP e validacao de `SITE_URL`.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.
@@ -40,7 +41,8 @@ IMPLEMENTADO:
 - Fase 8 com perfis logisticos, `shipping_boxes`, `cart_shipping_selections` e cliente SuperFrete.
 - Fase 9 com `orders`, snapshots de pedido e conversao de carrinho por `converted_at`.
 - Bucket publico `product-images` no Supabase Storage para imagens de catalogo.
-- Fase 13.4 do painel administrativo para imagens e Supabase Storage em correcao, com validacao real pendente.
+- Fase 13.4 do painel administrativo para imagens e Supabase Storage concluida e validada em producao.
+- Fase 14.1 com Supabase Cron para limpeza diaria de `admin_sessions` e `carts` expirados.
 - Selecao publica de configuracao por query string em `GET /produtos/{slug}?variante=<variant-slug>` quando houver mais de uma configuracao ativa.
 - Supabase CLI local e estrutura `supabase/`.
 - Vercel configurada para `gru1`.
@@ -54,6 +56,9 @@ PLANEJADO:
 
 ```text
 Browser
+   |
+   v
+Security middleware
    |
    v
 Go Backend
@@ -85,6 +90,7 @@ Go Backend -> InfinitePay Checkout
 Go Backend -> InfinitePay payment_check
 InfinitePay -> Go Backend webhook
 Go Backend -> Supabase Auth
+Go Backend -> Supabase Storage
 ```
 
 ## Arquitetura server-side
@@ -104,6 +110,8 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
 O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas. A Fase 13.4 adicionou gestao administrativa de imagens com upload direto ao Supabase Storage e finalizacao server-side em `product_images`.
+
+A Fase 14.1 adiciona hardening HTTP transversal. O servidor usa `http.Server` com timeouts explicitos, aplica headers globais de seguranca, CSP restritiva, teto global de 1 MiB para corpo de requests e validacao central de `SITE_URL`. Admin e acompanhamento publico preservam seus headers privados/noindex/referrer especificos. Rate limiting permanece uma responsabilidade operacional futura por Vercel Firewall/WAF, apos observacao de trafego real.
 
 ## Responsabilidades do frontend
 
@@ -209,6 +217,8 @@ A Fase 13.2 adiciona `admin_order_events`, tabela de auditoria operacional para 
 
 A Fase 13.3 nao adiciona tabelas. O Admin opera `categories`, `products`, `product_variants`, `materials`, `colors`, `variant_filaments` e `shipping_boxes` existentes, usando `is_active` em vez de hard delete para entidades principais. A Fase 13.4 tambem nao adiciona tabelas; ela usa `product_images.storage_path`, `sort_order` e `is_primary` existentes para gerenciar imagens do bucket `product-images`.
 
+A Fase 14.1 habilita `pg_cron` e agenda `printlab_transient_data_cleanup` para remover diariamente `admin_sessions` expiradas e `carts` expirados. A limpeza de carrinhos apaga somente dados temporarios por FKs `ON DELETE CASCADE`; pedidos sao preservados porque `orders.source_cart_id` usa `ON DELETE SET NULL`.
+
 Ainda nao existem tabelas de clientes permanentes nem tabelas de auditoria de catalogo.
 
 ## Comunicacao com servicos externos
@@ -224,6 +234,8 @@ A integracao InfinitePay usa `net/http`, timeout explicito, base URL interna fix
 A integracao Supabase Auth para Admin usa `net/http`, timeout explicito e `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` com header `apikey: SUPABASE_PUBLISHABLE_KEY`. A publishable key identifica a aplicacao, nao concede autorizacao administrativa. A autorizacao da PrintLab compara o UUID retornado por Supabase Auth com `ADMIN_SUPABASE_USER_ID`.
 
 A integracao Supabase Storage para Admin usa `SUPABASE_SECRET_KEY` apenas no backend, depois da sessao Admin e da validacao `Origin`/`Referer`. O backend gera signed upload URL para o bucket `product-images`; o navegador envia os bytes diretamente ao Supabase e depois chama a finalizacao server-side. Na finalizacao, o backend confirma o objeto com `GET /storage/v1/object/info/{bucket}/{path}` e usa o JSON de metadata (`size` e `content_type`) antes de gravar `product_images`.
+
+O uso de Supabase Auth no fluxo `Browser -> Go -> Supabase Auth` pode concentrar tentativas no IP server-side da aplicacao para fins de rate limit do provedor. IP forwarding oficial exige `Sb-Forwarded-For`, secret API key `sb_secret` e habilitacao explicita no Supabase; isso permanece documentado como avaliacao futura e nao foi adicionado na 14.1.
 
 ## Boundaries
 
@@ -241,6 +253,21 @@ Os pacotes em `internal/` devem representar areas de responsabilidade:
 - `config`: leitura de configuracao.
 
 Diretorios sem implementacao permanecem vazios com `.gitkeep`. Nao devem receber codigo artificial apenas para preencher estrutura.
+
+## Seguranca transversal
+
+Todas as rotas passam por middleware global que aplica:
+
+- `X-Content-Type-Options: nosniff`;
+- `X-Frame-Options: DENY`;
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- CSP restritiva sem `unsafe-eval`;
+- limite global de 1 MiB para body.
+
+A CSP permite scripts apenas de `self`; estilos de `self` e inline existente; imagens de `self`, `data:` e origem Supabase quando `SUPABASE_URL` estiver configurada; conexoes de `self` e origem Supabase quando aplicavel; bloqueia objetos, frames ancestrais e base URI externa.
+
+Limites especificos menores continuam ativos para formularios Admin, JSON de imagens Admin e webhook InfinitePay.
 
 ## Fluxo HTTP esperado
 
@@ -275,6 +302,8 @@ GET /admin -> dashboard administrativo inicial somente leitura, protegido por se
 POST /admin/logout -> remove sessao e limpa cookie administrativo
 GET /static/... -> assets embutidos a partir de web/static/
 ```
+
+Todas as respostas desse fluxo recebem headers globais de seguranca. Rotas Admin e `/acompanhar/{public_tracking_id}` adicionam seus headers privados/noindex/referrer especificos.
 
 Vertical slice implementada para catalogo:
 

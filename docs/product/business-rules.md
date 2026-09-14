@@ -1,6 +1,6 @@
 # Regras de negocio
 
-Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento e operacao administrativa com imagens IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
+Status: catalogo, variantes, receita de producao, carrinho, dados de checkout, frete, pedidos, pagamentos InfinitePay, acompanhamento, operacao administrativa com imagens e hardening base IMPLEMENTADOS; demais regras comerciais PLANEJADAS.
 
 Este documento registra regras de negocio previstas para a PrintLab. Ele nao representa funcionalidades prontas.
 
@@ -85,7 +85,7 @@ Antes de finalizar uma compra, o backend deve:
 - CPF e necessario para documentacao futura de envio/DC-e e nao e identificador publico.
 - Nao ha coleta de senha, conta, newsletter, marketing consent, data de nascimento, genero ou dados nao necessarios a compra.
 - O pedido copia contato e endereco para snapshots definitivos antes de pagamento/envio.
-- Limpeza programada de carrinhos expirados e PII associada e requisito antes do go-live comercial.
+- Carrinhos expirados e PII temporaria associada sao removidos pelo job diario de limpeza transiente.
 
 ## Dinheiro
 
@@ -177,6 +177,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - A pagina de acompanhamento nao mostra itens, produtos, valores, CPF, e-mail, telefone, endereco, UUID interno do pedido, `source_cart_id`, `transaction_nsu`, `invoice_slug`, checkout URL, peso, dimensoes, filamento, material ou cor.
 - Acompanhamento mostra somente numero humano do pedido, data, status de pagamento, status de producao, status de envio e transportadora/servico comercial quando houver.
 - Respostas de acompanhamento usam `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: no-referrer`.
+- Respostas de acompanhamento tambem recebem os headers globais de seguranca da Fase 14.1.
 - O HTML de acompanhamento usa meta robots `noindex, nofollow, noarchive`.
 - Logs nao devem registrar `public_tracking_id`.
 - Nao ha endpoint publico para alterar status de producao ou envio.
@@ -206,6 +207,15 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Entidades principais de catalogo e logistica usam ativacao/inativacao por `is_active`; nao ha hard delete de categorias, produtos, configuracoes, materiais, cores ou caixas.
 - `admin_order_events` e exclusivo de pedidos; catalogo nao reutiliza essa auditoria e nao cria tabela de eventos antecipada.
 - Alteracao de valores/dados de pedido, papeis multiplos e integracao de etiqueta/postagem permanecem planejados para subfases futuras.
+
+## Hardening base implementado
+
+- Todas as rotas recebem headers globais de seguranca e CSP.
+- A CSP nao usa `unsafe-eval` e so inclui a origem Supabase quando derivada de `SUPABASE_URL`.
+- O teto global de body e 1 MiB, preservando limites menores de Admin, imagens Admin e webhook InfinitePay.
+- `SITE_URL`, quando preenchida, deve ser URL absoluta `http` ou `https`, com host, sem userinfo e sem fragment; em producao deve usar `https`.
+- Comparacoes com `SITE_URL` usam `scheme://host`.
+- Rate limiting, MFA, RBAC e CAPTCHA nao foram implementados na 14.1.
 
 ## Status operacionais implementados
 
