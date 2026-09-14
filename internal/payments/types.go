@@ -22,9 +22,6 @@ const (
 
 	ReturnMessageVerified    = "verified"
 	ReturnMessageAlreadyPaid = "already_paid"
-
-	checkoutHostBR      = "checkout.infinitepay.com.br"
-	checkoutHostCurrent = "checkout.infinitepay.io"
 )
 
 var (
@@ -42,6 +39,11 @@ var (
 	ErrPaymentNotConfirmed  = errors.New("payment not confirmed")
 	ErrUnavailable          = errors.New("payments unavailable")
 )
+
+var checkoutAllowedOrigins = [...]string{
+	"https://checkout.infinitepay.io",
+	"https://checkout.infinitepay.com.br",
+}
 
 var (
 	uuidPattern       = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
@@ -257,6 +259,16 @@ func PaymentWebhookURL(siteURL string) (string, bool) {
 	return parsed.String(), true
 }
 
+// CheckoutAllowedOrigins returns the hosted checkout origins accepted by ValidateCheckoutURL.
+func CheckoutAllowedOrigins() []string {
+	origins := make([]string, 0, len(checkoutAllowedOrigins))
+	for _, origin := range checkoutAllowedOrigins {
+		origins = append(origins, origin)
+	}
+
+	return origins
+}
+
 func ValidateCheckoutURL(rawURL string) error {
 	parsed, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil || parsed.Scheme != "https" || parsed.Port() != "" || !isAllowedCheckoutHost(parsed.Hostname()) {
@@ -270,12 +282,19 @@ func ValidateCheckoutURL(rawURL string) error {
 }
 
 func isAllowedCheckoutHost(host string) bool {
-	switch strings.ToLower(strings.TrimSpace(host)) {
-	case checkoutHostBR, checkoutHostCurrent:
-		return true
-	default:
-		return false
+	normalizedHost := strings.ToLower(strings.TrimSpace(host))
+	for _, origin := range checkoutAllowedOrigins {
+		parsed, err := url.Parse(origin)
+		if err == nil && strings.EqualFold(parsed.Scheme, "https") && parsed.Port() == "" && sameCheckoutHost(parsed.Hostname(), normalizedHost) {
+			return true
+		}
 	}
+
+	return false
+}
+
+func sameCheckoutHost(left string, right string) bool {
+	return strings.EqualFold(strings.TrimSpace(left), strings.TrimSpace(right))
 }
 
 func ReturnPageFor(result ReturnResult) ReturnPage {

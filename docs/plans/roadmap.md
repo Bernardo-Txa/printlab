@@ -629,7 +629,7 @@ Principais entregas:
 
 - Headers globais: `nosniff`, `DENY` para frame, `Permissions-Policy`, `Referrer-Policy` global e CSP restritiva.
 - Preservacao de `Referrer-Policy`, `Cache-Control` e `X-Robots-Tag` especificos de Admin e acompanhamento publico.
-- CSP sem `unsafe-eval`; origem Supabase adicionada somente quando derivavel de `SUPABASE_URL`.
+- CSP sem `unsafe-eval`; origem Supabase adicionada somente quando derivavel de `SUPABASE_URL`; `form-action` limitado a `'self'` e origins exatos de checkout InfinitePay aceitos pelo backend.
 - Teto global de 1 MiB para corpo de requests, sem remover limites menores ja existentes por rota.
 - `http.Server` com `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout` e `IdleTimeout` explicitos.
 - Validacao central de `SITE_URL`, com HTTPS obrigatorio em producao e HTTP local preservado em desenvolvimento.

@@ -21,10 +21,12 @@ Todas as respostas devem receber, salvo decisao especifica documentada:
 A CSP base e:
 
 ```text
-default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: <SUPABASE_ORIGIN>; connect-src 'self' <SUPABASE_ORIGIN>; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: <SUPABASE_ORIGIN>; connect-src 'self' <SUPABASE_ORIGIN>; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://checkout.infinitepay.io https://checkout.infinitepay.com.br
 ```
 
 `<SUPABASE_ORIGIN>` deve ser derivado exclusivamente de `SUPABASE_URL`, usando apenas esquema e host. Quando `SUPABASE_URL` estiver ausente ou invalida, nenhuma origem externa deve ser adicionada a `img-src` ou `connect-src`. A CSP nao deve usar `unsafe-eval`.
+
+`form-action` inicialmente usava somente `'self'`. A validacao real da Fase 14.1 revelou que o Chrome tambem aplica essa restricao ao redirect `303` gerado pela submissao do formulario de pagamento para o checkout hospedado InfinitePay. A politica permite somente `'self'` e os origins exatos `https://checkout.infinitepay.io` e `https://checkout.infinitepay.com.br`, derivados da mesma allowlist usada por `ValidateCheckoutURL`. Isso nao autoriza forms para origens arbitrarias, wildcards, `https:` amplo ou `api.checkout.infinitepay.io`, e nao amplia `connect-src`, porque a API InfinitePay continua sendo chamada somente server-side.
 
 Headers especificos de paginas sensiveis continuam prevalecendo:
 

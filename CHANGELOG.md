@@ -96,7 +96,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - Fase 13.4 — Imagens e Supabase Storage validada em producao, incluindo upload direto, finalizacao, exibicao publica, associacao, substituicao, imagem principal, ordenacao, remocao e limpeza fisica quando aplicavel.
 - Fase 14.1 — Hardening base de seguranca, com headers globais, CSP restritiva, teto global de 1 MiB para body, timeouts HTTP explicitos, validacao de `SITE_URL` e migration Supabase Cron para limpeza transiente.
 - Testes de regressao para headers globais, preservacao de headers Admin/acompanhamento, CSP Supabase, limite global de body, limite menor de Admin image JSON, `SITE_URL` e migration de limpeza.
-- Canonicalizacao de host para `GET` e `HEAD` baseada em `SITE_URL`, mantendo `form-action 'self'` e preservando validacao `Origin`/`Referer` em POST.
+- Canonicalizacao de host para `GET` e `HEAD` baseada em `SITE_URL`, preservando validacao `Origin`/`Referer` em POST.
+- `form-action` da CSP passa a permitir somente os origins exatos de checkout InfinitePay ja aceitos por `ValidateCheckoutURL`, mantendo API InfinitePay apenas server-side.
 
 ### Changed
 

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 )
 
 const globalMaxRequestBodyBytes = 1 << 20
@@ -95,6 +97,10 @@ func contentSecurityPolicy(supabaseURL string) string {
 		imgSrc += " " + origin
 		connectSrc += " " + origin
 	}
+	formAction := "form-action 'self'"
+	for _, origin := range paymentsdomain.CheckoutAllowedOrigins() {
+		formAction += " " + origin
+	}
 
 	return strings.Join([]string{
 		"default-src 'self'",
@@ -105,7 +111,7 @@ func contentSecurityPolicy(supabaseURL string) string {
 		"object-src 'none'",
 		"base-uri 'self'",
 		"frame-ancestors 'none'",
-		"form-action 'self'",
+		formAction,
 	}, "; ")
 }
 

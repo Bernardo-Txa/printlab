@@ -3,10 +3,12 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
 	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 )
 
 func TestGlobalSecurityHeaders(t *testing.T) {
@@ -142,7 +144,7 @@ func TestContentSecurityPolicyUsesSupabaseOriginOnly(t *testing.T) {
 		"object-src 'none'",
 		"base-uri 'self'",
 		"frame-ancestors 'none'",
-		"form-action 'self'",
+		"form-action 'self' https://checkout.infinitepay.io https://checkout.infinitepay.com.br",
 	} {
 		if !strings.Contains(policy, required) {
 			t.Fatalf("expected CSP to contain %q, got %q", required, policy)
@@ -151,6 +153,41 @@ func TestContentSecurityPolicyUsesSupabaseOriginOnly(t *testing.T) {
 	for _, forbidden := range []string{"unsafe-eval", "/project", "?query=1"} {
 		if strings.Contains(policy, forbidden) {
 			t.Fatalf("expected CSP not to contain %q, got %q", forbidden, policy)
+		}
+	}
+}
+
+func TestContentSecurityPolicyFormActionUsesExactCheckoutAllowlist(t *testing.T) {
+	policy := contentSecurityPolicy("")
+	got, ok := cspDirectiveSources(policy, "form-action")
+	if !ok {
+		t.Fatalf("expected form-action directive in CSP, got %q", policy)
+	}
+
+	want := append([]string{"'self'"}, paymentsdomain.CheckoutAllowedOrigins()...)
+	if !slices.Equal(got, want) {
+		t.Fatalf("expected form-action sources %v, got %v", want, got)
+	}
+
+	for _, forbidden := range []string{
+		"https:",
+		"*",
+		"*.infinitepay.io",
+		"https://*.infinitepay.io",
+		"https://api.checkout.infinitepay.io",
+	} {
+		if slices.Contains(got, forbidden) {
+			t.Fatalf("expected form-action not to allow %q, got %v", forbidden, got)
+		}
+	}
+
+	connectSrc, ok := cspDirectiveSources(policy, "connect-src")
+	if !ok {
+		t.Fatalf("expected connect-src directive in CSP, got %q", policy)
+	}
+	for _, origin := range paymentsdomain.CheckoutAllowedOrigins() {
+		if slices.Contains(connectSrc, origin) {
+			t.Fatalf("expected checkout origin %q not to be added to connect-src, got %v", origin, connectSrc)
 		}
 	}
 }
@@ -164,6 +201,17 @@ func TestContentSecurityPolicyOmitsSupabaseOriginWhenUnavailable(t *testing.T) {
 	if strings.Contains(policy, "supabase") || strings.Contains(policy, "unsafe-eval") {
 		t.Fatalf("expected CSP not to invent external sources, got %q", policy)
 	}
+}
+
+func cspDirectiveSources(policy string, name string) ([]string, bool) {
+	for _, directive := range strings.Split(policy, ";") {
+		fields := strings.Fields(strings.TrimSpace(directive))
+		if len(fields) > 0 && fields[0] == name {
+			return fields[1:], true
+		}
+	}
+
+	return nil, false
 }
 
 func TestGlobalRequestBodyLimitRejectsKnownOversizedBody(t *testing.T) {

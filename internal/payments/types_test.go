@@ -2,6 +2,7 @@ package payments
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -37,6 +38,30 @@ func TestValidateCheckoutURLUsesExplicitHostAllowlist(t *testing.T) {
 				t.Fatalf("expected valid checkout URL, got %v", err)
 			}
 		})
+	}
+}
+
+func TestCheckoutAllowedOriginsReturnsExactImmutableOrigins(t *testing.T) {
+	origins := CheckoutAllowedOrigins()
+	want := []string{
+		"https://checkout.infinitepay.io",
+		"https://checkout.infinitepay.com.br",
+	}
+	if !slices.Equal(origins, want) {
+		t.Fatalf("expected checkout origins %v, got %v", want, origins)
+	}
+
+	origins[0] = "https://evil.example"
+	if got := CheckoutAllowedOrigins(); !slices.Equal(got, want) {
+		t.Fatalf("expected checkout origins to be returned as copy, got %v", got)
+	}
+}
+
+func TestCheckoutAllowedOriginsAreAcceptedByCheckoutURLValidation(t *testing.T) {
+	for _, origin := range CheckoutAllowedOrigins() {
+		if err := ValidateCheckoutURL(origin + "/checkout-slug"); err != nil {
+			t.Fatalf("expected allowed checkout origin %q to pass validation, got %v", origin, err)
+		}
 	}
 }
 

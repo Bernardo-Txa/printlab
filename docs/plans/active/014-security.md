@@ -21,7 +21,7 @@ Reduzir superficie de ataque da aplicacao antes de ampliar uso real, sem alterar
 - Preservacao de headers especificos de paginas sensiveis:
   - Admin continua com `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: same-origin`;
   - Acompanhamento publico continua com `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `Referrer-Policy: no-referrer`.
-- CSP sem `unsafe-eval`, com `style-src 'self' 'unsafe-inline'` para estilos inline existentes e origem exata do Supabase derivada somente de `SUPABASE_URL`.
+- CSP sem `unsafe-eval`, com `style-src 'self' 'unsafe-inline'`, origem exata do Supabase derivada somente de `SUPABASE_URL` e `form-action` limitado a `'self'` mais origins exatos de checkout InfinitePay validados pelo backend.
 - Teto global de corpo de request em 1 MiB, com `413 Request Entity Too Large` para `Content-Length` conhecido acima do limite e `http.MaxBytesReader` aplicado antes do roteador.
 - Preservacao dos limites menores existentes:
   - Admin forms: 256 KiB;
@@ -85,6 +85,7 @@ O fluxo atual `Browser -> Go -> Supabase Auth` pode concentrar tentativas no IP 
 - Sessoes Admin mantem `crypto/rand`, 32 bytes, `SHA-256(token)`, cookie HttpOnly, `SameSite=Strict`, `Path=/admin`, Secure em producao, TTL de 8 horas, logout e expiracao.
 - Acompanhamento publico continua usando UUID aleatorio em `orders.public_tracking_id`, sem `orders.id` nem `order_number`, com view minimizada sem PII.
 - Webhook InfinitePay continua usando JSON limitado a 64 KiB, `Content-Type` JSON, segundo decode exigindo EOF, `payment_check` server-side, idempotencia e comparacao de valor com `orders.total_cents`.
+- Validacao real confirmou que o Chrome aplica `form-action` ao redirect `303` da submissao de pagamento; a CSP passou a permitir somente os origins exatos `https://checkout.infinitepay.io` e `https://checkout.infinitepay.com.br`, sem alterar o fluxo server-side InfinitePay nem liberar `api.checkout.infinitepay.io`.
 - Storage Admin continua usando `SUPABASE_SECRET_KEY` somente server-side, signed upload temporario, path gerado pelo backend, MIME/tamanho validados, metadata verificada e delete limitado a path gerenciado.
 - Migrations atuais habilitam RLS nas tabelas de negocio/operacao criadas e nao criam policies publicas.
 - Logs existentes usam categorias seguras e identificadores operacionais minimizados; nao devem registrar CPF, e-mail completo, telefone, endereco, tokens, secrets, signed upload URL, checkout URL completa ou `public_tracking_id`.
@@ -109,7 +110,7 @@ MFA nao foi implementado na 14.1. Uma Fase 14.2 pode avaliar TOTP/AAL2 se o risc
 - RBAC ou multiplos papeis administrativos.
 - Rate limiter em memoria ou distribuido dentro do Go.
 - CAPTCHA.
-- Alteracoes em InfinitePay, SuperFrete, ViaCEP, Supabase Storage ou Supabase Auth alem da documentacao de risco.
+- Alteracoes em InfinitePay, SuperFrete, ViaCEP, Supabase Storage ou Supabase Auth alem da allowlist CSP de checkout e da documentacao de risco.
 - Mudancas em regras comerciais, pedidos, checkout, catalogo ou precos.
 - Refatoracao ampla de sessao Admin, acompanhamento publico, webhook ou Storage.
 

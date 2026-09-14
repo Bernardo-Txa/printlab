@@ -140,11 +140,14 @@ A PrintLab aceita ambos os hosts por allowlist explicita:
 
 Essa allowlist e aplicada no dominio Go por `ValidateCheckoutURL` e tambem na constraint `order_payments_checkout_url_host` do PostgreSQL. Qualquer outro host continua rejeitado, incluindo subdominios ou sufixos parecidos como `evil.infinitepay.io`, `checkout.infinitepay.io.evil.com`, `infinitepay.io` e `api.checkout.infinitepay.io`. A URL tambem deve usar `https`.
 
+A validacao real da Fase 14.1 confirmou que o formulario de pagamento e same-origin, mas o Chrome aplica `form-action` tambem ao redirect `303` da submissao para o checkout hospedado. Por isso, a CSP permite esses mesmos dois origins exatos em `form-action`. A API InfinitePay continua sendo chamada somente pelo backend; o navegador nunca chama `https://api.checkout.infinitepay.io`.
+
 ## Seguranca
 
 - `POST /pedido/{id}/pagar` valida `Origin`/`Referer`.
 - O backend compara o total do payload com `orders.total_cents` antes de chamar a InfinitePay.
 - Checkout URL so e aceita com scheme `https` e host autorizado pela allowlist explicita.
+- A CSP `form-action` permite somente `'self'` e os origins exatos de checkout hospedado aceitos por `ValidateCheckoutURL`; nao ha wildcard nem permissao ampla para `https:`.
 - `GET /pagamento/retorno` usa `Cache-Control: private, no-store`.
 - `POST /webhooks/infinitepay` nao valida `Origin`/`Referer`, porque a chamada vem do provider, mas aceita somente JSON com limite de 64 KiB e responde com `Cache-Control: no-store`.
 - A aplicacao ignora `receipt_url` e `capture_method` vindos do navegador.
