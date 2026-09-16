@@ -46,3 +46,4 @@ Data:
 - [ADR-0014 — Auditoria transacional de operacoes administrativas de pedidos](0014-auditoria-transacional-operacoes-pedidos.md)
 - [ADR-0015 — Gestao administrativa de catalogo sem hard delete](0015-gestao-administrativa-catalogo-sem-hard-delete.md)
 - [ADR-0016 — Upload direto administrativo para Supabase Storage](0016-upload-direto-admin-para-supabase-storage.md)
+- [ADR-0017 - MFA TOTP antes da sessao administrativa](0017-admin-mfa-totp.md)

@@ -27,24 +27,28 @@ func (r *PostgresRepository) CreateSession(ctx context.Context, authUserID strin
 		insert into public.admin_sessions (
 			auth_user_id,
 			token_hash,
-			expires_at
+			expires_at,
+			mfa_verified_at
 		) values (
 			$1::uuid,
 			$2,
-			$3
+			$3,
+			now()
 		)
 		returning
 			id::text,
 			auth_user_id::text,
 			token_hash,
 			created_at,
-			expires_at
+			expires_at,
+			mfa_verified_at
 	`, authUserID, tokenHash, expiresAt).Scan(
 		&session.ID,
 		&session.AuthUserID,
 		&session.TokenHash,
 		&session.CreatedAt,
 		&session.ExpiresAt,
+		&session.MFAVerifiedAt,
 	)
 	if err != nil {
 		return Session{}, ErrUnavailable
@@ -65,15 +69,17 @@ func (r *PostgresRepository) ResolveSession(ctx context.Context, tokenHash []byt
 			auth_user_id::text,
 			token_hash,
 			created_at,
-			expires_at
+			expires_at,
+			mfa_verified_at
 		from public.admin_sessions
-		where token_hash = $1
+		where token_hash = $1 and mfa_verified_at is not null
 	`, tokenHash).Scan(
 		&session.ID,
 		&session.AuthUserID,
 		&session.TokenHash,
 		&session.CreatedAt,
 		&session.ExpiresAt,
+		&session.MFAVerifiedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

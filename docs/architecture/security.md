@@ -107,12 +107,22 @@ Rollout recomendado:
 
 O fluxo `Browser -> Go -> Supabase Auth` pode fazer tentativas de login parecerem concentradas no IP server-side perante os limites do Supabase Auth. A mitigacao oficial de IP forwarding exige header `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 apenas documenta esse risco; ela nao adiciona o header nem altera o fluxo de credenciais.
 
-MFA nao foi implementado na 14.1. Uma Fase 14.2 pode avaliar TOTP/AAL2 se o risco justificar. Pontos obrigatorios dessa avaliacao:
+A Fase 14.2 exige TOTP antes de criar a sessao propria. Fluxo: Browser -> senha -> Go -> Supabase Auth -> AAL1 -> TOTP challenge/verify -> AAL2 -> admin_session PrintLab. Validacao real da 14.2 permanece pendente; a 14.1 foi validada pelo responsavel.
 
-- usar challenge/verify antes de criar a sessao propria da PrintLab;
-- decidir como manter temporariamente o estado entre primeiro fator e desafio sem persistir access token ou refresh token desnecessariamente;
-- evitar lockout do unico administrador;
-- testar credenciais invalidas, fator ausente, challenge expirado e sessao nao elevada.
+- O UUID autorizado e validado antes de MFA, em cada consulta do usuario e depois do verify.
+- Apenas o access_token AAL1 fica no cookie `printlab_admin_mfa_pending`: HttpOnly, Strict, host-only, Path=/admin/mfa, Secure em producao/HTTPS, TTL de 10 minutos. Nao vai ao PostgreSQL, HTML, JS, query string ou logs.
+- O servidor autentica o token em `GET /auth/v1/user` antes de ler claims; exige AAL1, `sub` correspondente, `exp` valido e `iat` de no maximo 10 minutos. Alterar a expiracao do cookie nao prolonga o fluxo.
+- Refresh token e descartado, inclusive no verify. Senha, codigo, secret, QR e tokens nunca sao logados.
+- Somente TOTP verified pode ser usado para login; multiplos fatores exigem selecao. Factor ID do formulario e revalidado contra os fatores do usuario.
+- Setup remove somente TOTP unverified antes de enrollment. Supabase exige AAL2 para remover fator verified, protegendo tambem contra corrida durante a limpeza em AAL1. Falha interrompe o setup.
+- QR SVG e codificado em data URI e renderizado como imagem, nunca HTML cru. `img-src data:` existente atende ao fluxo, sem mudar CSP ou InfinitePay.
+- Secret aparece somente na resposta inicial de setup com `private, no-store`; retry preserva apenas factor ID. Recarregar setup inicia novo enrollment e invalida o abandonado; usar uma aba por vez.
+- Verify HTTP 200 nao basta: token atualizado e validado novamente no Supabase, usuario autorizado e claim `aal == aal2` sao obrigatorios antes de criar sessao.
+- `admin_sessions.mfa_verified_at` e preenchido com `now()` apenas na criacao apos MFA. Sessoes antigas com NULL sao recusadas pelo repository e service, mesmo sem expirar.
+- Cookie pending e limpo no sucesso, cancelamento, logout e erros terminais. Codigo invalido e 429 podem permitir retry dentro do TTL; 5xx exige novo login.
+- POSTs MFA preservam Origin/Referer estrito e limite de formulario. Provider usa timeout de 8s, response body de no maximo 1 MiB e nao segue redirects.
+
+Perder o autenticador pode bloquear o unico Admin. Recuperacao somente por operador autorizado usando mecanismo administrativo oficial Supabase, conforme [runbook](../integrations/supabase-auth.md#recuperacao-de-emergencia). Nao ha bypass, reset publico ou recovery codes. WAF/anti-abuse fica na 14.3.
 
 ## Banco, logs e dependencias
 
@@ -294,8 +304,8 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - E-mail nao e regra de autorizacao administrativa.
 - A aplicacao nao possui signup administrativo, criacao de conta, login social, lembrar de mim ou recuperacao de senha nesta subfase.
 - Senha administrativa vai somente para Supabase Auth, nunca e persistida, logada, colocada em query string ou armazenada em sessao.
-- Access token e refresh token do Supabase nao sao persistidos pela PrintLab.
-- Depois de autenticar e autorizar, a PrintLab cria sessao propria com token opaco aleatorio de 32 bytes.
+- Access token Supabase nao vai ao banco; AAL1 fica apenas no cookie temporario MFA. Refresh token e descartado.
+- Depois de autenticar, autorizar e confirmar AAL2, a PrintLab cria sessao propria com token opaco aleatorio de 32 bytes e `mfa_verified_at` preenchido.
 - `public.admin_sessions.token_hash` armazena somente `SHA-256(token)`, com constraint de 32 bytes.
 - `admin_sessions.expires_at` controla TTL inicial de 8 horas; nao ha renovacao automatica nesta fase.
 - `admin_sessions` tem RLS habilitado e nenhuma policy publica.
@@ -337,7 +347,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 ## Limites
 
 - Autenticacao e autorizacao administrativas basicas estao implementadas apenas para um usuario Supabase Auth autorizado por UUID.
-- Nao ha papeis multiplos, MFA obrigatorio, CAPTCHA, rate limiter em Go ou alteracao de valores/dados de pedidos nesta subfase.
+- MFA TOTP e obrigatorio. Nao ha papeis multiplos, CAPTCHA, rate limiter em Go ou alteracao de valores/dados de pedidos nesta subfase.
 - Webhook InfinitePay esta implementado sem HMAC/IP allowlist porque o contrato publico consultado nao documenta assinatura; a autoridade permanece no `payment_check` server-side.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.

@@ -18,6 +18,10 @@ const adminMaxFormBodyBytes = 256 << 10
 type adminPanelService interface {
 	Available() bool
 	Login(ctx context.Context, email string, password string) (admindomain.LoginResult, error)
+	MFAPage(context.Context, *http.Request, bool) (admindomain.MFAPage, error)
+	CompleteMFA(context.Context, *http.Request, bool, string, string) (admindomain.LoginResult, admindomain.MFAPage, error)
+	WritePendingCookie(http.ResponseWriter, string, time.Time)
+	ClearPendingCookie(http.ResponseWriter)
 	ResolveSession(ctx context.Context, r *http.Request) (admindomain.Session, error)
 	Logout(ctx context.Context, r *http.Request) error
 	Dashboard(ctx context.Context) (admindomain.Dashboard, error)
@@ -99,14 +103,14 @@ func adminLoginHandler(service adminPanelService, siteURL string) http.HandlerFu
 
 		result, err := service.Login(r.Context(), strings.TrimSpace(r.PostFormValue("email")), r.PostFormValue("password"))
 		if err != nil {
-			log.Print("admin login failed")
-			renderHTML(w, r, http.StatusUnauthorized, templates.AdminLogin(admindomain.InvalidCredentialsMessage))
+			service.ClearPendingCookie(w)
+			status, message := adminAuthError(err)
+			renderHTML(w, r, status, templates.AdminLogin(message))
 			return
 		}
 
-		log.Print("admin login succeeded")
-		service.WriteCookie(w, result.Token, result.ExpiresAt)
-		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+		service.WritePendingCookie(w, result.PendingToken, result.ExpiresAt)
+		http.Redirect(w, r, result.NextPath, http.StatusSeeOther)
 	}
 }
 
@@ -228,7 +232,10 @@ func adminLogoutHandler(service adminPanelService, siteURL string) http.HandlerF
 			if err := service.Logout(r.Context(), r); err != nil && !errors.Is(err, admindomain.ErrUnauthenticated) {
 				log.Print("admin repository error")
 			}
+		}
+		if service != nil {
 			service.ClearCookie(w)
+			service.ClearPendingCookie(w)
 		}
 
 		log.Print("admin logout")

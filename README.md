@@ -55,6 +55,8 @@ IMPLEMENTADO:
 - Fase 13.3A — Refinamento de configuracoes do produto, com seletor publico apenas quando ha duas ou mais configuracoes ativas e validacao real concluida.
 - Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com validacao real em producao concluida.
 - Fase 14.1 — Hardening base de seguranca, com headers globais, CSP, limite global de body, timeouts HTTP, validacao/canonicalizacao de `SITE_URL` e limpeza diaria de dados transientes por Supabase Cron.
+- Fase 14.1 validada em producao pelo responsavel; plano arquivado em `docs/plans/completed/014-security.md`.
+- Fase 14.2 - MFA TOTP obrigatorio no Admin implementado; validacao real pendente. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
 
 PLANEJADO:
 
@@ -137,7 +139,7 @@ Banco implementado:
 - `order_payments` guarda pagamento InfinitePay 1:1 por pedido, com status `pending` ou `paid`.
 - `order_fulfillment` guarda status operacional 1:1 de producao e envio do pedido.
 - `orders.public_tracking_id` e UUID aleatorio unico para `/acompanhar/{uuid}`.
-- `admin_sessions` guarda sessoes administrativas transitorias com `SHA-256` do token, TTL de 8 horas e RLS habilitado.
+- `admin_sessions` guarda sessoes administrativas transitorias com `SHA-256` do token, TTL de 8 horas, `mfa_verified_at` obrigatorio para acesso e RLS habilitado. Sessoes legadas com NULL sao recusadas.
 - `admin_order_events` guarda auditoria operacional de mutacoes administrativas de producao/envio.
 - Supabase Cron remove diariamente `admin_sessions` expiradas e `carts` expirados, preservando pedidos historicos.
 - `order_number` e sequencial para referencia humana; `/pedido/{id}` usa UUID interno e acompanhamento usa `public_tracking_id`.
@@ -196,7 +198,7 @@ Configuracao local ou de hosting para runtime:
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
-- `SUPABASE_PUBLISHABLE_KEY`: opcional e nao administrativa; usada somente para autenticar credenciais do Admin no Supabase Auth.
+- `SUPABASE_PUBLISHABLE_KEY`: opcional e nao administrativa; usada para senha e MFA do Admin no Supabase Auth, junto do bearer do usuario nas chamadas MFA.
 - `SUPABASE_SECRET_KEY`: secret server-side com prefixo `sb_secret_`, usada somente para signed upload/delete de imagens no Admin.
 - `ADMIN_SUPABASE_USER_ID`: opcional; UUID do unico usuario Supabase Auth autorizado a acessar `/admin`.
 - `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.

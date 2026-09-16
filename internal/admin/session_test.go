@@ -110,7 +110,7 @@ func TestAdminServiceCreatesAndResolvesAuthorizedSession(t *testing.T) {
 	repo := newFakeRepository()
 	service := newTestService(repo, testAdminUserID, now)
 
-	result, err := service.Login(context.Background(), "admin@example.com", "correct-password")
+	result, err := completeTestMFA(service)
 	if err != nil {
 		t.Fatalf("expected login, got %v", err)
 	}
@@ -213,7 +213,7 @@ func TestAdminServiceLogoutDeletesSession(t *testing.T) {
 	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
 	repo := newFakeRepository()
 	service := newTestService(repo, testAdminUserID, now)
-	result, err := service.Login(context.Background(), "admin@example.com", "correct-password")
+	result, err := completeTestMFA(service)
 	if err != nil {
 		t.Fatalf("expected login, got %v", err)
 	}
@@ -250,7 +250,7 @@ func TestDashboardFromOrderStatuses(t *testing.T) {
 }
 
 func newTestService(repo *fakeRepository, adminUserID string, now time.Time) *Service {
-	service := NewService(fakeAuthClient{userID: adminUserID}, repo, adminUserID, CookieOptions{})
+	service := NewService(fakeAuthClient{userID: adminUserID, now: now}, repo, adminUserID, CookieOptions{})
 	service.now = func() time.Time { return now }
 	return service
 }
@@ -272,13 +272,14 @@ func mustTokenAndHash(t *testing.T, manager *TokenManager) (string, []byte) {
 type fakeAuthClient struct {
 	userID string
 	err    error
+	now    time.Time
 }
 
-func (c fakeAuthClient) SignInWithPassword(context.Context, string, string) (AuthUser, error) {
+func (c fakeAuthClient) SignInWithPassword(context.Context, string, string) (AuthSession, error) {
 	if c.err != nil {
-		return AuthUser{}, c.err
+		return AuthSession{}, c.err
 	}
-	return AuthUser{ID: c.userID}, nil
+	return AuthSession{User: AuthUser{ID: c.userID}, AccessToken: testAuthJWT(c.userID, "aal1", c.now)}, nil
 }
 
 type fakeRepository struct {
@@ -304,6 +305,8 @@ func (r *fakeRepository) CreateSession(_ context.Context, authUserID string, tok
 		CreatedAt:  expiresAt.Add(-SessionTTL),
 		ExpiresAt:  expiresAt,
 	}
+	verifiedAt := expiresAt.Add(-SessionTTL)
+	session.MFAVerifiedAt = &verifiedAt
 	r.sessions[string(tokenHash)] = session
 	return session, nil
 }

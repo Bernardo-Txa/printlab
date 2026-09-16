@@ -4,7 +4,9 @@ Status: em andamento.
 
 ## Fase 14.1 — Hardening base de seguranca
 
-Status: implementada; validacao real em andamento.
+Status: concluida; validada em producao pelo responsavel em 2026-09-16.
+
+Validacao real confirmou headers, CSP, canonical host, redirect 303 para InfinitePay, limites de body, Origin/Referer Admin, cron, timeouts e SITE_URL.
 
 ## Objetivo
 
@@ -120,7 +122,7 @@ MFA nao foi implementado na 14.1. Uma Fase 14.2 pode avaliar TOTP/AAL2 se o risc
 - Migration Supabase Cron append-only criada e coberta por teste estrutural.
 - Documentacao de seguranca, backend, database, migrations, roadmap e CHANGELOG atualizada.
 - Validacoes locais executadas antes do commit.
-- Validacao real de deploy e headers remotos em andamento.
+- Validacao real de deploy e headers remotos concluida pelo responsavel.
 
 ## Validacoes executadas
 

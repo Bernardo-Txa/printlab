@@ -83,6 +83,7 @@ Templates de catalogo implementados:
 - `web/templates/order.templ` para revisao de checkout, criacao de pedido e pagina de pedido.
 - `web/templates/order.templ` tambem contem a pagina segura de retorno de pagamento e acompanhamento de pedido.
 - `web/templates/admin.templ` para login administrativo, shell, dashboard, lista/detalhe de pedidos, gestao de catalogo e indisponibilidade segura.
+- `web/templates/admin_mfa.templ` para setup/desafio TOTP com forms SSR, seletor de autenticador quando necessario, QR como img data URI e chave manual somente no primeiro render. Nenhum JavaScript MFA.
 - `web/components/product_card.templ` para card reutilizavel, media de produto, galeria SSR e placeholder visual de produto.
 
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.

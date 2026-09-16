@@ -956,8 +956,13 @@
     @apply grid gap-2 text-sm font-semibold text-foreground;
   }
 
-  .admin-login-form input {
+  .admin-login-form input,
+  .admin-login-form select {
     @apply min-h-12 rounded-control border border-border bg-surface px-4 text-base font-normal text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .admin-login-form select {
+    @apply w-full min-w-0;
   }
 
   .admin-shell {

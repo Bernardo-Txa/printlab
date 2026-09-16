@@ -28,7 +28,9 @@ Nesta fase, o backend implementa:
 - `POST /webhooks/infinitepay` para receber webhook InfinitePay e confirmar por `payment_check`.
 - `GET /acompanhar/{public_tracking_id}` para acompanhamento seguro e minimizado do pedido.
 - `GET /admin/login` para formulario SSR de login administrativo ou indisponibilidade segura quando config Admin estiver ausente.
-- `POST /admin/login` para autenticar e-mail/senha no Supabase Auth, autorizar por UUID e criar sessao propria.
+- `POST /admin/login` para autenticar e-mail/senha no Supabase Auth, autorizar por UUID e iniciar MFA sem criar sessao propria.
+- `GET/POST /admin/mfa/setup` e `GET/POST /admin/mfa/challenge` para enrollment/desafio TOTP; somente AAL2 validado cria sessao propria.
+- `POST /admin/mfa/cancel` para limpar o cookie temporario e voltar ao login.
 - `GET /admin` para dashboard administrativo com contagens agregadas.
 - `GET /admin/pedidos` para listagem administrativa autenticada de pedidos.
 - `GET /admin/pedidos/{orderID}` para detalhe administrativo autenticado de pedido.
@@ -98,7 +100,7 @@ Nesta fase, o backend implementa:
 - Usar UUID em `/pedido/{id}` e `order_number` apenas como referencia humana.
 - Iniciar pagamento hospedado a partir do pedido congelado, nunca a partir do carrinho.
 - Confirmar pagamento somente por `payment_check` server-side.
-- Autenticar Admin por Supabase Auth sem armazenar senha, access token ou refresh token na PrintLab.
+- Autenticar Admin por Supabase Auth com TOTP obrigatorio; senha e refresh token nao sao armazenados. Access token AAL1 fica apenas no cookie temporario HttpOnly de 10 minutos, nunca no banco.
 - Autorizar Admin por `ADMIN_SUPABASE_USER_ID`, nunca por e-mail.
 - Usar sessao propria com token opaco, hash SHA-256 no PostgreSQL, cookie HttpOnly `SameSite=Strict` e TTL de 8 horas.
 - Validar `Origin`/`Referer` em POSTs administrativos, rejeitando `Origin: null`, origem cross-site e requests sem os dois headers.
@@ -184,6 +186,8 @@ O pedido copia snapshots de itens, preco, frete, dados de cliente, endereco e re
 ## Admin
 
 Rotas `/admin/*` usam headers privados/noindex e `Referrer-Policy: same-origin`.
+
+As rotas MFA exigem token pending validado no Supabase e UUID autorizado, sem exigir sessao completa. O service consulta fatores, limpa somente TOTP unverified no setup e revalida o fator selecionado nos POSTs. Apos challenge/verify, autentica o token atualizado no Supabase e exige claim AAL2. Somente entao gera token opaco PrintLab e grava hash com `mfa_verified_at = now()`. Repository e service recusam timestamp NULL; o cron de expiracao continua igual. Veja [contratos e recuperacao](../integrations/supabase-auth.md).
 
 As rotas Admin tambem recebem os headers globais de seguranca da Fase 14.1. Os headers privados/noindex e o `Referrer-Policy: same-origin` continuam sendo definidos pelos handlers Admin e prevalecem sobre o default global.
 

@@ -1056,7 +1056,7 @@ A aplicacao Admin 13.4 aceita apenas `image/jpeg`, `image/png` e `image/webp` e 
 
 ## Tabela `public.admin_sessions`
 
-Sessoes administrativas proprias da PrintLab, criadas apos autenticacao bem-sucedida no Supabase Auth e autorizacao por `ADMIN_SUPABASE_USER_ID`.
+Sessoes administrativas proprias da PrintLab, criadas somente apos MFA AAL2 validado no Supabase Auth e autorizacao por `ADMIN_SUPABASE_USER_ID`.
 
 Campos:
 
@@ -1067,6 +1067,7 @@ Campos:
 | `token_hash` | `bytea` | nao | - | `SHA-256` do token opaco do cookie. |
 | `created_at` | `timestamptz` | nao | `now()` | Criacao da sessao. |
 | `expires_at` | `timestamptz` | nao | - | Expiracao da sessao, inicialmente 8 horas. |
+| `mfa_verified_at` | `timestamptz` | sim | - | NULL nas sessoes anteriores ao MFA, recusadas. Nova sessao apos AAL2 grava `now()`. |
 
 Constraints:
 
@@ -1082,7 +1083,8 @@ Indices:
 Semantica:
 
 - Token bruto existe somente no cookie HttpOnly `printlab_admin_session`.
-- Senha, access token e refresh token do Supabase nao sao persistidos.
+- Senha, access token e refresh token do Supabase nao sao persistidos no banco. Access token AAL1 existe apenas no cookie MFA temporario; refresh token e descartado.
+- Leitura exige `mfa_verified_at IS NOT NULL`, sem backfill de sessoes antigas. O service tambem exige timestamp, usuario autorizado e expiracao futura.
 - Nao ha FK para `auth.users` nesta fase para reduzir acoplamento ao schema interno do Supabase Auth.
 - A autorizacao continua no backend por comparacao com `ADMIN_SUPABASE_USER_ID`.
 - Sessao expirada e tratada como nao autenticada e pode ser removida oportunisticamente.

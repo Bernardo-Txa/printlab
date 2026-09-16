@@ -10,6 +10,7 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 - 13.2 — pedidos, producao, envio e auditoria: concluida com validacao real em producao.
 - 13.3 — catalogo, variantes, materiais, cores e caixas: concluida com validacao real em producao.
 - 13.4 — imagens e Supabase Storage: concluida com validacao real em producao.
+- 14.2 - MFA TOTP obrigatorio: implementado; validacao real pendente.
 
 ## Fase 13.1 implementada
 
@@ -21,6 +22,12 @@ Rotas:
 - `POST /admin/logout`
 
 O login usa Supabase Auth com e-mail e senha. A PrintLab autoriza somente o usuario cujo `user.id` corresponde a `ADMIN_SUPABASE_USER_ID`.
+
+Desde a Fase 14.2, a senha inicia somente o fluxo MFA. No primeiro acesso, `/admin/mfa/setup` apresenta QR e chave manual para cadastrar um autenticador. Nos acessos seguintes, `/admin/mfa/challenge` pede o codigo; havendo varios TOTP verificados, o administrador escolhe qual usar. A sessao PrintLab so nasce depois de AAL2 confirmado no servidor.
+
+O fluxo temporario dura ate 10 minutos. Codigo invalido permite nova tentativa sem reapresentar o secret; recarregar setup descarta fatores TOTP nao verificados e gera outro QR. Cancelar limpa o estado temporario. A tela funciona com forms SSR, sem JavaScript.
+
+Sessoes anteriores ao MFA sao recusadas por `mfa_verified_at` nulo. Perder o autenticador pode bloquear acesso: seguir o [runbook de recuperacao](../integrations/supabase-auth.md#recuperacao-de-emergencia), sem reset ou bypass pela aplicacao.
 
 A sessao administrativa e propria da PrintLab:
 
@@ -264,11 +271,11 @@ Evidencias funcionais confirmadas:
 
 - Nao ha alteracao de dados comerciais do pedido, valores, cliente, endereco ou pagamento.
 - Nao ha papeis multiplos.
-- Nao ha MFA obrigatorio, CAPTCHA ou rate limiter em Go na aplicacao.
+- MFA TOTP e obrigatorio; nao ha CAPTCHA ou rate limiter em Go na aplicacao.
 - Nao ha etiqueta, postagem, rastreio externo ou integracao logistica de despacho.
 - Nao ha estoque fisico de filamento, marcas, lotes, carretel, custos calculados ou multiplos admins/papeis.
 - Nao ha crop, compressao avancada, bulk upload, thumbnails persistidos multiplos ou DAM.
-- MFA, RBAC e protecoes WAF/rate limiting operacional ficam para avaliacao posterior da Fase 14.
+- RBAC permanece fora do escopo; protecoes WAF/anti-abuse ficam para a Fase 14.3.
 
 ## Decisoes pendentes
 

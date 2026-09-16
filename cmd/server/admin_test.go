@@ -49,12 +49,13 @@ func TestAdminLoginUnavailableWhenConfigMissing(t *testing.T) {
 }
 
 func TestAdminLoginValidRedirectsAndSetsCookie(t *testing.T) {
-	expiresAt := time.Now().Add(admindomain.SessionTTL)
+	expiresAt := time.Now().Add(admindomain.MFAPendingTTL)
 	service := &fakeAdminPanelService{
 		available: true,
 		loginResult: admindomain.LoginResult{
-			Token:     mustAdminToken(t),
-			ExpiresAt: expiresAt,
+			PendingToken: "test-pending-token",
+			NextPath:     "/admin/mfa/challenge",
+			ExpiresAt:    expiresAt,
 		},
 	}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
@@ -69,14 +70,14 @@ func TestAdminLoginValidRedirectsAndSetsCookie(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("expected redirect, got %d", rec.Code)
 	}
-	if rec.Header().Get("Location") != "/admin" {
-		t.Fatalf("expected redirect to /admin, got %q", rec.Header().Get("Location"))
+	if rec.Header().Get("Location") != "/admin/mfa/challenge" {
+		t.Fatalf("expected redirect to MFA, got %q", rec.Header().Get("Location"))
 	}
 	cookies := rec.Result().Cookies()
-	if len(cookies) != 1 || cookies[0].Name != admindomain.CookieName {
-		t.Fatalf("expected admin session cookie, got %#v", cookies)
+	if len(cookies) != 1 || cookies[0].Name != admindomain.MFAPendingCookieName {
+		t.Fatal("expected only pending cookie")
 	}
-	if cookies[0].Path != "/admin" || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteStrictMode {
+	if cookies[0].Path != "/admin/mfa" || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteStrictMode {
 		t.Fatalf("expected safe admin cookie attributes, got %#v", cookies[0])
 	}
 	if service.loginEmail != "admin@example.com" || service.loginPassword != "correct-password" {
@@ -84,7 +85,7 @@ func TestAdminLoginValidRedirectsAndSetsCookie(t *testing.T) {
 	}
 }
 
-func TestAdminLoginInvalidCredentialsShowsGenericMessageAndNoCookie(t *testing.T) {
+func TestAdminLoginInvalidCredentialsShowsGenericMessageAndClearsPending(t *testing.T) {
 	service := &fakeAdminPanelService{available: true, loginErr: admindomain.ErrInvalidCredentials}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
 	form := url.Values{"email": {"other@example.com"}, "password": {"wrong-password"}}
@@ -101,7 +102,7 @@ func TestAdminLoginInvalidCredentialsShowsGenericMessageAndNoCookie(t *testing.T
 	if !strings.Contains(rec.Body.String(), admindomain.InvalidCredentialsMessage) {
 		t.Fatal("expected generic invalid credentials message")
 	}
-	if strings.Contains(rec.Body.String(), "não autorizado") || strings.Contains(rec.Body.String(), "wrong-password") || len(rec.Result().Cookies()) != 0 {
+	if strings.Contains(rec.Body.String(), "não autorizado") || strings.Contains(rec.Body.String(), "wrong-password") || len(rec.Result().Cookies()) != 1 || rec.Result().Cookies()[0].MaxAge != -1 {
 		t.Fatal("expected no authorization details, password, or cookie")
 	}
 }
@@ -750,8 +751,8 @@ func TestAdminLogoutPostValidatesOriginDeletesSessionAndClearsCookie(t *testing.
 	if !service.logoutCalled {
 		t.Fatal("expected logout to call service")
 	}
-	if len(rec.Result().Cookies()) != 1 || rec.Result().Cookies()[0].MaxAge != -1 {
-		t.Fatalf("expected admin cookie to be cleared, got %#v", rec.Result().Cookies())
+	if len(rec.Result().Cookies()) != 2 || rec.Result().Cookies()[0].MaxAge != -1 || rec.Result().Cookies()[1].MaxAge != -1 {
+		t.Fatal("expected admin and pending cookies to be cleared")
 	}
 }
 

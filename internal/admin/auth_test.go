@@ -46,8 +46,8 @@ func TestSupabaseAuthClientSignsInWithEmailPassword(t *testing.T) {
 	if !sawRequest {
 		t.Fatal("expected auth request")
 	}
-	if user.ID != testAdminUserID {
-		t.Fatalf("expected user id %q, got %q", testAdminUserID, user.ID)
+	if user.User.ID != testAdminUserID || user.AccessToken != "ignored" {
+		t.Fatal("expected authenticated user and access token")
 	}
 }
 
@@ -57,7 +57,7 @@ func TestSupabaseAuthClientHandlesHTTPFailuresSafely(t *testing.T) {
 		want   error
 	}{
 		{status: http.StatusBadRequest, want: ErrAuthRejected},
-		{status: http.StatusTooManyRequests, want: ErrAuthUnavailable},
+		{status: http.StatusTooManyRequests, want: ErrAuthRateLimited},
 		{status: http.StatusInternalServerError, want: ErrAuthUnavailable},
 	}
 
@@ -128,8 +128,8 @@ func TestSupabaseAuthClientRejectsInvalidResponses(t *testing.T) {
 
 			client := newTestAuthClient(t, server.URL, server.Client())
 			_, err := client.SignInWithPassword(context.Background(), "admin@example.com", "secret-password")
-			if !errors.Is(err, ErrAuthUnavailable) {
-				t.Fatalf("expected auth unavailable, got %v", err)
+			if !errors.Is(err, ErrAuthInvalidResponse) {
+				t.Fatalf("expected invalid response, got %v", err)
 			}
 			assertErrorDoesNotContainSensitiveAuthData(t, err)
 		})

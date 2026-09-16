@@ -207,14 +207,29 @@ func (s *Service) Login(ctx context.Context, email string, password string) (Log
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
-	user, err := s.auth.SignInWithPassword(ctx, email, password)
+	authSession, err := s.auth.SignInWithPassword(ctx, email, password)
 	if err != nil {
+		if errors.Is(err, ErrAuthRejected) {
+			return LoginResult{}, ErrInvalidCredentials
+		}
+		return LoginResult{}, SafeAuthError(err)
+	}
+	if normalizeUUID(authSession.User.ID) != s.adminUserID {
 		return LoginResult{}, ErrInvalidCredentials
 	}
-	if normalizeUUID(user.ID) != s.adminUserID {
-		return LoginResult{}, ErrInvalidCredentials
+	user, err := s.pendingUser(ctx, authSession.AccessToken)
+	if err != nil {
+		return LoginResult{}, err
 	}
+	nextPath := "/admin/mfa/setup"
+	if len(verifiedTOTP(user)) > 0 {
+		nextPath = "/admin/mfa/challenge"
+	}
+	return LoginResult{PendingToken: authSession.AccessToken, NextPath: nextPath, ExpiresAt: s.now().UTC().Add(MFAPendingTTL)}, nil
+}
 
+// Only CompleteMFA may create a PrintLab session, after remote AAL2 validation.
+func (s *Service) createMFASession(ctx context.Context) (LoginResult, error) {
 	token, err := s.tokens.GenerateToken()
 	if err != nil {
 		return LoginResult{}, ErrUnavailable
@@ -261,6 +276,9 @@ func (s *Service) ResolveSession(ctx context.Context, r *http.Request) (Session,
 	}
 	if normalizeUUID(session.AuthUserID) != s.adminUserID {
 		_ = s.sessions.DeleteSession(ctx, tokenHash)
+		return Session{}, ErrUnauthenticated
+	}
+	if session.MFAVerifiedAt == nil {
 		return Session{}, ErrUnauthenticated
 	}
 

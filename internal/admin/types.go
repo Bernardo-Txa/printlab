@@ -15,44 +15,84 @@ const (
 )
 
 var (
-	ErrAuthRejected       = errors.New("admin auth rejected")
-	ErrAuthUnavailable    = errors.New("admin auth unavailable")
-	ErrInvalidCredentials = errors.New("admin invalid credentials")
-	ErrUnauthenticated    = errors.New("admin unauthenticated")
-	ErrSessionNotFound    = errors.New("admin session not found")
-	ErrSessionExpired     = errors.New("admin session expired")
-	ErrInvalidToken       = errors.New("admin invalid session token")
-	ErrInvalidOrderID     = errors.New("admin invalid order id")
-	ErrOrderNotFound      = errors.New("admin order not found")
-	ErrInvalidTransition  = errors.New("admin invalid order transition")
-	ErrTransitionConflict = errors.New("admin order transition conflict")
-	ErrInvalidCatalogID   = errors.New("admin invalid catalog id")
-	ErrCatalogNotFound    = errors.New("admin catalog record not found")
-	ErrValidation         = errors.New("admin validation failed")
-	ErrDuplicateSlug      = errors.New("admin duplicate slug")
-	ErrDuplicateSKU       = errors.New("admin duplicate sku")
-	ErrUnavailable        = errors.New("admin unavailable")
-	ErrStorageUnavailable = errors.New("admin storage unavailable")
-	ErrInvalidImageType   = errors.New("admin invalid image type")
-	ErrImageTooLarge      = errors.New("admin image too large")
-	ErrInvalidImagePath   = errors.New("admin invalid image path")
+	ErrAuthRejected        = errors.New("admin auth rejected")
+	ErrAuthUnavailable     = errors.New("admin auth unavailable")
+	ErrAuthConfiguration   = errors.New("admin auth configuration invalid")
+	ErrAuthInvalidResponse = errors.New("admin auth response invalid")
+	ErrAuthRateLimited     = errors.New("admin auth rate limited")
+	ErrMFAInvalidCode      = errors.New("admin mfa invalid code")
+	ErrMFAFactor           = errors.New("admin mfa factor invalid")
+	ErrInvalidCredentials  = errors.New("admin invalid credentials")
+	ErrUnauthenticated     = errors.New("admin unauthenticated")
+	ErrSessionNotFound     = errors.New("admin session not found")
+	ErrSessionExpired      = errors.New("admin session expired")
+	ErrInvalidToken        = errors.New("admin invalid session token")
+	ErrInvalidOrderID      = errors.New("admin invalid order id")
+	ErrOrderNotFound       = errors.New("admin order not found")
+	ErrInvalidTransition   = errors.New("admin invalid order transition")
+	ErrTransitionConflict  = errors.New("admin order transition conflict")
+	ErrInvalidCatalogID    = errors.New("admin invalid catalog id")
+	ErrCatalogNotFound     = errors.New("admin catalog record not found")
+	ErrValidation          = errors.New("admin validation failed")
+	ErrDuplicateSlug       = errors.New("admin duplicate slug")
+	ErrDuplicateSKU        = errors.New("admin duplicate sku")
+	ErrUnavailable         = errors.New("admin unavailable")
+	ErrStorageUnavailable  = errors.New("admin storage unavailable")
+	ErrInvalidImageType    = errors.New("admin invalid image type")
+	ErrImageTooLarge       = errors.New("admin image too large")
+	ErrInvalidImagePath    = errors.New("admin invalid image path")
 )
 
 type AuthUser struct {
-	ID string
+	ID      string      `json:"id"`
+	Factors []MFAFactor `json:"factors"`
+}
+
+// Refresh tokens are intentionally not decoded or retained.
+type AuthSession struct {
+	AccessToken string   `json:"access_token"`
+	User        AuthUser `json:"user"`
+}
+
+type MFAFactor struct {
+	ID           string `json:"id"`
+	Type         string `json:"factor_type"`
+	Status       string `json:"status"`
+	FriendlyName string `json:"friendly_name"`
+}
+
+type TOTPEnrollment struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	TOTP struct {
+		QRCode string `json:"qr_code"`
+		Secret string `json:"secret"`
+	} `json:"totp"`
+}
+
+type MFAPage struct {
+	Setup    bool
+	Factors  []MFAFactor
+	FactorID string
+	QRCode   string
+	Secret   string
+	Message  string
 }
 
 type Session struct {
-	ID         string
-	AuthUserID string
-	TokenHash  []byte
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
+	ID            string
+	AuthUserID    string
+	TokenHash     []byte
+	CreatedAt     time.Time
+	ExpiresAt     time.Time
+	MFAVerifiedAt *time.Time
 }
 
 type LoginResult struct {
-	Token     string
-	ExpiresAt time.Time
+	PendingToken string
+	NextPath     string
+	Token        string
+	ExpiresAt    time.Time
 }
 
 type Dashboard struct {

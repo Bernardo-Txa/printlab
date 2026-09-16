@@ -76,6 +76,10 @@ Ela habilita `pg_cron` e agenda o job diario `printlab_transient_data_cleanup` p
 
 Novas migrations Supabase devem continuar em `supabase/migrations/` e ser revisadas antes de chegar a `main`.
 
+A Fase 14.2 adiciona `20260916120000_require_admin_session_mfa.sql`, somente `ALTER TABLE public.admin_sessions ADD COLUMN mfa_verified_at timestamptz`. Sem default, backfill, indice novo ou alteracao em auth.*. Sessoes existentes ficam NULL e nao autenticam mais; o INSERT apos AAL2 grava `now()`. O indice de token hash e o cron por `expires_at` permanecem suficientes.
+
+Aplicar a migration antes de disponibilizar o novo login. Durante eventual intervalo de deploy sem a coluna, o Admin falha fechado; a loja publica permanece independente. Rollback de codigo para antes do MFA restauraria acesso por senha e nao e um rollback seguro. Preferir corrigir o deploy mantendo a coluna e a exigencia MFA.
+
 A pasta antiga `migrations/` na raiz foi removida para evitar duas fontes de verdade.
 
 ## Workflow normal

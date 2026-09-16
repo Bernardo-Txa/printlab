@@ -1,0 +1,75 @@
+package templates
+
+import (
+	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ AdminMFA(page admindomain.MFAPage) {
+	@components.PrivateNoIndexLayout("Verificação em duas etapas | PrintLab", "Acesso administrativo da PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">PrintLab Admin</p>
+						if page.Setup {
+							<h1>Configure a verificação em duas etapas</h1>
+						} else {
+							<h1>Verificação em duas etapas</h1>
+						}
+					</div>
+					if page.Message != "" {
+						<p role="alert" class="checkout-alert checkout-alert-error">{ page.Message }</p>
+					}
+					if page.QRCode != "" {
+						<p>Escaneie o QR com seu aplicativo autenticador.</p>
+						<img src={ page.QRCode } alt="QR para configurar o autenticador" width="240" height="240" class="max-w-full"/>
+						<p>Chave manual: <code class="break-all">{ page.Secret }</code></p>
+					}
+					<p>Digite o código do seu aplicativo autenticador.</p>
+					<form class="admin-login-form" method="post" action={ adminMFAAction(page.Setup) }>
+						if page.Setup {
+							<input type="hidden" name="factor_id" value={ page.FactorID }/>
+						} else if len(page.Factors) == 1 {
+							<input type="hidden" name="factor_id" value={ page.Factors[0].ID }/>
+						} else {
+							<label>
+								<span>Autenticador</span>
+								<select name="factor_id" required>
+									<option value="">Selecione o autenticador</option>
+									for _, factor := range page.Factors {
+										<option value={ factor.ID } selected={ factor.ID == page.FactorID }>{ adminMFAFactorLabel(factor) }</option>
+									}
+								</select>
+							</label>
+						}
+						<label>
+							<span>Código do autenticador</span>
+							<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required/>
+						</label>
+						<button class="btn-base btn-primary" type="submit">
+							if page.Setup {
+								Ativar e continuar
+							} else {
+								Verificar
+							}
+						</button>
+					</form>
+					<form method="post" action="/admin/mfa/cancel">
+						<button class="btn-base btn-secondary" type="submit">Cancelar</button>
+					</form>
+				</div>
+			}
+		</section>
+	}
+}
+
+func adminMFAAction(setup bool) string {
+	if setup { return "/admin/mfa/setup" }
+	return "/admin/mfa/challenge"
+}
+
+func adminMFAFactorLabel(factor admindomain.MFAFactor) string {
+	if factor.FriendlyName != "" { return factor.FriendlyName }
+	return factor.ID
+}

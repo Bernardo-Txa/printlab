@@ -7,6 +7,23 @@ import (
 	"testing"
 )
 
+func TestMFAMigrationDoesNotGrandfatherOldSessions(t *testing.T) {
+	source, err := os.ReadFile("../../supabase/migrations/20260916120000_require_admin_session_mfa.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(string(source)) != "alter table public.admin_sessions\n  add column mfa_verified_at timestamptz;" {
+		t.Fatal("MFA timestamp must remain nullable without backfill/default")
+	}
+	repository, err := os.ReadFile("repository.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(repository), "where token_hash = $1 and mfa_verified_at is not null") {
+		t.Fatal("repository must reject legacy sessions")
+	}
+}
+
 func TestCreateAdminSessionsMigrationDocumentsSessionSchema(t *testing.T) {
 	matches, err := filepath.Glob("../../supabase/migrations/*_create_admin_sessions.sql")
 	if err != nil {

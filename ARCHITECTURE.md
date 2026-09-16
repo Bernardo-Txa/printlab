@@ -109,7 +109,7 @@ A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carr
 
 O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
-O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e cria uma sessao propria da PrintLab. Requests autenticadas usam cookie HttpOnly com token opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`; tokens Supabase e senhas nao sao persistidos. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas. A Fase 13.4 adicionou gestao administrativa de imagens com upload direto ao Supabase Storage e finalizacao server-side em `product_images`.
+O painel administrativo tambem e server-side. `POST /admin/login` envia e-mail e senha ao Supabase Auth pelo backend usando `SUPABASE_PUBLISHABLE_KEY`, verifica se `user.id` corresponde a `ADMIN_SUPABASE_USER_ID` e inicia MFA TOTP. AAL1 nunca cria sessao PrintLab. O access_token temporario fica exclusivamente no cookie HttpOnly `printlab_admin_mfa_pending`, Strict, host-only, Path=/admin/mfa, Secure em producao e TTL de 10 minutos; refresh_token e descartado e nenhum token Supabase vai ao banco. Apos challenge/verify, o backend valida o token atualizado junto ao Supabase, confirma usuario e claim AAL2 e cria sessao propria. Requests autenticadas usam cookie HttpOnly opaco e resolvem a sessao por hash SHA-256 em `public.admin_sessions`, exigindo `mfa_verified_at` nao nulo. A Fase 13.2 adicionou operacao administrativa de pedidos com lista minimizada, detalhe protegido, mutacoes sequenciais de producao/envio e auditoria transacional em `public.admin_order_events`. A Fase 13.3 adicionou gestao SSR protegida de catalogo, variantes, receita, materiais, cores e caixas sobre as tabelas existentes, sem hard delete. A Fase 13.3A refinou a UX para tratar `product_variants` como configuracoes do produto na UI, exibindo escolha publica apenas quando houver duas ou mais configuracoes ativas. A Fase 13.4 adicionou gestao administrativa de imagens com upload direto ao Supabase Storage e finalizacao server-side em `product_images`.
 
 A Fase 14.1 adiciona hardening HTTP transversal. O servidor usa `http.Server` com timeouts explicitos, aplica headers globais de seguranca, CSP restritiva, teto global de 1 MiB para corpo de requests e validacao central de `SITE_URL`. Admin e acompanhamento publico preservam seus headers privados/noindex/referrer especificos. Rate limiting permanece uma responsabilidade operacional futura por Vercel Firewall/WAF, apos observacao de trafego real.
 
@@ -297,9 +297,12 @@ GET /pagamento/retorno -> valida payment_check; pago redireciona 303 para /pedid
 POST /webhooks/infinitepay -> valida identificadores, chama payment_check e responde JSON
 GET /acompanhar/{public_tracking_id} -> acompanhamento SSR minimizado, sem PII, valores ou IDs internos
 GET /admin/login -> formulario SSR de login administrativo ou indisponibilidade segura
-POST /admin/login -> autentica via Supabase Auth, autoriza por user UUID e cria sessao PrintLab
+POST /admin/login -> autentica via Supabase Auth, autoriza por user UUID e inicia AAL1 sem sessao PrintLab
+GET/POST /admin/mfa/setup -> enrollment e verificacao inicial TOTP
+GET/POST /admin/mfa/challenge -> escolha de fator e challenge/verify -> valida token e AAL2 -> cria sessao PrintLab
+POST /admin/mfa/cancel -> limpa cookie pending e volta ao login
 GET /admin -> dashboard administrativo inicial somente leitura, protegido por sessao
-POST /admin/logout -> remove sessao e limpa cookie administrativo
+POST /admin/logout -> remove sessao e limpa cookies administrativo e pending
 GET /static/... -> assets embutidos a partir de web/static/
 ```
 

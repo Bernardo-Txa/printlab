@@ -111,7 +111,7 @@ Pool padrao por instancia:
 - `order_shipping_details` guarda o snapshot logistico do frete selecionado.
 - `order_items` e `order_item_filaments` guardam snapshots de itens e receita de producao.
 - `order_payments` guarda checkout InfinitePay, status de pagamento, `order_nsu`, retorno confirmado e valores validados.
-- `admin_sessions` guarda sessoes administrativas com token hash de 32 bytes e expiracao curta de 8 horas.
+- `admin_sessions` guarda sessoes administrativas com token hash de 32 bytes, expiracao curta de 8 horas e `mfa_verified_at` preenchido somente apos AAL2. NULL identifica sessoes legadas recusadas, sem backfill.
 - `admin_order_events` guarda trilha de auditoria operacional de producao/envio por pedido.
 - `pg_cron` agenda limpeza diaria de `admin_sessions` expiradas e `carts` expirados.
 - RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections`, tabelas de pedido, `order_payments`, `admin_sessions` e `admin_order_events` sem policies publicas.
