@@ -63,7 +63,7 @@ Contratos confirmados no OpenAPI e implementacao oficiais do Supabase Auth em 20
 - Challenge: POST com JSON vazio; retorno id.
 - Verify: POST com challenge_id e codigo de seis digitos; retorno access_token atualizado e user.
 
-QR SVG e codificado em base64 e exibido por img data URI, sem HTML cru. A CSP existente permite `img-src data:`. Secret manual e mostrado somente na resposta inicial privada/no-store, sem cookie/DB/logs. Codigo incorreto reexibe somente formulario e factor ID; reload cria novo enrollment apos limpeza. Evitar abas simultaneas durante setup.
+QR SVG e codificado em base64 e exibido por img data URI, sem HTML cru. O provider aceita respostas com whitespace ou declaracao XML, mas exige QR nao vazio contendo abertura `<svg` e fechamento `</svg>`; texto arbitrario ou SVG incompleto e rejeitado. A CSP existente permite `img-src data:`. Secret manual e mostrado somente na resposta inicial privada/no-store, sem cookie/DB/logs. Codigo incorreto reexibe somente formulario e factor ID; reload cria novo enrollment apos limpeza. Evitar abas simultaneas durante setup.
 
 ## Sessao PrintLab
 

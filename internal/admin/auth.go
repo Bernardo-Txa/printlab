@@ -87,10 +87,15 @@ func (c *SupabaseAuthClient) EnrollTOTP(ctx context.Context, token string) (TOTP
 	if err != nil {
 		return TOTPEnrollment{}, err
 	}
-	if !ValidUUID(result.ID) || result.Type != "totp" || result.TOTP.Secret == "" || !strings.HasPrefix(strings.TrimSpace(result.TOTP.QRCode), "<svg") {
+	if !ValidUUID(result.ID) || result.Type != "totp" || result.TOTP.Secret == "" || !validQRCodeSVG(result.TOTP.QRCode) {
 		return TOTPEnrollment{}, ErrAuthInvalidResponse
 	}
 	return result, nil
+}
+
+func validQRCodeSVG(value string) bool {
+	qr := strings.TrimSpace(value)
+	return qr != "" && strings.Contains(qr, "<svg") && strings.Contains(qr, "</svg>")
 }
 
 func (c *SupabaseAuthClient) UnenrollFactor(ctx context.Context, token, factorID string) error {

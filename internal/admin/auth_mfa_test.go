@@ -81,6 +81,49 @@ func TestSupabaseMFAContracts(t *testing.T) {
 	}
 }
 
+func TestSupabaseAuthClientValidatesQRCodeStructure(t *testing.T) {
+	cases := []struct {
+		name    string
+		qr      string
+		secret  string
+		typ     string
+		wantErr bool
+	}{
+		{name: "simple SVG", qr: "<svg></svg>", secret: "secret", typ: "totp"},
+		{name: "XML declaration", qr: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>", secret: "secret", typ: "totp"},
+		{name: "leading whitespace", qr: "\n  <svg xmlns=\"http://www.w3.org/2000/svg\">\n  </svg>\n", secret: "secret", typ: "totp"},
+		{name: "no SVG", qr: "invalid", secret: "secret", typ: "totp", wantErr: true},
+		{name: "unclosed SVG", qr: "<svg>", secret: "secret", typ: "totp", wantErr: true},
+		{name: "empty secret", qr: "<svg></svg>", typ: "totp", wantErr: true},
+		{name: "wrong factor type", qr: "<svg></svg>", secret: "secret", typ: "phone", wantErr: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/auth/v1/factors" {
+					t.Fatalf("expected enrollment endpoint, got %s", r.URL.Path)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = fmt.Fprintf(w, `{"id":%q,"type":%q,"totp":{"qr_code":%q,"secret":%q}}`, testFactorID, tc.typ, tc.qr, tc.secret)
+			}))
+			defer server.Close()
+
+			client := newTestAuthClient(t, server.URL, server.Client())
+			_, err := client.EnrollTOTP(context.Background(), "test-access")
+			if tc.wantErr {
+				if !errors.Is(err, ErrAuthInvalidResponse) {
+					t.Fatalf("expected invalid response, got %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected valid enrollment, got %v", err)
+			}
+		})
+	}
+}
+
 func TestSupabaseAuthResponseLimitsAndStatuses(t *testing.T) {
 	operations := []struct {
 		name string
