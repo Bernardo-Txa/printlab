@@ -1,6 +1,6 @@
 # Fase 16.1 — SEO tecnico e baseline de performance
 
-Status: em execucao.
+Status: concluida e validada em producao.
 
 ## Objetivo
 
@@ -38,6 +38,8 @@ Em 2026-09-16, os artefatos embutidos medidos localmente foram:
 | `web/static/images/branding/logo-printlab-primary.png` | 897.969 bytes |
 
 Antes de otimizar imagens reais do catalogo, medir em ambiente publico com Lighthouse/WebPageTest pelo menos `/`, `/produtos` e um detalhe de produto com imagens: LCP, INP, CLS, TTFB, tamanho transferido e requests. Registrar data, URL, dispositivo/rede e resultado; nao assumir que uma imagem de Storage ou o logo e gargalo sem essa medicao.
+
+A validacao manual em producao confirmou `robots.txt`, `sitemap.xml`, canonicals absolutos, metadados Open Graph/Twitter, `loading="eager"`/`fetchpriority="high"` na imagem principal e Lighthouse SEO/Best Practices 100 nas tres URLs auditadas.
 
 ## Validacao prevista
 

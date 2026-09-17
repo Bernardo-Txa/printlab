@@ -322,10 +322,18 @@ func staticFileHandler(staticFS fs.FS) http.Handler {
 			return
 		}
 
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+		w.Header().Set("Cache-Control", staticCacheControl(name))
 
 		request := r.Clone(r.Context())
 		request.URL.Path = "/static/" + name
 		fileServer.ServeHTTP(w, request)
 	})
+}
+
+func staticCacheControl(name string) string {
+	if strings.Contains(path.Base(name), "-v1.") {
+		return "public, max-age=31536000, immutable"
+	}
+
+	return "public, max-age=3600"
 }

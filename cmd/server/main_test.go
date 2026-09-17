@@ -34,8 +34,23 @@ func TestHomeHandler(t *testing.T) {
 		t.Fatal("expected response to include the skip link")
 	}
 
-	if !strings.Contains(body, "/static/images/branding/logo-printlab-primary.png") {
-		t.Fatal("expected response to reference the PrintLab logo")
+	for _, asset := range []string{
+		"/static/images/branding/logo-printlab-hero-v1.webp",
+		"/static/images/branding/logo-printlab-small-v1.webp",
+		"/static/images/branding/favicon-printlab-v1.png",
+	} {
+		if !strings.Contains(body, asset) {
+			t.Fatalf("expected response to reference optimized branding asset %q", asset)
+		}
+	}
+	for _, obsoleteARIA := range []string{
+		`aria-label="Identidade visual da PrintLab"`,
+		`aria-label="Espaco visual reservado para catalogo futuro"`,
+		`aria-label="Falar com a PrintLab"`,
+	} {
+		if strings.Contains(body, obsoleteARIA) {
+			t.Fatalf("expected homepage not to use redundant ARIA label %q", obsoleteARIA)
+		}
 	}
 
 	if !strings.Contains(body, "Imprimimos") || !strings.Contains(body, "Por que Lab?") {
@@ -138,6 +153,20 @@ func TestStaticBrandLogoHandler(t *testing.T) {
 
 	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "image/png") {
 		t.Fatalf("expected PNG content type, got %q", got)
+	}
+}
+
+func TestVersionedStaticAssetUsesLongImmutableCache(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/static/images/branding/logo-printlab-small-v1.webp", nil)
+	rec := httptest.NewRecorder()
+
+	newTestHandler(t).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
+		t.Fatalf("expected immutable cache policy for versioned asset, got %q", got)
 	}
 }
 
