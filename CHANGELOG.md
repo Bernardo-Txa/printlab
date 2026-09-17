@@ -6,8 +6,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 16.2 em execucao: variantes WebP locais de branding, favicon reduzido, cache longo apenas para assets versionados e pequenos ajustes semanticos/contraste na Home.
-- Fase 16.1 em execucao: canonical absoluto baseado em `SITE_URL`, metadados Open Graph/Twitter nas paginas publicas, `robots.txt`, sitemap de catalogo ativo, `noindex` transacional, teste de SEO e cache estatico conservador.
+- Fase 16 concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, contraste WCAG AA nos DNA cards e Lighthouse 100 nas paginas publicas validadas.
 - Fase 15 concluida pela 15.1: correlacao opaca por request, eventos operacionais pesquisaveis e sem identificadores sensiveis, inventario de cobertura critica, runbooks de observabilidade/incidentes e estrategia de alertas compativel com Vercel Hobby.
 - Fase 14.3: configuracao real do Vercel Firewall no Hobby validada, com tres regras ativas e Bot Protection OFF.
 

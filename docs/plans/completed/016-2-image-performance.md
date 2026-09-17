@@ -1,6 +1,6 @@
 # Fase 16.2 — Performance de imagens, cache estatico e acessibilidade
 
-Status: em execucao; requer nova medicao manual em producao apos deploy.
+Status: concluida; validada em producao.
 
 ## Resultado apos a primeira rodada de branding
 
@@ -12,9 +12,21 @@ Status: em execucao; requer nova medicao manual em producao apos deploy.
 
 Branding local deixou de ser gargalo relevante. SSR, JavaScript e CSS não justificam refactor nesta etapa; as imagens públicas de produto no Storage são o alvo restante.
 
+## Validacao final em producao
+
+| URL | Performance | Accessibility | Best Practices | SEO |
+| --- | ---: | ---: | ---: | ---: |
+| `/` | 100 | 100 | 100 | 100 |
+| `/produtos` | 100 | 100 | 100 | 100 |
+| `/produtos/produto-teste-frete` | 100 | 100 | 100 | 100 |
+
+Na observacao final com cache desabilitado, o catálogo transferiu aproximadamente 45,9 KB (cerca de 150 KB de recursos), incluindo imagem WebP de produto de aproximadamente 20,8 KB. O detalhe transferiu aproximadamente 45,4 KB (cerca de 150 KB de recursos), incluindo imagem principal WebP de aproximadamente 21 KB. Sao resultados observados nessa validacao, nao garantias universais.
+
+O Admin foi validado com imagem 4K de aproximadamente 142 MB: o processamento client-side executou, enviou WebP otimizado e preservou qualidade visual adequada no catálogo e no detalhe. Nenhuma Image Transformation paga foi usada; o backend continuou validando MIME, tamanho e objeto no Storage.
+
 ## Patch final de contraste da Home
 
-O Lighthouse identificou contraste insuficiente somente nos parágrafos dos cards `dna-card-blue` e `dna-card-pink`. A cor anterior era `#071c36` com opacidade de 75%, composta sobre os fundos. O patch usa `#071c36` opaco no azul (4,72:1 sobre `#1187f4`) e o novo token navy `#000f20` no rosa (4,53:1 sobre `#e42b7b`), ambos WCAG AA para texto normal. Fundos, tipografia, tamanho e identidade visual permanecem inalterados. Aguarda validação final Lighthouse em produção.
+O Lighthouse identificou contraste insuficiente somente nos parágrafos dos cards `dna-card-blue` e `dna-card-pink`. A cor anterior era `#071c36` com opacidade de 75%, composta sobre os fundos. O patch usa `#071c36` opaco no azul (4,72:1 sobre `#1187f4`) e o novo token navy `#000f20` no rosa (4,53:1 sobre `#e42b7b`), ambos WCAG AA para texto normal. Fundos, tipografia, tamanho e identidade visual permanecem inalterados. A validacao final da Home confirmou Accessibility 100.
 
 ## Baseline de producao (2026-09-16)
 
@@ -54,5 +66,4 @@ As URLs públicas do Storage observadas respondem `Cache-Control: no-cache`. A a
 - JSON-LD continua adiado pela ambiguidade de variantes; `og:image` continua adiado até existir semântica canônica segura.
 - O produto `produto-teste-frete` está ativo, portanto é corretamente incluído no sitemap. Antes da indexação/comercialização real, produtos temporários devem ser desativados pelo Admin, sem exceção por slug.
 - Não houve migration, regra de negócio, mudança em pagamentos, frete, MFA, WAF, banco, plano Supabase ou configuração Vercel.
-- Reexecutar Lighthouse nas mesmas três URLs em produção após deploy e registrar bytes, LCP e warnings de image delivery/cache. A fase não busca score 100 artificial.
-- Validar manualmente no Admin uma substituição do produto teste, incluindo formato, dimensões, bytes, catálogo, detalhe e Lighthouse. Imagens existentes não serão alteradas em lote.
+- A fase foi encerrada com Lighthouse 100 nas tres URLs e validacao manual do Admin. Imagens existentes não foram alteradas em lote.

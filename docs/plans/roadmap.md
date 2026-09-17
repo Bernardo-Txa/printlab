@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 15 concluidas. Fase 16 em execucao; Fase 17 planejada.
+Status: Fases 0 a 16 concluidas. Fase 17 planejada.
 
 ## Status das fases
 
@@ -36,9 +36,9 @@ Status: Fases 0 a 15 concluidas. Fase 16 em execucao; Fase 17 planejada.
 | Fase 14.2 — MFA obrigatorio para Admin | Concluida; validada em producao |
 | Fase 14.3 — WAF / anti-abuse | Concluida; configurada e validada em producao |
 | Fase 15 — Testes e observabilidade | Concluida |
-| Fase 16 — SEO e performance | Em execucao (16.2) |
+| Fase 16 — SEO e performance | Concluida; validada em producao |
 | Fase 16.1 — SEO tecnico e baseline de performance | Concluida; validada em producao |
-| Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Em execucao |
+| Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
 | Fase 17 — Preparacao para producao | Planejada |
 
 ## Processo de planos
@@ -682,7 +682,7 @@ Definition of Done:
 
 ## Fase 16 — SEO e performance
 
-Plano concluido: [016-1-seo-performance.md](completed/016-1-seo-performance.md). Plano ativo: [016-2-image-performance.md](active/016-2-image-performance.md).
+Planos concluidos: [016-1-seo-performance.md](completed/016-1-seo-performance.md) e [016-2-image-performance.md](completed/016-2-image-performance.md).
 
 Objetivo: preparar a loja para descoberta e boa experiencia de navegacao.
 
