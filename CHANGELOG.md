@@ -6,7 +6,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 17.1 em execução: cadastro administrativo gera slugs no servidor para produtos, categorias, configurações, materiais, cores e caixas; colisões usam sufixos determinísticos, renomeações preservam slugs e o fluxo comum não expõe campo editável. Nenhuma migration foi criada; validação manual em produção ainda está pendente.
+- Fase 17.1 concluída e validada manualmente em produção: cadastro administrativo gera slugs no servidor para produtos, categorias, configurações, materiais, cores e caixas; colisões usam sufixos determinísticos, renomeações preservam slugs e o fluxo comum não expõe campo editável. Nenhuma migration foi criada e nenhum slug existente foi recalculado em lote.
 
 - Reorganizacao documental do roadmap pre-go-live: Fases 17 a 20 planejadas para simplificacao do catalogo/Admin, conta e comunicacao transacional, experiencia comercial e preparacao final para producao; nenhuma funcionalidade foi implementada.
 - ADRs propostos para perfil logistico por produto, conta opcional de cliente, SMTP transacional inicial e separacao entre cor de producao e cor comercial.

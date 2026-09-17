@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 16 concluidas. Fases 17 a 20 planejadas.
+Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 
 ## Status das fases
 
@@ -40,7 +40,7 @@ Status: Fases 0 a 16 concluidas. Fases 17 a 20 planejadas.
 | Fase 16.1 — SEO tecnico e baseline de performance | Concluida; validada em producao |
 | Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
 | Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
-| Fase 17.1 — Cadastro e slugs | Em execucao |
+| Fase 17.1 — Cadastro e slugs | Concluida; validada em producao |
 | Fase 17.2 — Logistica simplificada | Planejada |
 | Fase 17.3 — Cores e producao | Planejada |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
@@ -720,9 +720,11 @@ Definition of Done:
 
 ## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. A Fase 17.1 esta em execucao; as demais permanecem planejadas.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. A Fase 17.1 foi concluida e validada em producao; as demais permanecem planejadas.
 
 ### Fase 17.1 — Cadastro e slugs
+
+Status: Concluida; validada manualmente em producao.
 
 - Gerar slug automaticamente a partir do nome para produtos, categorias, materiais, cores, caixas e configuracoes.
 - Manter tratamento seguro e deterministico de colisao, com sufixo automatico e constraints existentes preservadas.
