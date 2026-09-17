@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 16 concluidas. Fase 17 planejada.
+Status: Fases 0 a 16 concluidas. Fases 17 a 20 planejadas.
 
 ## Status das fases
 
@@ -39,7 +39,23 @@ Status: Fases 0 a 16 concluidas. Fase 17 planejada.
 | Fase 16 — SEO e performance | Concluida; validada em producao |
 | Fase 16.1 — SEO tecnico e baseline de performance | Concluida; validada em producao |
 | Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
-| Fase 17 — Preparacao para producao | Planejada |
+| Fase 17 — Simplificacao do catalogo e administrativo | Planejada |
+| Fase 17.1 — Cadastro e slugs | Planejada |
+| Fase 17.2 — Logistica simplificada | Planejada |
+| Fase 17.3 — Cores e producao | Planejada |
+| Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
+| Fase 18.1 — E-mail transacional PrintLab | Planejada |
+| Fase 18.2 — Autenticacao do cliente | Planejada |
+| Fase 18.3 — Minha conta / Meus pedidos | Planejada |
+| Fase 18.4 — Pagamentos pendentes e retomada | Planejada |
+| Fase 19 — Experiencia e acabamento comercial | Planejada |
+| Fase 19.1 — Revisao textual completa | Planejada |
+| Fase 19.2 — Motion e experiencia premium | Planejada |
+| Fase 19.3 — Regressao de UX/performance | Planejada |
+| Fase 20 — Preparacao final para producao | Planejada |
+| Fase 20.1 — Auditoria | Planejada |
+| Fase 20.2 — Correcao de bloqueadores | Planejada |
+| Fase 20.3 — Go-live | Planejada |
 
 ## Processo de planos
 
@@ -702,26 +718,102 @@ Definition of Done:
 - Performance medida.
 - Imagens otimizadas conforme necessidade real.
 
-## Fase 17 — Preparacao para producao
+## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: preparar operacao comercial.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. Tudo nesta fase permanece planejado.
 
-Principais entregas:
+### Fase 17.1 — Cadastro e slugs
 
-- Revisao de hospedagem.
-- Revisao de environment variables e secrets.
-- Revisao de dominio.
-- Revisao de backups.
-- Revisao de webhooks.
-- Revisao de observabilidade.
-- Revisao de seguranca.
+- Gerar slug automaticamente a partir do nome para produtos, categorias, materiais, cores e configuracoes quando fizer sentido.
+- Manter tratamento seguro e deterministico de colisao.
+- Preservar os slugs publicos existentes de produtos; renomear nao altera slug antigo sem decisao explicita futura.
+- Tratar edicao manual de slug como opcao avancada, nao como fluxo comum do Admin.
 
-Dependencias: fases comerciais essenciais concluidas.
+### Fase 17.2 — Logistica simplificada
 
-Definition of Done:
+- Adotar perfil logistico unico por produto; configuracoes nao terao override logistico.
+- Exigir logistica completa para produto ativo/comercial e permitir ausencia somente em rascunho ou inativo, sem inventar valores.
+- Simplificar o formulario de caixas para altura, largura, comprimento, peso da embalagem, ativo e ordem.
+- Preservar a semantica atual: medidas internas para encaixe e externas para transportadora. A implementacao preferida inicialmente escreve o mesmo conjunto de medidas nas colunas interna e externa atuais; eventual remocao de colunas exige justificativa posterior.
+- Avaliar migration futura com cuidado; nenhuma migration e criada neste planejamento.
 
-- Plano de Vercel revisado.
-- Banco e migrations revisados.
-- Backups avaliados.
-- Pagamentos e webhooks verificados.
-- Responsavel pelo projeto aprova entrada em producao.
+### Fase 17.3 — Cores e producao
+
+- Preservar `materials` e `colors` como dados de producao usados por receita, `variant_filaments`, peso, snapshots e operacao.
+- Modelar futuramente cor comercial escolhida pelo cliente como conceito distinto de cor de filamento/receita.
+- Fazer a escolha comercial fluir de produto para carrinho, pedido e producao sem criar variantes artificiais apenas para cor.
+
+Dependencias: Fase 16.
+
+## Fase 18 — Conta do cliente e comunicacao transacional
+
+Objetivo: oferecer conta opcional e comunicacao transacional sem remover o checkout convidado. Tudo nesta fase permanece planejado.
+
+### Fase 18.1 — E-mail transacional PrintLab
+
+- Usar inicialmente `acesso@printlab3d.com.br` como remetente PrintLab para autenticacao e conta, sem marketing.
+- Planejar iCloud+ Custom Email Domain -> SMTP iCloud (`smtp.mail.me.com`, porta 587) -> Supabase Auth Custom SMTP -> cliente.
+- Usar senha especifica de app somente como secret no provider apropriado; nunca em codigo, documentacao, GitHub, frontend ou logs.
+- Validar DNS, SPF, DKIM, DMARC, From/Reply-To e entrega em Gmail, Outlook e iCloud antes de uso real.
+- Personalizar somente templates Supabase Auth habilitados, em pt-BR, responsivos e sem conteudo promocional.
+- Reavaliar SMTP se volume, entregabilidade, limites ou necessidade de analytics/retries justificarem provedor transacional dedicado.
+
+### Fase 18.2 — Autenticacao do cliente
+
+- Usar Supabase Auth passwordless/Magic Link como preferencia arquitetural.
+- Manter o fluxo de cliente separado do Admin: sem acesso a `/admin`, sem herdar autorizacao administrativa e sem inferir papel por autenticacao.
+
+### Fase 18.3 — Minha conta / Meus pedidos
+
+- Permitir que cliente autenticado consulte somente pedidos associados server-side a sua identidade.
+- Manter checkout convidado e acompanhamento publico seguro.
+- Tratar eventual reivindicacao de pedido antigo de convidado como funcionalidade futura, somente apos prova de posse do e-mail.
+
+### Fase 18.4 — Pagamentos pendentes e retomada
+
+- Preservar `pending_payment` internamente: o pedido anterior ao checkout InfinitePay congela snapshots e suporta `payment_check` e webhook idempotente.
+- Oferecer retomada somente para pedido ainda valido, com revalidacao server-side e sem pagamento ja confirmado.
+- Definir politica para pendencias abandonadas sem apagar automaticamente evidencias financeiras ou pedidos.
+
+Dependencias: Fase 17.
+
+## Fase 19 — Experiencia e acabamento comercial
+
+Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. Tudo nesta fase permanece planejado.
+
+### Fase 19.1 — Revisao textual completa
+
+- Auditar textos visiveis, mensagens, estados, acessibilidade, SEO e e-mails para pt-BR profissional.
+- Corrigir somente texto apresentado; nao alterar slugs, identificadores, colunas, constantes, eventos ou APIs por acentuacao.
+
+### Fase 19.2 — Motion e experiencia premium
+
+- Adicionar interacoes proprias da PrintLab que sejam sutis, mobile-first, acessiveis, compatíveis com SSR e respeitem `prefers-reduced-motion`.
+- Nao transformar o site em SPA nem bloquear checkout.
+
+### Fase 19.3 — Regressao de UX/performance
+
+- Revalidar mobile, desktop, teclado, foco, contraste, reduced motion, Lighthouse, CLS, LCP, TBT, SEO, checkout, Admin e conta do cliente.
+- Preservar os ganhos da Fase 16.
+
+Dependencias: Fase 18.
+
+## Fase 20 — Preparacao final para producao
+
+Objetivo: auditar e liberar a operacao comercial somente quando as Fases 17 a 19 estiverem congeladas.
+
+### Fase 20.1 — Auditoria
+
+- Auditar Vercel, dominio/DNS/HTTPS, environments e secrets, Supabase, migrations, backups/restore, Storage, Auth, SMTP, SuperFrete, InfinitePay, webhook, WAF, seguranca, observabilidade, PII/retenção, produtos e operacao.
+
+### Fase 20.2 — Correcao de bloqueadores
+
+- Corrigir somente problemas reais da auditoria, classificados como BLOCKER, WARNING ou MANUAL CHECK.
+- Nao introduzir melhoria cosmetica nova.
+
+### Fase 20.3 — Go-live
+
+- Validar catalogo real, precos, imagens, configuracoes, cores, receita, logistica, pagamentos, e-mail, conta, Admin, backup e monitoramento.
+- Exigir aprovacao explicita do responsavel antes de declarar a operacao comercial pronta.
+
+Dependencias: Fases 17, 18 e 19.

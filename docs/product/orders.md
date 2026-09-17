@@ -233,3 +233,7 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 - Painel administrativo altera apenas producao/envio, nao valores, cliente, endereco ou pagamento.
 - Nao ha endpoint publico para alterar producao ou envio.
 - O checkout cria pedidos com status inicial `pending_payment`; a confirmacao InfinitePay pode alterar para `paid`.
+
+## Evolucao planejada
+
+Na Fase 18, a conta de cliente sera opcional e o checkout convidado continuara suportado. `pending_payment` permanece necessario internamente para preservar snapshots, `payment_check` e webhook idempotente; a Fase 18.4 podera oferecer retomada de pagamento ao cliente autenticado somente com autorizacao e revalidacao server-side. Pedidos pendentes abandonados terao politica operacional futura, sem apagamento automatico antes de definir retencao e implicacoes financeiras.

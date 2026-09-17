@@ -47,3 +47,7 @@ Data:
 - [ADR-0015 — Gestao administrativa de catalogo sem hard delete](0015-gestao-administrativa-catalogo-sem-hard-delete.md)
 - [ADR-0016 — Upload direto administrativo para Supabase Storage](0016-upload-direto-admin-para-supabase-storage.md)
 - [ADR-0017 - MFA TOTP antes da sessao administrativa](0017-admin-mfa-totp.md)
+- [ADR-0018 — Perfil logistico unico por produto](0018-perfil-logistico-unico-por-produto.md) — proposta
+- [ADR-0019 — Conta opcional de cliente](0019-conta-opcional-de-cliente.md) — proposta
+- [ADR-0020 — SMTP transacional inicial via iCloud+](0020-smtp-transacional-inicial-icloud.md) — proposta
+- [ADR-0021 — Cor comercial separada da producao](0021-cor-comercial-separada-da-producao.md) — proposta

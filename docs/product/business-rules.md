@@ -283,6 +283,14 @@ Nao ha controle de estoque unitario de produtos nesta fase. A disponibilidade pu
 
 Filamento fisico, inventario, lotes, custo por kg e reserva de material permanecem planejados para modulo operacional futuro.
 
+## Evolucao planejada pre-go-live
+
+- A Fase 17 planeja slugs automaticos com colisao segura, preservando URLs publicas existentes em renomeacoes.
+- A Fase 17 planeja um unico perfil logistico por produto e uma interface simplificada de caixas; a regra atual de override por configuracao continua implementada ate essa mudanca futura.
+- Materiais e cores permanecem dados de producao. Cor comercial escolhida pelo cliente sera conceito separado e planejado para a Fase 17.3.
+- A Fase 18 planeja conta opcional de cliente com checkout convidado preservado. Autenticacao de cliente nao concede autorizacao administrativa.
+- A retomada de pagamento para cliente autenticado e uma funcionalidade futura; `pending_payment` continua como estado interno necessario.
+
 ## Imagens
 
 Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_path` e arquivos no bucket `product-images` do Supabase Storage.

@@ -6,6 +6,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Reorganizacao documental do roadmap pre-go-live: Fases 17 a 20 planejadas para simplificacao do catalogo/Admin, conta e comunicacao transacional, experiencia comercial e preparacao final para producao; nenhuma funcionalidade foi implementada.
+- ADRs propostos para perfil logistico por produto, conta opcional de cliente, SMTP transacional inicial e separacao entre cor de producao e cor comercial.
 - Fase 16 concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, contraste WCAG AA nos DNA cards e Lighthouse 100 nas paginas publicas validadas.
 - Fase 15 concluida pela 15.1: correlacao opaca por request, eventos operacionais pesquisaveis e sem identificadores sensiveis, inventario de cobertura critica, runbooks de observabilidade/incidentes e estrategia de alertas compativel com Vercel Hobby.
 - Fase 14.3: configuracao real do Vercel Firewall no Hobby validada, com tres regras ativas e Bot Protection OFF.

@@ -63,6 +63,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
+- Fases 17 a 20 do roadmap pre-go-live: simplificacao do catalogo/Admin, conta opcional do cliente e comunicacao transacional, acabamento comercial e preparacao final para producao.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
