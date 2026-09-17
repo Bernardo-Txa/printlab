@@ -160,7 +160,7 @@ Na Fase 13.4, o Admin permite enviar, substituir, remover, ordenar e marcar imag
 
 ## Planejado
 
-- Fase 17.1: gerar slugs automaticamente a partir do nome, com colisao segura; slugs publicos existentes nao mudarao por renomeacao sem regra deliberada.
+- Fase 17.1 em execucao: o servidor gera slugs a partir do nome para entidades administrativas, aplica sufixos determinísticos em colisões e preserva o slug existente em renomeações. O operador não precisa preencher slug; não há recálculo em lote nem migration.
 - Fase 17.2: simplificar o perfil logistico para um perfil unico por produto, sem override de configuracao. Ate sua implementacao, o comportamento atual permanece inalterado.
 - Fase 17.2: simplificar o cadastro de caixa para uma medida operacional unica, preservando a semantica de encaixe interno e transporte externo no modelo existente.
 - Fase 17.3: cor comercial selecionavel pelo cliente, distinta de material/cor usados pela receita de producao. A escolha devera atravessar produto, carrinho, pedido e producao sem variantes artificiais.

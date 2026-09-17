@@ -53,12 +53,12 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Fases 17 a 20 pre-go-live: simplificacao de cadastro/logistica e cor comercial, conta opcional de cliente, e-mail transacional, acabamento de experiencia e auditoria final de producao.
+- Fase 17.1 em execucao: simplificacao do cadastro administrativo com slugs gerados no servidor; Fases 17.2 a 20 permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Evolucao planejada pre-go-live
 
-As Fases 17 a 20 ainda nao foram iniciadas. A Fase 17 planeja simplificar o cadastro administrativo, concentrar o perfil logistico no produto e distinguir cor comercial da cor de receita de producao. A Fase 18 planeja uma conta de cliente opcional com Magic Link, mantendo checkout convidado; o Admin continuara separado por senha, TOTP, AAL2 e allowlist. O SMTP inicial planejado para e-mails de autenticacao e conta e iCloud+ Custom Email Domain integrado futuramente ao Custom SMTP do Supabase Auth, sem configuracao realizada neste momento. A Fase 19 planeja revisao textual e experiencia, e a Fase 20 fara a auditoria final de producao somente apos essas funcionalidades estabilizarem.
+As Fases 17.2 a 20 ainda nao foram iniciadas. A Fase 17.1 esta em execucao e gera slugs no servidor para cadastros administrativos, preservando slugs existentes em renomeacoes e usando sufixos determinísticos em colisoes. As Fases 17.2 e 17.3 permanecem planejadas para logistica e cor comercial. A Fase 18 planeja uma conta de cliente opcional com Magic Link, mantendo checkout convidado; o Admin continuara separado por senha, TOTP, AAL2 e allowlist. O SMTP inicial planejado para e-mails de autenticacao e conta e iCloud+ Custom Email Domain integrado futuramente ao Custom SMTP do Supabase Auth, sem configuracao realizada neste momento. A Fase 19 planeja revisao textual e experiencia, e a Fase 20 fara a auditoria final de producao somente apos essas funcionalidades estabilizarem.
 
 ## Diagrama textual
 

@@ -19,6 +19,8 @@ const (
 	AdminCatalogStatusInactive = "inactive"
 )
 
+const maxAutomaticSlugAttempts = 100
+
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-F]{6}$`)
 
 type CatalogRepository interface {
@@ -322,7 +324,10 @@ func (s *Service) CreateAdminProduct(ctx context.Context, form AdminProductForm)
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminProduct(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminProduct(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -336,6 +341,7 @@ func (s *Service) UpdateAdminProduct(ctx context.Context, productID string, form
 	if err != nil {
 		return AdminProductFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminProductForm(form, false, productID)
 	if errorsByField.Any() {
@@ -395,7 +401,10 @@ func (s *Service) CreateAdminCategory(ctx context.Context, form AdminCategoryFor
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminCategory(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminCategory(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -409,6 +418,7 @@ func (s *Service) UpdateAdminCategory(ctx context.Context, categoryID string, fo
 	if err != nil {
 		return AdminCategoryFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminCategoryForm(form, false, categoryID)
 	if errorsByField.Any() {
@@ -467,7 +477,10 @@ func (s *Service) CreateAdminVariant(ctx context.Context, productID string, form
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminVariant(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminVariant(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -481,6 +494,7 @@ func (s *Service) UpdateAdminVariant(ctx context.Context, productID string, vari
 	if err != nil {
 		return AdminVariantFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminVariantForm(form, false, productID, variantID)
 	if errorsByField.Any() {
@@ -577,7 +591,10 @@ func (s *Service) CreateAdminMaterial(ctx context.Context, form AdminMaterialFor
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminMaterial(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminMaterial(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -591,6 +608,7 @@ func (s *Service) UpdateAdminMaterial(ctx context.Context, materialID string, fo
 	if err != nil {
 		return AdminMaterialFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminMaterialForm(form, false, materialID)
 	if errorsByField.Any() {
@@ -649,7 +667,10 @@ func (s *Service) CreateAdminColor(ctx context.Context, form AdminColorForm) (st
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminColor(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminColor(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -663,6 +684,7 @@ func (s *Service) UpdateAdminColor(ctx context.Context, colorID string, form Adm
 	if err != nil {
 		return AdminColorFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminColorForm(form, false, colorID)
 	if errorsByField.Any() {
@@ -724,7 +746,10 @@ func (s *Service) CreateAdminBox(ctx context.Context, form AdminBoxForm) (string
 		return "", page, ErrValidation
 	}
 
-	id, err := s.catalog.CreateAdminBox(ctx, input)
+	id, err := createWithAutomaticSlug(input.Slug, func(slug string) (string, error) {
+		input.Slug = slug
+		return s.catalog.CreateAdminBox(ctx, input)
+	})
 	if err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return "", page, err
@@ -738,6 +763,7 @@ func (s *Service) UpdateAdminBox(ctx context.Context, boxID string, form AdminBo
 	if err != nil {
 		return AdminBoxFormPage{}, err
 	}
+	form.Slug = page.Form.Slug
 	page.Form = form
 	input, errorsByField := validateAdminBoxForm(form, false, boxID)
 	if errorsByField.Any() {
@@ -772,10 +798,10 @@ func validateAdminProductForm(form AdminProductForm, create bool, id string) (Ad
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 	if form.CategoryID != "" && !ValidUUID(input.CategoryID) {
 		errorsByField.Add("category_id", "Selecione uma categoria valida.")
 	}
@@ -801,10 +827,10 @@ func validateAdminCategoryForm(form AdminCategoryForm, create bool, id string) (
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 
 	return input, errorsByField
 }
@@ -829,10 +855,10 @@ func validateAdminVariantForm(form AdminVariantForm, create bool, productID stri
 	if create && form.IsDefault && !form.IsActive {
 		errorsByField.Add("is_default", "A configuração padrão precisa estar ativa.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 	if strings.TrimSpace(form.PriceBRL) != "" {
 		price, err := ParseAdminBRLCents(form.PriceBRL)
 		if err != nil {
@@ -904,10 +930,10 @@ func validateAdminMaterialForm(form AdminMaterialForm, create bool, id string) (
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 
 	return input, errorsByField
 }
@@ -923,10 +949,10 @@ func validateAdminColorForm(form AdminColorForm, create bool, id string) (AdminC
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 	hexColor, err := NormalizeHexColor(form.HexColor)
 	if err != nil {
 		errorsByField.Add("hex_color", "Use hexadecimal no formato #RRGGBB.")
@@ -947,10 +973,10 @@ func validateAdminBoxForm(form AdminBoxForm, create bool, id string) (AdminBoxSa
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
 	}
-	if input.Slug == "" && create {
+	if create {
 		input.Slug = CanonicalSlug(input.Name)
 	}
-	validateSlugField(errorsByField, "slug", input.Slug, "Informe um slug válido.")
+	validateAutomaticSlug(errorsByField, input.Slug)
 	input.InternalHeightMM = parseBoxPositiveInt(errorsByField, "internal_height_mm", form.InternalHeightMM)
 	input.InternalWidthMM = parseBoxPositiveInt(errorsByField, "internal_width_mm", form.InternalWidthMM)
 	input.InternalLengthMM = parseBoxPositiveInt(errorsByField, "internal_length_mm", form.InternalLengthMM)
@@ -976,10 +1002,29 @@ func validateAdminBoxForm(form AdminBoxForm, create bool, id string) (AdminBoxSa
 	return input, errorsByField
 }
 
-func validateSlugField(errorsByField AdminFieldErrors, field string, slug string, message string) {
+func validateAutomaticSlug(errorsByField AdminFieldErrors, slug string) {
 	if slug == "" || !products.ValidSlug(slug) {
-		errorsByField.Add(field, message)
+		errorsByField.Add("name", "Informe um nome que gere um slug válido.")
 	}
+}
+
+func automaticSlugCandidate(base string, attempt int) string {
+	if attempt <= 1 {
+		return base
+	}
+
+	return base + "-" + strconv.Itoa(attempt)
+}
+
+func createWithAutomaticSlug(base string, create func(string) (string, error)) (string, error) {
+	for attempt := 1; attempt <= maxAutomaticSlugAttempts; attempt++ {
+		id, err := create(automaticSlugCandidate(base, attempt))
+		if !errors.Is(err, ErrDuplicateSlug) {
+			return id, err
+		}
+	}
+
+	return "", ErrDuplicateSlug
 }
 
 func validateAdminShippingProfile(errorsByField AdminFieldErrors, enabled bool, weight string, height string, width string, length string) *AdminShippingProfile {
@@ -1169,7 +1214,7 @@ func catalogSaveErrors(err error) AdminFieldErrors {
 	errorsByField := AdminFieldErrors{}
 	switch {
 	case errors.Is(err, ErrDuplicateSlug):
-		errorsByField.Add("slug", "Este slug ja esta em uso. Ajuste e tente novamente.")
+		errorsByField.Add("name", "Nao foi possivel gerar um slug disponivel para este nome. Tente outro nome.")
 	case errors.Is(err, ErrDuplicateSKU):
 		errorsByField.Add("sku", "Este SKU ja esta em uso. Ajuste e tente novamente.")
 	}

@@ -409,7 +409,9 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 						}
 						<form class="admin-form" method="post" action={ page.Action }>
 							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
-							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							if !page.IsNew {
+								<p class="admin-muted">Slug: { page.Form.Slug }</p>
+							}
 							@adminSelectField("category_id", "Categoria", page.Form.CategoryID, page.Categories, page.Errors.Get("category_id"), "Sem categoria")
 							@adminTextField("price", "Preco", page.Form.PriceBRL, page.Errors.Get("price"), "text", true)
 							@adminTextareaField("short_description", "Resumo", page.Form.ShortDescription, page.Errors.Get("short_description"))
@@ -651,7 +653,7 @@ templ AdminCategories(page admindomain.AdminCategoryListPage) {
 }
 
 templ AdminCategoryForm(page admindomain.AdminCategoryFormPage) {
-	@adminBasicTextForm("categories", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.Errors)
+	@adminBasicTextForm("categories", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.IsNew, page.Errors)
 }
 
 templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
@@ -666,7 +668,9 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 						}
 						<form class="admin-form" method="post" action={ page.Action }>
 							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
-							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							if !page.IsNew {
+								<p class="admin-muted">Slug: { page.Form.Slug }</p>
+							}
 							@adminTextField("sku", "SKU", page.Form.SKU, page.Errors.Get("sku"), "text", false)
 							@adminTextField("price", "Preco proprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false)
 							<div class="admin-checkbox-grid">
@@ -726,7 +730,7 @@ templ AdminMaterials(page admindomain.AdminMaterialListPage) {
 }
 
 templ AdminMaterialForm(page admindomain.AdminMaterialFormPage) {
-	@adminBasicTextForm("materials", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.Errors)
+	@adminBasicTextForm("materials", page.Title, page.Action, page.BackURL, page.SubmitLabel, page.Message, page.Form.Name, page.Form.Slug, page.Form.Description, page.Form.IsActive, page.IsNew, page.Errors)
 }
 
 templ AdminColors(page admindomain.AdminColorListPage) {
@@ -776,7 +780,9 @@ templ AdminColorForm(page admindomain.AdminColorFormPage) {
 						}
 						<form class="admin-form" method="post" action={ page.Action }>
 							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
-							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							if !page.IsNew {
+								<p class="admin-muted">Slug: { page.Form.Slug }</p>
+							}
 							@adminTextField("hex_color", "Hexadecimal", page.Form.HexColor, page.Errors.Get("hex_color"), "text", false)
 							@adminCheckboxField("is_active", "Cor ativa", page.Form.IsActive)
 							<div class="admin-form-actions">
@@ -836,7 +842,9 @@ templ AdminBoxForm(page admindomain.AdminBoxFormPage) {
 						}
 						<form class="admin-form" method="post" action={ page.Action }>
 							@adminTextField("name", "Nome", page.Form.Name, page.Errors.Get("name"), "text", true)
-							@adminTextField("slug", "Slug", page.Form.Slug, page.Errors.Get("slug"), "text", false)
+							if !page.IsNew {
+								<p class="admin-muted">Slug: { page.Form.Slug }</p>
+							}
 							<fieldset>
 								<legend>Dimensoes internas</legend>
 								<div class="admin-form-grid">
@@ -1010,7 +1018,7 @@ templ adminEntityCard(name string, slug string, status string, detailURL string,
 	</article>
 }
 
-templ adminBasicTextForm(active string, title string, action string, backURL string, submitLabel string, message string, name string, slug string, description string, isActive bool, errors admindomain.AdminFieldErrors) {
+templ adminBasicTextForm(active string, title string, action string, backURL string, submitLabel string, message string, name string, slug string, description string, isActive bool, isNew bool, errors admindomain.AdminFieldErrors) {
 	@components.PrivateNoIndexLayout(title + " | PrintLab", title + " administrativo da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
@@ -1022,7 +1030,9 @@ templ adminBasicTextForm(active string, title string, action string, backURL str
 						}
 						<form class="admin-form" method="post" action={ action }>
 							@adminTextField("name", "Nome", name, errors.Get("name"), "text", true)
-							@adminTextField("slug", "Slug", slug, errors.Get("slug"), "text", false)
+							if !isNew {
+								<p class="admin-muted">Slug: { slug }</p>
+							}
 							@adminTextareaField("description", "Descricao", description, errors.Get("description"))
 							@adminCheckboxField("is_active", "Ativo", isActive)
 							<div class="admin-form-actions">

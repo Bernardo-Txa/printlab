@@ -63,7 +63,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Fases 17 a 20 do roadmap pre-go-live: simplificacao do catalogo/Admin, conta opcional do cliente e comunicacao transacional, acabamento comercial e preparacao final para producao.
+- Fase 17.1 em execução: cadastro administrativo gera slugs no servidor com colisão determinística e preserva slugs existentes em renomeações; Fases 17.2 e 17.3, além das Fases 18 a 20, permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 

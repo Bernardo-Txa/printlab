@@ -583,7 +583,6 @@ func adminCatalogMessage(r *http.Request) string {
 func adminProductFormFromRequest(r *http.Request) admindomain.AdminProductForm {
 	return admindomain.AdminProductForm{
 		Name:             r.PostFormValue("name"),
-		Slug:             r.PostFormValue("slug"),
 		CategoryID:       r.PostFormValue("category_id"),
 		ShortDescription: r.PostFormValue("short_description"),
 		Description:      r.PostFormValue("description"),
@@ -601,7 +600,6 @@ func adminProductFormFromRequest(r *http.Request) admindomain.AdminProductForm {
 func adminCategoryFormFromRequest(r *http.Request) admindomain.AdminCategoryForm {
 	return admindomain.AdminCategoryForm{
 		Name:        r.PostFormValue("name"),
-		Slug:        r.PostFormValue("slug"),
 		Description: r.PostFormValue("description"),
 		IsActive:    r.PostFormValue("is_active") == "1",
 	}
@@ -610,7 +608,6 @@ func adminCategoryFormFromRequest(r *http.Request) admindomain.AdminCategoryForm
 func adminVariantFormFromRequest(r *http.Request) admindomain.AdminVariantForm {
 	return admindomain.AdminVariantForm{
 		Name:             r.PostFormValue("name"),
-		Slug:             r.PostFormValue("slug"),
 		SKU:              r.PostFormValue("sku"),
 		PriceBRL:         r.PostFormValue("price"),
 		IsActive:         r.PostFormValue("is_active") == "1",
@@ -638,7 +635,6 @@ func adminRecipeFormFromRequest(r *http.Request) admindomain.AdminRecipeForm {
 func adminMaterialFormFromRequest(r *http.Request) admindomain.AdminMaterialForm {
 	return admindomain.AdminMaterialForm{
 		Name:        r.PostFormValue("name"),
-		Slug:        r.PostFormValue("slug"),
 		Description: r.PostFormValue("description"),
 		IsActive:    r.PostFormValue("is_active") == "1",
 	}
@@ -647,7 +643,6 @@ func adminMaterialFormFromRequest(r *http.Request) admindomain.AdminMaterialForm
 func adminColorFormFromRequest(r *http.Request) admindomain.AdminColorForm {
 	return admindomain.AdminColorForm{
 		Name:     r.PostFormValue("name"),
-		Slug:     r.PostFormValue("slug"),
 		HexColor: r.PostFormValue("hex_color"),
 		IsActive: r.PostFormValue("is_active") == "1",
 	}
@@ -656,7 +651,6 @@ func adminColorFormFromRequest(r *http.Request) admindomain.AdminColorForm {
 func adminBoxFormFromRequest(r *http.Request) admindomain.AdminBoxForm {
 	return admindomain.AdminBoxForm{
 		Name:             r.PostFormValue("name"),
-		Slug:             r.PostFormValue("slug"),
 		InternalHeightMM: r.PostFormValue("internal_height_mm"),
 		InternalWidthMM:  r.PostFormValue("internal_width_mm"),
 		InternalLengthMM: r.PostFormValue("internal_length_mm"),

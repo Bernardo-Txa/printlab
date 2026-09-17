@@ -39,8 +39,8 @@ Status: Fases 0 a 16 concluidas. Fases 17 a 20 planejadas.
 | Fase 16 — SEO e performance | Concluida; validada em producao |
 | Fase 16.1 — SEO tecnico e baseline de performance | Concluida; validada em producao |
 | Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
-| Fase 17 — Simplificacao do catalogo e administrativo | Planejada |
-| Fase 17.1 — Cadastro e slugs | Planejada |
+| Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
+| Fase 17.1 — Cadastro e slugs | Em execucao |
 | Fase 17.2 — Logistica simplificada | Planejada |
 | Fase 17.3 — Cores e producao | Planejada |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
@@ -720,14 +720,14 @@ Definition of Done:
 
 ## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. Tudo nesta fase permanece planejado.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. A Fase 17.1 esta em execucao; as demais permanecem planejadas.
 
 ### Fase 17.1 — Cadastro e slugs
 
-- Gerar slug automaticamente a partir do nome para produtos, categorias, materiais, cores e configuracoes quando fizer sentido.
-- Manter tratamento seguro e deterministico de colisao.
-- Preservar os slugs publicos existentes de produtos; renomear nao altera slug antigo sem decisao explicita futura.
-- Tratar edicao manual de slug como opcao avancada, nao como fluxo comum do Admin.
+- Gerar slug automaticamente a partir do nome para produtos, categorias, materiais, cores, caixas e configuracoes.
+- Manter tratamento seguro e deterministico de colisao, com sufixo automatico e constraints existentes preservadas.
+- Preservar slugs existentes em renomeacoes, sem recalculo em lote ou migration.
+- Remover slug editavel do fluxo comum do Admin; o valor existente pode ser mostrado somente como informacao.
 
 ### Fase 17.2 — Logistica simplificada
 

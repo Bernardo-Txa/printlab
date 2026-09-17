@@ -3,6 +3,7 @@ package admin
 import (
 	"errors"
 	"math"
+	"reflect"
 	"testing"
 )
 
@@ -80,8 +81,108 @@ func TestParseAdminGramsToMilligrams(t *testing.T) {
 }
 
 func TestCanonicalSlug(t *testing.T) {
-	if got := CanonicalSlug(" Suporte Ágil 3D! "); got != "suporte-agil-3d" {
-		t.Fatalf("unexpected slug %q", got)
+	tests := map[string]string{
+		"Dragão Articulado":      "dragao-articulado",
+		"PLA Branco Premium":     "pla-branco-premium",
+		"  Caixa 20 x 15 x 10  ": "caixa-20-x-15-x-10",
+		"Azul Céu":               "azul-ceu",
+		" Suporte Ágil 3D! ":     "suporte-agil-3d",
+		"foo---bar / baz":        "foo-bar-baz",
+		"!!!":                    "",
+	}
+	for input, want := range tests {
+		if got := CanonicalSlug(input); got != want {
+			t.Errorf("CanonicalSlug(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestAutomaticSlugValidationUsesNameAndIgnoresSubmittedSlug(t *testing.T) {
+	input, errorsByField := validateAdminProductForm(AdminProductForm{
+		Name:     "Dragão Articulado",
+		Slug:     "slug-malicioso",
+		PriceBRL: "39,90",
+	}, true, "")
+	if errorsByField.Any() {
+		t.Fatalf("unexpected errors: %#v", errorsByField)
+	}
+	if input.Slug != "dragao-articulado" {
+		t.Fatalf("slug = %q, want server-generated slug", input.Slug)
+	}
+}
+
+func TestAutomaticSlugValidationCoversAllCatalogEntities(t *testing.T) {
+	productID := "11111111-1111-1111-1111-111111111111"
+	tests := []struct {
+		name  string
+		check func() (string, AdminFieldErrors)
+		want  string
+	}{
+		{name: "product", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminProductForm(AdminProductForm{Name: "Produto Ágil", PriceBRL: "1,00"}, true, "")
+			return input.Slug, errs
+		}, want: "produto-agil"},
+		{name: "category", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminCategoryForm(AdminCategoryForm{Name: "Peças Azuis"}, true, "")
+			return input.Slug, errs
+		}, want: "pecas-azuis"},
+		{name: "variant", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminVariantForm(AdminVariantForm{Name: "Tamanho Grande", SortOrder: "0"}, true, productID, "")
+			return input.Slug, errs
+		}, want: "tamanho-grande"},
+		{name: "material", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminMaterialForm(AdminMaterialForm{Name: "PLA Branco"}, true, "")
+			return input.Slug, errs
+		}, want: "pla-branco"},
+		{name: "color", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminColorForm(AdminColorForm{Name: "Azul Céu", HexColor: "#00AEEF"}, true, "")
+			return input.Slug, errs
+		}, want: "azul-ceu"},
+		{name: "box", check: func() (string, AdminFieldErrors) {
+			input, errs := validateAdminBoxForm(AdminBoxForm{Name: "Caixa Média", InternalHeightMM: "10", InternalWidthMM: "10", InternalLengthMM: "10", ExternalHeightMM: "12", ExternalWidthMM: "12", ExternalLengthMM: "12", PackagingWeightG: "100", SortOrder: "0"}, true, "")
+			return input.Slug, errs
+		}, want: "caixa-media"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, errs := test.check()
+			if errs.Any() {
+				t.Fatalf("unexpected errors: %#v", errs)
+			}
+			if got != test.want {
+				t.Fatalf("slug = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestAutomaticSlugCollisionCandidatesAreDeterministic(t *testing.T) {
+	var attempts []string
+	got, err := createWithAutomaticSlug("dragao-articulado", func(slug string) (string, error) {
+		attempts = append(attempts, slug)
+		if len(attempts) < 3 {
+			return "", ErrDuplicateSlug
+		}
+		return "product-id", nil
+	})
+	if err != nil || got != "product-id" {
+		t.Fatalf("create result = %q, %v", got, err)
+	}
+	want := []string{"dragao-articulado", "dragao-articulado-2", "dragao-articulado-3"}
+	if !reflect.DeepEqual(attempts, want) {
+		t.Fatalf("attempts = %#v, want %#v", attempts, want)
+	}
+}
+
+func TestAutomaticSlugDoesNotMaskOtherUniqueErrors(t *testing.T) {
+	wantErr := ErrDuplicateSKU
+	var attempts int
+	_, err := createWithAutomaticSlug("material", func(string) (string, error) {
+		attempts++
+		return "", wantErr
+	})
+	if !errors.Is(err, wantErr) || attempts != 1 {
+		t.Fatalf("result = %v after %d attempts, want %v after one attempt", err, attempts, wantErr)
 	}
 }
 
