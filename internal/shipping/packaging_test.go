@@ -69,16 +69,10 @@ func TestSelectSmallestBoxNoFittingBox(t *testing.T) {
 
 func TestEffectiveShippingProfileFallback(t *testing.T) {
 	productProfile := ShippingProfile{WeightG: 280, Dimensions: DimensionsMM{Height: 90, Width: 105, Length: 210}}
-	variantProfile := ShippingProfile{WeightG: 300, Dimensions: DimensionsMM{Height: 100, Width: 120, Length: 220}}
 
 	profile, ok := EffectiveShippingProfile(CartItem{ProductProfile: &productProfile})
 	if !ok || profile.WeightG != productProfile.WeightG {
 		t.Fatalf("expected product profile fallback, got %#v ok=%v", profile, ok)
-	}
-
-	profile, ok = EffectiveShippingProfile(CartItem{ProductProfile: &productProfile, VariantProfile: &variantProfile})
-	if !ok || profile.WeightG != variantProfile.WeightG {
-		t.Fatalf("expected variant profile override, got %#v ok=%v", profile, ok)
 	}
 
 	if _, ok := EffectiveShippingProfile(CartItem{}); ok {
@@ -210,7 +204,7 @@ func TestBuildCartInputHashMatchesSelectionFingerprint(t *testing.T) {
 			ProductID: "product-a",
 			VariantID: "variant-a",
 			Quantity:  1,
-			VariantProfile: &ShippingProfile{
+			ProductProfile: &ShippingProfile{
 				WeightG: 280,
 				Dimensions: DimensionsMM{
 					Height: 100,

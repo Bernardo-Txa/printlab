@@ -88,7 +88,6 @@ type AdminProductForm struct {
 	PriceBRL         string
 	IsActive         bool
 	IsFeatured       bool
-	UseShipping      bool
 	ShippingWeightG  string
 	ShippingHeightMM string
 	ShippingWidthMM  string
@@ -231,23 +230,21 @@ type AdminCategoryFormPage struct {
 }
 
 type AdminVariantListItem struct {
-	ID                 string
-	Name               string
-	Slug               string
-	SKU                string
-	PriceLabel         string
-	IsActive           bool
-	StatusLabel        string
-	IsDefault          bool
-	DefaultLabel       string
-	SortOrder          int
-	PrintTimeLabel     string
-	HasShippingProfile bool
-	ShippingLabel      string
-	RecipeCount        int
-	RecipeWeightMg     int64
-	RecipeWeightLabel  string
-	DetailURL          string
+	ID                string
+	Name              string
+	Slug              string
+	SKU               string
+	PriceLabel        string
+	IsActive          bool
+	StatusLabel       string
+	IsDefault         bool
+	DefaultLabel      string
+	SortOrder         int
+	PrintTimeLabel    string
+	RecipeCount       int
+	RecipeWeightMg    int64
+	RecipeWeightLabel string
+	DetailURL         string
 }
 
 type AdminVariantForm struct {
@@ -259,11 +256,6 @@ type AdminVariantForm struct {
 	IsDefault        bool
 	SortOrder        string
 	PrintTimeMinutes string
-	UseShipping      bool
-	ShippingWeightG  string
-	ShippingHeightMM string
-	ShippingWidthMM  string
-	ShippingLengthMM string
 }
 
 type AdminVariantFormPage struct {
@@ -398,12 +390,9 @@ type AdminBoxListItem struct {
 type AdminBoxForm struct {
 	Name             string
 	Slug             string
-	InternalHeightMM string
-	InternalWidthMM  string
-	InternalLengthMM string
-	ExternalHeightMM string
-	ExternalWidthMM  string
-	ExternalLengthMM string
+	HeightMM         string
+	WidthMM          string
+	LengthMM         string
 	PackagingWeightG string
 	IsActive         bool
 	SortOrder        string
@@ -459,7 +448,6 @@ type AdminVariantSaveInput struct {
 	IsDefault        bool
 	SortOrder        int
 	PrintTimeMinutes *int
-	ShippingProfile  *AdminShippingProfile
 }
 
 type AdminRecipeSaveInput struct {
@@ -490,16 +478,17 @@ type AdminColorSaveInput struct {
 }
 
 type AdminBoxSaveInput struct {
-	ID               string
-	Name             string
-	Slug             string
-	InternalHeightMM int
-	InternalWidthMM  int
-	InternalLengthMM int
-	ExternalHeightMM int
-	ExternalWidthMM  int
-	ExternalLengthMM int
-	PackagingWeightG int
-	IsActive         bool
-	SortOrder        int
+	ID                           string
+	Name                         string
+	Slug                         string
+	InternalHeightMM             int
+	InternalWidthMM              int
+	InternalLengthMM             int
+	ExternalHeightMM             int
+	ExternalWidthMM              int
+	ExternalLengthMM             int
+	PackagingWeightG             int
+	IsActive                     bool
+	SortOrder                    int
+	OperationalDimensionsChanged bool
 }

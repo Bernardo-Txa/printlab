@@ -62,8 +62,8 @@ func TestPostgresRepositoryListsProfilesBoxesAndSelections(t *testing.T) {
 	if len(items) != 1 {
 		t.Fatalf("expected one cart item, got %d", len(items))
 	}
-	if items[0].VariantProfile == nil || items[0].VariantProfile.WeightG != 300 {
-		t.Fatalf("expected variant shipping profile, got %#v", items[0])
+	if items[0].ProductProfile == nil || items[0].ProductProfile.WeightG != 280 {
+		t.Fatalf("expected product shipping profile, got %#v", items[0])
 	}
 
 	boxes, err := repository.ListActiveBoxes(ctx)

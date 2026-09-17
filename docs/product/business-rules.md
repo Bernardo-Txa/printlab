@@ -113,12 +113,11 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Frete e sempre calculado no backend.
 - O navegador nunca determina preco de frete, prazo, transportadora, peso ou dimensoes.
 - `POST /checkout/frete` recebe somente `service_code` como escolha do cliente e revalida a cotacao atual antes de persistir.
-- Produtos e configuracoes possuem perfil logistico em gramas e milimetros, separado da receita de producao 3D.
+- Produtos possuem perfil logistico autoritativo em gramas e milimetros, separado da receita de producao 3D.
 - Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
-- Se a configuracao possui perfil logistico completo, ela substitui o perfil do produto.
-- Se a configuracao nao possui perfil logistico completo, o frete usa o perfil completo do produto.
-- Campos parciais nao sao misturados entre produto e configuracao.
-- Produto sem perfil logistico efetivo nao recebe estimativa ficticia de peso ou dimensoes.
+- Configuracoes nao alteram o perfil logistico; colunas legadas em `product_variants` sao inertes.
+- Produto ativo exige perfil completo e positivo. Produto inativo aceita perfil ausente ou completo, nunca parcial.
+- Produto sem perfil logistico nao recebe estimativa ficticia de peso ou dimensoes.
 - A PrintLab so deve cotar com caixas fisicas reais cadastradas em `shipping_boxes`.
 - A caixa menor compativel e escolhida por dimensoes internas considerando rotacao, nunca somente por volume.
 - Medidas internas da caixa sao usadas para encaixe; medidas externas sao enviadas a transportadora.
@@ -232,7 +231,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 
 ## Producao 3D
 
-`product_variants` permanece sendo a entidade interna para SKU, preco especifico, tempo estimado, receita, perfil logistico, status ativo e snapshots. Na interface administrativa, o conceito deve ser apresentado como configuracao do produto.
+`product_variants` permanece sendo a entidade interna para SKU, preco especifico, tempo estimado, receita, status ativo e snapshots. Na interface administrativa, o conceito deve ser apresentado como configuracao do produto. Suas colunas logisticas legadas nao participam do dominio.
 
 Na loja publica:
 
@@ -286,7 +285,7 @@ Filamento fisico, inventario, lotes, custo por kg e reserva de material permanec
 ## Evolucao planejada pre-go-live
 
 - A Fase 17.1 está concluída e validada em produção: slugs administrativos são derivados no servidor, recebem sufixo determinístico em colisões e permanecem estáveis quando o nome muda. O operador não precisa preencher slug, o browser não consegue alterá-lo por POST comum, nenhuma migration foi necessária e nenhum dado existente é recalculado em lote.
-- A Fase 17 planeja um unico perfil logistico por produto e uma interface simplificada de caixas; a regra atual de override por configuracao continua implementada ate essa mudanca futura.
+- A Fase 17.2 implementa um unico perfil logistico autoritativo por produto e uma interface simplificada de caixas; aguarda validacao manual em producao. Nenhuma migration foi necessaria.
 - Materiais e cores permanecem dados de producao. Cor comercial escolhida pelo cliente sera conceito separado e planejado para a Fase 17.3.
 - A Fase 18 planeja conta opcional de cliente com checkout convidado preservado. Autenticacao de cliente nao concede autorizacao administrativa.
 - A retomada de pagamento para cliente autenticado e uma funcionalidade futura; `pending_payment` continua como estado interno necessario.

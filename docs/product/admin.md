@@ -162,7 +162,9 @@ Regras administrativas:
 - receita usa gramas na UI Admin e persiste `estimated_weight_mg` como inteiro;
 - materiais e cores inativos continuam carregaveis em receitas existentes e sao indicados como inativos;
 - novas escolhas de receita usam somente materiais e cores ativos;
-- produto ou variante pode ter perfil logistico completo ou nenhum perfil; perfis parciais sao rejeitados;
+- produto ativo exige perfil logistico completo e positivo; produto inativo aceita perfil ausente ou completo;
+- configuracoes nao exibem nem aceitam logistica, e suas colunas legadas permanecem inertes;
+- caixas usam um conjunto dimensional operacional no formulario; mudancas dimensionais sincronizam medidas internas e externas;
 - caixa inativa deixa de participar de novas cotacoes, sem apagar selecoes historicas;
 - na Fase 13.3, imagens permaneceram fora do escopo e foram implementadas depois na Fase 13.4.
 

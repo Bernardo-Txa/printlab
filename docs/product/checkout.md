@@ -105,7 +105,7 @@ A etapa de frete exige:
 - carrinho nao vazio;
 - nenhum item indisponivel;
 - contato e endereco ja salvos;
-- perfil logistico efetivo para todos os itens;
+- perfil logistico completo no produto de todos os itens;
 - pelo menos uma caixa real ativa cadastrada;
 - SuperFrete configurada para cotacao real.
 
@@ -113,7 +113,7 @@ Se nao houver carrinho valido, a rota redireciona para `/carrinho`. Se os dados 
 
 O backend calcula frete em duas etapas: envia `products` para a SuperFrete obter pacote ideal, escolhe a menor caixa fisica real compativel usando medidas internas e rotacao, soma `packaging_weight_g` ao peso dos produtos e faz a cotacao final com `package` usando medidas externas da caixa. Apenas o resultado final e apresentado ao cliente.
 
-Frete selecionado expira em 30 minutos e e invalidado por `input_hash` quando carrinho, quantidade, variante, perfil logistico, CEP, servicos ou caixa mudam.
+Frete selecionado expira em 30 minutos e e invalidado por `input_hash` quando carrinho, quantidade, variante, perfil logistico do produto, CEP, servicos ou caixa mudam.
 
 Falhas de frete mantem mensagem publica generica. Internamente, a aplicacao diferencia indisponibilidade de configuracao, ausencia de caixas, falha na chamada de planejamento, ausencia de pacote retornado, caixa inexistente para o pacote, falha na chamada final e ausencia de cotacoes finais validas, sem logar PII ou secrets.
 

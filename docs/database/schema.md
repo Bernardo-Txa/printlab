@@ -206,10 +206,10 @@ Campos:
 | `slug` | `text` | nao | - | Slug unico dentro do produto. |
 | `sku` | `text` | sim | - | Codigo interno opcional. |
 | `price_cents` | `bigint` | sim | - | Override opcional de preco em centavos. |
-| `shipping_weight_g` | `bigint` | sim | - | Override completo do peso logistico da variante, em gramas. |
-| `shipping_height_mm` | `integer` | sim | - | Override completo da altura logistica da variante, em milimetros. |
-| `shipping_width_mm` | `integer` | sim | - | Override completo da largura logistica da variante, em milimetros. |
-| `shipping_length_mm` | `integer` | sim | - | Override completo do comprimento logistico da variante, em milimetros. |
+| `shipping_weight_g` | `bigint` | sim | - | Coluna legada inerte desde a Fase 17.2. |
+| `shipping_height_mm` | `integer` | sim | - | Coluna legada inerte desde a Fase 17.2. |
+| `shipping_width_mm` | `integer` | sim | - | Coluna legada inerte desde a Fase 17.2. |
+| `shipping_length_mm` | `integer` | sim | - | Coluna legada inerte desde a Fase 17.2. |
 | `is_active` | `boolean` | nao | `false` | Controla exibicao publica da variante. |
 | `is_default` | `boolean` | nao | `false` | Variante inicial preferencial. |
 | `sort_order` | `integer` | nao | `0` | Ordenacao publica/operacional. |
@@ -251,8 +251,8 @@ Semantica:
 - Configuracao default deve estar ativa.
 - `sku` e opcional e nao e identificador publico principal.
 - Ordenacao publica: `is_default desc`, `sort_order asc`, `name asc`.
-- O perfil logistico da configuracao e um override atomico. Se estiver completo, substitui o perfil do produto; se estiver ausente, o frete usa o perfil completo do produto.
-- Campos logisticos parciais nao sao permitidos e nao devem ser misturados com campos do produto.
+- Os campos logisticos foram criados na Fase 8 e suas constraints permanecem no schema, mas desde a Fase 17.2 nao sao lidos nem escritos pelos fluxos de dominio e Admin.
+- `products.shipping_*` e a unica fonte autoritativa para frete.
 
 RLS:
 
@@ -503,6 +503,8 @@ Como a escrita e transacional, os dois registros devem existir juntos. Se houver
 ## Tabela `public.shipping_boxes`
 
 Caixas fisicas reais disponiveis para cotacao de frete. A migration cria a tabela vazia; caixas ficticias nao devem ser inseridas apenas para teste.
+
+Na interface administrativa, altura, largura e comprimento formam um unico conjunto operacional. Novas caixas gravam os mesmos valores nos campos internos e externos. Em registros antigos, uma edicao sem mudanca dimensional preserva os dois conjuntos persistidos; alterar qualquer dimensao sincroniza ambos. O schema permanece inalterado.
 
 Campos:
 

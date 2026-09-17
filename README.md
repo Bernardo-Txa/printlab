@@ -60,10 +60,11 @@ IMPLEMENTADO:
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
 - Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 - Fase 16 — SEO e Performance concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, acessibilidade e Lighthouse 100 nas paginas publicas validadas.
+- Fase 17.1 concluida e validada em producao; Fase 17.2 implementada com perfil logistico unico por produto e caixas simplificadas, aguardando validacao manual em producao.
 
 PLANEJADO:
 
-- Fase 17.1 concluída e validada em produção: cadastro administrativo gera slugs no servidor com colisão determinística e preserva slugs existentes em renomeações; Fases 17.2 e 17.3, além das Fases 18 a 20, permanecem planejadas.
+- Fase 17.3 e Fases 18 a 20 permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
@@ -134,7 +135,7 @@ Banco implementado:
 - `cart_customer_details` e `cart_shipping_addresses` persistem contato e endereco do checkout vinculados ao carrinho anonimo.
 - CPF e CEP sao armazenados como digitos ASCII normalizados; telefone e armazenado em formato canonico brasileiro E.164.
 - Dados de contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
-- `products` e `product_variants` possuem perfil logistico opcional em gramas e milimetros, com constraint all-or-none.
+- `products` possui o perfil logistico autoritativo em gramas e milimetros. As colunas equivalentes em `product_variants` permanecem apenas como schema legado inerte.
 - `shipping_boxes` guarda caixas fisicas reais com medidas internas, externas, peso de embalagem, status ativo e ordenacao.
 - `cart_shipping_selections` guarda a escolha de frete por carrinho com snapshot do pacote real, preco em centavos, prazo, validade de 30 minutos e `input_hash`.
 - `carts.converted_at` marca carrinhos convertidos em pedido.

@@ -41,7 +41,7 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
 | Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
 | Fase 17.1 — Cadastro e slugs | Concluida; validada em producao |
-| Fase 17.2 — Logistica simplificada | Planejada |
+| Fase 17.2 — Logistica simplificada | Em execucao; aguardando validacao manual em producao |
 | Fase 17.3 — Cores e producao | Planejada |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
 | Fase 18.1 — E-mail transacional PrintLab | Planejada |
@@ -720,7 +720,7 @@ Definition of Done:
 
 ## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. A Fase 17.1 foi concluida e validada em producao; as demais permanecem planejadas.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. A Fase 17.1 foi concluida e validada em producao; a Fase 17.2 esta implementada e aguarda validacao manual em producao; a Fase 17.3 permanece planejada.
 
 ### Fase 17.1 — Cadastro e slugs
 
@@ -733,11 +733,13 @@ Status: Concluida; validada manualmente em producao.
 
 ### Fase 17.2 — Logistica simplificada
 
+Status: Em execucao; aguardando validacao manual em producao.
+
 - Adotar perfil logistico unico por produto; configuracoes nao terao override logistico.
 - Exigir logistica completa para produto ativo/comercial e permitir ausencia somente em rascunho ou inativo, sem inventar valores.
 - Simplificar o formulario de caixas para altura, largura, comprimento, peso da embalagem, ativo e ordem.
 - Preservar a semantica atual: medidas internas para encaixe e externas para transportadora. A implementacao preferida inicialmente escreve o mesmo conjunto de medidas nas colunas interna e externa atuais; eventual remocao de colunas exige justificativa posterior.
-- Avaliar migration futura com cuidado; nenhuma migration e criada neste planejamento.
+- Manter as colunas atuais sem migration; campos logisticos de configuracao permanecem como legado inerte.
 
 ### Fase 17.3 — Cores e producao
 

@@ -153,7 +153,9 @@ func PrepareAdminProductListItem(item *AdminProductListItem) {
 		item.ShippingLabel = "Perfil logistico presente"
 	} else {
 		item.ShippingLabel = "Sem perfil logistico"
-		item.Warnings = append(item.Warnings, "Sem perfil logistico efetivo no produto.")
+		if item.IsActive {
+			item.Warnings = append(item.Warnings, "Produto ativo sem perfil logistico.")
+		}
 	}
 	if item.VariantCount == 0 {
 		item.Warnings = append(item.Warnings, "Sem configurações cadastradas.")
@@ -295,7 +297,7 @@ func (s *Service) NewAdminProduct(ctx context.Context) (AdminProductFormPage, er
 	page.SubmitLabel = "Criar produto"
 	page.BackURL = "/admin/produtos"
 	page.IsNew = true
-	page.Form.IsActive = true
+	page.Form.IsActive = false
 
 	return page, nil
 }
@@ -764,6 +766,7 @@ func (s *Service) UpdateAdminBox(ctx context.Context, boxID string, form AdminBo
 		return AdminBoxFormPage{}, err
 	}
 	form.Slug = page.Form.Slug
+	originalDimensions := page.Form.HeightMM + "|" + page.Form.WidthMM + "|" + page.Form.LengthMM
 	page.Form = form
 	input, errorsByField := validateAdminBoxForm(form, false, boxID)
 	if errorsByField.Any() {
@@ -771,6 +774,7 @@ func (s *Service) UpdateAdminBox(ctx context.Context, boxID string, form AdminBo
 		return page, ErrValidation
 	}
 	input.ID = normalizeUUID(boxID)
+	input.OperationalDimensionsChanged = form.HeightMM+"|"+form.WidthMM+"|"+form.LengthMM != originalDimensions
 	if err := s.catalog.UpdateAdminBox(ctx, input); err != nil {
 		page.Errors = catalogSaveErrors(err)
 		return page, err
@@ -810,7 +814,7 @@ func validateAdminProductForm(form AdminProductForm, create bool, id string) (Ad
 		errorsByField.Add("price", "Informe um preco em reais, como 39,90.")
 	}
 	input.PriceCents = price
-	input.ShippingProfile = validateAdminShippingProfile(errorsByField, form.UseShipping, form.ShippingWeightG, form.ShippingHeightMM, form.ShippingWidthMM, form.ShippingLengthMM)
+	input.ShippingProfile = validateAdminProductShippingProfile(errorsByField, form.IsActive, form.ShippingWeightG, form.ShippingHeightMM, form.ShippingWidthMM, form.ShippingLengthMM)
 
 	return input, errorsByField
 }
@@ -880,8 +884,6 @@ func validateAdminVariantForm(form AdminVariantForm, create bool, productID stri
 			input.PrintTimeMinutes = &printTime
 		}
 	}
-	input.ShippingProfile = validateAdminShippingProfile(errorsByField, form.UseShipping, form.ShippingWeightG, form.ShippingHeightMM, form.ShippingWidthMM, form.ShippingLengthMM)
-
 	return input, errorsByField
 }
 
@@ -977,27 +979,18 @@ func validateAdminBoxForm(form AdminBoxForm, create bool, id string) (AdminBoxSa
 		input.Slug = CanonicalSlug(input.Name)
 	}
 	validateAutomaticSlug(errorsByField, input.Slug)
-	input.InternalHeightMM = parseBoxPositiveInt(errorsByField, "internal_height_mm", form.InternalHeightMM)
-	input.InternalWidthMM = parseBoxPositiveInt(errorsByField, "internal_width_mm", form.InternalWidthMM)
-	input.InternalLengthMM = parseBoxPositiveInt(errorsByField, "internal_length_mm", form.InternalLengthMM)
-	input.ExternalHeightMM = parseBoxPositiveInt(errorsByField, "external_height_mm", form.ExternalHeightMM)
-	input.ExternalWidthMM = parseBoxPositiveInt(errorsByField, "external_width_mm", form.ExternalWidthMM)
-	input.ExternalLengthMM = parseBoxPositiveInt(errorsByField, "external_length_mm", form.ExternalLengthMM)
+	input.InternalHeightMM = parseBoxPositiveInt(errorsByField, "height_mm", form.HeightMM)
+	input.InternalWidthMM = parseBoxPositiveInt(errorsByField, "width_mm", form.WidthMM)
+	input.InternalLengthMM = parseBoxPositiveInt(errorsByField, "length_mm", form.LengthMM)
+	input.ExternalHeightMM = input.InternalHeightMM
+	input.ExternalWidthMM = input.InternalWidthMM
+	input.ExternalLengthMM = input.InternalLengthMM
 	input.PackagingWeightG = parseBoxPositiveInt(errorsByField, "packaging_weight_g", form.PackagingWeightG)
 	sortOrder, err := parseAdminNonNegativeInt(form.SortOrder)
 	if err != nil {
 		errorsByField.Add("sort_order", "Informe um inteiro maior ou igual a zero.")
 	}
 	input.SortOrder = sortOrder
-	if input.ExternalHeightMM > 0 && input.InternalHeightMM > 0 && input.ExternalHeightMM < input.InternalHeightMM {
-		errorsByField.Add("external_height_mm", "Altura externa deve ser maior ou igual a interna.")
-	}
-	if input.ExternalWidthMM > 0 && input.InternalWidthMM > 0 && input.ExternalWidthMM < input.InternalWidthMM {
-		errorsByField.Add("external_width_mm", "Largura externa deve ser maior ou igual a interna.")
-	}
-	if input.ExternalLengthMM > 0 && input.InternalLengthMM > 0 && input.ExternalLengthMM < input.InternalLengthMM {
-		errorsByField.Add("external_length_mm", "Comprimento externo deve ser maior ou igual ao interno.")
-	}
 
 	return input, errorsByField
 }
@@ -1027,7 +1020,7 @@ func createWithAutomaticSlug(base string, create func(string) (string, error)) (
 	return "", ErrDuplicateSlug
 }
 
-func validateAdminShippingProfile(errorsByField AdminFieldErrors, enabled bool, weight string, height string, width string, length string) *AdminShippingProfile {
+func validateAdminProductShippingProfile(errorsByField AdminFieldErrors, active bool, weight string, height string, width string, length string) *AdminShippingProfile {
 	values := []string{strings.TrimSpace(weight), strings.TrimSpace(height), strings.TrimSpace(width), strings.TrimSpace(length)}
 	anyFilled := false
 	for _, value := range values {
@@ -1035,13 +1028,9 @@ func validateAdminShippingProfile(errorsByField AdminFieldErrors, enabled bool, 
 			anyFilled = true
 		}
 	}
-	if !enabled {
-		if anyFilled {
-			errorsByField.Add("shipping_profile", "Marque o uso do perfil logistico ou limpe os campos.")
-		}
+	if !active && !anyFilled {
 		return nil
 	}
-
 	profile := &AdminShippingProfile{}
 	var err error
 	profile.WeightG, err = parseAdminPositiveInt64(weight)
@@ -1060,7 +1049,6 @@ func validateAdminShippingProfile(errorsByField AdminFieldErrors, enabled bool, 
 	if err != nil {
 		errorsByField.Add("shipping_length_mm", "Informe comprimento positivo em mm.")
 	}
-
 	return profile
 }
 

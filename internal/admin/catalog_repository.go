@@ -29,6 +29,9 @@ func (r *PostgresRepository) ListAdminProducts(ctx context.Context, filter Admin
 			p.is_featured,
 			count(v.id)::integer,
 			p.shipping_weight_g is not null
+				and p.shipping_height_mm is not null
+				and p.shipping_width_mm is not null
+				and p.shipping_length_mm is not null
 		from public.products p
 		left join public.categories c
 			on c.id = p.category_id
@@ -51,7 +54,10 @@ func (r *PostgresRepository) ListAdminProducts(ctx context.Context, filter Admin
 			p.price_cents,
 			p.is_active,
 			p.is_featured,
-			p.shipping_weight_g
+			p.shipping_weight_g,
+			p.shipping_height_mm,
+			p.shipping_width_mm,
+			p.shipping_length_mm
 		order by p.is_active desc, p.name asc, p.id asc
 	`, filter.Status, filter.Query)
 	if err != nil {
@@ -159,7 +165,7 @@ func (r *PostgresRepository) GetAdminProductForm(ctx context.Context, productID 
 		page.Form.Description = description.String
 	}
 	page.Form.PriceBRL = FormatAdminCentsInput(priceCents)
-	fillShippingForm(&page.Form.UseShipping, &page.Form.ShippingWeightG, &page.Form.ShippingHeightMM, &page.Form.ShippingWidthMM, &page.Form.ShippingLengthMM, shippingWeight, shippingHeight, shippingWidth, shippingLength)
+	fillShippingForm(&page.Form.ShippingWeightG, &page.Form.ShippingHeightMM, &page.Form.ShippingWidthMM, &page.Form.ShippingLengthMM, shippingWeight, shippingHeight, shippingWidth, shippingLength)
 
 	options, err := r.listCategoryOptions(ctx, page.Form.CategoryID)
 	if err != nil {
@@ -665,10 +671,6 @@ func (r *PostgresRepository) GetAdminVariantForm(ctx context.Context, productID 
 	var sku pgtype.Text
 	var price pgtype.Int8
 	var printTime pgtype.Int4
-	var shippingWeight pgtype.Int8
-	var shippingHeight pgtype.Int4
-	var shippingWidth pgtype.Int4
-	var shippingLength pgtype.Int4
 	err = r.pool.QueryRow(ctx, `
 		select
 			name,
@@ -678,11 +680,7 @@ func (r *PostgresRepository) GetAdminVariantForm(ctx context.Context, productID 
 			is_active,
 			is_default,
 			sort_order,
-			print_time_minutes,
-			shipping_weight_g,
-			shipping_height_mm,
-			shipping_width_mm,
-			shipping_length_mm
+			print_time_minutes
 		from public.product_variants
 		where id = $1::uuid
 			and product_id = $2::uuid
@@ -695,10 +693,6 @@ func (r *PostgresRepository) GetAdminVariantForm(ctx context.Context, productID 
 		&page.Form.IsDefault,
 		&page.Form.SortOrder,
 		&printTime,
-		&shippingWeight,
-		&shippingHeight,
-		&shippingWidth,
-		&shippingLength,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -715,7 +709,6 @@ func (r *PostgresRepository) GetAdminVariantForm(ctx context.Context, productID 
 	if printTime.Valid {
 		page.Form.PrintTimeMinutes = strconv.FormatInt(int64(printTime.Int32), 10)
 	}
-	fillShippingForm(&page.Form.UseShipping, &page.Form.ShippingWeightG, &page.Form.ShippingHeightMM, &page.Form.ShippingWidthMM, &page.Form.ShippingLengthMM, shippingWeight, shippingHeight, shippingWidth, shippingLength)
 	page.Recipe, err = r.adminRecipeComponents(ctx, productID, variantID)
 	if err != nil {
 		return AdminVariantFormPage{}, err
@@ -755,10 +748,6 @@ func (r *PostgresRepository) CreateAdminVariant(ctx context.Context, input Admin
 			slug,
 			sku,
 			price_cents,
-			shipping_weight_g,
-			shipping_height_mm,
-			shipping_width_mm,
-			shipping_length_mm,
 			is_active,
 			is_default,
 			sort_order,
@@ -772,14 +761,10 @@ func (r *PostgresRepository) CreateAdminVariant(ctx context.Context, input Admin
 			$6,
 			$7,
 			$8,
-			$9,
-			$10,
-			$11,
-			$12,
-			$13
+			$9
 		)
 		returning id::text
-	`, input.ProductID, input.Name, input.Slug, nullableText(input.SKU), nullableInt64Ptr(input.PriceCents), shippingWeightValue(input.ShippingProfile), shippingHeightValue(input.ShippingProfile), shippingWidthValue(input.ShippingProfile), shippingLengthValue(input.ShippingProfile), input.IsActive, input.IsDefault, input.SortOrder, nullableIntPtr(input.PrintTimeMinutes)).Scan(&id)
+	`, input.ProductID, input.Name, input.Slug, nullableText(input.SKU), nullableInt64Ptr(input.PriceCents), input.IsActive, input.IsDefault, input.SortOrder, nullableIntPtr(input.PrintTimeMinutes)).Scan(&id)
 	if err != nil {
 		return "", mapCatalogError(err)
 	}
@@ -821,18 +806,14 @@ func (r *PostgresRepository) UpdateAdminVariant(ctx context.Context, input Admin
 			slug = $4,
 			sku = $5,
 			price_cents = $6,
-			shipping_weight_g = $7,
-			shipping_height_mm = $8,
-			shipping_width_mm = $9,
-			shipping_length_mm = $10,
-			is_active = $11,
-			is_default = $12,
-			sort_order = $13,
-			print_time_minutes = $14,
+			is_active = $7,
+			is_default = $8,
+			sort_order = $9,
+			print_time_minutes = $10,
 			updated_at = now()
 		where id = $1::uuid
 			and product_id = $2::uuid
-	`, input.ID, input.ProductID, input.Name, input.Slug, nullableText(input.SKU), nullableInt64Ptr(input.PriceCents), shippingWeightValue(input.ShippingProfile), shippingHeightValue(input.ShippingProfile), shippingWidthValue(input.ShippingProfile), shippingLengthValue(input.ShippingProfile), input.IsActive, input.IsDefault, input.SortOrder, nullableIntPtr(input.PrintTimeMinutes))
+	`, input.ID, input.ProductID, input.Name, input.Slug, nullableText(input.SKU), nullableInt64Ptr(input.PriceCents), input.IsActive, input.IsDefault, input.SortOrder, nullableIntPtr(input.PrintTimeMinutes))
 	if err != nil {
 		return mapCatalogError(err)
 	}
@@ -1167,9 +1148,6 @@ func (r *PostgresRepository) GetAdminBoxForm(ctx context.Context, boxID string) 
 		BackURL:     "/admin/caixas",
 		Errors:      AdminFieldErrors{},
 	}
-	var internalHeight int
-	var internalWidth int
-	var internalLength int
 	var externalHeight int
 	var externalWidth int
 	var externalLength int
@@ -1179,9 +1157,6 @@ func (r *PostgresRepository) GetAdminBoxForm(ctx context.Context, boxID string) 
 		select
 			name,
 			slug,
-			internal_height_mm,
-			internal_width_mm,
-			internal_length_mm,
 			external_height_mm,
 			external_width_mm,
 			external_length_mm,
@@ -1193,9 +1168,6 @@ func (r *PostgresRepository) GetAdminBoxForm(ctx context.Context, boxID string) 
 	`, boxID).Scan(
 		&page.Form.Name,
 		&page.Form.Slug,
-		&internalHeight,
-		&internalWidth,
-		&internalLength,
 		&externalHeight,
 		&externalWidth,
 		&externalLength,
@@ -1209,12 +1181,9 @@ func (r *PostgresRepository) GetAdminBoxForm(ctx context.Context, boxID string) 
 		}
 		return AdminBoxFormPage{}, ErrUnavailable
 	}
-	page.Form.InternalHeightMM = strconv.Itoa(internalHeight)
-	page.Form.InternalWidthMM = strconv.Itoa(internalWidth)
-	page.Form.InternalLengthMM = strconv.Itoa(internalLength)
-	page.Form.ExternalHeightMM = strconv.Itoa(externalHeight)
-	page.Form.ExternalWidthMM = strconv.Itoa(externalWidth)
-	page.Form.ExternalLengthMM = strconv.Itoa(externalLength)
+	page.Form.HeightMM = strconv.Itoa(externalHeight)
+	page.Form.WidthMM = strconv.Itoa(externalWidth)
+	page.Form.LengthMM = strconv.Itoa(externalLength)
 	page.Form.PackagingWeightG = strconv.Itoa(packagingWeight)
 	page.Form.SortOrder = strconv.Itoa(sortOrder)
 
@@ -1259,6 +1228,22 @@ func (r *PostgresRepository) CreateAdminBox(ctx context.Context, input AdminBoxS
 }
 
 func (r *PostgresRepository) UpdateAdminBox(ctx context.Context, input AdminBoxSaveInput) error {
+	var internalHeight, internalWidth, internalLength, externalHeight, externalWidth, externalLength int
+	err := r.pool.QueryRow(ctx, `
+		select internal_height_mm, internal_width_mm, internal_length_mm,
+			external_height_mm, external_width_mm, external_length_mm
+		from public.shipping_boxes where id = $1::uuid
+	`, input.ID).Scan(&internalHeight, &internalWidth, &internalLength, &externalHeight, &externalWidth, &externalLength)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrCatalogNotFound
+		}
+		return ErrUnavailable
+	}
+	if input.OperationalDimensionsChanged {
+		internalHeight, internalWidth, internalLength = input.InternalHeightMM, input.InternalWidthMM, input.InternalLengthMM
+		externalHeight, externalWidth, externalLength = input.ExternalHeightMM, input.ExternalWidthMM, input.ExternalLengthMM
+	}
 	tag, err := r.pool.Exec(ctx, `
 		update public.shipping_boxes
 		set
@@ -1275,7 +1260,7 @@ func (r *PostgresRepository) UpdateAdminBox(ctx context.Context, input AdminBoxS
 			sort_order = $12,
 			updated_at = now()
 		where id = $1::uuid
-	`, input.ID, input.Name, input.Slug, input.InternalHeightMM, input.InternalWidthMM, input.InternalLengthMM, input.ExternalHeightMM, input.ExternalWidthMM, input.ExternalLengthMM, input.PackagingWeightG, input.IsActive, input.SortOrder)
+	`, input.ID, input.Name, input.Slug, internalHeight, internalWidth, internalLength, externalHeight, externalWidth, externalLength, input.PackagingWeightG, input.IsActive, input.SortOrder)
 	if err != nil {
 		return mapCatalogError(err)
 	}
@@ -1330,7 +1315,6 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 			v.is_default,
 			v.sort_order,
 			v.print_time_minutes,
-			v.shipping_weight_g is not null,
 			count(f.id)::integer,
 			coalesce(sum(f.estimated_weight_mg), 0)::bigint
 		from public.product_variants v
@@ -1346,8 +1330,7 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 			v.is_active,
 			v.is_default,
 			v.sort_order,
-			v.print_time_minutes,
-			v.shipping_weight_g
+			v.print_time_minutes
 		order by v.is_active desc, v.is_default desc, v.sort_order asc, v.name asc, v.id asc
 	`, productID)
 	if err != nil {
@@ -1370,7 +1353,6 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 			&item.IsDefault,
 			&item.SortOrder,
 			&printTime,
-			&item.HasShippingProfile,
 			&item.RecipeCount,
 			&item.RecipeWeightMg,
 		); err != nil {
@@ -1383,11 +1365,6 @@ func (r *PostgresRepository) listAdminVariantItems(ctx context.Context, productI
 		}
 		if printTime.Valid {
 			item.PrintTimeLabel = products.FormatPrintTime(int(printTime.Int32))
-		}
-		if item.HasShippingProfile {
-			item.ShippingLabel = "Usa perfil proprio"
-		} else {
-			item.ShippingLabel = "Usa perfil logistico do produto"
 		}
 		item.RecipeWeightLabel = products.FormatWeightGrams(item.RecipeWeightMg)
 		item.DetailURL = "/admin/produtos/" + productID + "/variantes/" + item.ID
@@ -1776,11 +1753,10 @@ func (r *PostgresRepository) ensureRecipeReferencesAllowed(ctx context.Context, 
 	return nil
 }
 
-func fillShippingForm(use *bool, weight *string, height *string, width *string, length *string, weightValue pgtype.Int8, heightValue pgtype.Int4, widthValue pgtype.Int4, lengthValue pgtype.Int4) {
+func fillShippingForm(weight *string, height *string, width *string, length *string, weightValue pgtype.Int8, heightValue pgtype.Int4, widthValue pgtype.Int4, lengthValue pgtype.Int4) {
 	if !weightValue.Valid || !heightValue.Valid || !widthValue.Valid || !lengthValue.Valid {
 		return
 	}
-	*use = true
 	*weight = strconv.FormatInt(weightValue.Int64, 10)
 	*height = strconv.Itoa(int(heightValue.Int32))
 	*width = strconv.Itoa(int(widthValue.Int32))

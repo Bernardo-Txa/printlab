@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Catalogo publico, perfis logisticos, gestao administrativa, imagens Admin e refinamento 13.3A de configuracoes IMPLEMENTADOS; validacao real da Fase 13.3 concluida.
+Status: Catalogo publico, perfil logistico unico por produto, gestao administrativa, imagens Admin e refinamento de configuracoes IMPLEMENTADOS; Fase 17.2 aguarda validacao manual em producao.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de configuracoes internas em `product_variants`.
 
@@ -27,7 +27,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Placeholder visual de marca quando nao existe imagem renderizavel.
 - Selecao publica de configuracao por `GET /produtos/{slug}?variante=<variant-slug>`, sem JavaScript obrigatorio, somente quando houver mais de uma configuracao ativa.
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
-- Perfil logistico opcional em produtos e variantes para cotacao de frete.
+- Perfil logistico autoritativo no produto para cotacao de frete.
 - Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores, caixas e imagens em `/admin`.
 
 ## Regras publicas
@@ -65,7 +65,7 @@ No Admin, formularios recebem valores em BRL amigavel, como `39,90`, `39.90` ou 
 
 ## Configuracoes
 
-`product_variants` permanece sendo o modelo interno para SKU, preco especifico opcional, tempo estimado de impressao, receita, perfil logistico, status ativo, imagens especificas e snapshots de pedido.
+`product_variants` permanece sendo o modelo interno para SKU, preco especifico opcional, tempo estimado de impressao, receita, status ativo, imagens especificas e snapshots de pedido. Campos logisticos legados da tabela nao participam do dominio atual.
 
 Na interface administrativa, o conceito deve ser apresentado como "Configuracao" ou "Configuracoes do produto". Na loja publica, uma escolha so deve aparecer quando houver mais de uma configuracao ativa.
 
@@ -114,7 +114,7 @@ Tempo estimado de maquina fica em `product_variants.print_time_minutes`. Ele nao
 
 ## Perfil logistico
 
-Produtos e variantes podem possuir perfil logistico para frete:
+Produtos possuem o perfil logistico autoritativo para frete:
 
 - `shipping_weight_g`;
 - `shipping_height_mm`;
@@ -123,11 +123,13 @@ Produtos e variantes podem possuir perfil logistico para frete:
 
 Esse perfil representa uma unidade preparada para acondicionamento, nao necessariamente a geometria crua da peca 3D nem a receita de filamento. Exemplo: uma peca pode medir `190 x 85 x 70 mm`, mas seu perfil protegido para envio ser `210 x 105 x 90 mm`.
 
-A configuracao pode possuir override completo. Se nao possuir, a cotacao usa o perfil completo do produto. Campos parciais nao sao misturados.
+Configuracoes nao possuem override logistico no dominio nem no Admin. As colunas `product_variants.shipping_*` permanecem no schema como legado inerte e nao participam de frete, checkout ou revisao.
 
-Produto ou variante sem perfil logistico efetivo nao recebe estimativa ficticia no checkout de frete.
+Produto sem perfil logistico nao recebe estimativa ficticia no checkout. Produto ativo exige os quatro valores positivos; produto inativo aceita perfil ausente ou completo, nunca parcial. Novos produtos iniciam inativos.
 
-No Admin, perfil logistico e atomico: todos os quatro campos precisam estar preenchidos ou todos precisam ficar vazios. A configuracao com perfil ausente herda o perfil completo do produto; campos isolados de produto e configuracao nao sao combinados.
+O Admin mostra os quatro campos diretamente, sem opt-in. Na lista, perfil ausente e indicado e a inconsistência recebe aviso forte quando o produto esta ativo.
+
+Caixas exibem um conjunto de dimensoes operacionais. Nova caixa grava esse conjunto como medidas internas e externas; em caixas existentes, editar qualquer dimensao sincroniza os dois conjuntos e editar somente outros campos preserva os valores internos e externos persistidos.
 
 ## Gestao administrativa
 

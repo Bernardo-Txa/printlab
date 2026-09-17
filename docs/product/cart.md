@@ -22,7 +22,7 @@ O carrinho permite que visitantes anonimos escolham produtos e quantidades antes
 
 ## Regras de seguranca
 
-O carrinho no navegador nao e fonte autoritativa de preco, subtotal, desconto, frete ou total. O backend recalcula valores usando dados persistidos e regras aprovadas. Uma selecao de frete anterior fica invalida quando o `input_hash` atual muda por alteracao de item, quantidade, variante, perfil logistico, CEP, servicos ou caixa.
+O carrinho no navegador nao e fonte autoritativa de preco, subtotal, desconto, frete ou total. O backend recalcula valores usando dados persistidos e regras aprovadas. Uma selecao de frete anterior fica invalida quando o `input_hash` atual muda por alteracao de item, quantidade, variante, perfil logistico do produto, CEP, servicos ou caixa.
 
 O navegador pode enviar:
 

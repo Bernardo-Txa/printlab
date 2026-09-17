@@ -110,7 +110,7 @@ Somente o preco da segunda chamada e apresentado ao cliente.
 
 Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
 
-O perfil logistico em `products` e `product_variants` representa uma unidade preparada para acondicionamento:
+O perfil logistico autoritativo em `products` representa uma unidade preparada para acondicionamento:
 
 - `shipping_weight_g`;
 - `shipping_height_mm`;
@@ -118,6 +118,8 @@ O perfil logistico em `products` e `product_variants` representa uma unidade pre
 - `shipping_length_mm`.
 
 Internamente, peso usa gramas inteiras e dimensoes usam milimetros inteiros. Conversao para kg/cm acontece somente na borda HTTP da SuperFrete.
+
+As colunas equivalentes em `product_variants` permanecem no schema como legado inerte e nao sao lidas pela cotacao. O contrato com a SuperFrete e o fluxo de duas chamadas permanecem inalterados.
 
 `shipping_boxes` representa caixas fisicas reais:
 

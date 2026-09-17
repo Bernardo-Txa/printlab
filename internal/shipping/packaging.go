@@ -12,9 +12,6 @@ import (
 )
 
 func EffectiveShippingProfile(item CartItem) (ShippingProfile, bool) {
-	if item.VariantProfile != nil && item.VariantProfile.Valid() {
-		return *item.VariantProfile, true
-	}
 	if item.ProductProfile != nil && item.ProductProfile.Valid() {
 		return *item.ProductProfile, true
 	}

@@ -589,7 +589,6 @@ func adminProductFormFromRequest(r *http.Request) admindomain.AdminProductForm {
 		PriceBRL:         r.PostFormValue("price"),
 		IsActive:         r.PostFormValue("is_active") == "1",
 		IsFeatured:       r.PostFormValue("is_featured") == "1",
-		UseShipping:      r.PostFormValue("use_shipping") == "1",
 		ShippingWeightG:  r.PostFormValue("shipping_weight_g"),
 		ShippingHeightMM: r.PostFormValue("shipping_height_mm"),
 		ShippingWidthMM:  r.PostFormValue("shipping_width_mm"),
@@ -614,11 +613,6 @@ func adminVariantFormFromRequest(r *http.Request) admindomain.AdminVariantForm {
 		IsDefault:        r.PostFormValue("is_default") == "1",
 		SortOrder:        r.PostFormValue("sort_order"),
 		PrintTimeMinutes: r.PostFormValue("print_time_minutes"),
-		UseShipping:      r.PostFormValue("use_shipping") == "1",
-		ShippingWeightG:  r.PostFormValue("shipping_weight_g"),
-		ShippingHeightMM: r.PostFormValue("shipping_height_mm"),
-		ShippingWidthMM:  r.PostFormValue("shipping_width_mm"),
-		ShippingLengthMM: r.PostFormValue("shipping_length_mm"),
 	}
 }
 
@@ -651,12 +645,9 @@ func adminColorFormFromRequest(r *http.Request) admindomain.AdminColorForm {
 func adminBoxFormFromRequest(r *http.Request) admindomain.AdminBoxForm {
 	return admindomain.AdminBoxForm{
 		Name:             r.PostFormValue("name"),
-		InternalHeightMM: r.PostFormValue("internal_height_mm"),
-		InternalWidthMM:  r.PostFormValue("internal_width_mm"),
-		InternalLengthMM: r.PostFormValue("internal_length_mm"),
-		ExternalHeightMM: r.PostFormValue("external_height_mm"),
-		ExternalWidthMM:  r.PostFormValue("external_width_mm"),
-		ExternalLengthMM: r.PostFormValue("external_length_mm"),
+		HeightMM:         r.PostFormValue("height_mm"),
+		WidthMM:          r.PostFormValue("width_mm"),
+		LengthMM:         r.PostFormValue("length_mm"),
 		PackagingWeightG: r.PostFormValue("packaging_weight_g"),
 		IsActive:         r.PostFormValue("is_active") == "1",
 		SortOrder:        r.PostFormValue("sort_order"),

@@ -480,7 +480,6 @@ func TestAdminProductDetailUsesConfigurationCopy(t *testing.T) {
 					StatusLabel:       "Ativo",
 					DefaultLabel:      "Única configuração",
 					PrintTimeLabel:    "1h",
-					ShippingLabel:     "Usa perfil logistico do produto",
 					RecipeCount:       1,
 					RecipeWeightLabel: "12 g",
 					DetailURL:         "/admin/produtos/" + productID + "/variantes/22222222-2222-2222-2222-222222222222",

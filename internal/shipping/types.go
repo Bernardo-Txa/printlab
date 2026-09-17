@@ -47,7 +47,6 @@ type CartItem struct {
 	VariantName    string
 	Quantity       int
 	ProductProfile *ShippingProfile
-	VariantProfile *ShippingProfile
 }
 
 type ShippingBox struct {

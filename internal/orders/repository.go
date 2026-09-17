@@ -414,11 +414,7 @@ func (r *PostgresRepository) reviewItems(ctx context.Context, q queryer, cartID 
 			p.shipping_weight_g,
 			p.shipping_height_mm,
 			p.shipping_width_mm,
-			p.shipping_length_mm,
-			v.shipping_weight_g,
-			v.shipping_height_mm,
-			v.shipping_width_mm,
-			v.shipping_length_mm
+			p.shipping_length_mm
 		from public.cart_items ci
 		join public.products p
 			on p.id = ci.product_id
@@ -472,10 +468,6 @@ func scanRawReviewItem(scanner interface{ Scan(dest ...any) error }) (rawReviewI
 	var productHeight pgtype.Int4
 	var productWidth pgtype.Int4
 	var productLength pgtype.Int4
-	var variantWeight pgtype.Int8
-	var variantHeight pgtype.Int4
-	var variantWidth pgtype.Int4
-	var variantLength pgtype.Int4
 
 	if err := scanner.Scan(
 		&item.CartItemID,
@@ -498,10 +490,6 @@ func scanRawReviewItem(scanner interface{ Scan(dest ...any) error }) (rawReviewI
 		&productHeight,
 		&productWidth,
 		&productLength,
-		&variantWeight,
-		&variantHeight,
-		&variantWidth,
-		&variantLength,
 	); err != nil {
 		return rawReviewItem{}, err
 	}
@@ -523,7 +511,6 @@ func scanRawReviewItem(scanner interface{ Scan(dest ...any) error }) (rawReviewI
 		VariantName:    item.VariantName,
 		Quantity:       item.Quantity,
 		ProductProfile: profileFromColumns(productWeight, productHeight, productWidth, productLength),
-		VariantProfile: profileFromColumns(variantWeight, variantHeight, variantWidth, variantLength),
 	}
 
 	return item, nil

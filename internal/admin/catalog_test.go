@@ -139,7 +139,7 @@ func TestAutomaticSlugValidationCoversAllCatalogEntities(t *testing.T) {
 			return input.Slug, errs
 		}, want: "azul-ceu"},
 		{name: "box", check: func() (string, AdminFieldErrors) {
-			input, errs := validateAdminBoxForm(AdminBoxForm{Name: "Caixa Média", InternalHeightMM: "10", InternalWidthMM: "10", InternalLengthMM: "10", ExternalHeightMM: "12", ExternalWidthMM: "12", ExternalLengthMM: "12", PackagingWeightG: "100", SortOrder: "0"}, true, "")
+			input, errs := validateAdminBoxForm(AdminBoxForm{Name: "Caixa Média", HeightMM: "12", WidthMM: "12", LengthMM: "12", PackagingWeightG: "100", SortOrder: "0"}, true, "")
 			return input.Slug, errs
 		}, want: "caixa-media"},
 	}
@@ -191,7 +191,7 @@ func TestValidateAdminProductFormRejectsPartialShippingProfile(t *testing.T) {
 		Name:            "Produto",
 		Slug:            "produto",
 		PriceBRL:        "39,90",
-		UseShipping:     true,
+		IsActive:        true,
 		ShippingWeightG: "100",
 	}
 
@@ -201,6 +201,38 @@ func TestValidateAdminProductFormRejectsPartialShippingProfile(t *testing.T) {
 	}
 	if errorsByField.Get("shipping_height_mm") == "" || errorsByField.Get("shipping_width_mm") == "" || errorsByField.Get("shipping_length_mm") == "" {
 		t.Fatalf("expected missing dimensions to be rejected, got %#v", errorsByField)
+	}
+}
+
+func TestValidateAdminProductShippingProfileRules(t *testing.T) {
+	tests := []struct {
+		name    string
+		active  bool
+		weight  string
+		height  string
+		width   string
+		length  string
+		wantErr bool
+		wantNil bool
+	}{
+		{name: "inactive without profile", wantNil: true},
+		{name: "inactive complete", weight: "100", height: "10", width: "20", length: "30"},
+		{name: "inactive partial", weight: "100", wantErr: true},
+		{name: "active complete", active: true, weight: "100", height: "10", width: "20", length: "30"},
+		{name: "active without profile", active: true, wantErr: true},
+		{name: "active partial", active: true, weight: "100", wantErr: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			errorsByField := AdminFieldErrors{}
+			profile := validateAdminProductShippingProfile(errorsByField, test.active, test.weight, test.height, test.width, test.length)
+			if errorsByField.Any() != test.wantErr {
+				t.Fatalf("errors = %#v, wantErr %v", errorsByField, test.wantErr)
+			}
+			if (profile == nil) != test.wantNil {
+				t.Fatalf("profile = %#v, wantNil %v", profile, test.wantNil)
+			}
+		})
 	}
 }
 
@@ -299,23 +331,20 @@ func TestNormalizeHexColor(t *testing.T) {
 	}
 }
 
-func TestValidateAdminBoxFormRejectsExternalSmallerThanInternal(t *testing.T) {
+func TestValidateAdminBoxFormRejectsInvalidOperationalDimension(t *testing.T) {
 	form := AdminBoxForm{
 		Name:             "Caixa",
 		Slug:             "caixa",
-		InternalHeightMM: "100",
-		InternalWidthMM:  "100",
-		InternalLengthMM: "100",
-		ExternalHeightMM: "99",
-		ExternalWidthMM:  "100",
-		ExternalLengthMM: "100",
+		HeightMM:         "0",
+		WidthMM:          "100",
+		LengthMM:         "100",
 		PackagingWeightG: "10",
 		SortOrder:        "0",
 	}
 
 	_, errorsByField := validateAdminBoxForm(form, true, "")
-	if errorsByField.Get("external_height_mm") == "" {
-		t.Fatalf("expected external height error, got %#v", errorsByField)
+	if errorsByField.Get("height_mm") == "" {
+		t.Fatalf("expected height error, got %#v", errorsByField)
 	}
 }
 

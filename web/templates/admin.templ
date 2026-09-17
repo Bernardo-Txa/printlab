@@ -420,7 +420,7 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 								@adminCheckboxField("is_active", "Produto ativo", page.Form.IsActive)
 								@adminCheckboxField("is_featured", "Destacado", page.Form.IsFeatured)
 							</div>
-							@adminShippingProfileFields(page.Form.UseShipping, page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
+							@adminShippingProfileFields(page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
 							<div class="admin-form-actions">
 								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
 								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
@@ -462,7 +462,6 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 													}
 													<p><span>Ordem</span><strong>{ strconv.Itoa(variant.SortOrder) }</strong></p>
 													<p><span>Tempo</span><strong>{ variant.PrintTimeLabel }</strong></p>
-													<p><span>Frete</span><strong>{ variant.ShippingLabel }</strong></p>
 													<p><span>Receita</span><strong>{ strconv.Itoa(variant.RecipeCount) } componentes / { variant.RecipeWeightLabel }</strong></p>
 												</div>
 											</article>
@@ -680,7 +679,6 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 							<p class="admin-muted">A opção padrão é selecionada inicialmente na loja quando houver mais de uma configuração ativa.</p>
 							@adminTextField("sort_order", "Ordem", page.Form.SortOrder, page.Errors.Get("sort_order"), "number", true)
 							@adminTextField("print_time_minutes", "Tempo de impressao em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false)
-							@adminShippingProfileFields(page.Form.UseShipping, page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
 							<div class="admin-form-actions">
 								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
 								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>
@@ -846,19 +844,11 @@ templ AdminBoxForm(page admindomain.AdminBoxFormPage) {
 								<p class="admin-muted">Slug: { page.Form.Slug }</p>
 							}
 							<fieldset>
-								<legend>Dimensoes internas</legend>
+								<legend>Dimensoes operacionais</legend>
 								<div class="admin-form-grid">
-									@adminTextField("internal_height_mm", "Altura interna", page.Form.InternalHeightMM, page.Errors.Get("internal_height_mm"), "number", true)
-									@adminTextField("internal_width_mm", "Largura interna", page.Form.InternalWidthMM, page.Errors.Get("internal_width_mm"), "number", true)
-									@adminTextField("internal_length_mm", "Comprimento interno", page.Form.InternalLengthMM, page.Errors.Get("internal_length_mm"), "number", true)
-								</div>
-							</fieldset>
-							<fieldset>
-								<legend>Dimensoes externas</legend>
-								<div class="admin-form-grid">
-									@adminTextField("external_height_mm", "Altura externa", page.Form.ExternalHeightMM, page.Errors.Get("external_height_mm"), "number", true)
-									@adminTextField("external_width_mm", "Largura externa", page.Form.ExternalWidthMM, page.Errors.Get("external_width_mm"), "number", true)
-									@adminTextField("external_length_mm", "Comprimento externo", page.Form.ExternalLengthMM, page.Errors.Get("external_length_mm"), "number", true)
+									@adminTextField("height_mm", "Altura", page.Form.HeightMM, page.Errors.Get("height_mm"), "number", true)
+									@adminTextField("width_mm", "Largura", page.Form.WidthMM, page.Errors.Get("width_mm"), "number", true)
+									@adminTextField("length_mm", "Comprimento", page.Form.LengthMM, page.Errors.Get("length_mm"), "number", true)
 								</div>
 							</fieldset>
 							@adminTextField("packaging_weight_g", "Peso da embalagem", page.Form.PackagingWeightG, page.Errors.Get("packaging_weight_g"), "number", true)
@@ -960,13 +950,10 @@ templ adminCheckboxField(name string, label string, checked bool) {
 	</label>
 }
 
-templ adminShippingProfileFields(useShipping bool, weight string, height string, width string, length string, errors admindomain.AdminFieldErrors) {
+templ adminShippingProfileFields(weight string, height string, width string, length string, errors admindomain.AdminFieldErrors) {
 	<fieldset class="admin-fieldset">
 		<legend>Perfil logistico</legend>
-		@adminCheckboxField("use_shipping", "Usar perfil logistico neste registro", useShipping)
-		if errors.Get("shipping_profile") != "" {
-			<small class="admin-error">{ errors.Get("shipping_profile") }</small>
-		}
+		<p class="admin-muted">Obrigatorio para produtos ativos. O servidor deriva e protege esses dados.</p>
 		<div class="admin-form-grid">
 			@adminTextField("shipping_weight_g", "Peso em gramas", weight, errors.Get("shipping_weight_g"), "number", false)
 			@adminTextField("shipping_height_mm", "Altura em mm", height, errors.Get("shipping_height_mm"), "number", false)
