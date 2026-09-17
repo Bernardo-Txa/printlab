@@ -2,7 +2,6 @@ package payments
 
 import (
 	"context"
-	"log"
 	"math"
 	"strings"
 	"time"
@@ -91,8 +90,7 @@ func (s *Service) ConfirmReturn(ctx context.Context, input ReturnInput) (ReturnR
 	}
 
 	return s.confirmPayment(ctx, normalized, paymentConfirmationOptions{
-		pendingAsError:    false,
-		amountMismatchLog: "payment amount mismatch",
+		pendingAsError: false,
 	})
 }
 
@@ -106,14 +104,12 @@ func (s *Service) ConfirmWebhook(ctx context.Context, input WebhookInput) (Retur
 	}
 
 	return s.confirmPayment(ctx, normalized, paymentConfirmationOptions{
-		pendingAsError:    true,
-		amountMismatchLog: "payment webhook amount mismatch",
+		pendingAsError: true,
 	})
 }
 
 type paymentConfirmationOptions struct {
-	pendingAsError    bool
-	amountMismatchLog string
+	pendingAsError bool
 }
 
 func (s *Service) confirmPayment(ctx context.Context, normalized ReturnInput, options paymentConfirmationOptions) (ReturnResult, error) {
@@ -143,7 +139,6 @@ func (s *Service) confirmPayment(ctx context.Context, normalized ReturnInput, op
 		return result, nil
 	}
 	if check.AmountCents != target.TotalCents {
-		log.Printf("%s order_id=%s order_number=%d", options.amountMismatchLog, target.OrderID, target.OrderNumber)
 		return ReturnResult{Status: ReturnStatusUnavailable, OrderID: target.OrderID}, ErrAmountMismatch
 	}
 

@@ -199,10 +199,11 @@ func handlePaymentWebhookError(w http.ResponseWriter, ctx context.Context, err e
 	case errors.Is(err, paymentsdomain.ErrPaymentNotConfirmed):
 		logOperationalEvent(ctx, operationalLogLevelWarning, "payment_webhook_invalid", "reason=not_confirmed")
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento ainda nao confirmado")
+	case errors.Is(err, paymentsdomain.ErrAmountMismatch):
+		logOperationalEvent(ctx, operationalLogLevelError, "payment_webhook_processing_failed", "reason=amount_mismatch")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Nao foi possivel confirmar o pagamento agora")
 	default:
-		if !errors.Is(err, paymentsdomain.ErrAmountMismatch) {
-			logOperationalEvent(ctx, operationalLogLevelError, "payment_webhook_processing_failed", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
-		}
+		logOperationalEvent(ctx, operationalLogLevelError, "payment_webhook_processing_failed", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Nao foi possivel confirmar o pagamento agora")
 	}
 }

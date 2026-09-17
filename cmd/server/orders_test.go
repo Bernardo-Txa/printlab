@@ -81,7 +81,6 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/checkout/revisao", nil)
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
-
 	newTestHandlerWithOrders(t, service, cookies, "").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
@@ -138,7 +137,6 @@ func TestCheckoutReviewPostRejectsCrossSiteOrigin(t *testing.T) {
 	req.Header.Set("Origin", "https://evil.example")
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
-
 	newTestHandlerWithOrders(t, service, cookies, "").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusForbidden {
@@ -233,6 +231,7 @@ func TestCheckoutReviewPostValidRedirectsAndExpiresCookie(t *testing.T) {
 	req.Header.Set("Origin", "https://printlab.test")
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
+	errorLogs, standardLogs := captureOperationalLogs(t)
 
 	newTestHandlerWithOrders(t, service, cookies, "").ServeHTTP(rec, req)
 
@@ -249,6 +248,7 @@ func TestCheckoutReviewPostValidRedirectsAndExpiresCookie(t *testing.T) {
 	if service.lastFingerprint != "fingerprint-1" {
 		t.Fatalf("expected submitted fingerprint only, got %q", service.lastFingerprint)
 	}
+	assertOperationalLogsDoNotContainOrderIdentifiers(t, errorLogs.String()+standardLogs.String())
 }
 
 func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
@@ -758,6 +758,7 @@ func TestPaymentWebhookValidJSONReturnsOK(t *testing.T) {
 	if got := standardLogs.String(); !strings.Contains(got, "event=payment_webhook_processed level=info reason=confirmed request_id=") {
 		t.Fatalf("expected confirmed info event, got %q", got)
 	}
+	assertOperationalLogsDoNotContainOrderIdentifiers(t, standardLogs.String())
 	if payment.lastWebhookInput.OrderNSU != orderID || payment.lastWebhookInput.TransactionNSU != "txn_123" || payment.lastWebhookInput.InvoiceSlug != "slug_123" {
 		t.Fatalf("expected webhook identifiers only, got %#v", payment.lastWebhookInput)
 	}
@@ -909,6 +910,28 @@ func TestPaymentWebhookReturnsRetryableFailureWhenPaymentCheckDoesNotConfirm(t *
 	}
 }
 
+func TestPaymentWebhookAmountMismatchLogsSafeOperationalFailure(t *testing.T) {
+	payment := &fakePaymentService{
+		available:     true,
+		webhookResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
+		webhookErr:    paymentsdomain.ErrAmountMismatch,
+	}
+	rec := httptest.NewRecorder()
+	errorLogs, _ := captureOperationalLogs(t)
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, paymentWebhookRequest(validInfinitePayWebhookJSON()))
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+	for _, expected := range []string{"event=payment_webhook_processing_failed", "level=error", "reason=amount_mismatch", "request_id="} {
+		if !strings.Contains(errorLogs.String(), expected) {
+			t.Fatalf("expected error log to contain %q, got %q", expected, errorLogs.String())
+		}
+	}
+	assertOperationalLogsDoNotContainOrderIdentifiers(t, errorLogs.String())
+}
+
 func TestPaymentWebhookProviderErrorLogsSafeDiagnostics(t *testing.T) {
 	providerErr := paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusServiceUnavailable, paymentsdomain.ErrProviderUnavailable)
 	providerErr.Message = "payment check failed for txn_123 Joao Silva joao@example.com +5527999999999 Rua Um https://checkout.infinitepay.com.br/checkout-slug"
@@ -987,6 +1010,15 @@ func assertPaymentWebhookResponse(t *testing.T, rec *httptest.ResponseRecorder, 
 
 func stringPtr(value string) *string {
 	return &value
+}
+
+func assertOperationalLogsDoNotContainOrderIdentifiers(t *testing.T, logs string) {
+	t.Helper()
+	for _, forbidden := range []string{"order_id=", "order_number=", orderID} {
+		if strings.Contains(logs, forbidden) {
+			t.Fatalf("operational log leaked %q: %q", forbidden, logs)
+		}
+	}
 }
 
 func orderReviewPageFixture() ordersdomain.ReviewPage {

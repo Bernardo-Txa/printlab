@@ -109,7 +109,7 @@ func adminAuthError(ctx context.Context, err error) (int, string) {
 		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_mfa_rate_limited", "reason=provider_rate_limited")
 		return http.StatusTooManyRequests, "Muitas tentativas. Aguarde antes de tentar novamente."
 	case errors.Is(err, admindomain.ErrAuthConfiguration):
-		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_auth_rejected", "reason=configuration_invalid")
+		logOperationalEvent(ctx, operationalLogLevelError, "admin_mfa_provider_unavailable", "reason=configuration_invalid")
 	case errors.Is(err, admindomain.ErrAuthInvalidResponse):
 		logOperationalEvent(ctx, operationalLogLevelError, "admin_mfa_provider_unavailable", "reason=invalid_response")
 	default:

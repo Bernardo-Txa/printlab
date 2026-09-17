@@ -118,6 +118,7 @@ func TestAdminAuthOperationalLevels(t *testing.T) {
 		{name: "invalid credentials", err: admindomain.ErrInvalidCredentials, wantLevel: "warning", wantEvent: "admin_auth_rejected"},
 		{name: "invalid MFA code", err: admindomain.ErrMFAInvalidCode, wantLevel: "warning", wantEvent: "admin_mfa_invalid_code"},
 		{name: "provider unavailable", err: admindomain.ErrUnavailable, wantLevel: "error", wantEvent: "admin_mfa_provider_unavailable", wantErrorSink: true},
+		{name: "configuration invalid", err: admindomain.ErrAuthConfiguration, wantLevel: "error", wantEvent: "admin_mfa_provider_unavailable", wantErrorSink: true},
 	}
 
 	for _, tt := range tests {

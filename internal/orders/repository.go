@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/Bernardo-Txa/printlab/internal/products"
@@ -123,8 +122,6 @@ func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expe
 	if err := tx.Commit(ctx); err != nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
-
-	log.Printf("order created order_id=%s order_number=%d status=%s cart_converted=true", orderID, orderNumber, status)
 
 	return ConfirmResult{
 		OrderID:      orderID,

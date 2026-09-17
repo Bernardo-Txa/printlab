@@ -3,7 +3,6 @@ package payments
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -72,7 +71,6 @@ func (r *PostgresRepository) CreateOrReuseCheckout(ctx context.Context, orderID 
 		return CheckoutStartResult{}, ErrUnavailable
 	}
 
-	log.Printf("payment checkout created order_id=%s reused=false", order.ID)
 	result.CheckoutURL = created.URL
 	return result, nil
 }
@@ -172,7 +170,6 @@ func (r *PostgresRepository) MarkPaid(ctx context.Context, orderNSU string, paym
 		return ReturnResult{}, ErrUnavailable
 	}
 
-	log.Printf("payment verified order_id=%s order_number=%d", target.OrderID, target.OrderNumber)
 	return ReturnResult{Status: ReturnStatusConfirmed, OrderID: target.OrderID}, nil
 }
 
