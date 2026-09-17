@@ -60,6 +60,7 @@
       request.open("PUT", uploadURL);
       request.setRequestHeader("Content-Type", file.type);
       request.setRequestHeader("x-upsert", "false");
+      request.setRequestHeader("cache-control", "public, max-age=31536000, immutable");
       request.upload.addEventListener("progress", function (event) {
         if (event.lengthComputable) {
           progress(form, Math.round((event.loaded / event.total) * 100), false);
@@ -80,6 +81,34 @@
     });
   }
 
+  function optimizedImage(file) {
+    if (!window.createImageBitmap || !window.OffscreenCanvas && !document.createElement) {
+      return Promise.resolve(file);
+    }
+    return window.createImageBitmap(file, { imageOrientation: "from-image" }).then(function (bitmap) {
+      var maxWidth = 1200;
+      var scale = Math.min(1, maxWidth / bitmap.width);
+      var width = Math.max(1, Math.round(bitmap.width * scale));
+      var height = Math.max(1, Math.round(bitmap.height * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" }));
+        }, "image/webp", 0.82);
+      });
+    }).catch(function () {
+      return file;
+    });
+  }
+
   function submit(event) {
     var form = event.currentTarget;
     var fileInput = form.elements.image_file;
@@ -92,43 +121,38 @@
       setStatus(form, "Selecione uma imagem.", true);
       return;
     }
-    var maxSize = Number(form.dataset.maxSize || "0");
-    if (maxSize > 0 && file.size > maxSize) {
-      setStatus(form, "Arquivo acima do limite permitido.", true);
-      return;
-    }
     if (!/^(image\/jpeg|image\/png|image\/webp)$/.test(file.type)) {
       setStatus(form, "Formato de imagem nao permitido.", true);
       return;
     }
 
-    var metadata = {
-      variant_id: value(form, "variant_id"),
-      content_type: file.type,
-      file_size: file.size,
-      filename: file.name
-    };
-
-    setStatus(form, "Autorizando upload...", false);
-    postJSON(form.dataset.uploadUrl, metadata)
-      .then(function (authorization) {
-        setStatus(form, "Enviando imagem...", false);
-        progress(form, 0, false);
-        return uploadFile(authorization.upload_url, file, form).then(function () {
-          return authorization;
-        });
-      })
-      .then(function (authorization) {
+    var maxSize = Number(form.dataset.maxSize || "0");
+    setStatus(form, "Otimizando imagem...", false);
+    optimizedImage(file).then(function (optimized) {
+      if (maxSize > 0 && optimized.size > maxSize) {
+        throw new Error("image_too_large");
+      }
+      return optimized;
+    }).then(function (optimized) {
+      var metadata = { variant_id: value(form, "variant_id"), content_type: optimized.type, file_size: optimized.size, filename: optimized.name };
+      setStatus(form, "Autorizando upload...", false);
+      return postJSON(form.dataset.uploadUrl, metadata).then(function (authorization) {
+        return uploadFile(authorization.upload_url, optimized, form).then(function () { return { authorization: authorization, file: optimized }; });
+      });
+    })
+      .then(function (result) {
+        var authorization = result.authorization;
+        var uploadedFile = result.file;
         setStatus(form, "Finalizando cadastro...", false);
         return postJSON(form.dataset.finalizeUrl, {
           variant_id: value(form, "variant_id"),
           object_path: authorization.object_path,
-          content_type: file.type,
-          file_size: file.size,
+          content_type: uploadedFile.type,
+          file_size: uploadedFile.size,
           alt_text: value(form, "alt_text"),
           sort_order: Number(value(form, "sort_order") || "0"),
           is_primary: checked(form, "is_primary"),
-          filename: file.name
+          filename: uploadedFile.name
         });
       })
       .then(function (result) {

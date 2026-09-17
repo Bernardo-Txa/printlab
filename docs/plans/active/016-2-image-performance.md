@@ -2,6 +2,16 @@
 
 Status: em execucao; requer nova medicao manual em producao apos deploy.
 
+## Resultado apos a primeira rodada de branding
+
+| URL | Performance anterior → atual | Accessibility anterior → atual | Best Practices / SEO |
+| --- | --- | --- | --- |
+| `/` | 80 → 100 | 91 → 95 | 100 / 100 |
+| `/produtos` | 75 → 77 | 100 → 100 | 100 / 100 |
+| `/produtos/produto-teste-frete` | 75 → 79 | 100 → 100 | 100 / 100 |
+
+Branding local deixou de ser gargalo relevante. SSR, JavaScript e CSS não justificam refactor nesta etapa; as imagens públicas de produto no Storage são o alvo restante.
+
 ## Baseline de producao (2026-09-16)
 
 | URL | Performance | Accessibility | SEO | LCP | Diagnostico principal |
@@ -32,6 +42,8 @@ As URLs públicas do Storage observadas respondem `Cache-Control: no-cache`. A a
 - [x] Assets com sufixo `-v1` recebem `Cache-Control: public, max-age=31536000, immutable`; arquivos mutáveis, como `app.css` e o PNG master, permanecem em uma hora.
 - [x] Removidos ARIA labels redundantes de `div`s da Home e corrigido o contraste do texto introdutório no hero.
 - [x] Não há `srcset` artificial: variantes locais atendem usos distintos e imagens do Storage não possuem variantes reais.
+- [x] Novos uploads administrativos usam, quando a API do navegador estiver disponível, canvas client-side para preservar proporção/orientação, limitar largura a 1200 px sem ampliar imagens menores e converter para WebP quality 0,82. Falha legítima mantém o arquivo original; validações server-side continuam obrigatórias.
+- [x] O upload direto envia cache longo para objeto novo de caminho aleatório e não faz upsert; replacement recebe outro caminho antes de remover o anterior, portanto não reutiliza URL com conteúdo diferente.
 
 ## Limites e próxima validação
 
@@ -39,3 +51,4 @@ As URLs públicas do Storage observadas respondem `Cache-Control: no-cache`. A a
 - O produto `produto-teste-frete` está ativo, portanto é corretamente incluído no sitemap. Antes da indexação/comercialização real, produtos temporários devem ser desativados pelo Admin, sem exceção por slug.
 - Não houve migration, regra de negócio, mudança em pagamentos, frete, MFA, WAF, banco, plano Supabase ou configuração Vercel.
 - Reexecutar Lighthouse nas mesmas três URLs em produção após deploy e registrar bytes, LCP e warnings de image delivery/cache. A fase não busca score 100 artificial.
+- Validar manualmente no Admin uma substituição do produto teste, incluindo formato, dimensões, bytes, catálogo, detalhe e Lighthouse. Imagens existentes não serão alteradas em lote.
