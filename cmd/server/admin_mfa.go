@@ -100,20 +100,20 @@ func adminMFATerminalError(w http.ResponseWriter, r *http.Request, service admin
 func adminAuthError(ctx context.Context, err error) (int, string) {
 	switch {
 	case errors.Is(err, admindomain.ErrInvalidCredentials), errors.Is(err, admindomain.ErrAuthRejected), errors.Is(err, admindomain.ErrUnauthenticated):
-		logOperationalEvent(ctx, "admin_auth_rejected", "reason=invalid_credentials")
+		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_auth_rejected", "reason=invalid_credentials")
 		return http.StatusUnauthorized, admindomain.InvalidCredentialsMessage
 	case errors.Is(err, admindomain.ErrMFAInvalidCode):
-		logOperationalEvent(ctx, "admin_mfa_invalid_code", "reason=invalid_code")
+		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_mfa_invalid_code", "reason=invalid_code")
 		return http.StatusUnauthorized, "Código inválido ou expirado."
 	case errors.Is(err, admindomain.ErrAuthRateLimited):
-		logOperationalEvent(ctx, "admin_mfa_rate_limited", "reason=provider_rate_limited")
+		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_mfa_rate_limited", "reason=provider_rate_limited")
 		return http.StatusTooManyRequests, "Muitas tentativas. Aguarde antes de tentar novamente."
 	case errors.Is(err, admindomain.ErrAuthConfiguration):
-		logOperationalEvent(ctx, "admin_auth_rejected", "reason=configuration_invalid")
+		logOperationalEvent(ctx, operationalLogLevelWarning, "admin_auth_rejected", "reason=configuration_invalid")
 	case errors.Is(err, admindomain.ErrAuthInvalidResponse):
-		logOperationalEvent(ctx, "admin_mfa_provider_unavailable", "reason=invalid_response")
+		logOperationalEvent(ctx, operationalLogLevelError, "admin_mfa_provider_unavailable", "reason=invalid_response")
 	default:
-		logOperationalEvent(ctx, "admin_mfa_provider_unavailable", "reason=provider_unavailable")
+		logOperationalEvent(ctx, operationalLogLevelError, "admin_mfa_provider_unavailable", "reason=provider_unavailable")
 	}
 	return http.StatusServiceUnavailable, "Acesso temporariamente indisponível. Tente novamente mais tarde."
 }

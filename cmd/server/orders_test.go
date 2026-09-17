@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -174,6 +175,47 @@ func TestCheckoutReviewPostStaleFingerprintRerenders(t *testing.T) {
 	}
 	if len(rec.Result().Cookies()) != 0 {
 		t.Fatalf("expected stale review not to expire cookie, got %#v", rec.Result().Cookies())
+	}
+}
+
+func TestCheckoutReviewPostExpectedConfirmationErrorsDoNotLogOperationalFailure(t *testing.T) {
+	for _, err := range []error{ordersdomain.ErrShippingExpired, ordersdomain.ErrStaleReview} {
+		t.Run(err.Error(), func(t *testing.T) {
+			service := &fakeOrderReviewService{confirmErr: err, confirmResult: ordersdomain.ConfirmResult{Page: orderReviewPageFixture()}}
+			cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+			req := orderReviewFormRequest(url.Values{"review_fingerprint": {"old-fingerprint"}})
+			req.Header.Set("Origin", "https://printlab.test")
+			addValidCartCookie(t, cookies, req)
+			rec := httptest.NewRecorder()
+			errorLogs, _ := captureOperationalLogs(t)
+
+			newTestHandlerWithOrders(t, service, cookies, "https://printlab.test").ServeHTTP(rec, req)
+
+			if strings.Contains(errorLogs.String(), "event=order_creation_failed") {
+				t.Fatalf("expected %v not to log operational failure: %q", err, errorLogs.String())
+			}
+		})
+	}
+}
+
+func TestCheckoutReviewPostUnexpectedConfirmationErrorLogsOperationalFailure(t *testing.T) {
+	service := &fakeOrderReviewService{confirmErr: errors.New("database unavailable")}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := orderReviewFormRequest(url.Values{"review_fingerprint": {"fingerprint-1"}})
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+	errorLogs, _ := captureOperationalLogs(t)
+
+	newTestHandlerWithOrders(t, service, cookies, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503, got %d", rec.Code)
+	}
+	for _, expected := range []string{"event=order_creation_failed", "level=error", "reason=confirmation_failed", "request_id="} {
+		if !strings.Contains(errorLogs.String(), expected) {
+			t.Fatalf("expected error log to contain %q, got %q", expected, errorLogs.String())
+		}
 	}
 }
 
@@ -696,6 +738,7 @@ func TestPaymentWebhookValidJSONReturnsOK(t *testing.T) {
 	req := paymentWebhookRequest(validInfinitePayWebhookJSON())
 	req.Header.Set("Origin", "https://evil.example")
 	rec := httptest.NewRecorder()
+	_, standardLogs := captureOperationalLogs(t)
 
 	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, req)
 
@@ -712,8 +755,23 @@ func TestPaymentWebhookValidJSONReturnsOK(t *testing.T) {
 	if payment.webhookCalls != 1 {
 		t.Fatalf("expected webhook confirmation once, got %d", payment.webhookCalls)
 	}
+	if got := standardLogs.String(); !strings.Contains(got, "event=payment_webhook_processed level=info reason=confirmed request_id=") {
+		t.Fatalf("expected confirmed info event, got %q", got)
+	}
 	if payment.lastWebhookInput.OrderNSU != orderID || payment.lastWebhookInput.TransactionNSU != "txn_123" || payment.lastWebhookInput.InvoiceSlug != "slug_123" {
 		t.Fatalf("expected webhook identifiers only, got %#v", payment.lastWebhookInput)
+	}
+}
+
+func TestPaymentWebhookAlreadyPaidLogsInfo(t *testing.T) {
+	payment := &fakePaymentService{available: true, webhookResult: paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusConfirmed, Message: paymentsdomain.ReturnMessageAlreadyPaid}}
+	rec := httptest.NewRecorder()
+	_, standardLogs := captureOperationalLogs(t)
+
+	newTestHandlerWithOrdersAndPayment(t, &fakeOrderReviewService{}, payment, nil, "https://printlab.test").ServeHTTP(rec, paymentWebhookRequest(validInfinitePayWebhookJSON()))
+
+	if got := standardLogs.String(); !strings.Contains(got, "event=payment_webhook_processed level=info reason=already_paid request_id=") {
+		t.Fatalf("expected already-paid info event, got %q", got)
 	}
 }
 
@@ -878,7 +936,7 @@ func TestPaymentWebhookProviderErrorLogsSafeDiagnostics(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
 	}
 	logText := logs.String()
-	for _, expected := range []string{"event=payment_webhook_processing_failed", "reason=provider_unavailable", "request_id=", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
+	for _, expected := range []string{"event=payment_webhook_processing_failed", "level=error", "reason=provider_unavailable", "request_id=", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
 		if !strings.Contains(logText, expected) {
 			t.Fatalf("expected log to contain %q, got %q", expected, logText)
 		}

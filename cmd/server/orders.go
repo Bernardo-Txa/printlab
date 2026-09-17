@@ -59,7 +59,7 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 		setCheckoutPrivateCache(w)
 
 		if service == nil {
-			logOperationalEvent(r.Context(), "order_creation_failed", "reason=service_unavailable")
+			logOperationalEvent(r.Context(), operationalLogLevelError, "order_creation_failed", "reason=service_unavailable")
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.CheckoutReviewUnavailable())
 			return
 		}
@@ -71,7 +71,9 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 
 		result, err := service.Confirm(r.Context(), tokenHash, strings.TrimSpace(r.PostFormValue("review_fingerprint")))
 		if err != nil {
-			logOperationalEvent(r.Context(), "order_creation_failed", "reason=confirmation_failed")
+			if orderCreationOperationalFailure(err) {
+				logOperationalEvent(r.Context(), operationalLogLevelError, "order_creation_failed", "reason=confirmation_failed")
+			}
 			handleOrderCheckoutError(w, r, err, result.Page)
 			return
 		}
@@ -81,6 +83,17 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 		}
 		http.Redirect(w, r, "/pedido/"+result.OrderID, http.StatusSeeOther)
 	}
+}
+
+func orderCreationOperationalFailure(err error) bool {
+	return !errors.Is(err, ordersdomain.ErrCartRequired) &&
+		!errors.Is(err, ordersdomain.ErrEmptyCart) &&
+		!errors.Is(err, ordersdomain.ErrUnavailableItems) &&
+		!errors.Is(err, ordersdomain.ErrDetailsRequired) &&
+		!errors.Is(err, ordersdomain.ErrShippingRequired) &&
+		!errors.Is(err, ordersdomain.ErrShippingExpired) &&
+		!errors.Is(err, ordersdomain.ErrShippingChanged) &&
+		!errors.Is(err, ordersdomain.ErrStaleReview)
 }
 
 func orderPageHandler(service orderReviewService, payment paymentService) http.HandlerFunc {

@@ -107,6 +107,36 @@ func TestAdminLoginInvalidCredentialsShowsGenericMessageAndClearsPending(t *test
 	}
 }
 
+func TestAdminAuthOperationalLevels(t *testing.T) {
+	tests := []struct {
+		name          string
+		err           error
+		wantLevel     string
+		wantEvent     string
+		wantErrorSink bool
+	}{
+		{name: "invalid credentials", err: admindomain.ErrInvalidCredentials, wantLevel: "warning", wantEvent: "admin_auth_rejected"},
+		{name: "invalid MFA code", err: admindomain.ErrMFAInvalidCode, wantLevel: "warning", wantEvent: "admin_mfa_invalid_code"},
+		{name: "provider unavailable", err: admindomain.ErrUnavailable, wantLevel: "error", wantEvent: "admin_mfa_provider_unavailable", wantErrorSink: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errorLogs, standardLogs := captureOperationalLogs(t)
+			adminAuthError(requestIDContext(context.Background(), "0123456789abcdef"), tt.err)
+			logs := standardLogs.String()
+			if tt.wantErrorSink {
+				logs = errorLogs.String()
+			}
+			for _, expected := range []string{"event=" + tt.wantEvent, "level=" + tt.wantLevel, "request_id=0123456789abcdef"} {
+				if !strings.Contains(logs, expected) {
+					t.Fatalf("expected log to contain %q, got %q", expected, logs)
+				}
+			}
+		})
+	}
+}
+
 func TestAdminLoginRejectsOpaqueOriginWithSameOriginReferer(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")

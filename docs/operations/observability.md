@@ -11,9 +11,9 @@ vercel logs --environment production --query "payment_webhook" --since 1h
 vercel logs --environment production --query "payment_check_failed" --since 1h
 ```
 
-Eventos criticos usam `event=`, `level=error`, `reason=` seguro e `request_id=` opaco. O servidor gera o ID e devolve `X-Request-ID`; nao aceita um ID enviado pelo cliente. Nunca pesquisar ou registrar PII, tokens, URLs completas de checkout, bodies ou IDs de pedido/carrinho.
+Eventos operacionais usam `event=`, `level=`, `reason=` seguro e `request_id=` opaco. `info` registra sucesso ou evento operacional esperado; `warning`, rejeicao ou falha esperada relevante; `error`, indisponibilidade ou falha operacional. O servidor gera o ID e devolve `X-Request-ID`; nao aceita um ID enviado pelo cliente. Eventos `info` e `warning` escrevem em stdout; `error` usa stderr para preservar a classificacao do Runtime Logs. Nunca pesquisar ou registrar PII, tokens, URLs completas de checkout, bodies ou IDs de pedido/carrinho.
 
-Taxonomia inicial: `payment_checkout_unavailable`, `payment_check_failed`, `payment_webhook_unavailable`, `payment_webhook_invalid`, `payment_webhook_processing_failed`, `payment_webhook_processed`, `order_creation_failed`, `admin_auth_rejected`, `admin_mfa_invalid_code`, `admin_mfa_rate_limited` e `admin_mfa_provider_unavailable`. Frete ja registra somente estagio e categoria segura; sua padronizacao com correlacao permanece uma lacuna consciente para evitar refactor amplo nesta subfase.
+Taxonomia inicial: `payment_checkout_unavailable`, `payment_check_failed`, `payment_webhook_unavailable`, `payment_webhook_processing_failed`, `admin_mfa_provider_unavailable` e falhas operacionais de `order_creation_failed` usam `error`; `payment_webhook_invalid`, `admin_auth_rejected`, `admin_mfa_invalid_code` e `admin_mfa_rate_limited` usam `warning`; `payment_webhook_processed` usa `info`. Frete ja registra somente estagio e categoria segura; sua padronizacao com correlacao permanece uma lacuna consciente para evitar refactor amplo nesta subfase.
 
 ## Alertas
 
