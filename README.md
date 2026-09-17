@@ -58,6 +58,7 @@ IMPLEMENTADO:
 - Fase 14.1 validada em producao pelo responsavel; plano arquivado em `docs/plans/completed/014-security.md`.
 - Fase 14.2 — MFA TOTP obrigatorio no Admin validado em producao. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
+- Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 
 PLANEJADO:
 

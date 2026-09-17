@@ -1,6 +1,6 @@
 # Fase 15.1 — Testes criticos e observabilidade operacional base
 
-Status: concluida localmente; observacao operacional depende de trafego real.
+Status: concluida.
 
 ## Inventario
 
@@ -18,3 +18,7 @@ O gap P0/P1 encontrado foi operacional: os logs criticos de pagamento podiam inc
 ## Limites
 
 Sem migration, provider real, browser automation, rate limiter, Redis, ferramenta paga ou mudanca de regra de negocio. CI existente foi revisada: somente migrations possui workflow; um workflow Go separado fica adiado para evitar ampliar escopo, pois as validacoes locais continuam obrigatorias.
+
+## Fechamento
+
+Testes criticos, eventos pesquisaveis sem PII, correlacao opaca, procedimento de Runtime Logs, runbook de incidentes e estrategia manual de alertas compativel com Vercel Hobby foram entregues. Observacao continua dependente de trafego real, sem impedir a conclusao desta fase.

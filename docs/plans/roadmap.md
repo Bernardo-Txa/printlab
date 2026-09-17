@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 14 concluidas. Fase 15 em andamento na 15.1. Fases 16 e 17 planejadas.
+Status: Fases 0 a 15 concluidas. Fases 16 e 17 planejadas.
 
 ## Status das fases
 
@@ -35,7 +35,7 @@ Status: Fases 0 a 14 concluidas. Fase 15 em andamento na 15.1. Fases 16 e 17 pla
 | Fase 14.1 — Hardening base de seguranca | Concluida; validada em producao |
 | Fase 14.2 — MFA obrigatorio para Admin | Concluida; validada em producao |
 | Fase 14.3 — WAF / anti-abuse | Concluida; configurada e validada em producao |
-| Fase 15 — Testes e observabilidade | Em andamento |
+| Fase 15 — Testes e observabilidade | Concluida |
 | Fase 16 — SEO e performance | Planejada |
 | Fase 17 — Preparacao para producao | Planejada |
 
@@ -654,18 +654,20 @@ Plano concluido: [014-2-admin-mfa.md](completed/014-2-admin-mfa.md). TOTP obriga
 
 ## Fase 14.3 - WAF / anti-abuse
 
-Plano ativo: [014-3-waf-anti-abuse.md](active/014-3-waf-anti-abuse.md). A protecao e configurada no edge da Vercel, antes da funcao Go. A configuracao e a validacao real permanecem pendentes enquanto o acesso autenticado ao projeto Vercel nao estiver disponivel.
+Plano concluido: [014-3-waf-anti-abuse.md](completed/014-3-waf-anti-abuse.md). A protecao esta configurada no edge da Vercel e validada em producao.
 
 ## Fase 15 — Testes e observabilidade
+
+Plano concluido: [015-1-tests-observability.md](completed/015-1-tests-observability.md).
 
 Objetivo: aumentar confiabilidade operacional.
 
 Principais entregas:
 
 - Cobertura dos fluxos criticos.
-- Logs estruturados quando aprovados.
-- Monitoramento de erros.
-- Alertas para falhas de pagamento e webhook.
+- Eventos operacionais pesquisaveis e logs sem dados sensiveis.
+- Monitoramento de erros pelos Runtime Logs Vercel.
+- Estrategia manual de alertas compativel com Hobby e criterio de escalonamento futuro.
 
 Dependencias: Fases 9, 10 e 11.
 

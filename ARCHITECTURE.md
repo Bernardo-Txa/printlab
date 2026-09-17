@@ -446,11 +446,11 @@ Regras obrigatorias:
 
 Detalhes adicionais estao em [docs/architecture/security.md](docs/architecture/security.md).
 
-## Observabilidade futura
+## Observabilidade
 
-Antes de operacao comercial, o projeto devera definir logs estruturados, metricas essenciais, rastreamento de erros, monitoramento de webhooks e alertas para falhas em checkout, pagamento e envio.
+A Fase 15 implementa eventos operacionais pesquisaveis com `event`, `level`, `reason` seguro e `request_id` opaco. Sucessos usam `info`, rejeicoes esperadas usam `warning` e indisponibilidades operacionais usam `error`, sem PII, tokens ou identificadores de pedido/carrinho. O procedimento de consulta dos Runtime Logs Vercel, a limitacao de retencao no Hobby, a estrategia de alertas e o runbook inicial estao em `docs/operations/`.
 
-Nesta fase, nao ha stack de observabilidade implementada.
+Antes de operacao comercial, metricas adicionais, retencao maior e alertas automatizados devem ser reavaliados conforme trafego e plano de hosting, sem alterar a fonte de verdade financeira `payment_check`.
 
 ## Escalabilidade
 

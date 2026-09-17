@@ -186,13 +186,13 @@ Quando a InfinitePay responde com status nao 2xx, o backend le apenas um body pe
 Exemplos de logs seguros:
 
 ```text
-payment checkout unavailable provider=infinitepay operation=create_checkout status=422 category=http_422
-payment confirmation unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx
-payment checkout unavailable provider=infinitepay operation=create_checkout category=timeout
-payment checkout unavailable provider=infinitepay operation=create_checkout category=invalid_checkout_url host=example.invalid
+event=payment_checkout_unavailable level=error reason=provider_unavailable provider=infinitepay operation=create_checkout status=422 category=http_422 request_id=<opaque>
+event=payment_check_failed level=error reason=provider_unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx request_id=<opaque>
+event=payment_checkout_unavailable level=error reason=provider_unavailable provider=infinitepay operation=create_checkout category=timeout request_id=<opaque>
+event=payment_checkout_unavailable level=error reason=provider_unavailable provider=infinitepay operation=create_checkout category=invalid_checkout_url host=example.invalid request_id=<opaque>
 ```
 
-`payment checkout amount mismatch` continua sendo log separado e nao e classificado como indisponibilidade do provider.
+Divergencias de valor tambem sao eventos operacionais seguros: no checkout/retorno usam `payment_checkout_unavailable` ou `payment_check_failed` com `reason=amount_mismatch`; no webhook usam `payment_webhook_processing_failed level=error reason=amount_mismatch`. Elas nao sao classificadas como indisponibilidade do provider.
 
 ## Webhook InfinitePay
 
@@ -224,13 +224,14 @@ Respostas:
 Logs seguros esperados:
 
 ```text
-payment webhook received
-payment webhook verified order_id=<uuid>
-payment webhook already_paid order_id=<uuid>
-payment webhook pending order_id=<uuid>
-payment webhook unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx
-payment webhook amount mismatch order_id=<uuid> order_number=<numero>
+event=payment_webhook_processed level=info reason=confirmed request_id=<opaque>
+event=payment_webhook_processed level=info reason=already_paid request_id=<opaque>
+event=payment_webhook_invalid level=warning reason=not_confirmed request_id=<opaque>
+event=payment_webhook_processing_failed level=error reason=amount_mismatch request_id=<opaque>
+event=payment_webhook_processing_failed level=error reason=provider_unavailable provider=infinitepay operation=payment_check status=503 category=http_5xx request_id=<opaque>
 ```
+
+Os exemplos nunca incluem `order_id`, `order_number`, `transaction_nsu`, `invoice_slug`, dados pessoais, checkout URL completa, tokens ou secrets.
 
 ## Validacao local
 

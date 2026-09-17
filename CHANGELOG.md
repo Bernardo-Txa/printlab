@@ -6,7 +6,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 15.1: correlacao opaca por request, eventos operacionais pesquisaveis para pagamento, pedido e MFA, inventario de cobertura critica e runbooks de observabilidade/incidentes sem PII.
+- Fase 15 concluida pela 15.1: correlacao opaca por request, eventos operacionais pesquisaveis e sem identificadores sensiveis, inventario de cobertura critica, runbooks de observabilidade/incidentes e estrategia de alertas compativel com Vercel Hobby.
 - Fase 14.3: configuracao real do Vercel Firewall no Hobby validada, com tres regras ativas e Bot Protection OFF.
 
 - Fase 14.2: MFA TOTP obrigatorio via Supabase Auth, com enrollment/desafio SSR, cookie AAL1 temporario, selecao de fatores e sessao propria somente apos validacao remota de AAL2. Refresh token descartado e tokens Supabase fora do banco. Validada em producao pelo responsavel.
