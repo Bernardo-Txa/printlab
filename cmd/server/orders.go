@@ -59,6 +59,7 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 		setCheckoutPrivateCache(w)
 
 		if service == nil {
+			logOperationalEvent(r.Context(), "order_creation_failed", "reason=service_unavailable")
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.CheckoutReviewUnavailable())
 			return
 		}
@@ -70,6 +71,7 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 
 		result, err := service.Confirm(r.Context(), tokenHash, strings.TrimSpace(r.PostFormValue("review_fingerprint")))
 		if err != nil {
+			logOperationalEvent(r.Context(), "order_creation_failed", "reason=confirmation_failed")
 			handleOrderCheckoutError(w, r, err, result.Page)
 			return
 		}

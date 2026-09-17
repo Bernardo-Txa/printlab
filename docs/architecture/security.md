@@ -83,6 +83,8 @@ Jobs de limpeza nao devem fazer chamadas HTTP, usar secrets ou apagar tabelas hi
 
 ## Rate limiting e WAF
 
+A configuracao real no Vercel Hobby tem System Mitigations/DDoS ativo, tres Custom Rules e Bot Protection OFF: `rate-limit-admin-login` protege `POST /admin/login` por IP (10/600 s, fixed window, 429); `log-checkout-shipping` e `log-order-payment` apenas registram, respectivamente, POST de frete e inicio de pagamento. Nao ha regra para o webhook InfinitePay e nao houve upgrade para Pro.
+
 Nao ha rate limiter em memoria, Redis, banco, cookie anti-bot, CAPTCHA proprio ou fingerprinting na aplicacao Go. A Fase 14.3 usa exclusivamente o Vercel Firewall/WAF no edge, antes da funcao Go; sua configuracao e validacao real estao registradas no [plano ativo](../plans/active/014-3-waf-anti-abuse.md).
 
 As regras de producao previstas sao por IP, algoritmo `fixed_window`, com resposta `429` ao exceder o limite:

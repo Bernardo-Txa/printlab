@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2, 13.3, 13.4, 14.1 e 14.2 concluidas. Fase 14 em andamento na 14.3, cuja configuracao e validacao real do Vercel Firewall estao pendentes. Fases 15 a 17 planejadas.
+Status: Fases 0 a 14 concluidas. Fase 15 em andamento na 15.1. Fases 16 e 17 planejadas.
 
 ## Status das fases
 
@@ -31,11 +31,11 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 13.2 — Pedidos, producao, envio e auditoria | Concluida |
 | Fase 13.3 — Catalogo, variantes, materiais, cores e caixas | Concluida |
 | Fase 13.4 — Imagens e Supabase Storage | Concluida |
-| Fase 14 — Seguranca | Em andamento |
+| Fase 14 — Seguranca | Concluida |
 | Fase 14.1 — Hardening base de seguranca | Concluida; validada em producao |
 | Fase 14.2 — MFA obrigatorio para Admin | Concluida; validada em producao |
-| Fase 14.3 — WAF / anti-abuse | Em configuracao operacional; validacao real pendente |
-| Fase 15 — Testes e observabilidade | Planejada |
+| Fase 14.3 — WAF / anti-abuse | Concluida; configurada e validada em producao |
+| Fase 15 — Testes e observabilidade | Em andamento |
 | Fase 16 — SEO e performance | Planejada |
 | Fase 17 — Preparacao para producao | Planejada |
 

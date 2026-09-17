@@ -1,6 +1,10 @@
 # Fase 14.3 - WAF / anti-abuse na Vercel
 
-Status: em configuracao operacional; regras reais e validacao em producao pendentes de acesso autenticado ao projeto Vercel.
+Status: concluida; configurada e validada em producao no Vercel Hobby.
+
+## Configuracao real
+
+System Mitigations/DDoS esta ativo. Das tres Custom Rules ativas, somente `rate-limit-admin-login` aplica rate limit: `POST /admin/login`, chave IP, fixed window, 10 requisicoes/600 s e resposta 429. `log-checkout-shipping` registra `POST /checkout/frete`; `log-order-payment` registra POST com inicio `/pedido/` e fim `/pagar`. Login Admin, MFA TOTP e acesso apos AAL2 foram validados apos a publicacao. Bot Protection permanece OFF. Nao houve upgrade para Pro e nao existe regra para `POST /webhooks/infinitepay`.
 
 ## Objetivo e limite
 

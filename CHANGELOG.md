@@ -6,6 +6,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 15.1: correlacao opaca por request, eventos operacionais pesquisaveis para pagamento, pedido e MFA, inventario de cobertura critica e runbooks de observabilidade/incidentes sem PII.
+- Fase 14.3: configuracao real do Vercel Firewall no Hobby validada, com tres regras ativas e Bot Protection OFF.
+
 - Fase 14.2: MFA TOTP obrigatorio via Supabase Auth, com enrollment/desafio SSR, cookie AAL1 temporario, selecao de fatores e sessao propria somente apos validacao remota de AAL2. Refresh token descartado e tokens Supabase fora do banco. Validada em producao pelo responsavel.
 - Migration append-only `require_admin_session_mfa`: timestamp nullable sem backfill, bloqueando sessoes anteriores ao MFA. Testes de provider/HTTP, runbook de recuperacao e ADR-0017.
 - Fase 14.1 e 14.2 registradas como validadas em producao pelo responsavel.

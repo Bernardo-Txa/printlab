@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -37,6 +36,7 @@ func startPaymentHandler(service paymentService, siteURL string) http.HandlerFun
 		setCheckoutPrivateCache(w)
 
 		if service == nil || !service.Available() {
+			logOperationalEvent(r.Context(), "payment_checkout_unavailable", "reason=service_unavailable")
 			http.Redirect(w, r, "/pedido/"+orderID+"?pagamento=indisponivel", http.StatusSeeOther)
 			return
 		}
@@ -117,9 +117,8 @@ func infinitePayWebhookHandler(service paymentService) http.HandlerFunc {
 			return
 		}
 
-		log.Print("payment webhook received")
 		if service == nil || !service.Available() {
-			log.Print("payment webhook unavailable")
+			logOperationalEvent(r.Context(), "payment_webhook_unavailable", "reason=service_unavailable")
 			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento indisponivel")
 			return
 		}
@@ -134,18 +133,18 @@ func infinitePayWebhookHandler(service paymentService) http.HandlerFunc {
 			CaptureMethod:   payload.CaptureMethod,
 		})
 		if err != nil {
-			handlePaymentWebhookError(w, err, result)
+			handlePaymentWebhookError(w, r.Context(), err, result)
 			return
 		}
 		if result.Status != paymentsdomain.ReturnStatusConfirmed {
-			handlePaymentWebhookError(w, paymentsdomain.ErrPaymentNotConfirmed, result)
+			handlePaymentWebhookError(w, r.Context(), paymentsdomain.ErrPaymentNotConfirmed, result)
 			return
 		}
 
 		if result.Message == paymentsdomain.ReturnMessageAlreadyPaid {
-			log.Printf("payment webhook already_paid order_id=%s", result.OrderID)
+			logOperationalEvent(r.Context(), "payment_webhook_processed", "reason=already_paid")
 		} else {
-			log.Printf("payment webhook verified order_id=%s", result.OrderID)
+			logOperationalEvent(r.Context(), "payment_webhook_processed", "reason=confirmed")
 		}
 		writePaymentWebhookJSON(w, http.StatusOK, true, "")
 	}
@@ -164,9 +163,9 @@ func handleStartPaymentError(w http.ResponseWriter, r *http.Request, err error, 
 		http.Redirect(w, r, "/pedido/"+redirectOrderID, http.StatusSeeOther)
 	default:
 		if errors.Is(err, paymentsdomain.ErrAmountMismatch) {
-			log.Printf("payment checkout amount mismatch order_id=%s", requestedOrderID)
+			logOperationalEvent(r.Context(), "payment_checkout_unavailable", "reason=amount_mismatch")
 		} else {
-			log.Printf("payment checkout unavailable%s", paymentProviderLogSuffix(err))
+			logOperationalEvent(r.Context(), "payment_checkout_unavailable", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
 		}
 		http.Redirect(w, r, "/pedido/"+requestedOrderID+"?pagamento=indisponivel", http.StatusSeeOther)
 	}
@@ -182,15 +181,15 @@ func handlePaymentReturnError(w http.ResponseWriter, r *http.Request, err error,
 		http.NotFound(w, r)
 	default:
 		if errors.Is(err, paymentsdomain.ErrAmountMismatch) {
-			log.Print("payment confirmation amount mismatch")
+			logOperationalEvent(r.Context(), "payment_check_failed", "reason=amount_mismatch")
 		} else {
-			log.Printf("payment confirmation unavailable%s", paymentProviderLogSuffix(err))
+			logOperationalEvent(r.Context(), "payment_check_failed", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
 		}
 		renderHTML(w, r, http.StatusServiceUnavailable, templates.PaymentReturn(page))
 	}
 }
 
-func handlePaymentWebhookError(w http.ResponseWriter, err error, result paymentsdomain.ReturnResult) {
+func handlePaymentWebhookError(w http.ResponseWriter, ctx context.Context, err error, result paymentsdomain.ReturnResult) {
 	switch {
 	case errors.Is(err, paymentsdomain.ErrInvalidReturn):
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload invalido")
@@ -198,11 +197,11 @@ func handlePaymentWebhookError(w http.ResponseWriter, err error, result payments
 		errors.Is(err, paymentsdomain.ErrOrderNotFound):
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pedido nao encontrado")
 	case errors.Is(err, paymentsdomain.ErrPaymentNotConfirmed):
-		log.Printf("payment webhook pending order_id=%s", result.OrderID)
+		logOperationalEvent(ctx, "payment_webhook_invalid", "reason=not_confirmed")
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento ainda nao confirmado")
 	default:
 		if !errors.Is(err, paymentsdomain.ErrAmountMismatch) {
-			log.Printf("payment webhook unavailable%s", paymentProviderLogSuffix(err))
+			logOperationalEvent(ctx, "payment_webhook_processing_failed", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
 		}
 		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Nao foi possivel confirmar o pagamento agora")
 	}

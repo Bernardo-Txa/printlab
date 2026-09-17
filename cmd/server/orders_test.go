@@ -576,7 +576,7 @@ func TestStartPaymentProviderErrorLogsSafeDiagnostics(t *testing.T) {
 		t.Fatalf("expected unavailable redirect, got %q", rec.Header().Get("Location"))
 	}
 	logText := logs.String()
-	for _, expected := range []string{"payment checkout unavailable", "provider=infinitepay", "operation=create_checkout", "status=422", "category=http_422"} {
+	for _, expected := range []string{"event=payment_checkout_unavailable", "reason=provider_unavailable", "request_id=", "provider=infinitepay", "operation=create_checkout", "status=422", "category=http_422"} {
 		if !strings.Contains(logText, expected) {
 			t.Fatalf("expected log to contain %q, got %q", expected, logText)
 		}
@@ -641,7 +641,7 @@ func TestPaymentReturnProviderErrorLogsSafeDiagnostics(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, rec.Code)
 	}
 	logText := logs.String()
-	for _, expected := range []string{"payment confirmation unavailable", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
+	for _, expected := range []string{"event=payment_check_failed", "reason=provider_unavailable", "request_id=", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
 		if !strings.Contains(logText, expected) {
 			t.Fatalf("expected log to contain %q, got %q", expected, logText)
 		}
@@ -878,7 +878,7 @@ func TestPaymentWebhookProviderErrorLogsSafeDiagnostics(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
 	}
 	logText := logs.String()
-	for _, expected := range []string{"payment webhook received", "payment webhook unavailable", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
+	for _, expected := range []string{"event=payment_webhook_processing_failed", "reason=provider_unavailable", "request_id=", "provider=infinitepay", "operation=payment_check", "status=503", "category=http_5xx"} {
 		if !strings.Contains(logText, expected) {
 			t.Fatalf("expected log to contain %q, got %q", expected, logText)
 		}

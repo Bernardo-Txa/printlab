@@ -104,7 +104,7 @@ func adminLoginHandler(service adminPanelService, siteURL string) http.HandlerFu
 		result, err := service.Login(r.Context(), strings.TrimSpace(r.PostFormValue("email")), r.PostFormValue("password"))
 		if err != nil {
 			service.ClearPendingCookie(w)
-			status, message := adminAuthError(err)
+			status, message := adminAuthError(r.Context(), err)
 			renderHTML(w, r, status, templates.AdminLogin(message))
 			return
 		}

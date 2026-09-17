@@ -56,7 +56,8 @@ IMPLEMENTADO:
 - Fase 13.4 — Imagens e Supabase Storage no painel administrativo, com validacao real em producao concluida.
 - Fase 14.1 — Hardening base de seguranca, com headers globais, CSP, limite global de body, timeouts HTTP, validacao/canonicalizacao de `SITE_URL` e limpeza diaria de dados transientes por Supabase Cron.
 - Fase 14.1 validada em producao pelo responsavel; plano arquivado em `docs/plans/completed/014-security.md`.
-- Fase 14.2 - MFA TOTP obrigatorio no Admin implementado; validacao real pendente. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
+- Fase 14.2 — MFA TOTP obrigatorio no Admin validado em producao. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
+- Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
 
 PLANEJADO:
 

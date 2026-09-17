@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
@@ -57,7 +57,7 @@ func adminMFAVerifyHandler(service adminPanelService, siteURL string, setup bool
 		result, page, err := service.CompleteMFA(r.Context(), r, setup, r.PostFormValue("factor_id"), r.PostFormValue("code"))
 		if err != nil {
 			if (errors.Is(err, admindomain.ErrMFAInvalidCode) || errors.Is(err, admindomain.ErrAuthRateLimited)) && (page.FactorID != "" || len(page.Factors) > 0) {
-				status, message := adminAuthError(err)
+				status, message := adminAuthError(r.Context(), err)
 				page.Message = message
 				renderHTML(w, r, status, templates.AdminMFA(page))
 				return
@@ -93,27 +93,27 @@ func adminMFATerminalError(w http.ResponseWriter, r *http.Request, service admin
 		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 		return
 	}
-	status, message := adminAuthError(err)
+	status, message := adminAuthError(r.Context(), err)
 	renderHTML(w, r, status, templates.AdminLogin(message))
 }
 
-func adminAuthError(err error) (int, string) {
+func adminAuthError(ctx context.Context, err error) (int, string) {
 	switch {
 	case errors.Is(err, admindomain.ErrInvalidCredentials), errors.Is(err, admindomain.ErrAuthRejected), errors.Is(err, admindomain.ErrUnauthenticated):
-		log.Print("admin_auth_rejected")
+		logOperationalEvent(ctx, "admin_auth_rejected", "reason=invalid_credentials")
 		return http.StatusUnauthorized, admindomain.InvalidCredentialsMessage
 	case errors.Is(err, admindomain.ErrMFAInvalidCode):
-		log.Print("admin_mfa_invalid_code")
+		logOperationalEvent(ctx, "admin_mfa_invalid_code", "reason=invalid_code")
 		return http.StatusUnauthorized, "Código inválido ou expirado."
 	case errors.Is(err, admindomain.ErrAuthRateLimited):
-		log.Print("admin_mfa_rate_limited")
+		logOperationalEvent(ctx, "admin_mfa_rate_limited", "reason=provider_rate_limited")
 		return http.StatusTooManyRequests, "Muitas tentativas. Aguarde antes de tentar novamente."
 	case errors.Is(err, admindomain.ErrAuthConfiguration):
-		log.Print("admin_auth_configuration_invalid")
+		logOperationalEvent(ctx, "admin_auth_rejected", "reason=configuration_invalid")
 	case errors.Is(err, admindomain.ErrAuthInvalidResponse):
-		log.Print("admin_auth_response_invalid")
+		logOperationalEvent(ctx, "admin_mfa_provider_unavailable", "reason=invalid_response")
 	default:
-		log.Print("admin_mfa_provider_unavailable")
+		logOperationalEvent(ctx, "admin_mfa_provider_unavailable", "reason=provider_unavailable")
 	}
 	return http.StatusServiceUnavailable, "Acesso temporariamente indisponível. Tente novamente mais tarde."
 }

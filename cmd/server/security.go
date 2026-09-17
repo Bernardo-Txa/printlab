@@ -16,6 +16,9 @@ func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) h
 	canonical, hasCanonical := configuredSiteURL(siteURL)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestID := newRequestID()
+		r = r.WithContext(requestIDContext(r.Context(), requestID))
+		w.Header().Set("X-Request-ID", requestID)
 		setGlobalSecurityHeaders(w.Header(), policy)
 		if hasCanonical {
 			if destination, ok := canonicalHostRedirectURL(r, canonical); ok {
