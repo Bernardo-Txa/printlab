@@ -158,7 +158,7 @@ Infraestrutura implementada para desenvolvimento:
 - Execucao automatica apenas em mudancas de `supabase/migrations/**` ou `supabase/config.toml` na branch `main`.
 - Supabase CLI fixado em `2.117.0`, com `supabase db push --dry-run` antes de `supabase db push`.
 - `vercel.json` minimo com `regions: ["gru1"]`.
-- Headers globais de seguranca e CSP sao aplicados pelo backend Go; WAF/rate limiting ficam para configuracao operacional na Vercel apos observacao de trafego.
+- Headers globais de seguranca e CSP sao aplicados pelo backend Go. A Fase 14.3 define rate limiting no Vercel Firewall, antes da funcao Go, para POSTs sensiveis; a configuracao real e sua validacao dependem de acesso operacional autenticado ao projeto Vercel e estao documentadas no plano ativo.
 
 ## Arquitetura resumida
 

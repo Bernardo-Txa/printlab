@@ -112,15 +112,13 @@ Logs nao devem registrar e-mail, senha, token de sessao, hash, access token, ref
 
 Supabase Auth possui rate limits proprios. Como a PrintLab usa o fluxo `Browser -> Go -> Supabase Auth`, tentativas de login podem ser vistas pelo Supabase como trafego vindo do IP server-side da aplicacao. A mitigacao oficial de IP forwarding exige `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 documenta o risco, mas nao adiciona o header nem troca a credencial do fluxo Auth.
 
-Protecao contra abuso e brute force deve ser configurada operacionalmente por Vercel Firewall/WAF apos observacao de trafego real, com cuidado para nao bloquear o unico administrador legitimo.
-
-Protecao adicional WAF/anti-abuse fica na 14.3. Nao ha rate limiter local.
+Protecao contra abuso e brute force e definida operacionalmente pela Fase 14.3 no Vercel Firewall/WAF, sem rate limiter local. O plano de configuracao usa limite por IP de 10 requisicoes por 10 minutos apenas em `POST /admin/login` e 20 por 10 minutos em `POST /admin/mfa/setup` e `POST /admin/mfa/challenge`; a configuracao real depende de acesso autenticado ao projeto Vercel e esta registrada em [014-3-waf-anti-abuse.md](../plans/active/014-3-waf-anti-abuse.md).
 
 ## Configuracao e validacao real
 
 TOTP e habilitado por padrao nos projetos Supabase segundo a documentacao oficial. Confirmar no Dashboard em Authentication/Multi-Factor Authentication que enrollment e verify TOTP estao habilitados no projeto de destino; nao habilitar phone MFA para esta entrega. Nao e necessaria variavel de ambiente nova nem secret key para o fluxo.
 
-Aplicar `20260916120000_require_admin_session_mfa.sql` pelo workflow oficial dry-run -> db push antes de testar o novo login. Confirmar `ADMIN_SUPABASE_USER_ID`, HTTPS e SITE_URL canonica ja configurados. Validar primeiro enrollment, novo login com TOTP, erro de codigo, expiracao/cancelamento e logout. Nao registrar QR, secret, codigos ou tokens como evidencias. A 14.2 permanece com validacao real pendente.
+`20260916120000_require_admin_session_mfa.sql` foi aplicado pelo workflow oficial dry-run -> db push. O responsavel confirmou em producao `ADMIN_SUPABASE_USER_ID`, HTTPS e `SITE_URL` canonica, primeiro enrollment e novo login TOTP: senha -> AAL1 -> TOTP -> AAL2 -> sessao PrintLab. Evidencias nao registram QR, secret, codigos ou tokens.
 
 ## Recuperacao de emergencia
 

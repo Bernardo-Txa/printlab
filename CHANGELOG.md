@@ -6,9 +6,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 14.2: MFA TOTP obrigatorio via Supabase Auth, com enrollment/desafio SSR, cookie AAL1 temporario, selecao de fatores e sessao propria somente apos validacao remota de AAL2. Refresh token descartado e tokens Supabase fora do banco.
+- Fase 14.2: MFA TOTP obrigatorio via Supabase Auth, com enrollment/desafio SSR, cookie AAL1 temporario, selecao de fatores e sessao propria somente apos validacao remota de AAL2. Refresh token descartado e tokens Supabase fora do banco. Validada em producao pelo responsavel.
 - Migration append-only `require_admin_session_mfa`: timestamp nullable sem backfill, bloqueando sessoes anteriores ao MFA. Testes de provider/HTTP, runbook de recuperacao e ADR-0017.
-- Fase 14.1 registrada como validada em producao pelo responsavel; Fase 14.2 com validacao real pendente.
+- Fase 14.1 e 14.2 registradas como validadas em producao pelo responsavel.
+- Fase 14.3: plano operacional para rate limiting no Vercel Firewall por IP, com quatro POSTs sensiveis, webhook InfinitePay excluido e Bot Protection em Log. A configuracao e validacao real no projeto Vercel permanecem pendentes de autenticacao.
 
 - Fundacao inicial do projeto.
 - Estrutura documental.

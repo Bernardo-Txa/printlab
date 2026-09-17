@@ -1,6 +1,6 @@
 # Fase 14.2 - MFA obrigatorio para Admin
 
-Status: implementada; validacao real pendente.
+Status: concluida; validada em producao.
 
 ## Escopo
 
@@ -18,7 +18,7 @@ Status: implementada; validacao real pendente.
 - Gerar templ/CSS; gofmt, tidy, test, vet, build, govulncheck e npm audit.
 - Validar migration com Supabase local quando disponivel e workflow oficial dry-run -> push.
 - Revisar diff, commit e push seletivos.
-- Validacao real de enrollment, login TOTP e recuperacao permanece pendente.
+- Validacao real de enrollment e login TOTP concluida pelo responsavel: senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao opaca PrintLab.
 
 ## Fora do escopo
 
@@ -35,4 +35,4 @@ Status: implementada; validacao real pendente.
 - PostgreSQL local confirmou coluna nullable sem default, filtro de sessao sem timestamp e gravacao de timestamp em nova sessao; dados sinteticos usados em transacao com rollback. Job diario de limpeza preservado.
 - Fluxos testados: senha sem sessao, UUID nao autorizado, setup/desafio, escolha e revalidacao de fatores, QR e privacidade, cookies, expiracao, Origin/Referer, codigo invalido, 429/5xx, token atualizado recusado, ausencia de AAL2, sessao completa, sessao legada e logout.
 - Validacao real identificou QR SVG com prefixo diferente de `<svg`; `EnrollTOTP` agora exige apenas QR nao vazio contendo abertura e fechamento SVG, preservando rejeicao de respostas arbitrarias.
-- Workflow remoto de migrations executa dry-run antes de db push apos o push para main. Validacao real de MFA no projeto de destino ainda deve ser realizada pelo responsavel.
+- Workflow remoto de migrations executa dry-run antes de db push apos o push para main. Validacao real de MFA no projeto de destino foi concluida pelo responsavel, sem registrar QR, secret, codigos ou tokens.

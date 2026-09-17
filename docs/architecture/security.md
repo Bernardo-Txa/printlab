@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro, operacao administrativa com imagens e hardening base da Fase 14.1 IMPLEMENTADOS.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro, operacao administrativa com imagens, hardening base da Fase 14.1 e MFA obrigatorio da Fase 14.2 IMPLEMENTADOS e validados em producao. A configuracao operacional da Fase 14.3 permanece pendente.
 
 ## Responsabilidade
 
@@ -83,31 +83,30 @@ Jobs de limpeza nao devem fazer chamadas HTTP, usar secrets ou apagar tabelas hi
 
 ## Rate limiting e WAF
 
-A Fase 14.1 nao implementa rate limiter dentro do Go. Endpoints sensiveis e/ou caros devem ser protegidos operacionalmente por Vercel Firewall/WAF depois de medir trafego real.
+Nao ha rate limiter em memoria, Redis, banco, cookie anti-bot, CAPTCHA proprio ou fingerprinting na aplicacao Go. A Fase 14.3 usa exclusivamente o Vercel Firewall/WAF no edge, antes da funcao Go; sua configuracao e validacao real estao registradas no [plano ativo](../plans/active/014-3-waf-anti-abuse.md).
 
-Endpoints prioritarios:
+As regras de producao previstas sao por IP, algoritmo `fixed_window`, com resposta `429` ao exceder o limite:
 
-- `POST /admin/login`;
-- `GET /api/cep/{cep}`;
-- `GET /checkout/frete`;
-- `POST /checkout/frete`;
-- `POST /webhooks/infinitepay`;
-- operacoes administrativas de Storage;
-- chamadas server-side a SuperFrete, ViaCEP, InfinitePay e Supabase Auth.
+| Regra | Condicoes | Limite inicial | Motivo |
+| --- | --- | --- | --- |
+| `rate-limit-admin-login` | `POST` e path exato `/admin/login` | 10 requisicoes / 600 s | brute force e credential stuffing |
+| `rate-limit-admin-mfa` | `POST` e path exato `/admin/mfa/setup` ou `/admin/mfa/challenge` | 20 requisicoes / 600 s | abuso adicional sobre TOTP/Supabase Auth |
+| `rate-limit-checkout-shipping-post` | `POST` e path exato `/checkout/frete` | 30 requisicoes / 600 s | cotacoes repetidas na SuperFrete |
+| `rate-limit-order-payment-post` | `POST` e path `/pedido/{uuid}/pagar` | 20 requisicoes / 600 s | abuso de inicio de checkout/pagamento |
 
-Rollout recomendado:
+`POST /webhooks/infinitepay` fica deliberadamente fora dessas regras: e servidor-servidor, pode receber retries e continua protegido pela validacao server-side e `payment_check`. Nao ha allowlist de IP inventada, challenge humano ou limite generico apertado para webhook.
 
-1. criar regras por path/metodo em modo observacao/log;
-2. medir volume real, falsos positivos, origens e padroes de erro;
-3. definir limites diferentes por criticidade e custo;
-4. ativar acao de rate limit, challenge ou deny de forma incremental;
-5. validar checkout, webhook financeiro e login administrativo apos ativacao.
+`GET /checkout/frete` tambem executa `prepareQuotes` e pode fazer duas chamadas SuperFrete. Nesta rodada ele nao recebe limite: a rota faz parte da navegacao normal e uma regra adicional exigiria observacao de trafego para calibrar impacto. Rotas publicas normais, inclusive `/`, `GET /produtos`, `GET /produtos/{slug}`, `GET /static/*`, `GET /acompanhar/*` e `GET /pedido/*`, nao devem receber limites apertados.
+
+Bot Protection deve iniciar em `Log`, sem challenge ou block agressivo e sem afetar crawlers legitimos. Apos ao menos 10 minutos de observacao de trafego e revisao de falsos positivos, uma alteracao deve ser publicada separadamente. As regras de rate limit usam `429` desde o inicio por cobrirem somente POSTs sensiveis/especificos; o login pode receber acao persistente temporaria somente se o plano Vercel e o trafego observado justificarem.
+
+O `vercel.json` permanece somente com a regiao `gru1`: ele nao suporta as acoes `log` e rate limiting necessarias para este rollout. Criar, editar, revisar ou publicar regras deve ocorrer no Vercel Firewall, sem deploy da aplicacao. A documentacao oficial atual e o procedimento de rollback estao no plano da fase.
 
 ## Supabase Auth e MFA
 
 O fluxo `Browser -> Go -> Supabase Auth` pode fazer tentativas de login parecerem concentradas no IP server-side perante os limites do Supabase Auth. A mitigacao oficial de IP forwarding exige header `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 apenas documenta esse risco; ela nao adiciona o header nem altera o fluxo de credenciais.
 
-A Fase 14.2 exige TOTP antes de criar a sessao propria. Fluxo: Browser -> senha -> Go -> Supabase Auth -> AAL1 -> TOTP challenge/verify -> AAL2 -> admin_session PrintLab. Validacao real da 14.2 permanece pendente; a 14.1 foi validada pelo responsavel.
+A Fase 14.2 exige TOTP antes de criar a sessao propria. Fluxo: Browser -> senha -> Go -> Supabase Auth -> AAL1 -> TOTP challenge/verify -> AAL2 -> admin_session PrintLab. As fases 14.1 e 14.2 foram validadas em producao pelo responsavel.
 
 - O UUID autorizado e validado antes de MFA, em cada consulta do usuario e depois do verify.
 - Apenas o access_token AAL1 fica no cookie `printlab_admin_mfa_pending`: HttpOnly, Strict, host-only, Path=/admin/mfa, Secure em producao/HTTPS, TTL de 10 minutos. Nao vai ao PostgreSQL, HTML, JS, query string ou logs.
@@ -122,7 +121,7 @@ A Fase 14.2 exige TOTP antes de criar a sessao propria. Fluxo: Browser -> senha 
 - Cookie pending e limpo no sucesso, cancelamento, logout e erros terminais. Codigo invalido e 429 podem permitir retry dentro do TTL; 5xx exige novo login.
 - POSTs MFA preservam Origin/Referer estrito e limite de formulario. Provider usa timeout de 8s, response body de no maximo 1 MiB e nao segue redirects.
 
-Perder o autenticador pode bloquear o unico Admin. Recuperacao somente por operador autorizado usando mecanismo administrativo oficial Supabase, conforme [runbook](../integrations/supabase-auth.md#recuperacao-de-emergencia). Nao ha bypass, reset publico ou recovery codes. WAF/anti-abuse fica na 14.3.
+Perder o autenticador pode bloquear o unico Admin. Recuperacao somente por operador autorizado usando mecanismo administrativo oficial Supabase, conforme [runbook](../integrations/supabase-auth.md#recuperacao-de-emergencia). Nao ha bypass, reset publico ou recovery codes. A protecao anti-abuse da 14.3 e definida para o Vercel Firewall, sem alterar o fluxo MFA; sua aplicacao real permanece pendente de acesso operacional autenticado.
 
 ## Banco, logs e dependencias
 

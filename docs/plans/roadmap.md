@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2, 13.3 e 13.4 concluidas. Fase 13 concluida. Fase 14 em andamento; Fase 14.1 concluida e validada em producao. Fase 14.2 implementada com validacao real pendente. Fases 14.3 e 15 a 17 planejadas.
+Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10.1, 11, 12, 13.1, 13.2, 13.3, 13.4, 14.1 e 14.2 concluidas. Fase 14 em andamento na 14.3, cuja configuracao e validacao real do Vercel Firewall estao pendentes. Fases 15 a 17 planejadas.
 
 ## Status das fases
 
@@ -33,8 +33,8 @@ Status: Fases 0, 1, 2, 2.1, 3, 3.1, 4, 5, 5.1, 6, 7, 7.1, 8, 8.1, 9, 9.1, 10, 10
 | Fase 13.4 — Imagens e Supabase Storage | Concluida |
 | Fase 14 — Seguranca | Em andamento |
 | Fase 14.1 — Hardening base de seguranca | Concluida; validada em producao |
-| Fase 14.2 — MFA obrigatorio para Admin | Implementada; validacao real pendente |
-| Fase 14.3 — WAF / anti-abuse | Planejada |
+| Fase 14.2 — MFA obrigatorio para Admin | Concluida; validada em producao |
+| Fase 14.3 — WAF / anti-abuse | Em configuracao operacional; validacao real pendente |
 | Fase 15 — Testes e observabilidade | Planejada |
 | Fase 16 — SEO e performance | Planejada |
 | Fase 17 — Preparacao para producao | Planejada |
@@ -650,7 +650,11 @@ Definition of Done:
 
 ## Fase 14.2 - MFA obrigatorio para Admin
 
-Plano ativo: [014-2-admin-mfa.md](active/014-2-admin-mfa.md). TOTP obrigatorio, estado AAL1 temporario, sessao propria somente apos AAL2 e invalidacao de sessoes legadas por timestamp. Validacao real pendente. A 14.3 tratara WAF/anti-abuse separadamente.
+Plano concluido: [014-2-admin-mfa.md](completed/014-2-admin-mfa.md). TOTP obrigatorio, estado AAL1 temporario, sessao propria somente apos AAL2 e invalidacao de sessoes legadas por timestamp. Fluxo validado em producao pelo responsavel: senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
+
+## Fase 14.3 - WAF / anti-abuse
+
+Plano ativo: [014-3-waf-anti-abuse.md](active/014-3-waf-anti-abuse.md). A protecao e configurada no edge da Vercel, antes da funcao Go. A configuracao e a validacao real permanecem pendentes enquanto o acesso autenticado ao projeto Vercel nao estiver disponivel.
 
 ## Fase 15 — Testes e observabilidade
 
