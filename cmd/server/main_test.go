@@ -115,6 +115,9 @@ func TestStaticCSSHandler(t *testing.T) {
 	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
 		t.Fatalf("expected CSS content type, got %q", got)
 	}
+	if got := rec.Header().Get("Cache-Control"); got != "public, max-age=3600" {
+		t.Fatalf("expected conservative static cache policy, got %q", got)
+	}
 }
 
 func TestStaticBrandLogoHandler(t *testing.T) {

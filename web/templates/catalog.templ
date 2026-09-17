@@ -6,7 +6,7 @@ import (
 )
 
 templ Catalog(catalog products.Catalog) {
-	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "") {
+	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "/produtos") {
 		<section class="catalog-page-hero">
 			@components.Container() {
 				<div class="catalog-page-hero-grid">

@@ -225,13 +225,15 @@ O middleware global aplica:
 - CSP restritiva;
 - teto absoluto de 1 MiB para corpo de request.
 
-Admin e acompanhamento publico podem sobrescrever `Referrer-Policy` e definem seus proprios headers de cache/robots. O middleware global nao deve definir `Cache-Control` nem `X-Robots-Tag`.
+Admin e acompanhamento publico podem sobrescrever `Referrer-Policy` e definem seus proprios headers de cache/robots. O middleware global nao define `Cache-Control`; ele aplica `X-Robots-Tag: noindex, nofollow, noarchive` aos prefixos transacionais e privados (`/admin`, `/checkout`, `/carrinho`, `/pedido`, `/acompanhar` e `/pagamento`) para cobrir tambem respostas de erro ou redirect.
 
 `SUPABASE_URL` alimenta a CSP somente como origem `scheme://host`. Caminho, query string, credenciais e fragments nao devem entrar na policy.
 
 `form-action` mantem `'self'` e adiciona somente `https://checkout.infinitepay.io` e `https://checkout.infinitepay.com.br`, a partir da allowlist central de pagamentos. O navegador nao chama `api.checkout.infinitepay.io`; chamadas a API InfinitePay continuam server-side.
 
 Quando `SITE_URL` estiver preenchida, o middleware tambem canonicaliza `GET` e `HEAD` para o host configurado antes do roteador. `POST` permanece sem redirect automatico e continua protegido por validacao de `Origin`/`Referer`.
+
+`GET /robots.txt` publica indicacoes de rastreamento e o URL do sitemap apenas quando `SITE_URL` e valido; nao protege rotas. `GET /sitemap.xml` usa o catalogo publico ativo e inclui somente `/`, `/produtos` e `/produtos/{slug}`. Se configuracao ou catalogo estiverem indisponiveis, responde 503 generico e registra evento operacional seguro.
 
 ## Health e readiness
 

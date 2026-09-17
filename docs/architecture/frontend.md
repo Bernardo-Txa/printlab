@@ -56,6 +56,9 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Exibir acompanhamento por `public_tracking_id` com tres cards de progresso: pagamento, producao e envio.
 - Exibir Admin com formulario de login, logout, dashboard, lista de pedidos, detalhe operacional, forms POST protegidos para producao/envio, gestao SSR de catalogo, configuracoes do produto, receita, materiais, cores, caixas e imagens de catalogo. A tela de imagens usa JavaScript nativo apenas para upload direto ao Supabase Storage, sem transformar o Admin em SPA.
 - Incluir meta robots `noindex, nofollow, noarchive` nas paginas privadas/noindex.
+- Gerar canonical absoluto somente a partir de `SITE_URL` valido; nunca derivar a origem de `Host` recebido.
+- Canonicalizar filtro de catalogo para `/produtos` e variante para `/produtos/{slug}`.
+- Expor Open Graph e Twitter card basicos somente nas paginas publicas canonicas.
 - Usar input numerico de quantidade apenas como melhoria de UX; o backend valida `1..99`.
 - Usar imagem geral primaria em cards quando existir.
 - Priorizar imagens da variante selecionada no detalhe; quando nao existirem, usar imagens gerais do produto.
@@ -89,6 +92,8 @@ Templates de catalogo implementados:
 Arquivos Go gerados pelo `templ` permanecem versionados para que `go build ./...` funcione sem geracao implicita durante a execucao.
 
 Arquivos em `web/static/` sao embutidos no binario Go. Essa estrategia deixa o servidor autossuficiente para entregar CSS, imagens e JavaScript progressivo sem depender de caminhos de filesystem no runtime da Vercel.
+
+Os assets estaticos recebem `Cache-Control: public, max-age=3600`. HTML dinamico permanece sem novo cache publico nesta subfase. Imagens de catalogo usam `loading="lazy"`; qualquer otimizacao adicional depende de medicao real, especialmente para imagens hospedadas no Storage.
 
 ## Design tokens
 

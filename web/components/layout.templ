@@ -1,5 +1,7 @@
 package components
 
+import "github.com/Bernardo-Txa/printlab/internal/seo"
+
 templ Layout(title string, description string, canonicalPath string) {
 	<!doctype html>
 	<html lang="pt-BR">
@@ -8,8 +10,16 @@ templ Layout(title string, description string, canonicalPath string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
 			<meta name="description" content={ description }/>
-			if canonicalPath != "" {
-				<link rel="canonical" href={ templ.URL(canonicalPath) }/>
+			if seo.CanonicalURL(ctx, canonicalPath) != "" {
+				<link rel="canonical" href={ templ.URL(seo.CanonicalURL(ctx, canonicalPath)) }/>
+				<meta property="og:title" content={ title }/>
+				<meta property="og:description" content={ description }/>
+				<meta property="og:type" content="website"/>
+				<meta property="og:url" content={ seo.CanonicalURL(ctx, canonicalPath) }/>
+				<meta name="twitter:card" content="summary"/>
+			}
+			if seo.NoIndex(ctx) {
+				<meta name="robots" content="noindex, nofollow, noarchive"/>
 			}
 			<link rel="icon" type="image/png" href="/static/images/branding/logo-printlab-primary.png"/>
 			<link rel="stylesheet" href="/static/css/app.css"/>

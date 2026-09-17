@@ -201,7 +201,10 @@ func TestProductWithVariantQueryReturnsOK(t *testing.T) {
 		t.Fatal("expected selected variant to be rendered")
 	}
 
-	if !strings.Contains(body, `rel="canonical" href="/produtos/produto-real"`) {
+	if strings.Contains(body, `rel="canonical" href="/produtos/produto-real"`) {
+		t.Fatal("expected no relative canonical URL without a valid SITE_URL")
+	}
+	if strings.Contains(body, "variante=grande") && strings.Contains(body, `rel="canonical"`) {
 		t.Fatal("expected product canonical URL to ignore variant query")
 	}
 }

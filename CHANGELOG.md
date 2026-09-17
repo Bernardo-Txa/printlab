@@ -6,6 +6,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 16.1 em execucao: canonical absoluto baseado em `SITE_URL`, metadados Open Graph/Twitter nas paginas publicas, `robots.txt`, sitemap de catalogo ativo, `noindex` transacional, teste de SEO e cache estatico conservador.
 - Fase 15 concluida pela 15.1: correlacao opaca por request, eventos operacionais pesquisaveis e sem identificadores sensiveis, inventario de cobertura critica, runbooks de observabilidade/incidentes e estrategia de alertas compativel com Vercel Hobby.
 - Fase 14.3: configuracao real do Vercel Firewall no Hobby validada, com tres regras ativas e Bot Protection OFF.
 

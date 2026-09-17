@@ -179,6 +179,8 @@ func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalo
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("GET /ready", readyHandler(db))
+	mux.HandleFunc("GET /robots.txt", robotsHandler(siteURL))
+	mux.HandleFunc("GET /sitemap.xml", sitemapHandler(catalog, siteURL))
 	mux.HandleFunc("GET /produtos", catalogHandler(catalog))
 	mux.HandleFunc("GET /produtos/{slug}", productHandler(catalog))
 	mux.HandleFunc("GET /carrinho", cartPageHandler(shoppingCart, cartCookies))
@@ -319,6 +321,8 @@ func staticFileHandler(staticFS fs.FS) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
+
+		w.Header().Set("Cache-Control", "public, max-age=3600")
 
 		request := r.Clone(r.Context())
 		request.URL.Path = "/static/" + name

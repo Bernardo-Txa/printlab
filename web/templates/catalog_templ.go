@@ -256,7 +256,7 @@ func Catalog(catalog products.Catalog) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "/produtos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

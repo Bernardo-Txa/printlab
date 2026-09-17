@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
+	"github.com/Bernardo-Txa/printlab/internal/seo"
 )
 
 const globalMaxRequestBodyBytes = 1 << 20
@@ -17,8 +18,16 @@ func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) h
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := newRequestID()
-		r = r.WithContext(requestIDContext(r.Context(), requestID))
+		origin := ""
+		if hasCanonical {
+			origin = canonical.Scheme + "://" + canonical.Host
+		}
+		noIndex := isNoIndexPath(r.URL.Path)
+		r = r.WithContext(seo.WithContext(requestIDContext(r.Context(), requestID), origin, noIndex))
 		w.Header().Set("X-Request-ID", requestID)
+		if noIndex {
+			w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive")
+		}
 		setGlobalSecurityHeaders(w.Header(), policy)
 		if hasCanonical {
 			if destination, ok := canonicalHostRedirectURL(r, canonical); ok {
@@ -32,6 +41,16 @@ func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) h
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func isNoIndexPath(path string) bool {
+	for _, prefix := range []string{"/admin", "/checkout", "/carrinho", "/pedido", "/acompanhar", "/pagamento"} {
+		if path == prefix || strings.HasPrefix(path, prefix+"/") {
+			return true
+		}
+	}
+
+	return false
 }
 
 func canonicalHostRedirectURL(r *http.Request, canonical *url.URL) (string, bool) {
