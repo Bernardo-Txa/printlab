@@ -1,6 +1,6 @@
 # ADR-0017 - MFA TOTP antes da sessao administrativa
 
-Status: aceita; implementacao com validacao real pendente.
+Status: aceita; implementada e validada em producao.
 Data: 2026-09-16.
 
 ## Contexto
@@ -28,7 +28,7 @@ Verify deve retornar token que GetUser autentique; UUID autorizado e claim aal2 
 
 O token AAL1 e um bearer sensivel mesmo sem acesso ao Admin. Exige HTTPS em producao, TTL curto e ausencia de logs/HTML. Cookie removido em sucesso, cancelamento, logout ou erro terminal. A sessao propria nao e automaticamente revogada por mudancas futuras no Supabase; recuperacao emergencial deve invalidar sessoes PrintLab tambem.
 
-Perder o autenticador pode bloquear o unico operador. Nao ha reset publico, bypass ou recovery codes. Recuperacao administrativa oficial esta no runbook. WAF fica na 14.3.
+Perder o autenticador pode bloquear o unico operador. Nao ha reset publico, bypass ou recovery codes. Recuperacao administrativa oficial esta no runbook. A protecao anti-abuse da 14.3 foi concluida no Vercel Firewall, sem alterar o fluxo MFA.
 
 ## Referencias
 

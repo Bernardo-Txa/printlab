@@ -1,6 +1,6 @@
 # Seguranca
 
-Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro, operacao administrativa com imagens, hardening base da Fase 14.1 e MFA obrigatorio da Fase 14.2 IMPLEMENTADOS e validados em producao. A configuracao operacional da Fase 14.3 permanece pendente.
+Status: diretrizes obrigatorias aprovadas; catalogo publico com variantes, carrinho, dados de checkout, frete, pedidos, pagamento InfinitePay, webhook, acompanhamento seguro, operacao administrativa com imagens, hardening base da Fase 14.1, MFA obrigatorio da Fase 14.2 e configuracao operacional da Fase 14.3 IMPLEMENTADOS e validados em producao.
 
 ## Responsabilidade
 
@@ -83,24 +83,17 @@ Jobs de limpeza nao devem fazer chamadas HTTP, usar secrets ou apagar tabelas hi
 
 ## Rate limiting e WAF
 
-A configuracao real no Vercel Hobby tem System Mitigations/DDoS ativo, tres Custom Rules e Bot Protection OFF: `rate-limit-admin-login` protege `POST /admin/login` por IP (10/600 s, fixed window, 429); `log-checkout-shipping` e `log-order-payment` apenas registram, respectivamente, POST de frete e inicio de pagamento. Nao ha regra para o webhook InfinitePay e nao houve upgrade para Pro.
+A configuracao real no Vercel Hobby tem System Mitigations/DDoS ativo, tres Custom Rules e Bot Protection OFF. Nao houve upgrade para Pro.
 
-Nao ha rate limiter em memoria, Redis, banco, cookie anti-bot, CAPTCHA proprio ou fingerprinting na aplicacao Go. A Fase 14.3 usa exclusivamente o Vercel Firewall/WAF no edge, antes da funcao Go; sua configuracao e validacao real estao registradas no [plano ativo](../plans/active/014-3-waf-anti-abuse.md).
+| Regra | Condicoes | Acao |
+| --- | --- | --- |
+| `rate-limit-admin-login` | `POST /admin/login`; chave IP; fixed window; 10 requisicoes / 600 s | rate limit, HTTP 429 |
+| `log-checkout-shipping` | `POST /checkout/frete` | Log |
+| `log-order-payment` | `POST`; path inicia em `/pedido/` e termina em `/pagar` | Log |
 
-As regras de producao previstas sao por IP, algoritmo `fixed_window`, com resposta `429` ao exceder o limite:
+Nao ha rate limiter em memoria, Redis, banco, cookie anti-bot, CAPTCHA proprio ou fingerprinting na aplicacao Go. A Fase 14.3 usa exclusivamente o Vercel Firewall/WAF no edge, antes da funcao Go; sua configuracao e validacao real estao registradas no [plano concluido](../plans/completed/014-3-waf-anti-abuse.md).
 
-| Regra | Condicoes | Limite inicial | Motivo |
-| --- | --- | --- | --- |
-| `rate-limit-admin-login` | `POST` e path exato `/admin/login` | 10 requisicoes / 600 s | brute force e credential stuffing |
-| `rate-limit-admin-mfa` | `POST` e path exato `/admin/mfa/setup` ou `/admin/mfa/challenge` | 20 requisicoes / 600 s | abuso adicional sobre TOTP/Supabase Auth |
-| `rate-limit-checkout-shipping-post` | `POST` e path exato `/checkout/frete` | 30 requisicoes / 600 s | cotacoes repetidas na SuperFrete |
-| `rate-limit-order-payment-post` | `POST` e path `/pedido/{uuid}/pagar` | 20 requisicoes / 600 s | abuso de inicio de checkout/pagamento |
-
-`POST /webhooks/infinitepay` fica deliberadamente fora dessas regras: e servidor-servidor, pode receber retries e continua protegido pela validacao server-side e `payment_check`. Nao ha allowlist de IP inventada, challenge humano ou limite generico apertado para webhook.
-
-`GET /checkout/frete` tambem executa `prepareQuotes` e pode fazer duas chamadas SuperFrete. Nesta rodada ele nao recebe limite: a rota faz parte da navegacao normal e uma regra adicional exigiria observacao de trafego para calibrar impacto. Rotas publicas normais, inclusive `/`, `GET /produtos`, `GET /produtos/{slug}`, `GET /static/*`, `GET /acompanhar/*` e `GET /pedido/*`, nao devem receber limites apertados.
-
-Bot Protection deve iniciar em `Log`, sem challenge ou block agressivo e sem afetar crawlers legitimos. Apos ao menos 10 minutos de observacao de trafego e revisao de falsos positivos, uma alteracao deve ser publicada separadamente. As regras de rate limit usam `429` desde o inicio por cobrirem somente POSTs sensiveis/especificos; o login pode receber acao persistente temporaria somente se o plano Vercel e o trafego observado justificarem.
+`POST /webhooks/infinitepay` nao tem regra especifica: e servidor-servidor, pode receber retries e continua protegido pela validacao server-side e `payment_check`. Nao ha rate limit customizado para MFA no Vercel Hobby atual; MFA continua protegido por senha, TOTP e limites do Supabase Auth. Rotas publicas normais, inclusive `/`, catalogo, estaticos, acompanhamento e pedido, nao recebem limites apertados.
 
 O `vercel.json` permanece somente com a regiao `gru1`: ele nao suporta as acoes `log` e rate limiting necessarias para este rollout. Criar, editar, revisar ou publicar regras deve ocorrer no Vercel Firewall, sem deploy da aplicacao. A documentacao oficial atual e o procedimento de rollback estao no plano da fase.
 
@@ -123,7 +116,7 @@ A Fase 14.2 exige TOTP antes de criar a sessao propria. Fluxo: Browser -> senha 
 - Cookie pending e limpo no sucesso, cancelamento, logout e erros terminais. Codigo invalido e 429 podem permitir retry dentro do TTL; 5xx exige novo login.
 - POSTs MFA preservam Origin/Referer estrito e limite de formulario. Provider usa timeout de 8s, response body de no maximo 1 MiB e nao segue redirects.
 
-Perder o autenticador pode bloquear o unico Admin. Recuperacao somente por operador autorizado usando mecanismo administrativo oficial Supabase, conforme [runbook](../integrations/supabase-auth.md#recuperacao-de-emergencia). Nao ha bypass, reset publico ou recovery codes. A protecao anti-abuse da 14.3 e definida para o Vercel Firewall, sem alterar o fluxo MFA; sua aplicacao real permanece pendente de acesso operacional autenticado.
+Perder o autenticador pode bloquear o unico Admin. Recuperacao somente por operador autorizado usando mecanismo administrativo oficial Supabase, conforme [runbook](../integrations/supabase-auth.md#recuperacao-de-emergencia). Nao ha bypass, reset publico ou recovery codes. A protecao anti-abuse da 14.3 esta configurada no Vercel Firewall, sem alterar o fluxo MFA.
 
 ## Banco, logs e dependencias
 

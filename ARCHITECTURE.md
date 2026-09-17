@@ -25,7 +25,7 @@ IMPLEMENTADO:
 - Painel administrativo em `/admin` com login Supabase Auth, autorizacao por UUID, sessao propria da PrintLab, dashboard, lista/detalhe de pedidos e mutacoes auditadas de producao/envio.
 - Hardening base de seguranca com headers globais, CSP, limite global de body, timeouts HTTP e validacao/canonicalizacao de `SITE_URL`.
 - MFA TOTP obrigatorio para Admin, validado em producao: senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
-- Estrategia operacional da Fase 14.3 para Vercel Firewall/WAF antes da funcao Go; regras reais e validacao dependem de acesso autenticado ao projeto Vercel.
+- Fase 14.3 configurada e validada no Vercel Firewall/WAF antes da funcao Go, com rate limit de login e regras operacionais de Log no Hobby.
 - Rota `GET /health` para verificar que o processo HTTP esta funcionando.
 - Rota `GET /ready` para readiness de banco.
 - Servico de assets estaticos em `/static/` via `embed.FS`.

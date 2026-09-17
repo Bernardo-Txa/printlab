@@ -11,7 +11,7 @@ O painel administrativo concentrara funcionalidades internas de operacao da Prin
 - 13.3 — catalogo, variantes, materiais, cores e caixas: concluida com validacao real em producao.
 - 13.4 — imagens e Supabase Storage: concluida com validacao real em producao.
 - 14.2 - MFA TOTP obrigatorio: concluido; validado em producao.
-- 14.3 - WAF / anti-abuse: configuracao operacional no Vercel Firewall pendente.
+- 14.3 - WAF / anti-abuse: concluida e validada no Vercel Hobby; o login tem rate limit por IP e MFA nao recebe limite customizado adicional no edge.
 
 ## Fase 13.1 implementada
 

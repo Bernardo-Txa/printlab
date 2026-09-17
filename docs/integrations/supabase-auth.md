@@ -1,6 +1,6 @@
 # Supabase Auth
 
-Status: senha e sessao propria implementadas na 13.1; MFA TOTP obrigatorio implementado na 14.2, com validacao real pendente. Fase 14.1 validada em producao pelo responsavel.
+Status: senha e sessao propria implementadas na 13.1; MFA TOTP obrigatorio implementado na 14.2 e validado em producao. Fase 14.1 validada em producao pelo responsavel.
 
 ## Escopo
 
@@ -112,7 +112,7 @@ Logs nao devem registrar e-mail, senha, token de sessao, hash, access token, ref
 
 Supabase Auth possui rate limits proprios. Como a PrintLab usa o fluxo `Browser -> Go -> Supabase Auth`, tentativas de login podem ser vistas pelo Supabase como trafego vindo do IP server-side da aplicacao. A mitigacao oficial de IP forwarding exige `Sb-Forwarded-For`, secret API key com prefixo `sb_secret` e habilitacao explicita do recurso no projeto. A Fase 14.1 documenta o risco, mas nao adiciona o header nem troca a credencial do fluxo Auth.
 
-Protecao contra abuso e brute force e definida operacionalmente pela Fase 14.3 no Vercel Firewall/WAF, sem rate limiter local. O plano de configuracao usa limite por IP de 10 requisicoes por 10 minutos apenas em `POST /admin/login` e 20 por 10 minutos em `POST /admin/mfa/setup` e `POST /admin/mfa/challenge`; a configuracao real depende de acesso autenticado ao projeto Vercel e esta registrada em [014-3-waf-anti-abuse.md](../plans/active/014-3-waf-anti-abuse.md).
+Protecao contra abuso e brute force e definida operacionalmente pela Fase 14.3 no Vercel Firewall/WAF, sem rate limiter local. No Vercel Hobby atual, `POST /admin/login` tem limite por IP de 10 requisicoes por 600 segundos; MFA continua protegido por senha, TOTP e rate limits do Supabase Auth, sem custom rate-limit adicional no edge. A configuracao real esta registrada em [014-3-waf-anti-abuse.md](../plans/completed/014-3-waf-anti-abuse.md).
 
 ## Configuracao e validacao real
 
