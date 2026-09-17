@@ -12,6 +12,10 @@ Status: em execucao; requer nova medicao manual em producao apos deploy.
 
 Branding local deixou de ser gargalo relevante. SSR, JavaScript e CSS não justificam refactor nesta etapa; as imagens públicas de produto no Storage são o alvo restante.
 
+## Patch final de contraste da Home
+
+O Lighthouse identificou contraste insuficiente somente nos parágrafos dos cards `dna-card-blue` e `dna-card-pink`. A cor anterior era `#071c36` com opacidade de 75%, composta sobre os fundos. O patch usa `#071c36` opaco no azul (4,72:1 sobre `#1187f4`) e o novo token navy `#000f20` no rosa (4,53:1 sobre `#e42b7b`), ambos WCAG AA para texto normal. Fundos, tipografia, tamanho e identidade visual permanecem inalterados. Aguarda validação final Lighthouse em produção.
+
 ## Baseline de producao (2026-09-16)
 
 | URL | Performance | Accessibility | SEO | LCP | Diagnostico principal |

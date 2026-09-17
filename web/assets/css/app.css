@@ -10,6 +10,7 @@
   --color-surface: #ffffff;
   --color-surface-muted: #eef6fb;
   --color-foreground: #071c36;
+  --color-foreground-strong: #000f20;
   --color-muted: #5b6c7e;
   --color-border: #d6e4ef;
   --color-primary: #006de0;
@@ -222,7 +223,7 @@
   }
 
   .dna-card-blue p {
-    @apply text-foreground/75;
+    @apply text-foreground;
   }
 
   .dna-card-teal {
@@ -238,7 +239,7 @@
   }
 
   .dna-card-pink p {
-    @apply text-foreground/75;
+    color: var(--color-foreground-strong);
   }
 
   .dna-card-yellow {
