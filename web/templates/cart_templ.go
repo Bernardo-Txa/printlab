@@ -91,7 +91,7 @@ func CartPage(view cartdomain.CartView) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = components.ProductMedia(line.Image, line.ProductName).Render(ctx, templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = components.ProductMediaLazy(line.Image, line.ProductName).Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}

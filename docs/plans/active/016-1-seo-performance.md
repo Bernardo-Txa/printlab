@@ -8,15 +8,15 @@ Estabelecer descoberta tecnica segura para as paginas publicas SSR e uma linha d
 
 ## Entregas desta subfase
 
-- [x] Auditoria de rotas: `/`, `/produtos` e `/produtos/{slug}` sao indexaveis; carrinho, checkout, pedido, retorno de pagamento, acompanhamento e Admin recebem `noindex`.
+- [x] Auditoria de rotas: `/`, `/produtos` e `/produtos/{slug}` sao indexaveis; carrinho, checkout, pedido, retorno de pagamento, acompanhamento, Admin, `/health` e `/ready` recebem `noindex`.
 - [x] Canonical absoluto baseado somente em `SITE_URL` valido, sem confiar no header `Host`; filtro de categoria e variante selecionada canonicalizam para a URL-base correspondente.
 - [x] Metadados basicos: `title`, `description`, canonical, Open Graph e Twitter card nas paginas publicas canonicas.
-- [x] `GET /robots.txt` com referencia ao sitemap e indicacoes de rotas privadas; robots nao e fronteira de seguranca.
+- [x] `GET /robots.txt` com referencia ao sitemap e prefixos de rotas privadas; robots nao e fronteira de seguranca.
 - [x] `GET /sitemap.xml` com home, catalogo e slugs validos retornados pelo catalogo publico ativo; sem query strings, checkout, pedido ou Admin.
 - [x] Falha segura do sitemap com HTTP 503 generico e evento operacional sem dados sensiveis.
 - [x] Cache conservador de uma hora para assets estaticos embutidos; HTML dinamico nao recebeu cache publico novo.
-- [x] Lazy loading para imagens de catalogo ja existente e JavaScript de checkout/Admin continua `defer` e especifico.
-- [x] Testes de canonical, metadados, `noindex`, robots, sitemap e cache estatico.
+- [x] Cards e thumbnails usam `loading="lazy"` e `decoding="async"`; a imagem principal do detalhe usa `loading="eager"`, `fetchpriority="high"` e o layout existente. JavaScript de checkout/Admin continua `defer` e especifico.
+- [x] Testes de canonical, metadados, `noindex`, robots, sitemap (incluindo escaping XML), estrategia de imagens e cache estatico.
 
 ## Decisoes e limites
 

@@ -44,6 +44,10 @@ func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) h
 }
 
 func isNoIndexPath(path string) bool {
+	if path == "/health" || path == "/ready" {
+		return true
+	}
+
 	for _, prefix := range []string{"/admin", "/checkout", "/carrinho", "/pedido", "/acompanhar", "/pagamento"} {
 		if path == prefix || strings.HasPrefix(path, prefix+"/") {
 			return true

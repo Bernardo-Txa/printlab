@@ -27,7 +27,7 @@ templ CartPage(view cartdomain.CartView) {
 							for _, line := range view.Lines {
 								<article class="cart-line">
 									<div class="cart-line-media">
-										@components.ProductMedia(line.Image, line.ProductName)
+										@components.ProductMediaLazy(line.Image, line.ProductName)
 									</div>
 									<div class="cart-line-body">
 										<div class="cart-line-title">

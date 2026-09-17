@@ -13,12 +13,12 @@ func robotsHandler(siteURL string) http.HandlerFunc {
 		for _, line := range []string{
 			"User-agent: *",
 			"Allow: /",
-			"Disallow: /admin/",
-			"Disallow: /checkout/",
+			"Disallow: /admin",
+			"Disallow: /checkout",
 			"Disallow: /carrinho",
-			"Disallow: /pedido/",
-			"Disallow: /acompanhar/",
-			"Disallow: /pagamento/",
+			"Disallow: /pedido",
+			"Disallow: /acompanhar",
+			"Disallow: /pagamento",
 		} {
 			_, _ = w.Write([]byte(line + "\n"))
 		}

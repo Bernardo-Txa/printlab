@@ -74,6 +74,9 @@ func TestHealthHandler(t *testing.T) {
 	if got := rec.Body.String(); got != "ok\n" {
 		t.Fatalf("expected body %q, got %q", "ok\n", got)
 	}
+	if got := rec.Header().Get("X-Robots-Tag"); got != "noindex, nofollow, noarchive" {
+		t.Fatalf("expected health endpoint to be noindex, got %q", got)
+	}
 }
 
 func TestHTTPServerTimeouts(t *testing.T) {
@@ -99,6 +102,9 @@ func TestReadyWithoutDatabaseURL(t *testing.T) {
 
 	if strings.Contains(rec.Body.String(), "postgres") {
 		t.Fatal("expected ready response not to expose database details")
+	}
+	if got := rec.Header().Get("X-Robots-Tag"); got != "noindex, nofollow, noarchive" {
+		t.Fatalf("expected ready endpoint to be noindex, got %q", got)
 	}
 }
 

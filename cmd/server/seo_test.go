@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -91,10 +92,29 @@ func TestRobotsHandlerPublishesSitemapAndPrivateHints(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 	body := rec.Body.String()
-	for _, required := range []string{"User-agent: *", "Allow: /", "Disallow: /admin/", "Disallow: /checkout/", "Disallow: /pedido/", "Sitemap: " + seoTestSiteURL + "/sitemap.xml"} {
+	for _, required := range []string{"User-agent: *", "Allow: /", "Disallow: /admin", "Disallow: /checkout", "Disallow: /carrinho", "Disallow: /pedido", "Disallow: /acompanhar", "Disallow: /pagamento", "Sitemap: " + seoTestSiteURL + "/sitemap.xml"} {
 		if !strings.Contains(body, required) {
 			t.Fatalf("expected robots.txt to contain %q", required)
 		}
+	}
+	for _, obsolete := range []string{"Disallow: /admin/", "Disallow: /checkout/", "Disallow: /pedido/", "Disallow: /acompanhar/", "Disallow: /pagamento/"} {
+		if strings.Contains(body, obsolete) {
+			t.Fatalf("expected robots.txt not to contain %q", obsolete)
+		}
+	}
+}
+
+func TestSitemapXMLSerializesLocationSafely(t *testing.T) {
+	body, err := xml.Marshal(sitemap{
+		XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9",
+		URLs:  []sitemapURL{{Location: "https://www.printlab.test/produtos/item?cor=azul&material=pla"}},
+	})
+	if err != nil {
+		t.Fatalf("expected sitemap serialization to succeed, got %v", err)
+	}
+
+	if got := string(body); !strings.Contains(got, "cor=azul&amp;material=pla") {
+		t.Fatalf("expected XML location escaping, got %s", got)
 	}
 }
 

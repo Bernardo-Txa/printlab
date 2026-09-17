@@ -5,7 +5,7 @@ import "github.com/Bernardo-Txa/printlab/internal/products"
 templ ProductCard(product products.Product) {
 	<article class="product-card">
 		<a class="product-card-link focus-ring" href={ templ.URL("/produtos/" + product.Slug) }>
-			@ProductMedia(product.PrimaryImage, product.Name)
+			@ProductMediaLazy(product.PrimaryImage, product.Name)
 			<div class="product-card-body">
 				if product.Category != nil {
 					<p class="product-category">{ product.Category.Name }</p>
@@ -35,11 +35,11 @@ templ ProductGallery(images []products.ProductImage, fallbackLabel string) {
 		@ProductVisual()
 	} else {
 		<div class="product-gallery">
-			@ProductMedia(firstRenderableImage(images), fallbackLabel)
+			@ProductPrimaryMedia(firstRenderableImage(images), fallbackLabel)
 			if len(renderableImages(images)) > 1 {
 				<div class="product-gallery-thumbs" aria-label="Imagens do produto">
 					for _, image := range renderableImages(images) {
-						@ProductMedia(&image, fallbackLabel)
+						@ProductMediaLazy(&image, fallbackLabel)
 					}
 				</div>
 			}
@@ -47,9 +47,17 @@ templ ProductGallery(images []products.ProductImage, fallbackLabel string) {
 	}
 }
 
-templ ProductMedia(image *products.ProductImage, fallbackLabel string) {
+templ ProductPrimaryMedia(image *products.ProductImage, fallbackLabel string) {
 	if image != nil && image.URL != "" {
-		<img class="product-media" src={ image.URL } alt={ imageAlt(*image, fallbackLabel) } loading="lazy"/>
+		<img class="product-media" src={ image.URL } alt={ imageAlt(*image, fallbackLabel) } loading="eager" decoding="async" fetchpriority="high"/>
+	} else {
+		@ProductVisual()
+	}
+}
+
+templ ProductMediaLazy(image *products.ProductImage, fallbackLabel string) {
+	if image != nil && image.URL != "" {
+		<img class="product-media" src={ image.URL } alt={ imageAlt(*image, fallbackLabel) } loading="lazy" decoding="async"/>
 	} else {
 		@ProductVisual()
 	}
