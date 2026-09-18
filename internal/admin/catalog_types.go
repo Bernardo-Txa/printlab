@@ -80,32 +80,35 @@ type AdminProductHeader struct {
 }
 
 type AdminProductForm struct {
-	Name             string
-	Slug             string
-	CategoryID       string
-	ShortDescription string
-	Description      string
-	PriceBRL         string
-	IsActive         bool
-	IsFeatured       bool
-	ShippingWeightG  string
-	ShippingHeightMM string
-	ShippingWidthMM  string
-	ShippingLengthMM string
+	Name                  string
+	Slug                  string
+	CategoryID            string
+	ShortDescription      string
+	Description           string
+	PriceBRL              string
+	IsActive              bool
+	IsFeatured            bool
+	ShippingWeightG       string
+	ShippingHeightMM      string
+	ShippingWidthMM       string
+	ShippingLengthMM      string
+	CommercialColorIDs    []string
+	CommercialColorOrders map[string]string
 }
 
 type AdminProductFormPage struct {
-	Title       string
-	Action      string
-	SubmitLabel string
-	BackURL     string
-	IsNew       bool
-	Form        AdminProductForm
-	Errors      AdminFieldErrors
-	Categories  []AdminSelectOption
-	Variants    []AdminVariantListItem
-	Message     string
-	ImagesURL   string
+	Title            string
+	Action           string
+	SubmitLabel      string
+	BackURL          string
+	IsNew            bool
+	Form             AdminProductForm
+	Errors           AdminFieldErrors
+	Categories       []AdminSelectOption
+	Variants         []AdminVariantListItem
+	CommercialColors []AdminProductColorOption
+	Message          string
+	ImagesURL        string
 }
 
 type AdminProductImagesPage struct {
@@ -416,6 +419,7 @@ type AdminShippingProfile struct {
 }
 
 type AdminProductSaveInput struct {
+	CommercialColors []ProductColorSelection
 	ID               string
 	Name             string
 	Slug             string
@@ -426,6 +430,25 @@ type AdminProductSaveInput struct {
 	IsActive         bool
 	IsFeatured       bool
 	ShippingProfile  *AdminShippingProfile
+}
+
+// ProductColorSelection is commercial availability, independent of a production recipe.
+type ProductColorSelection struct {
+	ColorID   string
+	SortOrder int
+}
+
+type ProductAvailableColor struct {
+	ColorID   string
+	Name      string
+	HexColor  string
+	SortOrder int
+	IsActive  bool
+}
+
+type AdminProductColorOption struct {
+	AdminSelectOption
+	SortOrder string
 }
 
 type AdminCategorySaveInput struct {

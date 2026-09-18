@@ -6,6 +6,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 17.3.1 em execucao: relacao `product_colors` para separar cores comerciais de `colors`/`variant_filaments` de producao; nenhuma variante ou receita existente foi alterada.
 - Fase 17.2 concluida e validada manualmente em producao: perfil logistico autoritativo por produto, configuracoes sem logistica no Admin e cadastro simplificado de caixas. Nenhuma migration foi criada; colunas legadas de configuracoes permanecem inertes.
 - Fase 17.1 concluída e validada manualmente em produção: cadastro administrativo gera slugs no servidor para produtos, categorias, configurações, materiais, cores e caixas; colisões usam sufixos determinísticos, renomeações preservam slugs e o fluxo comum não expõe campo editável. Nenhuma migration foi criada e nenhum slug existente foi recalculado em lote.
 

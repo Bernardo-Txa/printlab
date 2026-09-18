@@ -542,3 +542,7 @@ func (r *imageTestRepository) CreateAdminBox(context.Context, AdminBoxSaveInput)
 func (r *imageTestRepository) UpdateAdminBox(context.Context, AdminBoxSaveInput) error {
 	return nil
 }
+
+func (r *imageTestRepository) ListAdminProductColors(context.Context, string) ([]AdminProductColorOption, error) {
+	return nil, nil
+}

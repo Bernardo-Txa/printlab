@@ -8,7 +8,7 @@ O banco armazenara dados persistentes de produtos, clientes, enderecos, carrinho
 
 ## Limites
 
-- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments`, `public.order_payments`, `public.admin_sessions` e `public.admin_order_events`.
+- Existem as tabelas `public.categories`, `public.products`, `public.materials`, `public.colors`, `public.product_variants`, `public.variant_filaments`, `public.product_images`, `public.product_colors`, `public.carts`, `public.cart_items`, `public.cart_customer_details`, `public.cart_shipping_addresses`, `public.shipping_boxes`, `public.cart_shipping_selections`, `public.orders`, `public.order_fulfillment`, `public.order_customer_details`, `public.order_shipping_addresses`, `public.order_shipping_details`, `public.order_items`, `public.order_item_filaments`, `public.order_payments`, `public.admin_sessions` e `public.admin_order_events`.
 - As migrations funcionais criam o catalogo basico, a modelagem de variantes/producao, o carrinho anonimo, os dados temporarios de checkout, a base de frete, os snapshots de pedido, o registro 1:1 de pagamento, o acompanhamento seguro, sessoes admin, auditoria operacional e job diario de limpeza transiente.
 - A Fase 13.3 nao cria schema novo; o Admin de catalogo opera sobre tabelas existentes. A Fase 13.4 tambem nao cria schema novo; a gestao de imagens usa `public.product_images` existente.
 - Ha workflow GitHub Actions para aplicar futuras migrations versionadas ao Supabase de desenvolvimento.
@@ -93,6 +93,7 @@ Pool padrao por instancia:
 - `product_variants` guarda variantes ativas/inativas por produto.
 - `product_variants.price_cents` pode sobrescrever o preco-base.
 - `materials` e `colors` sao catalogo logico de producao, nao estoque fisico.
+- `product_colors` associa um produto às cores comerciais que podem ser apresentadas ao cliente; nao substitui cores de producao.
 - `variant_filaments` permite multicolor e multimaterial por variante.
 - `product_images` guarda metadados e caminhos relativos no bucket `product-images`.
 - O bucket `product-images` e publico para leitura de imagens de catalogo e nao possui policy publica de upload.
@@ -113,6 +114,7 @@ Pool padrao por instancia:
 - `order_payments` guarda checkout InfinitePay, status de pagamento, `order_nsu`, retorno confirmado e valores validados.
 - `admin_sessions` guarda sessoes administrativas com token hash de 32 bytes, expiracao curta de 8 horas e `mfa_verified_at` preenchido somente apos AAL2. NULL identifica sessoes legadas recusadas, sem backfill.
 - `admin_order_events` guarda trilha de auditoria operacional de producao/envio por pedido.
+- `product_colors` usa RLS habilitado, FK para produto/cor, unicidade por produto/cor e ordenacao comercial explicita.
 - `pg_cron` agenda limpeza diaria de `admin_sessions` expiradas e `carts` expirados.
 - RLS esta habilitado em `carts`, `cart_items`, `cart_customer_details`, `cart_shipping_addresses`, `shipping_boxes`, `cart_shipping_selections`, tabelas de pedido, `order_payments`, `admin_sessions` e `admin_order_events` sem policies publicas.
 - A gestao Admin de catalogo da Fase 13.3 usa essas tabelas sem criar tabela paralela e sem reutilizar `admin_order_events`.

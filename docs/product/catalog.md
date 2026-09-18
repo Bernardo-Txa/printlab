@@ -31,6 +31,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores, caixas e imagens em `/admin`.
 - Novos produtos iniciam inativos; produto ativo exige perfil logistico completo.
 - Caixas administrativas usam um conjunto operacional, preservando medidas internas e externas legadas quando necessario.
+- `product_colors` associa cores comerciais selecionaveis ao produto sem reutilizar variantes ou receita de producao.
 
 ## Regras publicas
 
@@ -165,7 +166,7 @@ Na Fase 13.4, o Admin permite enviar, substituir, remover, ordenar e marcar imag
 ## Planejado
 
 - Fase 17.1 concluída e validada em produção: o servidor gera slugs a partir do nome para entidades administrativas, aplica sufixos determinísticos em colisões e preserva o slug existente em renomeações. O operador não precisa preencher slug; não há recálculo em lote nem migration.
-- Fase 17.3: cor comercial selecionavel pelo cliente, distinta de material/cor usados pela receita de producao. A escolha devera atravessar produto, carrinho, pedido e producao sem variantes artificiais.
+- A selecao comercial de cor no checkout e a propagacao para pedido/producao permanecem planejadas para fases posteriores.
 - Busca.
 - Avaliacoes.
 - Paginacao complexa.

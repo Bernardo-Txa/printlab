@@ -21,9 +21,12 @@ const (
 
 const maxAutomaticSlugAttempts = 100
 
+var ErrCommercialColors = errors.Join(ErrValidation, errors.New("invalid commercial colors"))
+
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-F]{6}$`)
 
 type CatalogRepository interface {
+	ListAdminProductColors(ctx context.Context, productID string) ([]AdminProductColorOption, error)
 	ListAdminProducts(ctx context.Context, filter AdminProductListFilter) (AdminProductListPage, error)
 	GetAdminProductForm(ctx context.Context, productID string) (AdminProductFormPage, error)
 	CreateAdminProduct(ctx context.Context, input AdminProductSaveInput) (string, error)
@@ -58,6 +61,20 @@ type CatalogRepository interface {
 	GetAdminBoxForm(ctx context.Context, boxID string) (AdminBoxFormPage, error)
 	CreateAdminBox(ctx context.Context, input AdminBoxSaveInput) (string, error)
 	UpdateAdminBox(ctx context.Context, input AdminBoxSaveInput) error
+}
+
+func prepareCommercialColorOptions(options []AdminProductColorOption, form AdminProductForm) []AdminProductColorOption {
+	selected := make(map[string]bool, len(form.CommercialColorIDs))
+	for _, id := range form.CommercialColorIDs {
+		selected[normalizeUUID(id)] = true
+	}
+	for i := range options {
+		options[i].Selected = selected[options[i].ID]
+		if order, ok := form.CommercialColorOrders[options[i].ID]; ok {
+			options[i].SortOrder = order
+		}
+	}
+	return options
 }
 
 func NormalizeAdminProductListFilter(filter AdminProductListFilter) AdminProductListFilter {
@@ -292,6 +309,12 @@ func (s *Service) NewAdminProduct(ctx context.Context) (AdminProductFormPage, er
 	if err != nil {
 		return AdminProductFormPage{}, err
 	}
+	{
+		page.CommercialColors, err = s.catalog.ListAdminProductColors(ctx, "")
+		if err != nil {
+			return AdminProductFormPage{}, err
+		}
+	}
 	page.Title = "Novo produto"
 	page.Action = "/admin/produtos"
 	page.SubmitLabel = "Criar produto"
@@ -311,7 +334,57 @@ func (s *Service) GetAdminProduct(ctx context.Context, productID string) (AdminP
 		return AdminProductFormPage{}, ErrInvalidCatalogID
 	}
 
-	return s.catalog.GetAdminProductForm(ctx, productID)
+	page, err := s.catalog.GetAdminProductForm(ctx, productID)
+	if err != nil {
+		return AdminProductFormPage{}, err
+	}
+	{
+		page.CommercialColors, err = s.catalog.ListAdminProductColors(ctx, productID)
+		if err != nil {
+			return AdminProductFormPage{}, err
+		}
+		page.Form.CommercialColorOrders = map[string]string{}
+		for _, option := range page.CommercialColors {
+			page.Form.CommercialColorOrders[option.ID] = option.SortOrder
+			if option.Selected {
+				page.Form.CommercialColorIDs = append(page.Form.CommercialColorIDs, option.ID)
+			}
+		}
+	}
+	return page, nil
+}
+
+func validateCommercialColorSelection(form AdminProductForm, options []AdminProductColorOption, requireColor bool) ([]ProductColorSelection, AdminFieldErrors) {
+	errorsByField := AdminFieldErrors{}
+	seen := make(map[string]bool, len(form.CommercialColorIDs))
+	allowed := map[string]bool{}
+	for _, option := range options {
+		allowed[option.ID] = option.Active
+	}
+	var selections []ProductColorSelection
+	activeCount := 0
+	for _, rawID := range form.CommercialColorIDs {
+		id := normalizeUUID(rawID)
+		active, exists := allowed[id]
+		if !ValidUUID(id) || !exists || seen[id] {
+			errorsByField.Add("commercial_color_ids", "Selecione cores cadastradas, sem repetir a mesma cor.")
+			continue
+		}
+		seen[id] = true
+		order, err := parseAdminNonNegativeInt(form.CommercialColorOrders[id])
+		if err != nil || order > math.MaxInt32 {
+			errorsByField.Add("commercial_color_ids", "Informe uma ordem inteira entre 0 e 2147483647 para cada cor selecionada.")
+			continue
+		}
+		selections = append(selections, ProductColorSelection{ColorID: id, SortOrder: order})
+		if active {
+			activeCount++
+		}
+	}
+	if requireColor && activeCount == 0 {
+		errorsByField.Add("commercial_color_ids", "Para ativar o produto, selecione pelo menos uma cor ativa disponivel para venda.")
+	}
+	return selections, errorsByField
 }
 
 func (s *Service) CreateAdminProduct(ctx context.Context, form AdminProductForm) (string, AdminProductFormPage, error) {
@@ -320,7 +393,14 @@ func (s *Service) CreateAdminProduct(ctx context.Context, form AdminProductForm)
 		return "", AdminProductFormPage{}, err
 	}
 	page.Form = form
+	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
+	selections, colorErrors := validateCommercialColorSelection(form, page.CommercialColors, form.IsActive)
+	if colorErrors.Any() {
+		page.Errors = colorErrors
+		return "", page, ErrValidation
+	}
 	input, errorsByField := validateAdminProductForm(form, true, "")
+	input.CommercialColors = selections
 	if errorsByField.Any() {
 		page.Errors = errorsByField
 		return "", page, ErrValidation
@@ -343,9 +423,17 @@ func (s *Service) UpdateAdminProduct(ctx context.Context, productID string, form
 	if err != nil {
 		return AdminProductFormPage{}, err
 	}
+	requireColor := form.IsActive && (!page.Form.IsActive || len(page.Form.CommercialColorIDs) > 0)
 	form.Slug = page.Form.Slug
 	page.Form = form
+	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
+	selections, colorErrors := validateCommercialColorSelection(form, page.CommercialColors, requireColor)
+	if colorErrors.Any() {
+		page.Errors = colorErrors
+		return page, ErrValidation
+	}
 	input, errorsByField := validateAdminProductForm(form, false, productID)
+	input.CommercialColors = selections
 	if errorsByField.Any() {
 		page.Errors = errorsByField
 		return page, ErrValidation
@@ -1201,6 +1289,8 @@ func canonicalSlugRune(char rune) byte {
 func catalogSaveErrors(err error) AdminFieldErrors {
 	errorsByField := AdminFieldErrors{}
 	switch {
+	case errors.Is(err, ErrCommercialColors):
+		errorsByField.Add("commercial_color_ids", "Revise as cores selecionadas e a disponibilidade para ativar o produto.")
 	case errors.Is(err, ErrDuplicateSlug):
 		errorsByField.Add("name", "Nao foi possivel gerar um slug disponivel para este nome. Tente outro nome.")
 	case errors.Is(err, ErrDuplicateSKU):

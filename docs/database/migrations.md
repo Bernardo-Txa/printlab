@@ -2,6 +2,8 @@
 
 Status: fundacao IMPLEMENTADA; migrations de catalogo, variantes/imagens, carrinho, dados de checkout, frete, pedidos, pagamentos, acompanhamento, admin e limpeza transiente IMPLEMENTADAS.
 
+A migration `20260917100000_create_product_colors.sql` adiciona somente a relacao `public.product_colors` entre produtos e cores comerciais. Ela preserva `colors`, `product_variants` e `variant_filaments`, nao carrega dados automaticamente e possui rollback por remocao da nova tabela.
+
 A primeira migration funcional do projeto cria o catalogo basico:
 
 - `supabase/migrations/20260909153625_create_catalog.sql`

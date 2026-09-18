@@ -42,7 +42,10 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
 | Fase 17.1 — Cadastro e slugs | Concluida; validada em producao |
 | Fase 17.2 — Logistica simplificada | Concluida; validada em producao |
-| Fase 17.3 — Cores e producao | Planejada |
+| Fase 17.3 — Cores e producao | Em execucao |
+| Fase 17.3.1 — Separacao de cor comercial e producao | Em execucao |
+| Fase 17.3.2 — Selecao comercial de cor no checkout | Planejada |
+| Fase 17.3.3 — Fluxo de producao por cor comercial | Planejada |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
 | Fase 18.1 — E-mail transacional PrintLab | Planejada |
 | Fase 18.2 — Autenticacao do cliente | Planejada |
@@ -720,7 +723,7 @@ Definition of Done:
 
 ## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. As Fases 17.1 e 17.2 foram concluidas e validadas em producao; a Fase 17.3 permanece planejada.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. As Fases 17.1 e 17.2 foram concluidas e validadas em producao; a Fase 17.3.1 esta em execucao e aguarda validacao manual.
 
 ### Fase 17.1 — Cadastro e slugs
 
@@ -743,8 +746,11 @@ Status: Concluida; validada em producao.
 
 ### Fase 17.3 — Cores e producao
 
+Status: Em execucao; a subfase 17.3.1 aguarda validacao manual em producao.
+
 - Preservar `materials` e `colors` como dados de producao usados por receita, `variant_filaments`, peso, snapshots e operacao.
-- Modelar futuramente cor comercial escolhida pelo cliente como conceito distinto de cor de filamento/receita.
+- A Fase 17.3.1 associa cores comerciais ao produto, separadas da cor de filamento e da receita.
+- A selecao de cor no checkout e o fluxo de producao por cor comercial permanecem planejados.
 - Fazer a escolha comercial fluir de produto para carrinho, pedido e producao sem criar variantes artificiais apenas para cor.
 
 Dependencias: Fase 16.

@@ -116,6 +116,8 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Produtos possuem perfil logistico autoritativo em gramas e milimetros, separado da receita de producao 3D.
 - Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
 - Configuracoes nao alteram o perfil logistico; colunas legadas em `product_variants` sao inertes.
+- Cores comerciais sao associadas ao produto por `product_colors`; `colors` e `variant_filaments` continuam representando producao.
+- Produto inativo pode nao ter cores comerciais; produto ativo exige pelo menos uma cor comercial associada.
 - Produto ativo exige perfil completo e positivo. Produto inativo aceita perfil ausente ou completo, nunca parcial.
 - Produto sem perfil logistico nao recebe estimativa ficticia de peso ou dimensoes.
 - A PrintLab so deve cotar com caixas fisicas reais cadastradas em `shipping_boxes`.
@@ -286,7 +288,7 @@ Filamento fisico, inventario, lotes, custo por kg e reserva de material permanec
 
 - A Fase 17.1 está concluída e validada em produção: slugs administrativos são derivados no servidor, recebem sufixo determinístico em colisões e permanecem estáveis quando o nome muda. O operador não precisa preencher slug, o browser não consegue alterá-lo por POST comum, nenhuma migration foi necessária e nenhum dado existente é recalculado em lote.
 - A Fase 17.2 implementa um unico perfil logistico autoritativo por produto e uma interface simplificada de caixas; foi validada manualmente em producao. Nenhuma migration foi necessaria.
-- Materiais e cores permanecem dados de producao. Cor comercial escolhida pelo cliente sera conceito separado e planejado para a Fase 17.3.
+- Materiais e cores permanecem dados de producao. `product_colors` separa as cores comerciais disponiveis para cada produto sem alterar `variant_filaments`.
 - A Fase 18 planeja conta opcional de cliente com checkout convidado preservado. Autenticacao de cliente nao concede autorizacao administrativa.
 - A retomada de pagamento para cliente autenticado e uma funcionalidade futura; `pending_payment` continua como estado interno necessario.
 

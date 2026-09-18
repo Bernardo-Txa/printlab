@@ -448,8 +448,13 @@ func (r *PostgresRepository) CreateAdminProduct(ctx context.Context, input Admin
 		return "", err
 	}
 
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return "", ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
 	var id string
-	err := r.pool.QueryRow(ctx, `
+	err = tx.QueryRow(ctx, `
 		insert into public.products (
 			category_id,
 			name,
@@ -483,6 +488,12 @@ func (r *PostgresRepository) CreateAdminProduct(ctx context.Context, input Admin
 		return "", mapCatalogError(err)
 	}
 
+	if err := replaceProductColors(ctx, tx, id, input.CommercialColors, input.IsActive); err != nil {
+		return "", err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", ErrUnavailable
+	}
 	return id, nil
 }
 
@@ -494,7 +505,26 @@ func (r *PostgresRepository) UpdateAdminProduct(ctx context.Context, input Admin
 		return err
 	}
 
-	tag, err := r.pool.Exec(ctx, `
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
+	var wasActive bool
+	if err := tx.QueryRow(ctx, `select is_active from public.products where id = $1::uuid for update`, input.ID).Scan(&wasActive); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrCatalogNotFound
+		}
+		return ErrUnavailable
+	}
+	var hadColors bool
+	if err := tx.QueryRow(ctx, `select exists(select 1 from public.product_colors where product_id = $1::uuid)`, input.ID).Scan(&hadColors); err != nil {
+		return ErrUnavailable
+	}
+	if err := replaceProductColors(ctx, tx, input.ID, input.CommercialColors, input.IsActive && (!wasActive || hadColors)); err != nil {
+		return err
+	}
+	tag, err := tx.Exec(ctx, `
 		update public.products
 		set
 			category_id = $2::uuid,
@@ -519,6 +549,103 @@ func (r *PostgresRepository) UpdateAdminProduct(ctx context.Context, input Admin
 		return ErrCatalogNotFound
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return ErrUnavailable
+	}
+	return nil
+}
+
+func (r *PostgresRepository) ListProductColors(ctx context.Context, productID string) ([]ProductAvailableColor, error) {
+	if r == nil || r.pool == nil {
+		return nil, ErrUnavailable
+	}
+	rows, err := r.pool.Query(ctx, `
+		select c.id::text, c.name, coalesce(c.hex_color, ''), pc.sort_order, c.is_active
+		from public.product_colors pc join public.colors c on c.id = pc.color_id
+		where pc.product_id = $1::uuid
+		order by pc.sort_order, c.name, c.id`, productID)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+	var colors []ProductAvailableColor
+	for rows.Next() {
+		var color ProductAvailableColor
+		if err := rows.Scan(&color.ColorID, &color.Name, &color.HexColor, &color.SortOrder, &color.IsActive); err != nil {
+			return nil, ErrUnavailable
+		}
+		colors = append(colors, color)
+	}
+	if rows.Err() != nil {
+		return nil, ErrUnavailable
+	}
+	return colors, nil
+}
+
+func (r *PostgresRepository) ListAdminProductColors(ctx context.Context, productID string) ([]AdminProductColorOption, error) {
+	if r == nil || r.pool == nil {
+		return nil, ErrUnavailable
+	}
+	rows, err := r.pool.Query(ctx, `
+		select c.id::text, c.name, c.is_active, pc.id is not null, coalesce(pc.sort_order, 0)::text
+		from public.colors c
+		left join public.product_colors pc on pc.color_id = c.id and pc.product_id = $1::uuid
+		order by pc.sort_order asc nulls last, c.is_active desc, c.name asc, c.id asc
+	`, nullableUUID(productID))
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+	var options []AdminProductColorOption
+	for rows.Next() {
+		var option AdminProductColorOption
+		if err := rows.Scan(&option.ID, &option.Label, &option.Active, &option.Selected, &option.SortOrder); err != nil {
+			return nil, ErrUnavailable
+		}
+		if !option.Active {
+			option.Label += " — inativa"
+		}
+		options = append(options, option)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, ErrUnavailable
+	}
+	return options, nil
+}
+
+// replaceProductColors shares the product save transaction. Updates lock the product
+// first so simultaneous form submissions cannot interleave their associations.
+func replaceProductColors(ctx context.Context, tx pgx.Tx, productID string, selections []ProductColorSelection, requireColor bool) error {
+	seen := map[string]bool{}
+	activeCount := 0
+	for _, selection := range selections {
+		if !ValidUUID(selection.ColorID) || selection.SortOrder < 0 || seen[selection.ColorID] {
+			return ErrCommercialColors
+		}
+		seen[selection.ColorID] = true
+		var active bool
+		err := tx.QueryRow(ctx, `select is_active from public.colors where id = $1::uuid for share`, selection.ColorID).Scan(&active)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrCommercialColors
+		}
+		if err != nil {
+			return ErrUnavailable
+		}
+		if active {
+			activeCount++
+		}
+	}
+	if requireColor && activeCount == 0 {
+		return ErrCommercialColors
+	}
+	if _, err := tx.Exec(ctx, `delete from public.product_colors where product_id = $1::uuid`, productID); err != nil {
+		return ErrUnavailable
+	}
+	for _, selection := range selections {
+		if _, err := tx.Exec(ctx, `insert into public.product_colors (product_id, color_id, sort_order) values ($1::uuid, $2::uuid, $3)`, productID, selection.ColorID, selection.SortOrder); err != nil {
+			return mapCatalogError(err)
+		}
+	}
 	return nil
 }
 

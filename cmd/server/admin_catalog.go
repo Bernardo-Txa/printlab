@@ -581,18 +581,24 @@ func adminCatalogMessage(r *http.Request) string {
 }
 
 func adminProductFormFromRequest(r *http.Request) admindomain.AdminProductForm {
+	orders := make(map[string]string)
+	for _, id := range r.PostForm["commercial_color_ids"] {
+		orders[id] = r.PostFormValue("commercial_color_order_" + id)
+	}
 	return admindomain.AdminProductForm{
-		Name:             r.PostFormValue("name"),
-		CategoryID:       r.PostFormValue("category_id"),
-		ShortDescription: r.PostFormValue("short_description"),
-		Description:      r.PostFormValue("description"),
-		PriceBRL:         r.PostFormValue("price"),
-		IsActive:         r.PostFormValue("is_active") == "1",
-		IsFeatured:       r.PostFormValue("is_featured") == "1",
-		ShippingWeightG:  r.PostFormValue("shipping_weight_g"),
-		ShippingHeightMM: r.PostFormValue("shipping_height_mm"),
-		ShippingWidthMM:  r.PostFormValue("shipping_width_mm"),
-		ShippingLengthMM: r.PostFormValue("shipping_length_mm"),
+		CommercialColorOrders: orders,
+		Name:                  r.PostFormValue("name"),
+		CategoryID:            r.PostFormValue("category_id"),
+		ShortDescription:      r.PostFormValue("short_description"),
+		Description:           r.PostFormValue("description"),
+		PriceBRL:              r.PostFormValue("price"),
+		IsActive:              r.PostFormValue("is_active") == "1",
+		IsFeatured:            r.PostFormValue("is_featured") == "1",
+		ShippingWeightG:       r.PostFormValue("shipping_weight_g"),
+		ShippingHeightMM:      r.PostFormValue("shipping_height_mm"),
+		ShippingWidthMM:       r.PostFormValue("shipping_width_mm"),
+		ShippingLengthMM:      r.PostFormValue("shipping_length_mm"),
+		CommercialColorIDs:    r.PostForm["commercial_color_ids"],
 	}
 }
 

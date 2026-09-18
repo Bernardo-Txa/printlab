@@ -30,6 +30,17 @@ A Fase 13.4 nao altera schema: a gestao administrativa de imagens usa `public.pr
 
 A Fase 14.1 habilita `pg_cron` e agenda limpeza diaria de `public.admin_sessions` e `public.carts` expirados. Ela nao cria tabela de negocio nova.
 
+A Fase 17.3.1 adiciona `public.product_colors`, uma relacao nova entre produtos e cores comerciais. Ela nao altera `public.colors`, `public.product_variants` ou `public.variant_filaments`; nenhuma carga automatica e executada.
+
+## Tabela `public.product_colors`
+
+Relacao administrativa das cores que o cliente pode escolher para um produto. A associacao e opcional para produtos inativos e nao representa filamento ou receita.
+
+- `product_id` referencia `public.products(id)` com `on delete cascade`.
+- `color_id` referencia `public.colors(id)` e a cor continua disponivel para receitas de producao.
+- `sort_order` define a ordem comercial configurada.
+- `product_colors_product_color_unique` impede duplicidade da mesma cor no produto.
+
 ## Convencoes futuras
 
 - Usar `snake_case` para tabelas, colunas, constraints e indices.

@@ -420,6 +420,24 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 								@adminCheckboxField("is_active", "Produto ativo", page.Form.IsActive)
 								@adminCheckboxField("is_featured", "Destacado", page.Form.IsFeatured)
 							</div>
+							<section class="admin-panel" aria-labelledby="admin-product-commercial-colors">
+									<h2 id="admin-product-commercial-colors">Cores disponíveis para venda</h2>
+									<p class="admin-muted">Selecione as opções comerciais do produto e sua ordem de exibição. A receita de produção é cadastrada separadamente.</p>
+									<div class="admin-checkbox-grid">
+										for _, color := range page.CommercialColors {
+											<div>
+												<label class="admin-checkbox"><input type="checkbox" name="commercial_color_ids" value={ color.ID } checked?={ color.Selected }/>{ color.Label }</label>
+												@adminTextField("commercial_color_order_" + color.ID, "Ordem — " + color.Label, color.SortOrder, "", "number", false)
+											</div>
+										}
+									</div>
+								if len(page.CommercialColors) == 0 {
+									<p class="admin-muted">Nenhuma cor cadastrada.</p>
+								}
+								if page.Errors.Get("commercial_color_ids") != "" {
+									<p class="admin-field-error">{ page.Errors.Get("commercial_color_ids") }</p>
+								}
+							</section>
 							@adminShippingProfileFields(page.Form.ShippingWeightG, page.Form.ShippingHeightMM, page.Form.ShippingWidthMM, page.Form.ShippingLengthMM, page.Errors)
 							<div class="admin-form-actions">
 								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
