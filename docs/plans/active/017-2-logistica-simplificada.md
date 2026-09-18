@@ -15,6 +15,7 @@ Simplificar o cadastro logistico para que cada produto tenha um unico perfil aut
 - Formularios e POSTs de configuracao nao leem nem alteram perfil logistico.
 - A lista administrativa diferencia perfil ausente e destaca produto ativo inconsistente.
 - O formulario de caixa mostra altura, largura e comprimento operacionais, peso da embalagem, status e ordem.
+- A lista de caixas exibe um unico conjunto operacional de dimensoes, usando as dimensoes externas nos registros legados.
 - Nova caixa grava as dimensoes operacionais nos campos internos e externos.
 - Ao editar, mudar qualquer dimensao sincroniza os dois conjuntos; sem mudanca dimensional, os valores internos e externos persistidos sao preservados pelo servidor.
 - O contrato HTTP da SuperFrete e a estrategia de duas cotacoes foram preservados.

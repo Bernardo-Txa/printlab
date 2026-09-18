@@ -1,11 +1,32 @@
 package admin
 
 import (
+	"context"
 	"errors"
 	"math"
 	"reflect"
 	"testing"
 )
+
+type activeProductFormRepository struct {
+	*imageTestRepository
+}
+
+func (r *activeProductFormRepository) GetAdminProductForm(context.Context, string) (AdminProductFormPage, error) {
+	return AdminProductFormPage{Form: AdminProductForm{IsActive: true}}, nil
+}
+
+func TestNewAdminProductStartsInactive(t *testing.T) {
+	repo := &activeProductFormRepository{newImageTestRepository()}
+	service := NewService(fakeAuthClient{}, repo, testAdminUserID, CookieOptions{})
+	page, err := service.NewAdminProduct(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Form.IsActive {
+		t.Fatal("new products must start inactive")
+	}
+}
 
 func TestParseAdminBRLCents(t *testing.T) {
 	tests := []struct {

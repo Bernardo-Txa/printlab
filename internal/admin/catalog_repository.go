@@ -1126,8 +1126,7 @@ func (r *PostgresRepository) ListAdminBoxes(ctx context.Context) (AdminBoxListPa
 		); err != nil {
 			return AdminBoxListPage{}, ErrUnavailable
 		}
-		item.InternalLabel = FormatAdminDimensionsLabel(internalHeight, internalWidth, internalLength)
-		item.ExternalLabel = FormatAdminDimensionsLabel(externalHeight, externalWidth, externalLength)
+		item.DimensionsLabel = FormatAdminDimensionsLabel(externalHeight, externalWidth, externalLength)
 		item.WeightLabel = strconv.Itoa(item.PackagingWeightG) + " g"
 		item.StatusLabel = ActiveStatusLabel(item.IsActive)
 		item.DetailURL = "/admin/caixas/" + item.ID

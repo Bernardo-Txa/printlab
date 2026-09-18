@@ -377,8 +377,7 @@ type AdminBoxListItem struct {
 	ID               string
 	Name             string
 	Slug             string
-	InternalLabel    string
-	ExternalLabel    string
+	DimensionsLabel  string
 	PackagingWeightG int
 	WeightLabel      string
 	IsActive         bool
