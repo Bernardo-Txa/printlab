@@ -285,7 +285,7 @@ Filamento fisico, inventario, lotes, custo por kg e reserva de material permanec
 ## Evolucao planejada pre-go-live
 
 - A Fase 17.1 está concluída e validada em produção: slugs administrativos são derivados no servidor, recebem sufixo determinístico em colisões e permanecem estáveis quando o nome muda. O operador não precisa preencher slug, o browser não consegue alterá-lo por POST comum, nenhuma migration foi necessária e nenhum dado existente é recalculado em lote.
-- A Fase 17.2 implementa um unico perfil logistico autoritativo por produto e uma interface simplificada de caixas; aguarda validacao manual em producao. Nenhuma migration foi necessaria.
+- A Fase 17.2 implementa um unico perfil logistico autoritativo por produto e uma interface simplificada de caixas; foi validada manualmente em producao. Nenhuma migration foi necessaria.
 - Materiais e cores permanecem dados de producao. Cor comercial escolhida pelo cliente sera conceito separado e planejado para a Fase 17.3.
 - A Fase 18 planeja conta opcional de cliente com checkout convidado preservado. Autenticacao de cliente nao concede autorizacao administrativa.
 - A retomada de pagamento para cliente autenticado e uma funcionalidade futura; `pending_payment` continua como estado interno necessario.

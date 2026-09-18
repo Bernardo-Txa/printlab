@@ -53,12 +53,12 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Fase 17.1 concluida e validada em producao; Fase 17.2 implementada com perfil logistico autoritativo por produto e caixas simplificadas, aguardando validacao manual em producao. Fase 17.3 e Fases 18 a 20 permanecem planejadas.
+- Fase 17.1 e Fase 17.2 concluidas e validadas em producao; Fase 17.3 e Fases 18 a 20 permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 
 ## Evolucao planejada pre-go-live
 
-A Fase 17.1 foi concluida e validada em producao: slugs sao gerados no servidor para cadastros administrativos, preservados em renomeacoes e recebem sufixos determinísticos em colisoes. A Fase 17.2 esta implementada e aguarda validacao manual em producao: `products.shipping_*` e a fonte autoritativa, configuracoes nao alteram frete e caixas usam um conjunto dimensional operacional no Admin. Nenhuma migration foi necessaria. A Fase 17.3 permanece planejada para cor comercial. A Fase 18 planeja uma conta de cliente opcional com Magic Link, mantendo checkout convidado; o Admin continuara separado por senha, TOTP, AAL2 e allowlist. O SMTP inicial planejado para e-mails de autenticacao e conta e iCloud+ Custom Email Domain integrado futuramente ao Custom SMTP do Supabase Auth, sem configuracao realizada neste momento. A Fase 19 planeja revisao textual e experiencia, e a Fase 20 fara a auditoria final de producao somente apos essas funcionalidades estabilizarem.
+A Fase 17.1 foi concluida e validada em producao: slugs sao gerados no servidor para cadastros administrativos, preservados em renomeacoes e recebem sufixos determinísticos em colisoes. A Fase 17.2 foi concluida e validada em producao: `products.shipping_*` e a fonte autoritativa, configuracoes nao alteram frete e caixas usam um conjunto dimensional operacional no Admin. Nenhuma migration foi necessaria. A Fase 17.3 permanece planejada para cor comercial. A Fase 18 planeja uma conta de cliente opcional com Magic Link, mantendo checkout convidado; o Admin continuara separado por senha, TOTP, AAL2 e allowlist. O SMTP inicial planejado para e-mails de autenticacao e conta e iCloud+ Custom Email Domain integrado futuramente ao Custom SMTP do Supabase Auth, sem configuracao realizada neste momento. A Fase 19 planeja revisao textual e experiencia, e a Fase 20 fara a auditoria final de producao somente apos essas funcionalidades estabilizarem.
 
 ## Diagrama textual
 

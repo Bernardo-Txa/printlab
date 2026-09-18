@@ -1,6 +1,6 @@
 # Fase 17.2 — Logistica simplificada
 
-Status: Em execucao; aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 ## Objetivo
 
@@ -27,15 +27,15 @@ Simplificar o cadastro logistico para que cada produto tenha um unico perfil aut
 - Validacao das dimensoes operacionais da caixa.
 - Suite Go, vet e build antes do fechamento tecnico.
 
-## Validacao manual pendente
+## Validacao manual concluida
 
-- Cadastro e edicao de produto ativo/inativo.
-- Avisos da lista de produtos.
-- Cadastro e edicao de configuracao sem logistica.
-- Cadastro de caixa com um conjunto dimensional.
-- Preservacao de caixas antigas ao alterar somente dados nao dimensionais.
-- Sincronizacao interna/externa ao mudar dimensoes.
-- Cotacao e revisao usando somente o perfil do produto.
+- Novos produtos iniciam inativos e produto ativo exige perfil logistico completo.
+- Configuracoes nao possuem autoridade logistica; valores legados nao sobrescrevem o produto.
+- Frete usa somente o perfil logistico do produto.
+- Criacao de caixa grava dimensoes internas e externas iguais.
+- Edicao somente de peso preserva diferencas internas/externas antigas.
+- Alteracao dimensional sincroniza dimensoes internas e externas.
+- A lista administrativa mostra um unico conjunto operacional de dimensoes.
 
 ## Definition of Done
 

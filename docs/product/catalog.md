@@ -1,6 +1,6 @@
 # Catalogo
 
-Status: Catalogo publico, perfil logistico unico por produto, gestao administrativa, imagens Admin e refinamento de configuracoes IMPLEMENTADOS; Fase 17.2 aguarda validacao manual em producao.
+Status: Catalogo publico, perfil logistico unico por produto, gestao administrativa, imagens Admin e refinamento de configuracoes IMPLEMENTADOS; Fase 17.2 concluida e validada manualmente em producao.
 
 O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, mantendo o backend como autoridade sobre dados, preco-base e preco efetivo de configuracoes internas em `product_variants`.
 
@@ -29,6 +29,8 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Preservacao de componentes de receita que referenciem material ou cor inativos.
 - Perfil logistico autoritativo no produto para cotacao de frete.
 - Gestao administrativa SSR de categorias, produtos, variantes, receita, materiais, cores, caixas e imagens em `/admin`.
+- Novos produtos iniciam inativos; produto ativo exige perfil logistico completo.
+- Caixas administrativas usam um conjunto operacional, preservando medidas internas e externas legadas quando necessario.
 
 ## Regras publicas
 
@@ -163,8 +165,6 @@ Na Fase 13.4, o Admin permite enviar, substituir, remover, ordenar e marcar imag
 ## Planejado
 
 - Fase 17.1 concluída e validada em produção: o servidor gera slugs a partir do nome para entidades administrativas, aplica sufixos determinísticos em colisões e preserva o slug existente em renomeações. O operador não precisa preencher slug; não há recálculo em lote nem migration.
-- Fase 17.2: simplificar o perfil logistico para um perfil unico por produto, sem override de configuracao. Ate sua implementacao, o comportamento atual permanece inalterado.
-- Fase 17.2: simplificar o cadastro de caixa para uma medida operacional unica, preservando a semantica de encaixe interno e transporte externo no modelo existente.
 - Fase 17.3: cor comercial selecionavel pelo cliente, distinta de material/cor usados pela receita de producao. A escolha devera atravessar produto, carrinho, pedido e producao sem variantes artificiais.
 - Busca.
 - Avaliacoes.
