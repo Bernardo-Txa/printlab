@@ -1494,7 +1494,7 @@
     @apply inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-soft;
   }
 
-  .commercial-colors { @apply my-6 space-y-4 rounded-card border border-border bg-surface p-5; }
+  .commercial-colors { @apply mt-6 space-y-3; }
   .commercial-colors h2 { @apply text-base font-semibold text-foreground; }
   .commercial-swatches { @apply flex flex-wrap gap-3; }
   .commercial-swatch { @apply relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface; }

@@ -16,13 +16,11 @@ templ ProductColorSelector(detail products.ProductDetail) {
 					</a>
 				}
 			</nav>
-			<p class="commercial-color-name">
-				if detail.SelectedColor != nil {
+			if detail.SelectedColor != nil {
+				<p class="commercial-color-name">
 					<span>Cor selecionada:</span> <strong>{ detail.SelectedColor.Name }</strong>
-				} else {
-					<span>Selecione uma cor</span>
-				}
-			</p>
+				</p>
+			}
 		</section>
 	}
 }

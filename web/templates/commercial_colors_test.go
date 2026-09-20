@@ -30,8 +30,18 @@ func TestCommercialColorsRendering(t *testing.T) {
 	if strings.Contains(form, "color") || strings.Contains(form, `name="cor"`) {
 		t.Fatal("color leaked into cart submission")
 	}
-	d.AvailableColors = nil
 	d.SelectedColor = nil
+	b.Reset()
+	if err := ProductDetail(d, "Produto").Render(context.Background(), &b); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(b.String(), "Selecione uma cor") || strings.Contains(b.String(), "Cor selecionada:") {
+		t.Fatal("unselected colors must not show generic instructions or empty labels")
+	}
+	if !strings.Contains(b.String(), "commercial-swatch-fill") {
+		t.Fatal("unselected colors must retain selectable swatches")
+	}
+	d.AvailableColors = nil
 	b.Reset()
 	if err := ProductDetail(d, "Produto").Render(context.Background(), &b); err != nil {
 		t.Fatal(err)
