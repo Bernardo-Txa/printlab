@@ -213,6 +213,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	}, boxes)
 	if err != nil {
 		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
+		logNoFittingBoxDiagnostics(planningQuotes, idealPackage, boxes)
 		page.Unavailable = true
 		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil

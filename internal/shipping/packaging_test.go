@@ -276,3 +276,44 @@ func assertDifferentHash(t *testing.T, original []byte, fingerprint QuoteFingerp
 		t.Fatal("expected changed fingerprint to produce different hash")
 	}
 }
+
+func TestSelectSmallestBoxDimensionalBoundaries(t *testing.T) {
+	valid := DimensionsMM{Height: 100, Width: 150, Length: 200}
+	tests := []struct {
+		name       string
+		dimensions DimensionsMM
+		boxes      []ShippingBox
+		wantID     string
+		wantErr    error
+	}{
+		{name: "exact fit", dimensions: valid, boxes: []ShippingBox{{ID: "exact", Internal: valid}}, wantID: "exact"},
+		{name: "rotated exact fit", dimensions: valid, boxes: []ShippingBox{{ID: "rotated", Internal: DimensionsMM{Height: 200, Width: 100, Length: 150}}}, wantID: "rotated"},
+		{name: "one millimeter too large", dimensions: DimensionsMM{Height: 101, Width: 150, Length: 200}, boxes: []ShippingBox{{Internal: valid}}, wantErr: ErrNoFittingBox},
+		{name: "external dimensions cannot authorize fit", dimensions: valid, boxes: []ShippingBox{{Internal: DimensionsMM{Height: 99, Width: 150, Length: 200}, External: valid}}, wantErr: ErrNoFittingBox},
+		{name: "empty candidates", dimensions: valid, wantErr: ErrNoFittingBox},
+		{name: "smallest fitting internal volume", dimensions: valid, boxes: []ShippingBox{
+			{ID: "too-short", Internal: DimensionsMM{Height: 100, Width: 150, Length: 199}},
+			{ID: "large", Internal: DimensionsMM{Height: 300, Width: 300, Length: 300}},
+			{ID: "small", Internal: DimensionsMM{Height: 201, Width: 100, Length: 150}},
+		}, wantID: "small"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := SelectSmallestBox(tt.dimensions, tt.boxes)
+			if !errors.Is(err, tt.wantErr) || got.ID != tt.wantID {
+				t.Fatalf("box=%+v err=%v", got, err)
+			}
+		})
+	}
+	for _, invalid := range []DimensionsMM{{}, {Height: -1, Width: 150, Length: 200}, {Height: 100, Width: 0, Length: 200}, {Height: 100, Width: -1, Length: 200}, {Height: 100, Width: 150, Length: 0}, {Height: 100, Width: 150, Length: -1}} {
+		if _, err := SelectSmallestBox(invalid, []ShippingBox{{Internal: valid}}); !errors.Is(err, ErrInvalidPackage) {
+			t.Fatalf("invalid package %+v: %v", invalid, err)
+		}
+		if FitsInside(valid, invalid) || FitsInside(invalid, valid) {
+			t.Fatalf("invalid dimensions fit: %+v", invalid)
+		}
+		if _, err := SelectSmallestBox(valid, []ShippingBox{{Internal: invalid}}); !errors.Is(err, ErrNoFittingBox) {
+			t.Fatalf("invalid box %+v: %v", invalid, err)
+		}
+	}
+}
