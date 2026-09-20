@@ -117,7 +117,7 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
 - Configuracoes nao alteram o perfil logistico; colunas legadas em `product_variants` sao inertes.
 - Cores comerciais sao associadas ao produto por `product_colors`; `colors` e `variant_filaments` continuam representando producao.
-- Produto inativo pode nao ter cores comerciais; produto ativo exige pelo menos uma cor comercial associada.
+- Produto inativo pode nao ter cores comerciais; produto ativo pode ter zero ou varias cores comerciais associadas.
 - Produto ativo exige perfil completo e positivo. Produto inativo aceita perfil ausente ou completo, nunca parcial.
 - Produto sem perfil logistico nao recebe estimativa ficticia de peso ou dimensoes.
 - A PrintLab so deve cotar com caixas fisicas reais cadastradas em `shipping_boxes`.

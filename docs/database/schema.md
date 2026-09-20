@@ -34,7 +34,7 @@ A Fase 17.3.1 adiciona `public.product_colors`, uma relacao nova entre produtos 
 
 ## Tabela `public.product_colors`
 
-Relacao administrativa das cores que o cliente pode escolher para um produto. A associacao e opcional para produtos inativos e nao representa filamento ou receita.
+Relacao administrativa das cores que o cliente pode escolher para um produto. A associacao e opcional para produtos ativos e inativos e nao representa filamento ou receita.
 
 - `product_id` referencia `public.products(id)` com `on delete cascade`.
 - `color_id` referencia `public.colors(id)` e a cor continua disponivel para receitas de producao.

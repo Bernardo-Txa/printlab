@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Bernardo-Txa/printlab/internal/products"
 	"os"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ func TestAdminProductColorsAssociation(t *testing.T) {
 	t.Cleanup(pool.Close)
 	repo := NewPostgresRepository(pool)
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	input := AdminProductSaveInput{Name: "Commercial color test", Slug: "commercial-colors-" + suffix, PriceCents: 100}
+	input := AdminProductSaveInput{Name: "Commercial color test", Slug: "commercial-colors-" + suffix, PriceCents: 100, IsActive: true, ShippingProfile: &AdminShippingProfile{WeightG: 100, HeightMM: 100, WidthMM: 100, LengthMM: 100}}
 	productID, err := repo.CreateAdminProduct(ctx, input)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +64,24 @@ func TestAdminProductColorsAssociation(t *testing.T) {
 			}
 		}
 	}
-	assertColors() // A: drafts exist without commercial associations.
+	assertColors() // Active products also exist without commercial associations.
+	publicRepo := products.NewPostgresRepository(pool)
+	assertPublicColors := func(want ...string) {
+		t.Helper()
+		detail, err := publicRepo.GetActiveProductDetailBySlug(ctx, input.Slug)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(detail.AvailableColors) != len(want) {
+			t.Fatalf("public colors=%+v, want %v", detail.AvailableColors, want)
+		}
+		for i, id := range want {
+			if detail.AvailableColors[i].ID != id {
+				t.Fatalf("public order=%+v", detail.AvailableColors)
+			}
+		}
+	}
+	assertPublicColors()
 	for _, color := range []struct {
 		name, slug string
 		dst        *string
@@ -95,6 +113,14 @@ func TestAdminProductColorsAssociation(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertColors(redID, blueID) // D: configured order, not name or insertion order.
+	assertPublicColors(redID, blueID)
+	if _, err := pool.Exec(ctx, `update public.colors set is_active = false where id = $1::uuid`, redID); err != nil {
+		t.Fatal(err)
+	}
+	assertPublicColors(blueID)
+	if _, err := pool.Exec(ctx, `update public.colors set is_active = true where id = $1::uuid`, redID); err != nil {
+		t.Fatal(err)
+	}
 	options, err := repo.ListAdminProductColors(ctx, productID)
 	if err != nil {
 		t.Fatal(err)
@@ -122,6 +148,7 @@ func TestAdminProductColorsAssociation(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertColors()
+	assertPublicColors()
 	var gotMaterial, gotColor, gotVariant, label string
 	var weight int64
 	if err := pool.QueryRow(ctx, `select material_id::text, color_id::text, variant_id::text, estimated_weight_mg, label from public.variant_filaments where id = $1::uuid`, recipeID).Scan(&gotMaterial, &gotColor, &gotVariant, &weight, &label); err != nil {

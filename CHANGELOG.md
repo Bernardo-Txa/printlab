@@ -4,6 +4,10 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ## [Unreleased]
 
+### Changed
+
+- Fase 17.3.1: cores comerciais passam a ser opcionais tambem para produtos ativos; o detalhe publico recebe as cores vinculadas ativas e ordenadas, sem alterar checkout ou receitas. Nenhuma migration adicional.
+
 ### Added
 
 - Fase 17.3.1 em execucao: relacao `product_colors` para separar cores comerciais de `colors`/`variant_filaments` de producao; nenhuma variante ou receita existente foi alterada.

@@ -205,11 +205,42 @@ func (r *PostgresRepository) GetActiveProductDetailBySlug(ctx context.Context, s
 		variants[i].Images = imagesByVariant[variants[i].ID]
 	}
 	product.Images = imagesByProduct
+	colors, err := r.ListProductColors(ctx, product.ID)
+	if err != nil {
+		return ProductDetail{}, err
+	}
 
 	return ProductDetail{
-		Product:  product,
-		Variants: variants,
+		AvailableColors: colors,
+		Product:         product,
+		Variants:        variants,
 	}, nil
+}
+
+// ListProductColors loads only commercial associations; recipes remain independent.
+func (r *PostgresRepository) ListProductColors(ctx context.Context, productID string) ([]ProductAvailableColor, error) {
+	rows, err := r.pool.Query(ctx, `
+		select c.id::text, c.name, c.slug, coalesce(c.hex_color, ''), pc.sort_order
+		from public.product_colors pc
+		join public.colors c on c.id = pc.color_id
+		where pc.product_id = $1::uuid and c.is_active = true
+		order by pc.sort_order, c.name, c.id`, productID)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+	colors := []ProductAvailableColor{}
+	for rows.Next() {
+		var color ProductAvailableColor
+		if err := rows.Scan(&color.ID, &color.Name, &color.Slug, &color.HexColor, &color.SortOrder); err != nil {
+			return nil, ErrUnavailable
+		}
+		colors = append(colors, color)
+	}
+	if rows.Err() != nil {
+		return nil, ErrUnavailable
+	}
+	return colors, nil
 }
 
 type productScanner interface {

@@ -3,8 +3,24 @@ package products
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 )
+
+func TestProductPreservesCommercialColorsForTemplate(t *testing.T) {
+	for _, colors := range [][]ProductAvailableColor{nil, {{Color: Color{ID: "blue", Name: "Azul"}, SortOrder: 1}, {Color: Color{ID: "red", Name: "Vermelho"}, SortOrder: 2}}} {
+		fixture := productDetailFixture(nil)
+		fixture.AvailableColors = colors
+		repository := &fakeRepository{detail: fixture}
+		detail, err := NewService(repository).Product(context.Background(), fixture.Product.Slug, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(detail.AvailableColors, colors) {
+			t.Fatalf("colors lost: %+v", detail.AvailableColors)
+		}
+	}
+}
 
 func TestCatalogRejectsInvalidCategorySlugBeforeRepository(t *testing.T) {
 	repository := &fakeRepository{}

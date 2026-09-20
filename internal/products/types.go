@@ -104,6 +104,7 @@ type ProductImage struct {
 }
 
 type ProductDetail struct {
+	AvailableColors   []ProductAvailableColor
 	Product           Product
 	Variants          []ProductVariant
 	SelectedVariant   *ProductVariant
@@ -112,4 +113,10 @@ type ProductDetail struct {
 	DisplayPriceBRL   string
 	DisplayPriceLabel string
 	CanonicalPath     string
+}
+
+// ProductAvailableColor describes a commercial option, not a recipe component.
+type ProductAvailableColor struct {
+	Color
+	SortOrder int
 }

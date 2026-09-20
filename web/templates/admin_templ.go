@@ -2130,7 +2130,7 @@ func AdminProductForm(page admindomain.AdminProductFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "</div><section class=\"admin-panel\" aria-labelledby=\"admin-product-commercial-colors\"><h2 id=\"admin-product-commercial-colors\">Cores disponíveis para venda</h2><p class=\"admin-muted\">Marque as cores disponíveis para venda. Para remover uma cor, desmarque-a. A receita de produção permanece independente.</p><p class=\"admin-muted\">A ordem é salva com o produto: números menores aparecem primeiro.</p><div class=\"admin-checkbox-grid\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "</div><section class=\"admin-panel\" aria-labelledby=\"admin-product-commercial-colors\"><h2 id=\"admin-product-commercial-colors\">Cores disponíveis</h2><p class=\"admin-muted\">Marque as cores disponíveis para venda. Para remover uma cor, desmarque-a. A receita de produção permanece independente.</p><p class=\"admin-muted\">A ordem é salva com o produto: números menores aparecem primeiro.</p><div class=\"admin-checkbox-grid\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

@@ -488,7 +488,7 @@ func (r *PostgresRepository) CreateAdminProduct(ctx context.Context, input Admin
 		return "", mapCatalogError(err)
 	}
 
-	if err := replaceProductColors(ctx, tx, id, input.CommercialColors, input.IsActive); err != nil {
+	if err := replaceProductColors(ctx, tx, id, input.CommercialColors); err != nil {
 		return "", err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -510,18 +510,14 @@ func (r *PostgresRepository) UpdateAdminProduct(ctx context.Context, input Admin
 		return ErrUnavailable
 	}
 	defer tx.Rollback(ctx)
-	var wasActive bool
-	if err := tx.QueryRow(ctx, `select is_active from public.products where id = $1::uuid for update`, input.ID).Scan(&wasActive); err != nil {
+	var existingID string
+	if err := tx.QueryRow(ctx, `select id::text from public.products where id = $1::uuid for update`, input.ID).Scan(&existingID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrCatalogNotFound
 		}
 		return ErrUnavailable
 	}
-	var hadColors bool
-	if err := tx.QueryRow(ctx, `select exists(select 1 from public.product_colors where product_id = $1::uuid)`, input.ID).Scan(&hadColors); err != nil {
-		return ErrUnavailable
-	}
-	if err := replaceProductColors(ctx, tx, input.ID, input.CommercialColors, input.IsActive && (!wasActive || hadColors)); err != nil {
+	if err := replaceProductColors(ctx, tx, input.ID, input.CommercialColors); err != nil {
 		return err
 	}
 	tag, err := tx.Exec(ctx, `
@@ -615,9 +611,8 @@ func (r *PostgresRepository) ListAdminProductColors(ctx context.Context, product
 
 // replaceProductColors shares the product save transaction. Updates lock the product
 // first so simultaneous form submissions cannot interleave their associations.
-func replaceProductColors(ctx context.Context, tx pgx.Tx, productID string, selections []ProductColorSelection, requireColor bool) error {
+func replaceProductColors(ctx context.Context, tx pgx.Tx, productID string, selections []ProductColorSelection) error {
 	seen := map[string]bool{}
-	activeCount := 0
 	for _, selection := range selections {
 		if !ValidUUID(selection.ColorID) || selection.SortOrder < 0 || seen[selection.ColorID] {
 			return ErrCommercialColors
@@ -631,12 +626,6 @@ func replaceProductColors(ctx context.Context, tx pgx.Tx, productID string, sele
 		if err != nil {
 			return ErrUnavailable
 		}
-		if active {
-			activeCount++
-		}
-	}
-	if requireColor && activeCount == 0 {
-		return ErrCommercialColors
 	}
 	if _, err := tx.Exec(ctx, `delete from public.product_colors where product_id = $1::uuid`, productID); err != nil {
 		return ErrUnavailable

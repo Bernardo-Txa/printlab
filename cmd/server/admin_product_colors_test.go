@@ -26,7 +26,7 @@ func TestProductCommercialColorFormRoundTrip(t *testing.T) {
 		if err := templates.AdminProductForm(page).Render(context.Background(), &out); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(out.String(), "Cores disponíveis para venda") {
+		if !strings.Contains(out.String(), "Cores disponíveis") {
 			t.Fatal("missing commercial colors section")
 		}
 		formHTML := regexp.MustCompile(`(?s)<form[^>]*action="/admin/produtos"[^>]*>(.*?)</form>`).FindStringSubmatch(out.String())
