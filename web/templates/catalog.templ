@@ -100,24 +100,7 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 							<span>{ detail.DisplayPriceLabel }</span>
 							<strong>{ detail.DisplayPriceBRL }</strong>
 						</div>
-                        if len(detail.AvailableColors) > 0 {
-                            <section class="commercial-colors" aria-labelledby="commercial-colors-title">
-                                <h2 id="commercial-colors-title">Escolha a cor</h2>
-                                <nav class="commercial-swatches" aria-label="Cores disponíveis">
-                                    for _, color := range detail.AvailableColors {
-                                        <a class="commercial-swatch focus-ring" href={ templ.URL(detail.ColorURL(color.Slug)) } aria-label={ color.Name } title={ color.Name } aria-current={ selectedColorCurrent(detail, color.Slug) }>
-                                            <span class="commercial-swatch-fill" style={ color.SwatchStyle() } aria-hidden="true"></span>
-                                            <span>{ color.Name }</span>
-                                        </a>
-                                    }
-                                </nav>
-                                if detail.SelectedColor != nil {
-                                    <p>Cor selecionada: <strong>{ detail.SelectedColor.Name }</strong></p>
-                                } else {
-                                    <p>Selecione uma cor para visualizar sua escolha.</p>
-                                }
-                            </section>
-                        }
+						@components.ProductColorSelector(detail)
 						if len(detail.Variants) > 1 {
 							<div class="variant-selector-block">
 								<h2>Escolha uma opção</h2>
@@ -193,9 +176,4 @@ templ ProductNotFound() {
 			}
 		</section>
 	}
-}
-
-func selectedColorCurrent(detail products.ProductDetail, slug string) string {
- if detail.SelectedColor != nil && detail.SelectedColor.Slug == slug { return "true" }
- return "false"
 }

@@ -1494,12 +1494,17 @@
     @apply inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-soft;
   }
 
-  .commercial-colors { @apply my-6 space-y-3; }
-  .commercial-colors h2 { @apply font-semibold; }
+  .commercial-colors { @apply my-6 space-y-4 rounded-card border border-border bg-surface p-5; }
+  .commercial-colors h2 { @apply text-base font-semibold text-foreground; }
   .commercial-swatches { @apply flex flex-wrap gap-3; }
-  .commercial-swatch { @apply flex min-h-11 max-w-full items-center gap-2 rounded-full border border-border px-3 py-2 text-sm; overflow-wrap: anywhere; }
-  .commercial-swatch[aria-current="true"] { @apply border-foreground ring-2 ring-foreground; }
-  .commercial-swatch-fill { @apply block size-7 shrink-0 rounded-full border border-border bg-surface-muted; }
+  .commercial-swatch { @apply relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface; }
+  .commercial-swatch:hover { @apply border-primary; }
+  .commercial-swatch[aria-current="true"] { @apply border-primary ring-2 ring-primary/20 ring-offset-2; }
+  .commercial-swatch-fill { @apply block size-8 rounded-full border border-border bg-surface-muted; }
+  .commercial-swatch-check { @apply absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white; }
+  .commercial-color-name { @apply flex min-h-6 flex-wrap gap-x-2 text-sm; overflow-wrap: anywhere; }
+  .commercial-color-name span { @apply text-muted; }
+  .commercial-color-name strong { @apply font-semibold text-foreground; }
 
   .empty-state {
     @apply flex flex-col items-center rounded-card border border-dashed border-border bg-surface p-8 text-center shadow-soft sm:p-10;

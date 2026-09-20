@@ -20,6 +20,13 @@ func TestCommercialColorsRendering(t *testing.T) {
 		}
 	}
 	form := strings.Split(strings.Split(b.String(), `action="/carrinho/adicionar"`)[1], "</form>")[0]
+	swatches := strings.Split(strings.Split(b.String(), `aria-label="Cores disponíveis"`)[1], "</nav>")[0]
+	if strings.Contains(swatches, ">Azul Ceu<") || strings.Contains(swatches, ">Sem hex<") {
+		t.Fatal("color names must not appear as visible swatch labels")
+	}
+	if !strings.Contains(swatches, `aria-label="Azul Ceu"`) || !strings.Contains(swatches, "commercial-swatch-check") {
+		t.Fatal("missing accessible name or selection check")
+	}
 	if strings.Contains(form, "color") || strings.Contains(form, `name="cor"`) {
 		t.Fatal("color leaked into cart submission")
 	}

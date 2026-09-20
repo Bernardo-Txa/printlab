@@ -1,0 +1,35 @@
+package components
+
+import "github.com/Bernardo-Txa/printlab/internal/products"
+
+templ ProductColorSelector(detail products.ProductDetail) {
+	if len(detail.AvailableColors) > 0 {
+		<section class="commercial-colors" aria-labelledby="commercial-colors-title">
+			<h2 id="commercial-colors-title">Escolha a cor</h2>
+			<nav class="commercial-swatches" aria-label="Cores disponíveis">
+				for _, color := range detail.AvailableColors {
+					<a class="commercial-swatch focus-ring" href={ templ.URL(detail.ColorURL(color.Slug)) } aria-label={ color.Name } title={ color.Name } aria-current={ selectedColorCurrent(detail, color.Slug) }>
+						<span class="commercial-swatch-fill" style={ color.SwatchStyle() } aria-hidden="true"></span>
+						if detail.SelectedColor != nil && detail.SelectedColor.Slug == color.Slug {
+							<span class="commercial-swatch-check" aria-hidden="true">✓</span>
+						}
+					</a>
+				}
+			</nav>
+			<p class="commercial-color-name">
+				if detail.SelectedColor != nil {
+					<span>Cor selecionada:</span> <strong>{ detail.SelectedColor.Name }</strong>
+				} else {
+					<span>Selecione uma cor</span>
+				}
+			</p>
+		</section>
+	}
+}
+
+func selectedColorCurrent(detail products.ProductDetail, slug string) string {
+	if detail.SelectedColor != nil && detail.SelectedColor.Slug == slug {
+		return "true"
+	}
+	return "false"
+}
