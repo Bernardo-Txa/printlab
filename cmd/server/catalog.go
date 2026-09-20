@@ -72,6 +72,7 @@ func productHandler(service catalogService) http.HandlerFunc {
 			return
 		}
 
+		detail.SelectCommercialColor(r.URL.Query().Get("cor"))
 		renderHTML(w, r, http.StatusOK, templates.ProductDetail(detail, productDescription(detail.Product)))
 	}
 }

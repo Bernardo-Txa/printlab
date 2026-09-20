@@ -1494,6 +1494,13 @@
     @apply inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-soft;
   }
 
+  .commercial-colors { @apply my-6 space-y-3; }
+  .commercial-colors h2 { @apply font-semibold; }
+  .commercial-swatches { @apply flex flex-wrap gap-3; }
+  .commercial-swatch { @apply flex min-h-11 max-w-full items-center gap-2 rounded-full border border-border px-3 py-2 text-sm; overflow-wrap: anywhere; }
+  .commercial-swatch[aria-current="true"] { @apply border-foreground ring-2 ring-foreground; }
+  .commercial-swatch-fill { @apply block size-7 shrink-0 rounded-full border border-border bg-surface-muted; }
+
   .empty-state {
     @apply flex flex-col items-center rounded-card border border-dashed border-border bg-surface p-8 text-center shadow-soft sm:p-10;
   }

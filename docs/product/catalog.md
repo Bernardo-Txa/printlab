@@ -32,7 +32,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Novos produtos iniciam inativos; produto ativo exige perfil logistico completo.
 - Caixas administrativas usam um conjunto operacional, preservando medidas internas e externas legadas quando necessario.
 - `product_colors` associa cores comerciais selecionaveis ao produto sem reutilizar variantes ou receita de producao. Produtos ativos e inativos aceitam zero ou varias cores.
-- O detalhe publico recebe `AvailableColors` ordenadas por `sort_order`, nome e ID, incluindo somente cores ativas vinculadas. A selecao visual e o checkout permanecem para a proxima fase.
+- O detalhe publico recebe `AvailableColors` ordenadas por `sort_order`, nome e ID, incluindo somente cores ativas vinculadas. A pagina exibe swatches com selecao SSR por `?cor=slug`; troca de variante preserva a cor e vice-versa. Cores ausentes/invalidas nao quebram produtos antigos. O checkout permanece inalterado.
 
 ## Regras publicas
 

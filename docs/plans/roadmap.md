@@ -44,7 +44,7 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 17.2 — Logistica simplificada | Concluida; validada em producao |
 | Fase 17.3 — Cores e producao | Em execucao |
 | Fase 17.3.1 — Separacao de cor comercial e producao | Em execucao |
-| Fase 17.3.2 — Selecao comercial de cor no checkout | Planejada |
+| Fase 17.3.2 — Cores comerciais na pagina do produto | Em execucao; aguardando validacao manual |
 | Fase 17.3.3 — Fluxo de producao por cor comercial | Planejada |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
 | Fase 18.1 — E-mail transacional PrintLab | Planejada |

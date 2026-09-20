@@ -104,6 +104,7 @@ type ProductImage struct {
 }
 
 type ProductDetail struct {
+	SelectedColor     *ProductAvailableColor
 	AvailableColors   []ProductAvailableColor
 	Product           Product
 	Variants          []ProductVariant
