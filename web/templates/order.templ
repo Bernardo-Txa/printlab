@@ -38,6 +38,9 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 									<article class="review-item">
 										<div class="review-item-main">
 											<h3>{ item.ProductName }</h3>
+											if item.ColorName != "" {
+												<p>Cor: { item.ColorName }</p>
+											}
 											if item.HasVariant {
 												<p>{ item.VariantName }</p>
 											}
@@ -100,6 +103,9 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 								<div class="checkout-summary-line">
 									<div>
 										<strong>{ item.ProductName }</strong>
+										if item.ColorName != "" {
+											<span>Cor: { item.ColorName }</span>
+										}
 										if item.HasVariant {
 											<span>{ item.VariantName }</span>
 										}
@@ -157,6 +163,9 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 									<article class="review-item">
 										<div class="review-item-main">
 											<h3>{ item.ProductName }</h3>
+											if item.ColorName != "" {
+												<p>Cor: { item.ColorName }</p>
+											}
 											if item.HasVariant {
 												<p>{ item.VariantName }</p>
 											}

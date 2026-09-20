@@ -60,7 +60,7 @@ Antes de finalizar uma compra, o backend deve:
 - Carrinho expira apos 30 dias.
 - Mutacoes bem-sucedidas renovam a expiracao para `agora + 30 dias`.
 - Quantidade permitida por item: `1..99`.
-- Adicionar o mesmo produto/configuracao incrementa a quantidade existente.
+- Adicionar o mesmo produto/configuracao/cor comercial incrementa a quantidade existente; cores diferentes geram linhas separadas.
 - Produto sem configuracao ativa pode ser adicionado sem `variant_id`.
 - Produto com exatamente uma configuracao ativa resolve essa configuracao no backend.
 - Produto com duas ou mais configuracoes ativas exige configuracao valida para adicionar.
@@ -299,3 +299,10 @@ Imagens publicas de catalogo usam caminhos relativos em `product_images.storage_
 Imagens podem ser gerais do produto ou especificas de uma variante. A pagina de produto prioriza imagens da variante selecionada; se nao existirem, usa imagens gerais do produto; se nenhuma imagem publica estiver disponivel, usa placeholder visual da PrintLab.
 
 Upload e gestao administrativa de imagens existem somente no painel Admin, por signed upload URL gerada pelo backend apos sessao administrativa e validacao de origem. A finalizacao confirma metadata por `GET /storage/v1/object/info/{bucket}/{path}` e usa `size` e `content_type` do JSON retornado. Nao ha policy publica de escrita em Storage.
+
+## Persistencia comercial de cor — Fase 17.3.3
+
+- Cor e opcional inclusive para produto ativo; quando enviada, deve estar ativa e vinculada ao produto.
+- Produto/variante iguais com cores diferentes geram itens distintos. Repetir a mesma cor incrementa a quantidade da mesma linha.
+- Carrinho usa referencia `color_id`; pedido congela tambem nome e slug. Snapshot comercial nao substitui cor de filamento nem altera receita.
+- Cor retirada de venda bloqueia confirmacao de carrinho que a selecionou; nao modifica pedidos ja criados.

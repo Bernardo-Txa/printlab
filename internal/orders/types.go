@@ -59,6 +59,9 @@ type ReviewPage struct {
 }
 
 type ReviewItem struct {
+	ColorID                          string
+	ColorName                        string
+	ColorSlug                        string
 	CartItemID                       string
 	ProductID                        string
 	VariantID                        string
@@ -155,6 +158,9 @@ type OrderPage struct {
 }
 
 type OrderItem struct {
+	ColorID                          string
+	ColorName                        string
+	ColorSlug                        string
 	ProductName                      string
 	VariantName                      string
 	SKU                              string

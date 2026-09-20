@@ -145,6 +145,10 @@ func (r *PostgresRepository) ProductForAddBySlug(ctx context.Context, slug strin
 		return ProductForAdd{}, err
 	}
 	product.Variants = variants
+	product.Colors, err = products.NewPostgresRepository(r.pool).ListProductColors(ctx, product.ID)
+	if err != nil {
+		return ProductForAdd{}, err
+	}
 
 	return product, nil
 }
@@ -234,8 +238,15 @@ func (r *PostgresRepository) ListItems(ctx context.Context, cartID string) ([]St
 			coalesce(variant_image.storage_path, ''),
 			coalesce(variant_image.alt_text, ''),
 			coalesce(variant_image.sort_order, 0),
-			coalesce(variant_image.is_primary, false)
+			coalesce(variant_image.is_primary, false),
+			coalesce(ci.color_id::text, ''),
+			coalesce(c.name, ''),
+			coalesce(c.is_active, false) and exists (
+				select 1 from public.product_colors pc
+				where pc.product_id = ci.product_id and pc.color_id = ci.color_id
+			)
 		from public.cart_items ci
+		left join public.colors c on c.id = ci.color_id
 		join public.products p
 			on p.id = ci.product_id
 		left join public.product_variants v
@@ -349,6 +360,9 @@ func scanStoredItem(scanner itemScanner) (StoredItem, error) {
 		&variantImageAltText,
 		&variantImageSortOrder,
 		&variantImageIsPrimary,
+		&item.ColorID,
+		&item.ColorName,
+		&item.ColorAvailable,
 	); err != nil {
 		return StoredItem{}, err
 	}
@@ -393,102 +407,62 @@ func scanStoredItem(scanner itemScanner) (StoredItem, error) {
 	return item, nil
 }
 
-func (r *PostgresRepository) AddItem(ctx context.Context, cartID string, productID string, variantID *string, quantity int) error {
+func (r *PostgresRepository) AddItem(ctx context.Context, cartID string, productID string, variantID *string, colorID *string, quantity int) error {
 	if r == nil || r.pool == nil {
 		return ErrUnavailable
 	}
-
-	if variantID == nil {
-		return r.addItemWithoutVariant(ctx, cartID, productID, quantity)
+	// All conflict clauses are constants; customer input is bound as parameters.
+	conflict := "(cart_id, product_id) where variant_id is null and color_id is null"
+	if variantID != nil {
+		conflict = "(cart_id, product_id, variant_id) where variant_id is not null and color_id is null"
 	}
-
-	return r.addItemWithVariant(ctx, cartID, productID, *variantID, quantity)
-}
-
-func (r *PostgresRepository) addItemWithoutVariant(ctx context.Context, cartID string, productID string, quantity int) error {
+	if colorID != nil {
+		conflict = "(cart_id, product_id, color_id) where variant_id is null and color_id is not null"
+		if variantID != nil {
+			conflict = "(cart_id, product_id, variant_id, color_id) where variant_id is not null and color_id is not null"
+		}
+	}
 	var storedQuantity int
 	err := r.pool.QueryRow(ctx, `
-		insert into public.cart_items (
-			cart_id,
-			product_id,
-			variant_id,
-			quantity
-		)
-		select
-			active_cart.id,
-			$2::uuid,
-			null,
-			$3
+		insert into public.cart_items(cart_id, product_id, variant_id, color_id, quantity)
+		select active_cart.id, $2::uuid, $3::uuid, $4::uuid, $5
 		from public.carts active_cart
-		where active_cart.id = $1::uuid
-			and active_cart.converted_at is null
-		on conflict (cart_id, product_id) where variant_id is null
-		do update set
-			quantity = public.cart_items.quantity + excluded.quantity,
-			updated_at = now()
+		where active_cart.id = $1::uuid and active_cart.converted_at is null
+		and ($4::uuid is null or exists (
+		 select 1 from public.product_colors pc join public.colors c on c.id = pc.color_id
+		 where pc.product_id = $2::uuid and pc.color_id = $4::uuid and c.is_active
+		))
+		on conflict `+conflict+`
+		do update set quantity = public.cart_items.quantity + excluded.quantity, updated_at = now()
 		where public.cart_items.quantity <= 99 - excluded.quantity
 		returning quantity
-	`, cartID, productID, quantity).Scan(&storedQuantity)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			active, activeErr := r.activeCartExists(ctx, cartID)
-			if activeErr != nil {
-				return activeErr
-			}
-			if !active {
-				return ErrNotFound
-			}
-
-			return ErrQuantityLimit
+		`, cartID, productID, variantID, colorID, quantity).Scan(&storedQuantity)
+	if errors.Is(err, pgx.ErrNoRows) {
+		active, activeErr := r.activeCartExists(ctx, cartID)
+		if activeErr != nil {
+			return activeErr
 		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (r *PostgresRepository) addItemWithVariant(ctx context.Context, cartID string, productID string, variantID string, quantity int) error {
-	var storedQuantity int
-	err := r.pool.QueryRow(ctx, `
-		insert into public.cart_items (
-			cart_id,
-			product_id,
-			variant_id,
-			quantity
-		)
-		select
-			active_cart.id,
-			$2::uuid,
-			$3::uuid,
-			$4
-		from public.carts active_cart
-		where active_cart.id = $1::uuid
-			and active_cart.converted_at is null
-		on conflict (cart_id, product_id, variant_id) where variant_id is not null
-		do update set
-			quantity = public.cart_items.quantity + excluded.quantity,
-			updated_at = now()
-		where public.cart_items.quantity <= 99 - excluded.quantity
-		returning quantity
-	`, cartID, productID, variantID, quantity).Scan(&storedQuantity)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			active, activeErr := r.activeCartExists(ctx, cartID)
-			if activeErr != nil {
-				return activeErr
-			}
-			if !active {
-				return ErrNotFound
-			}
-
-			return ErrQuantityLimit
+		if !active {
+			return ErrNotFound
 		}
-
-		return err
+		if colorID != nil {
+			var available bool
+			if checkErr := r.pool.QueryRow(ctx, `
+				select exists (
+					select 1 from public.product_colors pc
+					join public.colors c on c.id = pc.color_id
+					where pc.product_id = $1::uuid and pc.color_id = $2::uuid and c.is_active
+				)
+			`, productID, *colorID).Scan(&available); checkErr != nil {
+				return checkErr
+			}
+			if !available {
+				return ErrInvalidColor
+			}
+		}
+		return ErrQuantityLimit
 	}
-
-	return nil
+	return err
 }
 
 func (r *PostgresRepository) UpdateItemQuantity(ctx context.Context, cartID string, itemID string, quantity int) (bool, error) {

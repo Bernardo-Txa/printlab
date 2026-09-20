@@ -33,6 +33,9 @@ templ CartPage(view cartdomain.CartView) {
 										<div class="cart-line-title">
 											<div>
 												<h2>{ line.ProductName }</h2>
+												if line.ColorName != "" {
+													<p>Cor: { line.ColorName }</p>
+												}
 												if line.HasVariant {
 													<p>Variante: { line.VariantName }</p>
 												}

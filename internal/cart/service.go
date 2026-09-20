@@ -15,7 +15,7 @@ type Repository interface {
 	RenewCart(ctx context.Context, cartID string, expiresAt time.Time) (Cart, error)
 	ProductForAddBySlug(ctx context.Context, slug string) (ProductForAdd, error)
 	ListItems(ctx context.Context, cartID string) ([]StoredItem, error)
-	AddItem(ctx context.Context, cartID string, productID string, variantID *string, quantity int) error
+	AddItem(ctx context.Context, cartID string, productID string, variantID *string, colorID *string, quantity int) error
 	UpdateItemQuantity(ctx context.Context, cartID string, itemID string, quantity int) (bool, error)
 	RemoveItem(ctx context.Context, cartID string, itemID string) (bool, error)
 }
@@ -85,6 +85,10 @@ func (s *Service) Add(ctx context.Context, tokenHash []byte, input AddItemInput)
 		return Cart{}, ErrInvalidQuantity
 	}
 
+	colorSlug := strings.TrimSpace(input.ColorSlug)
+	if colorSlug != "" && !products.ValidSlug(colorSlug) {
+		return Cart{}, ErrInvalidColor
+	}
 	productSlug := strings.TrimSpace(input.ProductSlug)
 	variantSlug := strings.TrimSpace(input.VariantSlug)
 	if !products.ValidSlug(productSlug) {
@@ -111,6 +115,19 @@ func (s *Service) Add(ctx context.Context, tokenHash []byte, input AddItemInput)
 		return Cart{}, err
 	}
 
+	var colorID *string
+	if colorSlug != "" {
+		for _, color := range product.Colors {
+			if color.Slug == colorSlug {
+				id := color.ID
+				colorID = &id
+				break
+			}
+		}
+		if colorID == nil {
+			return Cart{}, ErrInvalidColor
+		}
+	}
 	now := s.now()
 	activeCart, err := s.repository.FindActiveCart(ctx, tokenHash, now)
 	if err != nil {
@@ -124,7 +141,10 @@ func (s *Service) Add(ctx context.Context, tokenHash []byte, input AddItemInput)
 		}
 	}
 
-	if err := s.repository.AddItem(ctx, activeCart.ID, product.ID, variantID, input.Quantity); err != nil {
+	if err := s.repository.AddItem(ctx, activeCart.ID, product.ID, variantID, colorID, input.Quantity); err != nil {
+		if errors.Is(err, ErrInvalidColor) {
+			return Cart{}, ErrInvalidColor
+		}
 		if errors.Is(err, ErrQuantityLimit) {
 			return Cart{}, ErrQuantityLimit
 		}
@@ -286,6 +306,7 @@ func (s *Service) prepareLine(item StoredItem) (CartLine, error) {
 	}
 
 	line := CartLine{
+		ColorName:      item.ColorName,
 		ID:             item.ID,
 		ProductName:    item.Product.Name,
 		ProductSlug:    item.Product.Slug,
@@ -303,6 +324,9 @@ func (s *Service) prepareLine(item StoredItem) (CartLine, error) {
 	}
 
 	switch {
+	case item.ColorID != "" && !item.ColorAvailable:
+		line.Available = false
+		line.UnavailableReason = "Cor indisponível. Remova o item e escolha novamente."
 	case !item.Product.IsActive:
 		line.Available = false
 		line.ProductAvailable = false

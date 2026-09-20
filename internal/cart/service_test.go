@@ -503,10 +503,13 @@ func (r *fakeRepository) ListItems(_ context.Context, cartID string) ([]StoredIt
 	return r.itemsByCart[cartID], nil
 }
 
-func (r *fakeRepository) AddItem(_ context.Context, cartID string, productID string, variantID *string, quantity int) error {
+func (r *fakeRepository) AddItem(_ context.Context, cartID string, productID string, variantID *string, colorID *string, quantity int) error {
 	r.addCalls++
 	r.lastAddedVariantID = variantID
 	key := itemKey(cartID, productID, variantID)
+	if colorID != nil {
+		key += ":" + *colorID
+	}
 	current := r.quantitiesByKey[key]
 	if current+quantity > MaxQuantity {
 		return ErrQuantityLimit

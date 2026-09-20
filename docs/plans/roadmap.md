@@ -45,7 +45,7 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 17.3 — Cores e producao | Em execucao |
 | Fase 17.3.1 — Separacao de cor comercial e producao | Em execucao |
 | Fase 17.3.2 — Cores comerciais na pagina do produto | Em execucao; aguardando validacao manual |
-| Fase 17.3.3 — Fluxo de producao por cor comercial | Planejada |
+| Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Em execucao; aguardando validacao manual |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
 | Fase 18.1 — E-mail transacional PrintLab | Planejada |
 | Fase 18.2 — Autenticacao do cliente | Planejada |
@@ -750,7 +750,8 @@ Status: Em execucao; a subfase 17.3.1 aguarda validacao manual em producao.
 
 - Preservar `materials` e `colors` como dados de producao usados por receita, `variant_filaments`, peso, snapshots e operacao.
 - A Fase 17.3.1 associa cores comerciais ao produto, separadas da cor de filamento e da receita.
-- A selecao de cor no checkout e o fluxo de producao por cor comercial permanecem planejados.
+- A Fase 17.3.2 permite selecionar a cor na pagina publica. A [Fase 17.3.3](active/017-3-3-cor-no-carrinho-e-pedido.md) persiste essa escolha no carrinho e no snapshot do pedido, com exibicao no Admin; aguarda validacao manual.
+- Automatizacao de receita por cor comercial permanece fora deste escopo.
 - Fazer a escolha comercial fluir de produto para carrinho, pedido e producao sem criar variantes artificiais apenas para cor.
 
 Dependencias: Fase 16.

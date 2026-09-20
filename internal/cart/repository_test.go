@@ -36,8 +36,7 @@ func TestRepositoryAddItemUsesAtomicUpsertWithQuantityLimit(t *testing.T) {
 	}
 
 	for _, marker := range []string{
-		"func (r *PostgresRepository) addItemWithoutVariant",
-		"func (r *PostgresRepository) addItemWithVariant",
+		"func (r *PostgresRepository) AddItem",
 	} {
 		query, ok := repositoryFunctionSource(string(source), marker)
 		if !ok {
@@ -62,8 +61,7 @@ func TestRepositoryIgnoresConvertedCarts(t *testing.T) {
 		"func (r *PostgresRepository) FindActiveCart",
 		"func (r *PostgresRepository) CreateCart",
 		"func (r *PostgresRepository) RenewCart",
-		"func (r *PostgresRepository) addItemWithoutVariant",
-		"func (r *PostgresRepository) addItemWithVariant",
+		"func (r *PostgresRepository) AddItem",
 		"func (r *PostgresRepository) UpdateItemQuantity",
 		"func (r *PostgresRepository) RemoveItem",
 	} {

@@ -24,6 +24,9 @@ type reviewFingerprint struct {
 }
 
 type reviewFingerprintItem struct {
+	ColorID          string `json:"color_id,omitempty"`
+	ColorName        string `json:"color_name,omitempty"`
+	ColorSlug        string `json:"color_slug,omitempty"`
 	CartItemID       string `json:"cart_item_id"`
 	ProductID        string `json:"product_id"`
 	VariantID        string `json:"variant_id"`
@@ -139,6 +142,9 @@ func buildReviewFingerprint(page ReviewPage, inputHash []byte) (string, error) {
 
 	for _, item := range page.Items {
 		payload.Items = append(payload.Items, reviewFingerprintItem{
+			ColorID:          item.ColorID,
+			ColorName:        item.ColorName,
+			ColorSlug:        item.ColorSlug,
 			CartItemID:       item.CartItemID,
 			ProductID:        item.ProductID,
 			VariantID:        item.VariantID,

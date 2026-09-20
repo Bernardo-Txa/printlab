@@ -256,6 +256,9 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 										<div class="admin-order-row-header">
 											<div>
 												<h3>{ item.ProductName }</h3>
+												if item.ColorName != "" {
+													<p>Cor: { item.ColorName }</p>
+												}
 												if item.HasVariant {
 													<span>{ item.VariantName }</span>
 												}

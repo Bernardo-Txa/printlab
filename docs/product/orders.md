@@ -237,3 +237,7 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 ## Evolucao planejada
 
 Na Fase 18, a conta de cliente sera opcional e o checkout convidado continuara suportado. `pending_payment` permanece necessario internamente para preservar snapshots, `payment_check` e webhook idempotente; a Fase 18.4 podera oferecer retomada de pagamento ao cliente autenticado somente com autorizacao e revalidacao server-side. Pedidos pendentes abandonados terao politica operacional futura, sem apagamento automatico antes de definir retencao e implicacoes financeiras.
+
+## Cor comercial — Fase 17.3.3
+
+A cor opcional do item acompanha os resumos do checkout, a revisao e o pedido. A confirmacao valida novamente a disponibilidade e o vinculo ao produto; o fingerprint inclui ID, nome e slug da cor. `order_items.color_id` referencia o catalogo e `color_name`/`color_slug` congelam o nome comercial para exibicao publica e no Admin. Renomeacao ou exclusao posterior nao altera esse snapshot. Pedidos antigos continuam sem cor comercial. Variantes, receitas, precos, frete e pagamentos mantem suas regras.

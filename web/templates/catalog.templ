@@ -140,6 +140,9 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 						<div class="product-detail-actions">
 							<form class="add-to-cart-form" method="post" action="/carrinho/adicionar">
 								<input type="hidden" name="product_slug" value={ detail.Product.Slug }/>
+								if detail.SelectedColor != nil {
+									<input type="hidden" name="color_slug" value={ detail.SelectedColor.Slug }/>
+								}
 								if detail.SelectedVariant != nil {
 									<input type="hidden" name="variant_slug" value={ detail.SelectedVariant.Slug }/>
 								}

@@ -64,7 +64,7 @@ IMPLEMENTADO:
 
 PLANEJADO:
 
-- Fase 17.3 e Fases 18 a 20 permanecem planejadas.
+- Fase 17.3 em execucao: selecao publica e persistencia de cor no carrinho/pedido implementadas, aguardando validacao manual; Fases 18 a 20 permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
@@ -128,7 +128,7 @@ Banco implementado:
 - `product_variants.price_cents` pode sobrescrever o preco-base; quando `null`, usa `products.price_cents`.
 - `variant_filaments.estimated_weight_mg` armazena peso em miligramas como inteiro.
 - `product_variants.print_time_minutes` armazena tempo estimado de maquina, sem representar prazo de entrega.
-- `carts` e `cart_items` persistem carrinhos anonimos sem armazenar token bruto nem precos.
+- `carts` e `cart_items` persistem carrinhos anonimos sem armazenar token bruto nem precos. Desde a Fase 17.3.3, `color_id` opcional distingue itens de cores diferentes; pedidos preservam nome/slug comercial como snapshot e o Admin exibe a escolha.
 - `carts.token_hash` armazena `SHA-256` do token de cookie.
 - `cart_items.quantity` e limitado a `1..99`.
 - Subtotais do carrinho sao recalculados a partir do preco atual de produto/configuracao.

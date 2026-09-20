@@ -92,6 +92,7 @@ func addCartItemHandler(service cartService, cookies *cartdomain.CookieManager, 
 		activeCart, err := service.Add(r.Context(), tokenHash, cartdomain.AddItemInput{
 			ProductSlug: r.PostFormValue("product_slug"),
 			VariantSlug: r.PostFormValue("variant_slug"),
+			ColorSlug:   r.PostFormValue("color_slug"),
 			Quantity:    quantity,
 		})
 		if err != nil {
@@ -217,6 +218,7 @@ func handleCartMutationError(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, cartdomain.ErrInvalidQuantity),
 		errors.Is(err, cartdomain.ErrInvalidProduct),
 		errors.Is(err, cartdomain.ErrInvalidVariant),
+		errors.Is(err, cartdomain.ErrInvalidColor),
 		errors.Is(err, cartdomain.ErrProductUnavailable),
 		errors.Is(err, cartdomain.ErrVariantRequired),
 		errors.Is(err, cartdomain.ErrVariantUnavailable),

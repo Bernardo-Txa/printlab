@@ -362,7 +362,7 @@ RLS:
 
 ## Tabela `public.cart_items`
 
-Itens de carrinho com produto, variante opcional e quantidade. Preco nao e persistido nesta tabela.
+Itens de carrinho com produto, variante e cor comercial opcionais e quantidade. Preco nao e persistido nesta tabela.
 
 Campos:
 
@@ -372,6 +372,7 @@ Campos:
 | `cart_id` | `uuid` | nao | - | Carrinho dono da linha. |
 | `product_id` | `uuid` | nao | - | Produto escolhido. |
 | `variant_id` | `uuid` | sim | - | Variante escolhida, quando aplicavel. |
+| `color_id` | `uuid` | sim | - | Cor comercial escolhida; adicionada na Fase 17.3.3. |
 | `quantity` | `integer` | nao | - | Quantidade entre 1 e 99. |
 | `created_at` | `timestamptz` | nao | `now()` | Criacao da linha. |
 | `updated_at` | `timestamptz` | nao | `now()` | Atualizado explicitamente nas mutacoes. |
@@ -386,19 +387,22 @@ Constraints:
 
 - `cart_items_pkey`: chave primaria em `id`.
 - `cart_items_quantity_range`: `quantity between 1 and 99`.
+- `cart_items_color_id_fkey`: referencia restritiva a `public.colors(id)`; vinculo ao produto e atividade validados pelo backend.
 
 Indices:
 
 - `cart_items_cart_id_idx` em `cart_items(cart_id)`.
 - `cart_items_product_id_idx` em `cart_items(product_id)`.
 - `cart_items_variant_id_idx` em `cart_items(variant_id)` quando `variant_id is not null`.
-- `cart_items_cart_product_no_variant_unique_idx`: unique parcial em `(cart_id, product_id)` quando `variant_id is null`.
-- `cart_items_cart_product_variant_unique_idx`: unique parcial em `(cart_id, product_id, variant_id)` quando `variant_id is not null`.
+- `cart_items_cart_product_no_variant_unique_idx`: unique parcial em `(cart_id, product_id)` quando `variant_id is null and color_id is null`.
+- `cart_items_cart_product_variant_unique_idx`: unique parcial em `(cart_id, product_id, variant_id)` quando `variant_id is not null and color_id is null`.
+- `cart_items_cart_product_color_unique_idx`: `(cart_id, product_id, color_id)` quando `variant_id is null and color_id is not null`.
+- `cart_items_cart_product_variant_color_unique_idx`: `(cart_id, product_id, variant_id, color_id)` quando ambos sao nao nulos.
+- `cart_items_color_id_idx`: indice parcial da FK de cor nao nula.
 
 Semantica:
 
-- O mesmo produto sem variante nao pode gerar multiplas linhas no mesmo carrinho.
-- O mesmo produto com a mesma variante nao pode gerar multiplas linhas no mesmo carrinho.
+- Produto, variante opcional e cor opcional identificam uma linha no mesmo carrinho. Cores diferentes geram linhas separadas; `null` preserva itens antigos.
 - Adicionar novamente incrementa `quantity`, respeitando limite 99.
 - Atualizacoes e remocoes devem ser limitadas por `cart_id` e `id`.
 - Subtotais sao calculados em leitura usando preco atual do catalogo.
@@ -891,6 +895,9 @@ Campos:
 | `order_id` | `uuid` | nao | - | Pedido dono da linha. |
 | `product_id` | `uuid` | sim | - | Produto original, se ainda existir. |
 | `variant_id` | `uuid` | sim | - | Variante original, se ainda existir. |
+| `color_id` | `uuid` | sim | - | Cor comercial original, se ainda existir (Fase 17.3.3). |
+| `color_name` | `text` | sim | - | Snapshot do nome comercial escolhido. |
+| `color_slug` | `text` | sim | - | Snapshot do slug comercial escolhido. |
 | `product_name` | `text` | nao | - | Snapshot do nome do produto. |
 | `product_slug` | `text` | nao | - | Snapshot do slug do produto. |
 | `variant_name` | `text` | sim | - | Snapshot do nome da variante. |
@@ -913,6 +920,9 @@ Foreign keys:
 Indices:
 
 - `order_items_order_id_idx` em `order_id`.
+- `order_items_color_id_idx` em `color_id` nao nulo.
+
+A FK `order_items_color_id_fkey` usa `ON DELETE SET NULL`. A constraint `order_items_color_snapshot_check` permite itens antigos sem cor ou exige nome/slug nao vazios no snapshot; a remocao da referencia nao apaga o nome historico.
 
 Semantica:
 

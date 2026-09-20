@@ -10,6 +10,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 17.3.3: cor comercial opcional acompanha carrinho, checkout e pedido; cores diferentes geram linhas separadas e o Admin exibe o snapshot escolhido. Migration adiciona referencias opcionais e snapshots nas tabelas existentes, sem alterar receitas, SuperFrete ou InfinitePay. Validada automaticamente em PostgreSQL local; validacao manual em producao pendente.
+
 - Fase 17.3.2: swatches acessiveis de cores comerciais no detalhe publico, selecao independente de variantes via URL e canonical preservado. Sem migration, combinacoes automaticas ou envio de cor ao carrinho.
 
 - Fase 17.3.1 em execucao: relacao `product_colors` para separar cores comerciais de `colors`/`variant_filaments` de producao; nenhuma variante ou receita existente foi alterada.

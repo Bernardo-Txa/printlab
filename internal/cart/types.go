@@ -20,6 +20,7 @@ var (
 	ErrInvalidToken       = errors.New("invalid cart token")
 	ErrInvalidQuantity    = errors.New("invalid cart quantity")
 	ErrInvalidProduct     = errors.New("invalid cart product")
+	ErrInvalidColor       = errors.New("invalid cart color")
 	ErrInvalidVariant     = errors.New("invalid cart variant")
 	ErrProductUnavailable = errors.New("cart product unavailable")
 	ErrVariantRequired    = errors.New("cart variant required")
@@ -36,6 +37,7 @@ type Cart struct {
 }
 
 type AddItemInput struct {
+	ColorSlug   string
 	ProductSlug string
 	VariantSlug string
 	Quantity    int
@@ -48,6 +50,7 @@ type ProductForAdd struct {
 	PriceCents int64
 	IsActive   bool
 	Variants   []VariantForAdd
+	Colors     []products.ProductAvailableColor
 }
 
 type VariantForAdd struct {
@@ -60,6 +63,9 @@ type VariantForAdd struct {
 }
 
 type StoredItem struct {
+	ColorID                  string
+	ColorName                string
+	ColorAvailable           bool
 	ID                       string
 	CartID                   string
 	Quantity                 int
@@ -97,6 +103,7 @@ type CartView struct {
 }
 
 type CartLine struct {
+	ColorName           string
 	ID                  string
 	ProductName         string
 	ProductSlug         string

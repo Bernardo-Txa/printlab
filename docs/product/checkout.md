@@ -173,3 +173,7 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 - Nao ha etiqueta, postagem, rastreio ou multi-volume.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - O Admin atual opera pedidos ja criados e nao altera carrinhos ou dados temporarios de checkout.
+
+## Cor comercial — Fase 17.3.3
+
+A cor opcional do item acompanha os resumos do checkout, a revisao e o pedido. A confirmacao valida novamente a disponibilidade e o vinculo ao produto; o fingerprint inclui ID, nome e slug da cor. `order_items.color_id` referencia o catalogo e `color_name`/`color_slug` congelam o nome comercial para exibicao publica e no Admin. Renomeacao ou exclusao posterior nao altera esse snapshot. Pedidos antigos continuam sem cor comercial. Variantes, receitas, precos, frete e pagamentos mantem suas regras.

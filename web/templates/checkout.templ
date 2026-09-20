@@ -65,6 +65,9 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 									<div class="checkout-summary-line">
 										<div>
 											<strong>{ line.ProductName }</strong>
+											if line.ColorName != "" {
+												<span>Cor: { line.ColorName }</span>
+											}
 											if line.HasVariant {
 												<span>{ line.VariantName }</span>
 											}

@@ -38,6 +38,7 @@ func TestCartAddValidItemRedirectsAndSetsCookie(t *testing.T) {
 	req := cartFormRequest("/carrinho/adicionar", url.Values{
 		"product_slug": {"produto-real"},
 		"variant_slug": {"padrao"},
+		"color_slug":   {"azul"},
 		"quantity":     {"2"},
 	})
 	req.Header.Set("Origin", "https://printlab.test")
@@ -57,7 +58,7 @@ func TestCartAddValidItemRedirectsAndSetsCookie(t *testing.T) {
 	if service.addCalls != 1 {
 		t.Fatalf("expected add call, got %d", service.addCalls)
 	}
-	if service.lastAddInput.ProductSlug != "produto-real" || service.lastAddInput.VariantSlug != "padrao" || service.lastAddInput.Quantity != 2 {
+	if service.lastAddInput.ProductSlug != "produto-real" || service.lastAddInput.VariantSlug != "padrao" || service.lastAddInput.Quantity != 2 || service.lastAddInput.ColorSlug != "azul" {
 		t.Fatalf("expected add input from form, got %#v", service.lastAddInput)
 	}
 }

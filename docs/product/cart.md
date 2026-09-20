@@ -10,7 +10,7 @@ O carrinho permite que visitantes anonimos escolham produtos e quantidades antes
 - `POST /carrinho/adicionar` adiciona ou incrementa item e redireciona com 303 para `/carrinho`.
 - `POST /carrinho/itens/{id}/quantidade` atualiza quantidade e redireciona com 303.
 - `POST /carrinho/itens/{id}/remover` remove item de forma idempotente na experiencia publica e redireciona com 303.
-- O detalhe de produto envia formulario real de adicionar com `product_slug`, `variant_slug` opcional e `quantity`.
+- O detalhe de produto envia formulario real de adicionar com `product_slug`, `variant_slug` e `color_slug` opcionais e `quantity`.
 - Carrinho com itens disponiveis mostra CTA real para `/checkout/dados`.
 - Carrinho com item indisponivel nao permite continuar para dados ate revisao/remocao.
 - Produto sem configuracao ativa pode ser adicionado com `variant_id = null`.
@@ -28,6 +28,7 @@ O navegador pode enviar:
 
 - `product_slug`;
 - `variant_slug`;
+- `color_slug` opcional, validado contra cores ativas vinculadas ao produto;
 - `quantity`.
 
 O navegador nunca deve enviar como fonte de verdade:
@@ -145,3 +146,9 @@ Checkout e autenticacao poderao exigir protecao CSRF mais forte em fases futuras
 - Nao ha estoque ou reserva.
 - Nao ha contador global no header.
 - Nao ha HTMX ou JavaScript obrigatorio.
+
+## Cor comercial — Fase 17.3.3
+
+`cart_items.color_id` e opcional e referencia `colors`. A identidade da linha inclui produto, variante opcional e cor opcional. Repetir a mesma escolha incrementa quantidade ate 99; cores diferentes ficam em linhas separadas. Carrinhos antigos e produtos sem cores permanecem validos, sem exigir selecao.
+
+O servidor revalida vinculo em `product_colors` e atividade da cor ao adicionar, listar e confirmar o pedido. Cor desativada ou desvinculada torna a linha indisponivel; o cliente deve remove-la e escolher novamente. A receita em `variant_filaments` nao e alterada pela escolha comercial.

@@ -32,7 +32,7 @@ O catalogo apresenta produtos ativos da PrintLab com renderizacao server-side, m
 - Novos produtos iniciam inativos; produto ativo exige perfil logistico completo.
 - Caixas administrativas usam um conjunto operacional, preservando medidas internas e externas legadas quando necessario.
 - `product_colors` associa cores comerciais selecionaveis ao produto sem reutilizar variantes ou receita de producao. Produtos ativos e inativos aceitam zero ou varias cores.
-- O detalhe publico recebe `AvailableColors` ordenadas por `sort_order`, nome e ID, incluindo somente cores ativas vinculadas. A pagina exibe swatches com selecao SSR por `?cor=slug`; troca de variante preserva a cor e vice-versa. Cores ausentes/invalidas nao quebram produtos antigos. O checkout permanece inalterado.
+- O detalhe publico recebe `AvailableColors` ordenadas por `sort_order`, nome e ID, incluindo somente cores ativas vinculadas. A pagina exibe swatches com selecao SSR por `?cor=slug`; troca de variante preserva a cor e vice-versa. Cores ausentes/invalidas nao quebram produtos antigos. Desde a Fase 17.3.3, o formulario envia `color_slug` opcional ao carrinho; a escolha acompanha o checkout e o pedido sem alterar a receita.
 
 ## Regras publicas
 
@@ -167,7 +167,7 @@ Na Fase 13.4, o Admin permite enviar, substituir, remover, ordenar e marcar imag
 ## Planejado
 
 - Fase 17.1 concluída e validada em produção: o servidor gera slugs a partir do nome para entidades administrativas, aplica sufixos determinísticos em colisões e preserva o slug existente em renomeações. O operador não precisa preencher slug; não há recálculo em lote nem migration.
-- A selecao comercial de cor no checkout e a propagacao para pedido/producao permanecem planejadas para fases posteriores.
+- Automatizacao de receita por cor comercial permanece planejada; a Fase 17.3.3 ja persiste a escolha no carrinho e pedido e a exibe no Admin.
 - Busca.
 - Avaliacoes.
 - Paginacao complexa.

@@ -27,8 +27,8 @@ func TestCommercialColorsRendering(t *testing.T) {
 	if !strings.Contains(swatches, `aria-label="Azul Ceu"`) || !strings.Contains(swatches, "commercial-swatch-check") {
 		t.Fatal("missing accessible name or selection check")
 	}
-	if strings.Contains(form, "color") || strings.Contains(form, `name="cor"`) {
-		t.Fatal("color leaked into cart submission")
+	if !strings.Contains(form, `name="color_slug" value="azul"`) {
+		t.Fatal("selected commercial color missing from cart submission")
 	}
 	d.SelectedColor = nil
 	b.Reset()

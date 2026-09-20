@@ -368,6 +368,10 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 }
 
 type rawReviewItem struct {
+	ColorID                  string
+	ColorName                string
+	ColorSlug                string
+	ColorAvailable           bool
 	CartItemID               string
 	ProductID                string
 	VariantID                string
@@ -414,8 +418,16 @@ func (r *PostgresRepository) reviewItems(ctx context.Context, q queryer, cartID 
 			p.shipping_weight_g,
 			p.shipping_height_mm,
 			p.shipping_width_mm,
-			p.shipping_length_mm
+			p.shipping_length_mm,
+			coalesce(ci.color_id::text, ''),
+			coalesce(c.name, ''),
+			coalesce(c.slug, ''),
+			coalesce(c.is_active, false) and exists (
+				select 1 from public.product_colors pc
+				where pc.product_id = ci.product_id and pc.color_id = ci.color_id
+			)
 		from public.cart_items ci
+		left join public.colors c on c.id = ci.color_id
 		join public.products p
 			on p.id = ci.product_id
 		left join public.product_variants v
@@ -490,6 +502,10 @@ func scanRawReviewItem(scanner interface{ Scan(dest ...any) error }) (rawReviewI
 		&productHeight,
 		&productWidth,
 		&productLength,
+		&item.ColorID,
+		&item.ColorName,
+		&item.ColorSlug,
+		&item.ColorAvailable,
 	); err != nil {
 		return rawReviewItem{}, err
 	}
@@ -517,6 +533,9 @@ func scanRawReviewItem(scanner interface{ Scan(dest ...any) error }) (rawReviewI
 }
 
 func prepareReviewItem(raw rawReviewItem, filaments []ReviewItemFilament, index int) (ReviewItem, error) {
+	if raw.ColorID != "" && !raw.ColorAvailable {
+		return ReviewItem{}, ErrUnavailableItems
+	}
 	if !raw.ProductIsActive {
 		return ReviewItem{}, ErrUnavailableItems
 	}
@@ -538,6 +557,9 @@ func prepareReviewItem(raw rawReviewItem, filaments []ReviewItemFilament, index 
 	}
 
 	item := ReviewItem{
+		ColorID:              raw.ColorID,
+		ColorName:            raw.ColorName,
+		ColorSlug:            raw.ColorSlug,
 		CartItemID:           raw.CartItemID,
 		ProductID:            raw.ProductID,
 		VariantID:            raw.VariantID,
@@ -906,7 +928,10 @@ func (r *PostgresRepository) insertOrderItems(ctx context.Context, q queryer, or
 				line_total_cents,
 				unit_print_time_minutes,
 				unit_estimated_filament_weight_mg,
-				sort_order
+				sort_order,
+				color_id,
+				color_name,
+				color_slug
 			) values (
 				$1::uuid,
 				$2::uuid,
@@ -921,10 +946,13 @@ func (r *PostgresRepository) insertOrderItems(ctx context.Context, q queryer, or
 				$11,
 				$12,
 				$13,
-				$14
+				$14,
+				$15::uuid,
+				$16,
+				$17
 			)
 			returning id::text
-		`, orderID, uuidOrNil(item.ProductID), uuidOrNil(item.VariantID), item.ProductName, item.ProductSlug, textOrNil(item.VariantName), textOrNil(item.VariantSlug), textOrNil(item.SKU), item.UnitPriceCents, item.Quantity, item.LineTotalCents, intOrNil(item.UnitPrintTimeMinutes), int64OrNil(item.UnitEstimatedFilamentWeightMg), item.SortOrder).Scan(&orderItemID)
+		`, orderID, uuidOrNil(item.ProductID), uuidOrNil(item.VariantID), item.ProductName, item.ProductSlug, textOrNil(item.VariantName), textOrNil(item.VariantSlug), textOrNil(item.SKU), item.UnitPriceCents, item.Quantity, item.LineTotalCents, intOrNil(item.UnitPrintTimeMinutes), int64OrNil(item.UnitEstimatedFilamentWeightMg), item.SortOrder, uuidOrNil(item.ColorID), textOrNil(item.ColorName), textOrNil(item.ColorSlug)).Scan(&orderItemID)
 		if err != nil {
 			return ErrUnavailable
 		}
@@ -1003,6 +1031,9 @@ func (r *PostgresRepository) orderItems(ctx context.Context, q queryer, orderID 
 			id::text,
 			product_name,
 			coalesce(variant_name, ''),
+			coalesce(color_id::text, ''),
+			coalesce(color_name, ''),
+			coalesce(color_slug, ''),
 			coalesce(sku, ''),
 			quantity,
 			unit_price_cents,
@@ -1031,6 +1062,9 @@ func (r *PostgresRepository) orderItems(ctx context.Context, q queryer, orderID 
 			&itemID,
 			&item.ProductName,
 			&item.VariantName,
+			&item.ColorID,
+			&item.ColorName,
+			&item.ColorSlug,
 			&item.SKU,
 			&item.Quantity,
 			&unitPriceCents,

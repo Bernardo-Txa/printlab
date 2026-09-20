@@ -233,6 +233,9 @@ type OrderPayment struct {
 }
 
 type OrderDetailItem struct {
+	ColorID                          string
+	ColorName                        string
+	ColorSlug                        string
 	ProductName                      string
 	VariantName                      string
 	SKU                              string
