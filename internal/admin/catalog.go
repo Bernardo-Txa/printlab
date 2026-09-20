@@ -357,16 +357,16 @@ func (s *Service) GetAdminProduct(ctx context.Context, productID string) (AdminP
 func validateCommercialColorSelection(form AdminProductForm, options []AdminProductColorOption, requireColor bool) ([]ProductColorSelection, AdminFieldErrors) {
 	errorsByField := AdminFieldErrors{}
 	seen := make(map[string]bool, len(form.CommercialColorIDs))
-	allowed := map[string]bool{}
+	allowed := map[string]AdminProductColorOption{}
 	for _, option := range options {
-		allowed[option.ID] = option.Active
+		allowed[option.ID] = option
 	}
 	var selections []ProductColorSelection
 	activeCount := 0
 	for _, rawID := range form.CommercialColorIDs {
 		id := normalizeUUID(rawID)
-		active, exists := allowed[id]
-		if !ValidUUID(id) || !exists || seen[id] {
+		option, exists := allowed[id]
+		if !ValidUUID(id) || !exists || (!option.Active && !option.Selected) || seen[id] {
 			errorsByField.Add("commercial_color_ids", "Selecione cores cadastradas, sem repetir a mesma cor.")
 			continue
 		}
@@ -377,7 +377,7 @@ func validateCommercialColorSelection(form AdminProductForm, options []AdminProd
 			continue
 		}
 		selections = append(selections, ProductColorSelection{ColorID: id, SortOrder: order})
-		if active {
+		if option.Active {
 			activeCount++
 		}
 	}
@@ -393,8 +393,8 @@ func (s *Service) CreateAdminProduct(ctx context.Context, form AdminProductForm)
 		return "", AdminProductFormPage{}, err
 	}
 	page.Form = form
-	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
 	selections, colorErrors := validateCommercialColorSelection(form, page.CommercialColors, form.IsActive)
+	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
 	if colorErrors.Any() {
 		page.Errors = colorErrors
 		return "", page, ErrValidation
@@ -426,8 +426,8 @@ func (s *Service) UpdateAdminProduct(ctx context.Context, productID string, form
 	requireColor := form.IsActive && (!page.Form.IsActive || len(page.Form.CommercialColorIDs) > 0)
 	form.Slug = page.Form.Slug
 	page.Form = form
-	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
 	selections, colorErrors := validateCommercialColorSelection(form, page.CommercialColors, requireColor)
+	page.CommercialColors = prepareCommercialColorOptions(page.CommercialColors, form)
 	if colorErrors.Any() {
 		page.Errors = colorErrors
 		return page, ErrValidation

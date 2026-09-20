@@ -9,7 +9,7 @@ Preparar a escolha de cor comercial do produto sem transformar cor comercial em 
 ## Implementado
 
 - A relacao `product_colors` associa produtos a cores comerciais disponiveis, com ordenacao e unicidade por produto/cor.
-- O Admin permite selecionar as cores disponiveis para venda no cadastro do produto.
+- A UI administrativa do cadastro de produto (novo e edicao) lista todas as cores, permite selecao multipla, remocao e ordem `sort_order`.
 - Produto inativo pode existir sem cores comerciais; ativacao exige pelo menos uma cor.
 - `colors` continua representando cores usadas na producao e `variant_filaments` continua sendo a receita.
 - Nenhuma variante existente foi convertida, removida ou recalculada.

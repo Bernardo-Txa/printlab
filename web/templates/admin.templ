@@ -422,17 +422,21 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 							</div>
 							<section class="admin-panel" aria-labelledby="admin-product-commercial-colors">
 									<h2 id="admin-product-commercial-colors">Cores disponíveis para venda</h2>
-									<p class="admin-muted">Selecione as opções comerciais do produto e sua ordem de exibição. A receita de produção é cadastrada separadamente.</p>
+									<p class="admin-muted">Marque as cores disponíveis para venda. Para remover uma cor, desmarque-a. A receita de produção permanece independente.</p>
+									<p class="admin-muted">A ordem é salva com o produto: números menores aparecem primeiro.</p>
 									<div class="admin-checkbox-grid">
 										for _, color := range page.CommercialColors {
 											<div>
 												<label class="admin-checkbox"><input type="checkbox" name="commercial_color_ids" value={ color.ID } checked?={ color.Selected }/>{ color.Label }</label>
-												@adminTextField("commercial_color_order_" + color.ID, "Ordem — " + color.Label, color.SortOrder, "", "number", false)
+												<label class="admin-field" for={ "commercial_color_order_" + color.ID }>
+													<span>{ "Ordem — " + color.Label }</span>
+													<input id={ "commercial_color_order_" + color.ID } name={ "commercial_color_order_" + color.ID } type="number" min="0" max="2147483647" step="1" value={ color.SortOrder }/>
+												</label>
 											</div>
 										}
 									</div>
 								if len(page.CommercialColors) == 0 {
-									<p class="admin-muted">Nenhuma cor cadastrada.</p>
+									<p class="admin-muted">Nenhuma cor cadastrada. <a href="/admin/cores">Cadastrar cores</a></p>
 								}
 								if page.Errors.Get("commercial_color_ids") != "" {
 									<p class="admin-field-error">{ page.Errors.Get("commercial_color_ids") }</p>
