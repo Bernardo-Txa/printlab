@@ -71,9 +71,6 @@
       transform: none !important;
     }
 
-    .printlab-motion-rail {
-      display: none !important;
-    }
   }
 }
 
@@ -89,25 +86,6 @@
 
   .focus-ring {
     @apply rounded-control outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
-  }
-
-  .printlab-motion-rail {
-    @apply pointer-events-none fixed left-0 top-28 z-30 hidden h-72 w-10 overflow-hidden rounded-r-section border-y border-r border-border bg-surface/85 shadow-soft backdrop-blur lg:block;
-  }
-
-  .printlab-motion-rail::before,
-  .printlab-motion-rail::after {
-    content: "";
-    @apply absolute left-1/2 -translate-x-1/2 rounded-full;
-  }
-
-  .printlab-motion-rail::before {
-    @apply top-7 h-48 w-px bg-primary/25;
-  }
-
-  .printlab-motion-rail::after {
-    @apply top-6 size-3 bg-highlight-teal shadow-soft;
-    animation: printlab-rail-dot 4.8s var(--motion-ease) infinite;
   }
 
   .motion-ready .motion-reveal {
@@ -147,6 +125,28 @@
   .nav-link:hover::after,
   .nav-link:focus-visible::after {
     transform: scaleX(1);
+  }
+
+  .site-header {
+    @apply sticky top-0 z-40;
+    box-shadow: 0 8px 28px -26px rgb(7 28 54 / 0.55);
+    backdrop-filter: blur(10px);
+  }
+
+  .site-header-inner {
+    min-height: 4.75rem;
+  }
+
+  .site-nav {
+    max-width: 100%;
+  }
+
+  .nav-link-cart {
+    @apply border border-border bg-surface px-3;
+  }
+
+  .nav-link-cart:hover {
+    @apply border-primary;
   }
 
   .brand-link {
@@ -228,12 +228,31 @@
     @apply grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:py-18;
   }
 
+  .hero-grid > * {
+    min-width: 0;
+  }
+
   .hero-title {
-    @apply mt-5 flex flex-col text-balance text-5xl font-semibold leading-none tracking-normal text-secondary-foreground sm:text-6xl lg:text-7xl;
+    @apply mt-5 flex max-w-3xl min-w-0 flex-col text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.04em] text-secondary-foreground sm:text-6xl lg:text-7xl;
+    font-size: clamp(2.65rem, 11vw, 4.5rem);
+  }
+
+  .hero-title > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-copy > p:not(.brand-kicker) {
+    max-width: 38rem;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-copy .btn-base {
+    min-width: 9.5rem;
   }
 
   .hero-brand-stage {
-    @apply relative min-h-96 overflow-hidden rounded-section border border-white/15 p-5 sm:min-h-[28rem] sm:p-8;
+    @apply relative min-h-96 overflow-hidden rounded-section border border-white/15 p-5 sm:min-h-[30rem] sm:p-8;
     background:
       linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 30%, transparent), transparent 34%),
       linear-gradient(315deg, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 36%),
@@ -247,6 +266,41 @@
       -18px 42px 0 -2px color-mix(in oklab, var(--color-highlight-teal) 85%, transparent),
       20px 94px 0 -4px color-mix(in oklab, var(--color-highlight-pink) 80%, transparent);
     animation: printlab-soft-float 6s var(--motion-ease) infinite;
+  }
+
+  .hero-tech-label {
+    @apply absolute z-20 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/75;
+  }
+
+  .hero-tech-label-top {
+    @apply left-5 top-5 sm:left-8 sm:top-7;
+  }
+
+  .hero-tech-label-bottom {
+    @apply bottom-5 right-5 sm:bottom-7 sm:right-8;
+  }
+
+  .hero-geometry {
+    @apply pointer-events-none absolute z-10 block border border-white/35;
+    transition: transform var(--motion-slow) var(--motion-spring);
+  }
+
+  .hero-geometry-cube {
+    @apply right-8 top-28 size-16 rotate-12 rounded-card border-highlight-yellow/70;
+    box-shadow: 12px 12px 0 -1px color-mix(in oklab, var(--color-highlight-pink) 72%, transparent);
+  }
+
+  .hero-geometry-ring {
+    @apply bottom-16 left-8 size-20 rounded-full border-2 border-highlight-teal/70;
+    box-shadow: inset 0 0 0 8px color-mix(in oklab, var(--color-primary) 18%, transparent);
+  }
+
+  .hero-brand-stage:hover .hero-geometry-cube {
+    transform: translate(-4px, 4px) rotate(20deg);
+  }
+
+  .hero-brand-stage:hover .hero-geometry-ring {
+    transform: translate(5px, -4px) rotate(-12deg);
   }
 
   .hero-brand-stage::before {
@@ -337,7 +391,7 @@
   }
 
   .dna-card {
-    @apply min-h-52 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
+    @apply relative min-h-52 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
     transition:
       transform var(--motion-normal) var(--motion-spring),
       box-shadow var(--motion-normal) var(--motion-ease),
@@ -349,7 +403,37 @@
   }
 
   .dna-word {
-    @apply block text-3xl font-semibold leading-none tracking-normal sm:text-4xl;
+    @apply relative z-10 block text-3xl font-semibold leading-none tracking-normal sm:text-4xl;
+  }
+
+  .dna-card-mark {
+    @apply absolute right-5 top-5 z-0 block size-16 rounded-card border-2 border-current/35 opacity-70;
+    transition: transform var(--motion-slow) var(--motion-spring);
+  }
+
+  .dna-card:hover .dna-card-mark {
+    transform: rotate(12deg) translate(-3px, 3px);
+  }
+
+  .dna-card-mark::after {
+    content: "";
+    @apply absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-current;
+  }
+
+  .dna-card-mark-blue {
+    @apply rotate-12 border-foreground/35;
+  }
+
+  .dna-card-mark-teal {
+    @apply -rotate-12 rounded-full border-foreground/35;
+  }
+
+  .dna-card-mark-pink {
+    @apply rotate-45 border-foreground/35;
+  }
+
+  .dna-card-mark-yellow {
+    @apply -rotate-6 border-foreground/35;
   }
 
   .dna-card p {
@@ -1869,16 +1953,6 @@
 
   .empty-state-icon {
     @apply mb-5 flex size-20 items-center justify-center rounded-section bg-surface-muted text-primary;
-  }
-}
-
-@keyframes printlab-rail-dot {
-  0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, 185px);
   }
 }
 

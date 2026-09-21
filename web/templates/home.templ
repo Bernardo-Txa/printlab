@@ -7,7 +7,7 @@ templ Home() {
 		<section id="inicio" class="hero-section">
 			@components.Container() {
 				<div class="hero-grid">
-					<div class="max-w-3xl">
+					<div class="hero-copy max-w-3xl">
 						<p class="brand-kicker">Laboratorio de impressao 3D</p>
 						<h1 class="hero-title">
 							<span>Imprimimos <span class="text-highlight-blue">ideias.</span></span>
@@ -23,6 +23,10 @@ templ Home() {
 						</div>
 					</div>
 					<div class="hero-brand-stage">
+						<span class="hero-tech-label hero-tech-label-top">PL / 3D-01</span>
+						<span class="hero-tech-label hero-tech-label-bottom">LAYER / FORM / COLOR</span>
+						<span class="hero-geometry hero-geometry-cube" aria-hidden="true"></span>
+						<span class="hero-geometry hero-geometry-ring" aria-hidden="true"></span>
 						@components.MoleculeGraphic("molecule-mark hero-molecule")
 						<div class="hero-logo-shell">
 							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-hero-v1.webp" width="640" height="480" alt="Logo da PrintLab com impressora 3D e frasco de laboratorio" fetchpriority="high" decoding="async"/>
@@ -40,18 +44,22 @@ templ Home() {
 				</div>
 				<div class="dna-grid">
 					<div class="dna-card dna-card-blue">
+						<span class="dna-card-mark dna-card-mark-blue" aria-hidden="true"></span>
 						<span class="dna-word">Impressao</span>
 						<p>Camadas, formas e detalhes tratados como parte do projeto.</p>
 					</div>
 					<div class="dna-card dna-card-teal">
+						<span class="dna-card-mark dna-card-mark-teal" aria-hidden="true"></span>
 						<span class="dna-word">Experimento</span>
 						<p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p>
 					</div>
 					<div class="dna-card dna-card-pink">
+						<span class="dna-card-mark dna-card-mark-pink" aria-hidden="true"></span>
 						<span class="dna-word">Precisao</span>
 						<p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p>
 					</div>
 					<div class="dna-card dna-card-yellow">
+						<span class="dna-card-mark dna-card-mark-yellow" aria-hidden="true"></span>
 						<span class="dna-word">Criação</span>
 						<p>Cor, material e desenho abrem espaco para projetos mais autorais.</p>
 					</div>

@@ -55,9 +55,14 @@
       return;
     }
 
+    var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
     elements.forEach(function (element, index) {
       element.classList.add("motion-reveal");
       element.style.setProperty("--reveal-delay", Math.min(index % 6, 5) * 45 + "ms");
+      var rect = element.getBoundingClientRect();
+      if (rect.top < viewportHeight * 1.1 && rect.bottom > 0) {
+        element.classList.add("motion-visible");
+      }
     });
 
     document.documentElement.classList.add("motion-ready");

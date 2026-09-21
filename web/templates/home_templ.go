@@ -59,7 +59,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"hero-grid\"><div class=\"max-w-3xl\"><p class=\"brand-kicker\">Laboratorio de impressao 3D</p><h1 class=\"hero-title\"><span>Imprimimos <span class=\"text-highlight-blue\">ideias.</span></span> <span>Experimentamos <span class=\"text-highlight-pink\">possibilidades.</span></span> <span>Criamos em <span class=\"text-highlight-teal\">3D.</span></span></h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80\">Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"hero-grid\"><div class=\"hero-copy max-w-3xl\"><p class=\"brand-kicker\">Laboratorio de impressao 3D</p><h1 class=\"hero-title\"><span>Imprimimos <span class=\"text-highlight-blue\">ideias.</span></span> <span>Experimentamos <span class=\"text-highlight-pink\">possibilidades.</span></span> <span>Criamos em <span class=\"text-highlight-teal\">3D.</span></span></h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80\">Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -71,7 +71,7 @@ func Home() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"hero-brand-stage\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"hero-brand-stage\"><span class=\"hero-tech-label hero-tech-label-top\">PL / 3D-01</span> <span class=\"hero-tech-label hero-tech-label-bottom\">LAYER / FORM / COLOR</span> <span class=\"hero-geometry hero-geometry-cube\" aria-hidden=\"true\"></span> <span class=\"hero-geometry hero-geometry-ring\" aria-hidden=\"true\"></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -113,7 +113,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"section-heading\"><p class=\"brand-kicker\">DNA PrintLab</p><h2 class=\"mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Uma marca feita de tecnica, teste e imaginacao.</h2></div><div class=\"dna-grid\"><div class=\"dna-card dna-card-blue\"><span class=\"dna-word\">Impressao</span><p>Camadas, formas e detalhes tratados como parte do projeto.</p></div><div class=\"dna-card dna-card-teal\"><span class=\"dna-word\">Experimento</span><p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p></div><div class=\"dna-card dna-card-pink\"><span class=\"dna-word\">Precisao</span><p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p></div><div class=\"dna-card dna-card-yellow\"><span class=\"dna-word\">Criação</span><p>Cor, material e desenho abrem espaco para projetos mais autorais.</p></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"section-heading\"><p class=\"brand-kicker\">DNA PrintLab</p><h2 class=\"mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Uma marca feita de tecnica, teste e imaginacao.</h2></div><div class=\"dna-grid\"><div class=\"dna-card dna-card-blue\"><span class=\"dna-card-mark dna-card-mark-blue\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Impressao</span><p>Camadas, formas e detalhes tratados como parte do projeto.</p></div><div class=\"dna-card dna-card-teal\"><span class=\"dna-card-mark dna-card-mark-teal\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Experimento</span><p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p></div><div class=\"dna-card dna-card-pink\"><span class=\"dna-card-mark dna-card-mark-pink\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Precisao</span><p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p></div><div class=\"dna-card dna-card-yellow\"><span class=\"dna-card-mark dna-card-mark-yellow\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Criação</span><p>Cor, material e desenho abrem espaco para projetos mais autorais.</p></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

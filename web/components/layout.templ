@@ -26,7 +26,6 @@ templ Layout(title string, description string, canonicalPath string) {
 		</head>
 		<body class="min-h-screen bg-background font-sans text-foreground antialiased">
 			<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
-			<span class="printlab-motion-rail" aria-hidden="true"></span>
 			@Header()
 			<main id="conteudo" tabindex="-1">
 				{ children... }
@@ -51,7 +50,6 @@ templ PrivateNoIndexLayout(title string, description string) {
 		</head>
 		<body class="min-h-screen bg-background font-sans text-foreground antialiased">
 			<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
-			<span class="printlab-motion-rail" aria-hidden="true"></span>
 			@Header()
 			<main id="conteudo" tabindex="-1">
 				{ children... }

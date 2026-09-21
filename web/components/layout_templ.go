@@ -125,7 +125,7 @@ func Layout(title string, description string, canonicalPath string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<link rel=\"icon\" type=\"image/png\" href=\"/static/images/branding/favicon-printlab-v1.png\"><link rel=\"stylesheet\" href=\"/static/css/app.css\"></head><body class=\"min-h-screen bg-background font-sans text-foreground antialiased\"><a class=\"skip-link\" href=\"#conteudo\">Pular para o conteúdo</a> <span class=\"printlab-motion-rail\" aria-hidden=\"true\"></span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<link rel=\"icon\" type=\"image/png\" href=\"/static/images/branding/favicon-printlab-v1.png\"><link rel=\"stylesheet\" href=\"/static/css/app.css\"></head><body class=\"min-h-screen bg-background font-sans text-foreground antialiased\"><a class=\"skip-link\" href=\"#conteudo\">Pular para o conteúdo</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -185,7 +185,7 @@ func PrivateNoIndexLayout(title string, description string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/layout.templ`, Line: 46, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/layout.templ`, Line: 45, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -198,13 +198,13 @@ func PrivateNoIndexLayout(title string, description string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/layout.templ`, Line: 47, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/layout.templ`, Line: 46, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"><meta name=\"robots\" content=\"noindex, nofollow, noarchive\"><link rel=\"icon\" type=\"image/png\" href=\"/static/images/branding/favicon-printlab-v1.png\"><link rel=\"stylesheet\" href=\"/static/css/app.css\"></head><body class=\"min-h-screen bg-background font-sans text-foreground antialiased\"><a class=\"skip-link\" href=\"#conteudo\">Pular para o conteúdo</a> <span class=\"printlab-motion-rail\" aria-hidden=\"true\"></span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"><meta name=\"robots\" content=\"noindex, nofollow, noarchive\"><link rel=\"icon\" type=\"image/png\" href=\"/static/images/branding/favicon-printlab-v1.png\"><link rel=\"stylesheet\" href=\"/static/css/app.css\"></head><body class=\"min-h-screen bg-background font-sans text-foreground antialiased\"><a class=\"skip-link\" href=\"#conteudo\">Pular para o conteúdo</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

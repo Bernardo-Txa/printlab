@@ -10,7 +10,7 @@ Refinar a experiência visual da PrintLab com animações, transições e microi
 
 - Sistema centralizado de movimento em CSS com tokens `--motion-fast`, `--motion-normal`, `--motion-slow`, `--motion-enter`, `--motion-ease` e `--motion-spring`.
 - Microinterações para header, navegação, logo, botões, filtros, cards de produto, mídia de produto, variantes, swatches de cores comerciais, carrinho, checkout e Admin.
-- Elemento decorativo lateral próprio da PrintLab, restrito a desktop, sem bloquear interação.
+- Composição decorativa interna no hero e elementos gráficos secundários nos cards DNA, sem bloquear interação.
 - Reveal progressivo com `IntersectionObserver`, executado uma vez por elemento, usando somente `opacity` e `transform`.
 - Conteúdo permanece visível quando JavaScript está indisponível.
 - Feedback visual rápido em botões submetidos, sem atrasar nem bloquear ações.

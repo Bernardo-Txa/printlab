@@ -803,7 +803,7 @@ Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. 
 
 - Adicionar interacoes proprias da PrintLab que sejam sutis, mobile-first, acessiveis, compatíveis com SSR e respeitem `prefers-reduced-motion`.
 - Nao transformar o site em SPA nem bloquear checkout.
-- Implementada com sistema de movimento CSS, reveal progressivo sem dependencia de conteudo em JavaScript, microinteracoes em componentes principais e elemento decorativo lateral da marca.
+- Implementada com sistema de movimento CSS, reveal progressivo sem dependencia de conteudo em JavaScript, microinteracoes em componentes principais e composição decorativa interna da marca.
 
 ### Fase 19.3 — Regressao de UX/performance
 
