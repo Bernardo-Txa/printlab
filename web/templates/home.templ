@@ -8,111 +8,60 @@ templ Home() {
 			@components.Container() {
 				<div class="hero-grid">
 					<div class="hero-copy max-w-3xl">
-						<p class="brand-kicker">Laboratório de impressão 3D</p>
+						<p class="brand-kicker">Laboratorio de impressao 3D</p>
 						<h1 class="hero-title">
-							<span>Imprimimos</span>
-							<span class="text-highlight-blue">ideias.</span>
-							<span>Experimentamos</span>
-							<span class="text-highlight-pink">possibilidades.</span>
+							<span>Imprimimos <span class="text-highlight-blue">ideias.</span></span>
+							<span>Experimentamos <span class="text-highlight-pink">possibilidades.</span></span>
 							<span>Criamos em <span class="text-highlight-teal">3D.</span></span>
 						</h1>
 						<p class="mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80">
-							Precisão, cor e criatividade para transformar conceitos em objetos físicos com uma linguagem própria de fabricação digital.
+							Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.
 						</p>
 						<div class="mt-8 flex flex-col gap-3 sm:flex-row">
 							@components.LinkButton("/produtos", "Ver produtos")
 							@components.LinkButtonSecondary("#como-funciona", "Ver o processo")
 						</div>
-						<div class="hero-proof-grid" aria-label="Diferenciais da PrintLab">
-							<div class="hero-proof-item">
-								<span class="hero-proof-icon hero-proof-icon-shipping" aria-hidden="true"></span>
-								<p><strong>Frete calculado</strong><span>Cotação no checkout</span></p>
-							</div>
-							<div class="hero-proof-item">
-								<span class="hero-proof-icon hero-proof-icon-payment" aria-hidden="true"></span>
-								<p><strong>Compra segura</strong><span>Pagamento via InfinitePay</span></p>
-							</div>
-							<div class="hero-proof-item">
-								<span class="hero-proof-icon hero-proof-icon-quality" aria-hidden="true"></span>
-								<p><strong>Qualidade garantida</strong><span>Produção com cuidado e precisão</span></p>
-							</div>
-						</div>
 					</div>
-					<div class="hero-brand-stage" aria-label="Composição visual da PrintLab com objetos de impressão 3D">
-						<span class="hero-stage-glow hero-stage-glow-blue" aria-hidden="true"></span>
-						<span class="hero-stage-glow hero-stage-glow-pink" aria-hidden="true"></span>
-						<span class="hero-stage-glow hero-stage-glow-yellow" aria-hidden="true"></span>
+					<div class="hero-brand-stage">
 						<span class="hero-tech-label hero-tech-label-top">PL / 3D-01</span>
-						<span class="hero-tech-label hero-tech-label-bottom">Layer / Form / Color</span>
+						<span class="hero-tech-label hero-tech-label-bottom">LAYER / FORM / COLOR</span>
 						<span class="hero-geometry hero-geometry-cube" aria-hidden="true"></span>
 						<span class="hero-geometry hero-geometry-ring" aria-hidden="true"></span>
-						<span class="hero-note hero-note-postit" aria-hidden="true">Mais que impressão.<br/>Criação. ☺</span>
 						@components.MoleculeGraphic("molecule-mark hero-molecule")
 						<div class="hero-logo-shell">
-							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-hero-v1.webp" width="640" height="480" alt="Logo da PrintLab com impressora 3D e frasco de laboratório" fetchpriority="high" decoding="async"/>
+							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-hero-v1.webp" width="640" height="480" alt="Logo da PrintLab com impressora 3D e frasco de laboratorio" fetchpriority="high" decoding="async"/>
 						</div>
-						<div class="hero-css-object hero-boat" aria-hidden="true">
-							<span class="hero-boat-hull"></span>
-							<span class="hero-boat-cabin"></span>
-							<span class="hero-boat-stack"></span>
-						</div>
-						<div class="hero-css-object hero-dino" aria-hidden="true">
-							<span class="hero-dino-body"></span>
-							<span class="hero-dino-head"></span>
-							<span class="hero-dino-tail"></span>
-							<span class="hero-dino-leg hero-dino-leg-a"></span>
-							<span class="hero-dino-leg hero-dino-leg-b"></span>
-						</div>
-						<span class="hero-filament" aria-hidden="true"><span></span></span>
-						<span class="hero-hand-note" aria-hidden="true">Ideias<br/>ganham<br/>forma!</span>
 						@components.LayerStackGraphic()
-						<a class="hero-product-pill focus-ring" href="/produtos">
-							<span class="hero-product-icon" aria-hidden="true"></span>
-							<span><strong>Peças únicas</strong><small>para ideias reais</small></span>
-							<span aria-hidden="true">→</span>
-						</a>
 					</div>
 				</div>
 			}
 		</section>
 		<section id="dna" class="dna-section">
 			@components.Container() {
-				<div class="dna-heading-grid">
-					<div class="section-heading">
-						<p class="brand-kicker">DNA PrintLab</p>
-						<h2 class="mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl">Uma marca feita de técnica, teste e imaginação.</h2>
-					</div>
-					<p class="dna-intro">Aqui cada detalhe importa. Unimos tecnologia, materiais de qualidade e um processo cuidadoso para transformar ideias em produtos reais.</p>
-					<p class="dna-note" aria-hidden="true">3D torna tudo<br/>mais possível</p>
+				<div class="section-heading">
+					<p class="brand-kicker">DNA PrintLab</p>
+					<h2 class="mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl">Uma marca feita de tecnica, teste e imaginacao.</h2>
 				</div>
 				<div class="dna-grid">
 					<div class="dna-card dna-card-blue">
-						<span class="dna-icon dna-icon-cube" aria-hidden="true"></span>
 						<span class="dna-card-mark dna-card-mark-blue" aria-hidden="true"></span>
-						<span class="dna-word">Impressão</span>
+						<span class="dna-word">Impressao</span>
 						<p>Camadas, formas e detalhes tratados como parte do projeto.</p>
-						<span class="dna-card-arrow" aria-hidden="true">→</span>
 					</div>
 					<div class="dna-card dna-card-teal">
-						<span class="dna-icon dna-icon-bulb" aria-hidden="true"></span>
 						<span class="dna-card-mark dna-card-mark-teal" aria-hidden="true"></span>
 						<span class="dna-word">Experimento</span>
 						<p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p>
-						<span class="dna-card-arrow" aria-hidden="true">→</span>
 					</div>
 					<div class="dna-card dna-card-pink">
-						<span class="dna-icon dna-icon-target" aria-hidden="true"></span>
 						<span class="dna-card-mark dna-card-mark-pink" aria-hidden="true"></span>
-						<span class="dna-word">Precisão</span>
-						<p>Escolhas técnicas ajudam cada objeto a nascer com propósito.</p>
-						<span class="dna-card-arrow" aria-hidden="true">→</span>
+						<span class="dna-word">Precisao</span>
+						<p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p>
 					</div>
 					<div class="dna-card dna-card-yellow">
-						<span class="dna-icon dna-icon-star" aria-hidden="true"></span>
 						<span class="dna-card-mark dna-card-mark-yellow" aria-hidden="true"></span>
 						<span class="dna-word">Criação</span>
-						<p>Cor, material e desenho abrem espaço para projetos mais autorais.</p>
-						<span class="dna-card-arrow" aria-hidden="true">→</span>
+						<p>Cor, material e desenho abrem espaco para projetos mais autorais.</p>
 					</div>
 				</div>
 			}
@@ -136,7 +85,7 @@ templ Home() {
 				<li class="process-step">
 					<span class="step-number">03</span>
 					<div>
-						<h3>A impressão ganha forma</h3>
+						<h3>A impressao ganha forma</h3>
 						<p>Camada por camada, a ideia se aproxima do mundo físico.</p>
 					</div>
 				</li>
@@ -149,7 +98,7 @@ templ Home() {
 						<p class="brand-kicker">Catálogo futuro</p>
 						<h2 class="mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl">Experimentos que você vai poder levar para casa.</h2>
 						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg">
-							A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentação.
+							A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentacao.
 						</p>
 						<div class="mt-8">
 							@components.LinkButton("/produtos", "Abrir catálogo")

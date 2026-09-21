@@ -12,7 +12,7 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 19.2: sistema de movimento da PrintLab com tokens CSS, microinterações em navegação, botões, cards, swatches, variantes, carrinho, checkout e Admin, reveal progressivo sem ocultar conteúdo sem JavaScript, composição decorativa interna, Home com direção visual premium inspirada nas referências de alta fidelidade e suporte a `prefers-reduced-motion`.
+- Fase 19.2: sistema de movimento da PrintLab com tokens CSS, microinterações em navegação, botões, cards, swatches, variantes, carrinho, checkout e Admin, reveal progressivo sem ocultar conteúdo sem JavaScript, composição decorativa interna e suporte a `prefers-reduced-motion`.
 
 - Retirada no local no checkout, concluida e validada manualmente em producao: nova modalidade `pickup` com frete zero definido server-side, sem SuperFrete, caixa ou perfil logistico, persistida em carrinho e pedido por `delivery_method`. Pedido e Admin exibem “Retirada no local” e “Grátis”. Migration adiciona constraints condicionais para separar envio e retirada.
 

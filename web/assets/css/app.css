@@ -128,24 +128,13 @@
   }
 
   .site-header {
-    @apply sticky top-0 z-40 border-white/10;
-    background:
-      linear-gradient(90deg, rgb(7 28 54 / 0.96), rgb(8 36 72 / 0.92)),
-      var(--color-secondary);
-    box-shadow: 0 18px 46px -38px rgb(0 0 0 / 0.8);
-    backdrop-filter: blur(14px);
+    @apply sticky top-0 z-40;
+    box-shadow: 0 8px 28px -26px rgb(7 28 54 / 0.55);
+    backdrop-filter: blur(10px);
   }
 
   .site-header-inner {
     min-height: 4.75rem;
-  }
-
-  .site-header .nav-link {
-    @apply text-white/78 hover:text-white;
-  }
-
-  .site-header .nav-link:hover {
-    background: rgb(255 255 255 / 0.08);
   }
 
   .site-nav {
@@ -153,13 +142,11 @@
   }
 
   .nav-link-cart {
-    @apply border px-3;
-    border-color: rgb(255 255 255 / 0.18);
-    background: rgb(255 255 255 / 0.08);
+    @apply border border-border bg-surface px-3;
   }
 
   .nav-link-cart:hover {
-    border-color: color-mix(in oklab, var(--color-highlight-teal) 72%, white 0%);
+    @apply border-primary;
   }
 
   .brand-link {
@@ -220,32 +207,7 @@
   }
 
   .hero-section {
-    @apply relative overflow-hidden bg-secondary text-secondary-foreground;
-    background:
-      radial-gradient(circle at -10% 42%, color-mix(in oklab, var(--color-highlight-blue) 40%, transparent), transparent 22rem),
-      radial-gradient(circle at 72% 28%, color-mix(in oklab, var(--color-highlight-pink) 24%, transparent), transparent 25rem),
-      radial-gradient(circle at 95% 94%, color-mix(in oklab, var(--color-highlight-yellow) 42%, transparent), transparent 16rem),
-      linear-gradient(135deg, #061b36 0%, #071c36 48%, #0b1740 100%);
-  }
-
-  .hero-section::before,
-  .hero-section::after {
-    content: "";
-    @apply pointer-events-none absolute rounded-full;
-  }
-
-  .hero-section::before {
-    @apply -left-24 top-12 h-[34rem] w-44 bg-highlight-blue/70;
-    border-radius: 45% 55% 60% 40%;
-    filter: blur(1px);
-    transform: rotate(-18deg);
-  }
-
-  .hero-section::after {
-    @apply -bottom-36 -right-20 h-72 w-72 bg-highlight-yellow/90;
-    clip-path: polygon(58% 0, 100% 55%, 42% 100%, 0 48%);
-    border-radius: 2.5rem;
-    transform: rotate(18deg);
+    @apply overflow-hidden bg-secondary text-secondary-foreground;
   }
 
   .brand-kicker {
@@ -263,7 +225,7 @@
   }
 
   .hero-grid {
-    @apply relative z-10 grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[0.98fr_1.02fr] lg:py-18;
+    @apply grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:py-18;
   }
 
   .hero-grid > * {
@@ -271,14 +233,13 @@
   }
 
   .hero-title {
-    @apply mt-5 flex max-w-3xl min-w-0 flex-col text-balance text-5xl font-semibold leading-[0.94] tracking-[-0.05em] text-secondary-foreground sm:text-6xl lg:text-7xl;
-    font-size: clamp(2.25rem, 6.2vw, 4.35rem);
-    text-shadow: 0 18px 48px rgb(0 0 0 / 0.18);
+    @apply mt-5 flex max-w-3xl min-w-0 flex-col text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.04em] text-secondary-foreground sm:text-6xl lg:text-7xl;
+    font-size: clamp(2.65rem, 11vw, 4.5rem);
   }
 
   .hero-title > span {
     max-width: 100%;
-    overflow-wrap: normal;
+    overflow-wrap: anywhere;
   }
 
   .hero-copy > p:not(.brand-kicker) {
@@ -291,25 +252,19 @@
   }
 
   .hero-brand-stage {
-    @apply relative min-h-[34rem] overflow-hidden rounded-section border border-white/12 p-5 sm:min-h-[34rem] sm:p-8;
+    @apply relative min-h-96 overflow-hidden rounded-section border border-white/15 p-5 sm:min-h-[30rem] sm:p-8;
     background:
-      linear-gradient(135deg, rgb(15 47 89 / 0.92), rgb(7 28 54 / 0.35) 45%),
-      radial-gradient(circle at 72% 28%, color-mix(in oklab, var(--color-highlight-pink) 28%, transparent), transparent 15rem),
-      radial-gradient(circle at 18% 72%, color-mix(in oklab, var(--color-highlight-blue) 38%, transparent), transparent 16rem),
+      linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 30%, transparent), transparent 34%),
+      linear-gradient(315deg, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 36%),
       var(--color-secondary);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.14),
-      0 34px 90px -52px rgb(0 0 0 / 0.86);
-    isolation: isolate;
   }
 
   .hero-brand-stage::after {
     content: "";
-    @apply absolute right-10 top-32 z-20 h-6 w-6 rounded-full bg-highlight-pink;
+    @apply absolute right-8 top-10 h-24 w-3 rounded-full bg-highlight-yellow/80;
     box-shadow:
-      2.4rem 1.4rem 0 -0.2rem color-mix(in oklab, var(--color-highlight-teal) 92%, transparent),
-      1.2rem 4rem 0 -0.35rem color-mix(in oklab, var(--color-highlight-yellow) 94%, transparent),
-      -1.4rem 5.8rem 0 -0.45rem color-mix(in oklab, var(--color-highlight-blue) 86%, transparent);
+      -18px 42px 0 -2px color-mix(in oklab, var(--color-highlight-teal) 85%, transparent),
+      20px 94px 0 -4px color-mix(in oklab, var(--color-highlight-pink) 80%, transparent);
     animation: printlab-soft-float 6s var(--motion-ease) infinite;
   }
 
@@ -358,11 +313,7 @@
   }
 
   .hero-logo-shell {
-    @apply absolute inset-x-5 top-20 z-30 mx-auto flex max-w-[31rem] items-center justify-center rounded-section bg-surface p-5 shadow-soft sm:inset-x-12 sm:top-16 sm:p-7;
-    min-height: 13rem;
-    box-shadow:
-      0 30px 80px -42px rgb(0 0 0 / 0.82),
-      inset 0 1px 0 rgb(255 255 255 / 0.84);
+    @apply absolute inset-x-5 top-7 z-10 mx-auto flex max-w-md items-center justify-center rounded-section bg-surface p-5 shadow-soft sm:inset-x-8 sm:top-8 sm:p-6;
     transition:
       transform var(--motion-slow) var(--motion-spring),
       box-shadow var(--motion-normal) var(--motion-ease);
@@ -374,7 +325,6 @@
 
   .hero-logo-image {
     @apply w-full max-w-80 object-contain;
-    filter: drop-shadow(0 12px 20px rgb(7 28 54 / 0.13));
   }
 
   .molecule-mark {
@@ -382,8 +332,7 @@
   }
 
   .hero-molecule {
-    @apply bottom-10 right-2 z-10 h-36 w-48 opacity-85 sm:right-10;
-    filter: drop-shadow(0 18px 26px rgb(17 135 244 / 0.28));
+    @apply bottom-12 right-3 z-0 h-36 w-48 opacity-80 sm:right-8;
   }
 
   .lab-molecule {
@@ -391,7 +340,7 @@
   }
 
   .brand-layer-stack {
-    @apply absolute bottom-20 left-36 z-30 flex w-52 flex-col items-start gap-2 sm:left-40;
+    @apply absolute bottom-7 left-6 z-10 flex w-52 flex-col items-start gap-2 sm:left-8;
   }
 
   .brand-layer {
@@ -434,28 +383,7 @@
   }
 
   .dna-section {
-    @apply relative overflow-hidden bg-background py-14 sm:py-18;
-    background:
-      radial-gradient(circle at 84% 18%, rgb(17 135 244 / 0.10), transparent 18rem),
-      linear-gradient(180deg, #f8fbff 0%, var(--color-background) 100%);
-  }
-
-  .dna-heading-grid {
-    @apply relative grid gap-6 lg:grid-cols-[1fr_0.9fr_12rem] lg:items-end;
-  }
-
-  .dna-intro {
-    @apply max-w-xl text-base leading-7 text-muted sm:text-lg;
-  }
-
-  .dna-note {
-    @apply hidden -rotate-6 text-center text-2xl font-semibold leading-tight text-primary/45 lg:block;
-    font-family: "Comic Sans MS", "Segoe Print", cursive;
-  }
-
-  .dna-note::after {
-    content: "";
-    @apply mx-auto mt-2 block h-1 w-16 rounded-full bg-primary/35;
+    @apply bg-background py-14 sm:py-18;
   }
 
   .dna-grid {
@@ -463,8 +391,7 @@
   }
 
   .dna-card {
-    @apply relative min-h-60 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
-    box-shadow: 0 28px 70px -44px rgb(7 28 54 / 0.58);
+    @apply relative min-h-52 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
     transition:
       transform var(--motion-normal) var(--motion-spring),
       box-shadow var(--motion-normal) var(--motion-ease),
@@ -476,7 +403,7 @@
   }
 
   .dna-word {
-    @apply relative z-10 mt-10 block text-2xl font-semibold leading-none tracking-normal sm:text-3xl;
+    @apply relative z-10 block text-3xl font-semibold leading-none tracking-normal sm:text-4xl;
   }
 
   .dna-card-mark {
@@ -510,251 +437,39 @@
   }
 
   .dna-card p {
-    @apply relative z-10 mt-4 text-sm leading-6 text-primary-foreground/85;
-  }
-
-  .dna-icon {
-    @apply relative z-10 flex size-11 items-center justify-center rounded-full border-2 border-white/82 text-white;
-  }
-
-  .dna-icon::before,
-  .dna-icon::after {
-    content: "";
-    @apply absolute block;
-  }
-
-  .dna-icon-cube::before { @apply size-5 rotate-45 rounded-[0.2rem] border-2 border-current; }
-  .dna-icon-bulb::before { @apply top-2 size-4 rounded-full border-2 border-current; }
-  .dna-icon-bulb::after { @apply bottom-2 h-2 w-3 rounded-sm border-2 border-current border-t-0; }
-  .dna-icon-target::before { @apply size-6 rounded-full border-2 border-current; }
-  .dna-icon-target::after { @apply size-2 rounded-full bg-current; }
-  .dna-icon-star::before {
-    @apply size-7 bg-current;
-    clip-path: polygon(50% 0%, 61% 34%, 98% 35%, 68% 56%, 79% 91%, 50% 70%, 21% 91%, 32% 56%, 2% 35%, 39% 34%);
-  }
-
-  .dna-card-arrow {
-    @apply absolute bottom-5 left-6 z-10 flex size-10 items-center justify-center rounded-full border border-white/55 bg-black/10 text-xl font-semibold text-white;
-    transition: transform var(--motion-normal) var(--motion-spring);
-  }
-
-  .dna-card:hover .dna-card-arrow {
-    transform: translateX(4px);
+    @apply mt-6 text-sm leading-6 text-primary-foreground/85;
   }
 
   .dna-card-blue {
-    @apply bg-highlight-blue text-white;
-  }
-
-  .dna-card-blue::after {
-    content: "";
-    @apply absolute -bottom-10 right-3 h-32 w-40 rounded-t-[4rem] bg-secondary/10;
-    clip-path: polygon(0 28%, 86% 28%, 100% 48%, 84% 100%, 16% 100%);
+    @apply bg-highlight-blue text-foreground;
   }
 
   .dna-card-blue p {
-    @apply text-white/88;
+    @apply text-foreground;
   }
 
   .dna-card-teal {
-    @apply bg-highlight-teal text-white;
-  }
-
-  .dna-card-teal::after {
-    content: "";
-    @apply absolute -bottom-10 right-3 size-36 rounded-full border-[1.75rem] border-secondary/10;
+    @apply bg-highlight-teal text-foreground;
   }
 
   .dna-card-teal p {
-    @apply text-white/86;
+    @apply text-foreground/75;
   }
 
   .dna-card-pink {
-    @apply bg-highlight-pink text-white;
-  }
-
-  .dna-card-pink::after {
-    content: "";
-    @apply absolute -bottom-8 right-2 h-32 w-24 rotate-[-18deg] rounded-control bg-secondary/10;
-    clip-path: polygon(34% 0, 68% 0, 100% 100%, 0 100%);
+    @apply bg-highlight-pink text-foreground;
   }
 
   .dna-card-pink p {
-    @apply text-white/88;
+    color: var(--color-foreground-strong);
   }
 
   .dna-card-yellow {
     @apply bg-highlight-yellow text-foreground;
   }
 
-  .dna-card-yellow::after {
-    content: "";
-    @apply absolute -bottom-10 right-1 h-28 w-36 rounded-full border-[1rem] border-foreground/10;
-  }
-
   .dna-card-yellow p {
     @apply text-foreground/75;
-  }
-
-
-
-  .hero-proof-grid {
-    @apply mt-10 grid gap-4 sm:grid-cols-3;
-  }
-
-  .hero-proof-item {
-    @apply flex min-w-0 gap-3 text-primary-foreground;
-  }
-
-  .hero-proof-item p {
-    @apply min-w-0;
-  }
-
-  .hero-proof-item strong {
-    @apply block text-sm font-semibold leading-tight;
-  }
-
-  .hero-proof-item span:not(.hero-proof-icon) {
-    @apply mt-1 block text-xs leading-5 text-primary-foreground/65;
-  }
-
-  .hero-proof-icon {
-    @apply relative mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-control border border-white/30 text-white;
-  }
-
-  .hero-proof-icon::before,
-  .hero-proof-icon::after {
-    content: "";
-    @apply absolute block;
-  }
-
-  .hero-proof-icon-shipping::before { @apply h-4 w-6 rounded-sm border-2 border-current; }
-  .hero-proof-icon-shipping::after { @apply -bottom-0.5 h-2 w-6 rounded-full border-x-2 border-current; }
-  .hero-proof-icon-payment::before { @apply size-5 rotate-45 rounded-[0.2rem] border-2 border-current; }
-  .hero-proof-icon-quality::before { @apply size-5 rounded-full border-2 border-current; }
-  .hero-proof-icon-quality::after { @apply h-2 w-3 rotate-[-45deg] border-b-2 border-l-2 border-current; }
-
-  .hero-stage-glow {
-    @apply pointer-events-none absolute z-0 block rounded-full blur-2xl;
-  }
-
-  .hero-stage-glow-blue { @apply left-16 top-10 h-36 w-36 bg-highlight-blue/55; }
-  .hero-stage-glow-pink { @apply right-10 top-28 h-52 w-52 bg-highlight-pink/38; }
-  .hero-stage-glow-yellow { @apply bottom-0 right-20 h-40 w-40 bg-highlight-yellow/35; }
-
-  .hero-note-postit {
-    @apply absolute right-4 top-4 z-40 hidden rotate-[-8deg] rounded-control bg-[#ffdf74] px-4 py-3 text-base font-semibold leading-tight text-foreground shadow-soft sm:block;
-    font-family: "Comic Sans MS", "Segoe Print", cursive;
-  }
-
-  .hero-note-postit::after {
-    content: "";
-    @apply absolute inset-0 rounded-control border border-white/40;
-  }
-
-  .hero-css-object {
-    @apply pointer-events-none absolute z-40;
-    filter: drop-shadow(0 24px 24px rgb(0 0 0 / 0.22));
-    animation: printlab-object-float 7s var(--motion-ease) infinite;
-  }
-
-  .hero-boat {
-    @apply left-4 top-[17rem] h-28 w-44 sm:left-8 sm:top-[18rem];
-  }
-
-  .hero-boat-hull {
-    @apply absolute bottom-2 left-0 h-16 w-44 rounded-b-[4rem] rounded-t-[1.6rem] bg-highlight-blue;
-    clip-path: polygon(0 28%, 86% 28%, 100% 48%, 84% 100%, 16% 100%);
-    box-shadow: inset -18px -14px 22px rgb(0 52 130 / 0.32);
-  }
-
-  .hero-boat-cabin {
-    @apply absolute bottom-12 left-16 h-20 w-16 rounded-control bg-highlight-blue;
-    box-shadow: inset -10px -10px 18px rgb(0 52 130 / 0.28);
-  }
-
-  .hero-boat-cabin::before,
-  .hero-boat-cabin::after {
-    content: "";
-    @apply absolute top-7 size-4 rounded-full bg-secondary/75;
-  }
-
-  .hero-boat-cabin::before { @apply left-2; }
-  .hero-boat-cabin::after { @apply right-2; }
-
-  .hero-boat-stack {
-    @apply absolute bottom-[7.5rem] left-[5.4rem] h-9 w-7 rounded-t-control bg-highlight-blue;
-    box-shadow: inset -7px -6px 12px rgb(0 52 130 / 0.25);
-  }
-
-  .hero-dino {
-    @apply right-9 top-[14.2rem] h-40 w-32 sm:right-12;
-    animation-delay: 0.8s;
-  }
-
-  .hero-dino-body { @apply absolute bottom-7 left-5 h-20 w-20 rounded-[45%] bg-highlight-pink; box-shadow: inset -12px -12px 18px rgb(130 0 58 / 0.22); }
-  .hero-dino-head { @apply absolute left-0 top-0 h-16 w-24 rounded-[1.2rem] bg-highlight-pink; box-shadow: inset -12px -10px 18px rgb(130 0 58 / 0.2); }
-  .hero-dino-head::before { content: ""; @apply absolute left-5 top-5 size-2 rounded-full bg-foreground; }
-  .hero-dino-head::after { content: ""; @apply absolute bottom-0 left-8 h-3 w-10 bg-secondary/20; }
-  .hero-dino-tail { @apply absolute bottom-14 right-0 h-6 w-16 rounded-r-full bg-highlight-pink; transform: rotate(28deg); transform-origin: left center; }
-  .hero-dino-leg { @apply absolute bottom-0 h-10 w-5 rounded-b-control bg-highlight-pink; }
-  .hero-dino-leg-a { @apply left-9; }
-  .hero-dino-leg-b { @apply left-16; }
-
-  .hero-filament {
-    @apply absolute bottom-6 right-40 z-30 hidden h-20 w-32 rounded-full border-[14px] border-[#1b2637] bg-highlight-yellow sm:block;
-    box-shadow:
-      inset 0 0 0 4px rgb(255 255 255 / 0.14),
-      0 22px 34px -26px rgb(0 0 0 / 0.9);
-  }
-
-  .hero-filament span {
-    @apply absolute inset-x-2 top-1/2 block h-4 -translate-y-1/2 rounded-full bg-[#f8c82e];
-    box-shadow:
-      0 -12px 0 #f8c82e,
-      0 12px 0 #f8c82e,
-      0 24px 0 #f8c82e;
-  }
-
-  .hero-hand-note {
-    @apply absolute bottom-14 left-[21rem] z-40 hidden -rotate-6 text-xl font-semibold leading-tight text-white/80 sm:block;
-    font-family: "Comic Sans MS", "Segoe Print", cursive;
-  }
-
-  .hero-hand-note::after {
-    content: "";
-    @apply mt-1 block h-1 w-14 rounded-full bg-highlight-blue;
-  }
-
-  .hero-product-pill {
-    @apply absolute bottom-7 right-5 z-50 hidden items-center gap-3 rounded-full border border-white/20 bg-foreground/82 px-4 py-3 text-sm text-white shadow-soft no-underline sm:flex;
-    backdrop-filter: blur(8px);
-    transition:
-      transform var(--motion-fast) var(--motion-spring),
-      border-color var(--motion-fast) var(--motion-ease);
-  }
-
-  .hero-product-pill:hover {
-    transform: translateY(-2px);
-    border-color: rgb(255 255 255 / 0.42);
-  }
-
-  .hero-product-pill strong,
-  .hero-product-pill small {
-    @apply block leading-tight;
-  }
-
-  .hero-product-pill small {
-    @apply mt-0.5 text-white/70;
-  }
-
-  .hero-product-icon {
-    @apply relative size-10 rounded-full border border-white/40;
-  }
-
-  .hero-product-icon::before {
-    content: "";
-    @apply absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-sm border-2 border-white;
   }
 
   .empty-state-icon svg {
@@ -2241,77 +1956,6 @@
   }
 }
 
-@media (max-width: 1023px) {
-  .hero-stage-glow-yellow,
-  .hero-note-postit,
-  .hero-product-pill,
-  .hero-hand-note,
-  .hero-filament {
-    display: none;
-  }
-
-  .hero-logo-shell {
-    top: 5rem;
-  }
-
-  .hero-boat {
-    transform: scale(0.9);
-  }
-
-  .hero-dino {
-    transform: scale(0.86);
-  }
-}
-
-@media (max-width: 640px) {
-  .site-header-inner {
-    min-height: 0;
-  }
-
-  .brand-header-logo {
-    width: 5.75rem;
-  }
-
-  .hero-section::before,
-  .hero-section::after {
-    opacity: 0.5;
-  }
-
-  .hero-proof-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-brand-stage {
-    min-height: 30rem;
-    margin-inline: -0.25rem;
-  }
-
-  .hero-logo-shell {
-    inset-inline: 1rem;
-    min-height: 10.5rem;
-  }
-
-  .hero-boat {
-    left: 0.5rem;
-    top: 17rem;
-    transform: scale(0.74);
-    transform-origin: left top;
-  }
-
-  .hero-dino {
-    right: 0.25rem;
-    top: 16.4rem;
-    transform: scale(0.7);
-    transform-origin: right top;
-  }
-
-  .hero-brand-stage .brand-layer-stack {
-    left: 7.5rem;
-    bottom: 4rem;
-    width: 9rem;
-  }
-}
-
 @keyframes printlab-soft-float {
   0%,
   100% {
@@ -2341,16 +1985,5 @@
   to {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-
-@keyframes printlab-object-float {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -8px;
   }
 }
