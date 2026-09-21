@@ -137,6 +137,12 @@ Se a mesma confirmacao for enviada duas vezes, a segunda tentativa deve redireci
 
 Pedidos de retirada exibem “Retirada no local” e “Grátis”, sem transportadora, servico SuperFrete ou endereco publico de retirada.
 
+## E-mails transacionais planejados
+
+A Fase 18.1 preparou templates de e-mail para confirmacao de pedido, atualizacao de status e pagamento confirmado em `internal/email`. Esses templates ainda nao sao enviados automaticamente e dependem de configuracao externa de SMTP.
+
+Quando forem integrados ao fluxo real, devem usar somente o snapshot comercial persistido do pedido: numero, produtos, variante/cor comercial quando houver, quantidade, subtotais, frete, total, modalidade de entrega e status. Eles nao devem recotar SuperFrete nem incluir CPF, endereco completo, telefone completo, custo de producao, filamento, tempo de impressao, receita, margem, caixa fisica, peso/dimensoes do pacote, `transaction_nsu`, `invoice_slug` ou checkout URL de pagamento.
+
 Dados operacionais como SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem no snapshot para operacao futura, mas nao aparecem na interface publica do comprador.
 
 Quando o pedido esta `pending_payment` e `INFINITEPAY_HANDLE` esta configurado, `/pedido/{id}` mostra o CTA real `Pagar agora`. O POST valida origem, cria ou reutiliza um checkout pendente e redireciona somente para checkout URL `https` em host autorizado pela allowlist explicita:

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 20 planejadas. Fase 19 em execucao.
+Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 19 em execucao. Fase 20 planejada.
 
 ## Status das fases
 
@@ -46,8 +46,8 @@ Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 20 planejadas. Fase 19 e
 | Fase 17.3.1 — Separacao de cor comercial e producao | Concluida; validada em producao |
 | Fase 17.3.2 — Cores comerciais na pagina do produto | Concluida; validada em producao |
 | Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Concluida; validada em producao |
-| Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
-| Fase 18.1 — E-mail transacional PrintLab | Planejada |
+| Fase 18 — Conta do cliente e comunicacao transacional | Em execucao |
+| Fase 18.1 — E-mail transacional PrintLab | Implementada no codigo; aguardando configuracao externa e validacao manual |
 | Fase 18.2 — Autenticacao do cliente | Planejada |
 | Fase 18.3 — Minha conta / Meus pedidos | Planejada |
 | Fase 18.4 — Pagamentos pendentes e retomada | Planejada |
@@ -760,15 +760,16 @@ Dependencias: Fase 16.
 
 ## Fase 18 — Conta do cliente e comunicacao transacional
 
-Objetivo: oferecer conta opcional e comunicacao transacional sem remover o checkout convidado. Tudo nesta fase permanece planejado.
+Objetivo: oferecer conta opcional e comunicacao transacional sem remover o checkout convidado. A fase esta em execucao; 18.1 tem fundacao de codigo implementada e depende de configuracao externa de SMTP/entregabilidade.
 
 ### Fase 18.1 — E-mail transacional PrintLab
 
 - Usar inicialmente `acesso@printlab3d.com.br` como remetente PrintLab para autenticacao e conta, sem marketing.
+- Fundacao de codigo criada em `internal/email` com templates HTML/texto para confirmacao de cadastro, Magic Link, recuperacao de acesso, confirmacao de pedido, atualizacao de status e pagamento confirmado.
 - Planejar iCloud+ Custom Email Domain -> SMTP iCloud (`smtp.mail.me.com`, porta 587) -> Supabase Auth Custom SMTP -> cliente.
 - Usar senha especifica de app somente como secret no provider apropriado; nunca em codigo, documentacao, GitHub, frontend ou logs.
 - Validar DNS, SPF, DKIM, DMARC, From/Reply-To e entrega em Gmail, Outlook e iCloud antes de uso real.
-- Personalizar somente templates Supabase Auth habilitados, em pt-BR, responsivos e sem conteudo promocional.
+- Nao ha envio SMTP real nem Auth de cliente implementado nesta subfase; integracao externa permanece pendente.
 - Reavaliar SMTP se volume, entregabilidade, limites ou necessidade de analytics/retries justificarem provedor transacional dedicado.
 
 ### Fase 18.2 — Autenticacao do cliente

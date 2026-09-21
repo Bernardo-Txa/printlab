@@ -24,7 +24,7 @@ Nao existem signup, cadastro de administrador, login social, lembrar de mim ou r
 
 Esta secao nao descreve funcionalidade implementada. A Fase 18 planeja um fluxo separado de cliente por Supabase Auth passwordless/Magic Link, com conta opcional e checkout convidado preservado. Usuario autenticado como cliente nunca sera tratado como Admin nem recebera acesso a `/admin`.
 
-O SMTP transacional inicial planejado usa iCloud+ Custom Email Domain e `acesso@printlab3d.com.br` como remetente PrintLab para autenticacao e conta, integrado futuramente ao Custom SMTP do Supabase Auth por `smtp.mail.me.com:587`. A senha especifica de app da Apple sera configurada somente como secret no provider apropriado, nunca em codigo, documentacao, frontend, GitHub ou logs. DNS, SPF, DKIM, DMARC, From/Reply-To e entregabilidade ainda nao foram configurados nem validados.
+A Fase 18.1 criou a fundacao de templates transacionais em `internal/email`, mas o SMTP real ainda nao esta ativo. O SMTP transacional inicial planejado usa iCloud+ Custom Email Domain e `acesso@printlab3d.com.br` como remetente PrintLab para autenticacao e conta, integrado futuramente ao Custom SMTP do Supabase Auth por `smtp.mail.me.com:587`. A senha especifica de app da Apple sera configurada somente como secret no provider apropriado, nunca em codigo, documentacao, frontend, GitHub ou logs. DNS, SPF, DKIM, DMARC, From/Reply-To e entregabilidade ainda nao foram configurados nem validados. Detalhes e checklist ficam em [E-mail transacional PrintLab](transactional-email.md).
 
 ## Configuracao
 
