@@ -6,13 +6,13 @@ import (
 )
 
 templ Catalog(catalog products.Catalog) {
-	@components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "/produtos") {
+	@components.Layout("Produtos | PrintLab", "Catálogo de produtos impressos em 3D da PrintLab.", "/produtos") {
 		<section class="catalog-page-hero">
 			@components.Container() {
 				<div class="catalog-page-hero-grid">
 					<div>
-						<p class="brand-kicker">Catalogo PrintLab</p>
-						<h1>Experimentos que voce pode levar para casa.</h1>
+						<p class="brand-kicker">Catálogo PrintLab</p>
+						<h1>Experimentos que você pode levar para casa.</h1>
 						<p>
 							Produtos impressos em 3D com a linguagem de teste, cor e precisao da PrintLab.
 						</p>
@@ -28,7 +28,7 @@ templ Catalog(catalog products.Catalog) {
 				<div class="catalog-toolbar">
 					<div>
 						<p class="text-sm font-semibold uppercase tracking-normal text-primary">Produtos</p>
-						<h2 id="catalogo-produtos">Catalogo</h2>
+						<h2 id="catalogo-produtos">Catálogo</h2>
 					</div>
 					if len(catalog.Categories) > 0 {
 						<nav class="category-filter" aria-label="Filtrar por categoria">
@@ -49,9 +49,9 @@ templ Catalog(catalog products.Catalog) {
 				</div>
 				if len(catalog.Products) == 0 {
 					if catalog.SelectedCategory != nil {
-						@components.EmptyState("Ainda nao ha experimentos nesta categoria.", "Estamos preparando o catalogo da PrintLab com produtos reais.")
+						@components.EmptyState("Ainda não há experimentos nesta categoria.", "Estamos preparando o catálogo da PrintLab com produtos reais.")
 					} else {
-						@components.EmptyState("Os primeiros experimentos estao quase prontos.", "Estamos preparando o catalogo da PrintLab com produtos reais.")
+						@components.EmptyState("Os primeiros experimentos estão quase prontos.", "Estamos preparando o catálogo da PrintLab com produtos reais.")
 					}
 				} else {
 					<div class="product-grid">
@@ -69,7 +69,7 @@ templ Catalog(catalog products.Catalog) {
 						<p class="brand-kicker">Contato</p>
 						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Quer falar sobre uma ideia?</h2>
 						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg">
-							O catalogo vai crescer com produtos reais da PrintLab. Enquanto isso, seguimos abertos para conversar sobre projetos em impressao 3D.
+							O catálogo vai crescer com produtos reais da PrintLab. Enquanto isso, seguimos abertos para conversar sobre projetos em impressão 3D.
 						</p>
 					</div>
 					<a class="cta-badge focus-ring" href="/#contato">Falar com a PrintLab</a>
@@ -83,7 +83,7 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 	@components.Layout(detail.Product.Name + " | PrintLab", metaDescription, detail.CanonicalPath) {
 		<section class="product-detail-section">
 			@components.Container() {
-				<a class="back-link" href="/produtos">Voltar ao catalogo</a>
+				<a class="back-link" href="/produtos">Voltar ao catálogo</a>
 				<div class="product-detail-grid">
 					<div class="product-detail-visual">
 						@components.ProductGallery(detail.Images, detail.Product.Name)
@@ -152,7 +152,7 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 									<button class="btn-base btn-primary" type="submit">Adicionar ao carrinho</button>
 								</div>
 							</form>
-							<p>Frete e pagamento serao definidos na proxima etapa.</p>
+							<p>Frete e pagamento serão definidos na próxima etapa.</p>
 						</div>
 					</div>
 				</div>
@@ -162,20 +162,20 @@ templ ProductDetail(detail products.ProductDetail, metaDescription string) {
 }
 
 templ CatalogUnavailable() {
-	@components.Layout("Catalogo indisponivel | PrintLab", "Catalogo temporariamente indisponivel.", "") {
+	@components.Layout("Catálogo indisponível | PrintLab", "Catálogo temporariamente indisponível.", "") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Catalogo temporariamente indisponivel.", "Nao foi possivel carregar os produtos agora. Tente novamente em alguns instantes.")
+				@components.EmptyState("Catálogo temporariamente indisponível.", "Não foi possível carregar os produtos agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}
 }
 
 templ ProductNotFound() {
-	@components.Layout("Produto nao encontrado | PrintLab", "Produto nao encontrado no catalogo da PrintLab.", "") {
+	@components.Layout("Produto não encontrado | PrintLab", "Produto não encontrado no catálogo da PrintLab.", "") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Produto nao encontrado.", "Esse experimento ainda nao esta disponivel no catalogo publico da PrintLab.")
+				@components.EmptyState("Produto não encontrado.", "Esse experimento ainda não está disponível no catálogo público da PrintLab.")
 			}
 		</section>
 	}

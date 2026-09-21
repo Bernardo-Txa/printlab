@@ -43,8 +43,8 @@ func OrderListOptions(activeStatus string) []OrderListOption {
 	}{
 		{OrderListStatusAll, "Todos"},
 		{OrderListStatusPendingPayment, "Aguardando pagamento"},
-		{OrderListStatusWaitingProduction, "Aguardando producao"},
-		{OrderListStatusInProduction, "Em producao"},
+		{OrderListStatusWaitingProduction, "Aguardando produção"},
+		{OrderListStatusInProduction, "Em produção"},
 		{OrderListStatusWaitingShipment, "Aguardando envio"},
 		{OrderListStatusPreparingShipment, "Preparando envio"},
 		{OrderListStatusShipped, "Enviados"},
@@ -164,9 +164,9 @@ func ProductionActions(snapshot OrderStatusSnapshot) []OrderAction {
 
 	switch snapshot.ProductionStatus {
 	case ProductionStatusWaiting:
-		return []OrderAction{{Status: ProductionStatusInProduction, Label: "Iniciar producao"}}
+		return []OrderAction{{Status: ProductionStatusInProduction, Label: "Iniciar produção"}}
 	case ProductionStatusInProduction:
-		return []OrderAction{{Status: ProductionStatusCompleted, Label: "Concluir producao"}}
+		return []OrderAction{{Status: ProductionStatusCompleted, Label: "Concluir produção"}}
 	default:
 		return nil
 	}
@@ -234,7 +234,7 @@ func OrderStatusLabel(status string) string {
 	case OrderStatusPaid:
 		return "Pagamento confirmado"
 	default:
-		return "Status indisponivel"
+		return "Status indisponível"
 	}
 }
 
@@ -244,13 +244,13 @@ func ProductionStatusLabel(orderStatus string, productionStatus string) string {
 	}
 	switch productionStatus {
 	case ProductionStatusWaiting:
-		return "Aguardando producao"
+		return "Aguardando produção"
 	case ProductionStatusInProduction:
-		return "Em producao"
+		return "Em produção"
 	case ProductionStatusCompleted:
-		return "Producao concluida"
+		return "Produção concluída"
 	default:
-		return "Status indisponivel"
+		return "Status indisponível"
 	}
 }
 
@@ -269,13 +269,13 @@ func ShippingStatusLabel(orderStatus string, productionStatus string, shippingSt
 	}
 	switch productionStatus {
 	case ProductionStatusWaiting:
-		return "Aguardando producao"
+		return "Aguardando produção"
 	case ProductionStatusInProduction:
-		return "Aguardando conclusao"
+		return "Aguardando conclusão"
 	case ProductionStatusCompleted:
 		return "Aguardando envio"
 	default:
-		return "Status indisponivel"
+		return "Status indisponível"
 	}
 }
 
@@ -286,18 +286,18 @@ func PaymentStatusLabel(status string) string {
 	case "paid":
 		return "Pago"
 	default:
-		return "Nao iniciado"
+		return "Não iniciado"
 	}
 }
 
 func EventTypeLabel(eventType string) string {
 	switch eventType {
 	case EventTypeProductionStatusChanged:
-		return "Producao"
+		return "Produção"
 	case EventTypeShippingStatusChanged:
 		return "Envio"
 	default:
-		return "Operacao"
+		return "Operação"
 	}
 }
 

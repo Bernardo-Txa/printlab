@@ -6,6 +6,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Changed
 
+- Fase 19.1: revisão ortográfica e textual em português brasileiro para textos exibidos no site, checkout, carrinho, pedidos, Admin, mensagens de erro, acessibilidade e SEO, sem alterar layout, regras de negócio, banco ou integrações.
+
 - Fase 17.3 concluida e validada manualmente em producao: cores comerciais passam a ser opcionais tambem para produtos ativos, aparecem na pagina publica, acompanham carrinho/checkout/pedido/Admin e continuam independentes de variantes, receitas, frete e pagamentos.
 
 ### Added

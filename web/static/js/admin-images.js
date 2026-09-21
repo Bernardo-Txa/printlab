@@ -122,7 +122,7 @@
       return;
     }
     if (!/^(image\/jpeg|image\/png|image\/webp)$/.test(file.type)) {
-      setStatus(form, "Formato de imagem nao permitido.", true);
+      setStatus(form, "Formato de imagem não permitido.", true);
       return;
     }
 
@@ -160,7 +160,7 @@
       })
       .catch(function () {
         progress(form, 0, true);
-        setStatus(form, "Nao foi possivel salvar a imagem.", true);
+        setStatus(form, "Não foi possível salvar a imagem.", true);
       });
   }
 

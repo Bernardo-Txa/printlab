@@ -98,7 +98,7 @@ templ AdminOrders(page admindomain.OrderListPage) {
 										</div>
 										<div class="admin-status-grid" aria-label="Status do pedido">
 											<p><span>Pagamento</span><strong>{ order.OrderStatusLabel }</strong></p>
-											<p><span>Producao</span><strong>{ order.ProductionStatusLabel }</strong></p>
+											<p><span>Produção</span><strong>{ order.ProductionStatusLabel }</strong></p>
 											<p><span>Envio</span><strong>{ order.ShippingStatusLabel }</strong></p>
 										</div>
 										<div class="admin-order-meta">
@@ -115,9 +115,9 @@ templ AdminOrders(page admindomain.OrderListPage) {
 								if page.HasPrevious {
 									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.PreviousPage) }>Anterior</a>
 								}
-								<span>Pagina { strconv.Itoa(page.Page) }</span>
+								<span>Página { strconv.Itoa(page.Page) }</span>
 								if page.HasNext {
-									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.NextPage) }>Proxima</a>
+									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.NextPage) }>Próxima</a>
 								}
 							</nav>
 						}
@@ -154,17 +154,17 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 						}
 						<div class="admin-status-grid admin-status-grid-wide" aria-label="Status do pedido">
 							<p><span>Pagamento</span><strong>{ detail.OrderStatusLabel }</strong></p>
-							<p><span>Producao</span><strong>{ detail.ProductionStatusLabel }</strong></p>
+							<p><span>Produção</span><strong>{ detail.ProductionStatusLabel }</strong></p>
 							<p><span>Envio</span><strong>{ detail.ShippingStatusLabel }</strong></p>
 							<p><span>Total</span><strong>{ detail.TotalBRL }</strong></p>
 						</div>
 						<section class="admin-panel" aria-labelledby="admin-order-actions">
-							<h2 id="admin-order-actions">Operacao</h2>
+							<h2 id="admin-order-actions">Operação</h2>
 							<div class="admin-action-grid">
 								<div>
-									<h3>Producao</h3>
+									<h3>Produção</h3>
 									if len(detail.ProductionActions) == 0 {
-										<p>Nenhuma acao de producao disponivel.</p>
+										<p>Nenhuma ação de produção disponível.</p>
 									} else {
 										for _, action := range detail.ProductionActions {
 											<form method="post" action={ "/admin/pedidos/" + detail.ID + "/producao" }>
@@ -177,7 +177,7 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 								<div>
 									<h3>Envio</h3>
 									if len(detail.ShippingActions) == 0 {
-										<p>Nenhuma acao de envio disponivel.</p>
+										<p>Nenhuma ação de envio disponível.</p>
 									} else {
 										for _, action := range detail.ShippingActions {
 											<form method="post" action={ "/admin/pedidos/" + detail.ID + "/envio" }>
@@ -202,9 +202,9 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 							<section class="admin-panel" aria-labelledby="admin-order-address">
 								<h2 id="admin-order-address">Entrega</h2>
 								<div class="admin-field-grid">
-									<p><span>Endereco</span><strong>{ detail.Address.LineOne }</strong></p>
+									<p><span>Endereço</span><strong>{ detail.Address.LineOne }</strong></p>
 									<p><span>Cidade</span><strong>{ detail.Address.LineTwo }</strong></p>
-									<p><span>Pais</span><strong>{ detail.Address.CountryCode }</strong></p>
+									<p><span>País</span><strong>{ detail.Address.CountryCode }</strong></p>
 								</div>
 							</section>
 						</div>
@@ -217,15 +217,15 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 										<p><span>Frete</span><strong>Grátis</strong></p>
 										<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
 									} else {
-										<p><span>Servico</span><strong>{ detail.Shipping.ServiceName }</strong></p>
+										<p><span>Serviço</span><strong>{ detail.Shipping.ServiceName }</strong></p>
 										if detail.Shipping.CarrierName != "" {
 											<p><span>Transportadora</span><strong>{ detail.Shipping.CarrierName }</strong></p>
 										}
 										<p><span>Prazo</span><strong>{ detail.Shipping.DeliveryTime }</strong></p>
 										<p><span>Caixa</span><strong>{ detail.Shipping.ShippingBoxName }</strong></p>
 										<p><span>Peso</span><strong>{ detail.Shipping.PackageWeightLabel }</strong></p>
-										<p><span>Dimensoes</span><strong>{ detail.Shipping.DimensionsLabel }</strong></p>
-										<p><span>Preco</span><strong>{ detail.Shipping.PriceBRL }</strong></p>
+										<p><span>Dimensões</span><strong>{ detail.Shipping.DimensionsLabel }</strong></p>
+										<p><span>Preço</span><strong>{ detail.Shipping.PriceBRL }</strong></p>
 										if detail.Shipping.QuotedAtLabel != "" {
 											<p><span>Cotado em</span><strong>{ detail.Shipping.QuotedAtLabel }</strong></p>
 										}
@@ -335,7 +335,7 @@ templ AdminProducts(page admindomain.AdminProductListPage) {
 					<div class="admin-main">
 						<div class="admin-heading admin-heading-row">
 							<div>
-								<p class="brand-kicker">Catalogo</p>
+								<p class="brand-kicker">Catálogo</p>
 								<h1>Produtos</h1>
 							</div>
 							<div class="admin-heading-actions">
@@ -412,7 +412,7 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 			@components.Container() {
 				@adminShell("products") {
 					<div class="admin-main">
-						@adminFormHeader("Catalogo", page.Title, page.BackURL)
+						@adminFormHeader("Catálogo", page.Title, page.BackURL)
 						if page.Message != "" {
 							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
 						}
@@ -422,9 +422,9 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 								<p class="admin-muted">Slug: { page.Form.Slug }</p>
 							}
 							@adminSelectField("category_id", "Categoria", page.Form.CategoryID, page.Categories, page.Errors.Get("category_id"), "Sem categoria")
-							@adminTextField("price", "Preco", page.Form.PriceBRL, page.Errors.Get("price"), "text", true)
+							@adminTextField("price", "Preço", page.Form.PriceBRL, page.Errors.Get("price"), "text", true)
 							@adminTextareaField("short_description", "Resumo", page.Form.ShortDescription, page.Errors.Get("short_description"))
-							@adminTextareaField("description", "Descricao", page.Form.Description, page.Errors.Get("description"))
+							@adminTextareaField("description", "Descrição", page.Form.Description, page.Errors.Get("description"))
 							<div class="admin-checkbox-grid">
 								@adminCheckboxField("is_active", "Produto ativo", page.Form.IsActive)
 								@adminCheckboxField("is_featured", "Destacado", page.Form.IsFeatured)
@@ -516,7 +516,7 @@ templ AdminProductImages(page admindomain.AdminProductImagesPage) {
 					<div class="admin-main">
 						<div class="admin-heading admin-heading-row">
 							<div>
-								<p class="brand-kicker">Catalogo</p>
+								<p class="brand-kicker">Catálogo</p>
 								<h1>Imagens de { page.Product.Name }</h1>
 							</div>
 							<div class="admin-heading-actions">
@@ -539,7 +539,7 @@ templ AdminProductImages(page admindomain.AdminProductImagesPage) {
 									<label class="admin-field">
 										<span>Arquivo</span>
 										<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" required/>
-										<small>{ page.AllowedContentTypes } ate { page.MaxFileSizeLabel }.</small>
+										<small>{ page.AllowedContentTypes } até { page.MaxFileSizeLabel }.</small>
 									</label>
 									<label class="admin-field">
 										<span>Aplicar a</span>
@@ -702,7 +702,7 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 								<p class="admin-muted">Slug: { page.Form.Slug }</p>
 							}
 							@adminTextField("sku", "SKU", page.Form.SKU, page.Errors.Get("sku"), "text", false)
-							@adminTextField("price", "Preco proprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false)
+							@adminTextField("price", "Preço próprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false)
 							<div class="admin-checkbox-grid">
 								@adminCheckboxField("is_active", "Configuração ativa", page.Form.IsActive)
 								@adminCheckboxField("is_default", "Usar como opção padrão", page.Form.IsDefault)
@@ -803,7 +803,7 @@ templ AdminColorForm(page admindomain.AdminColorFormPage) {
 			@components.Container() {
 				@adminShell("colors") {
 					<div class="admin-main">
-						@adminFormHeader("Catalogo", page.Title, page.BackURL)
+						@adminFormHeader("Catálogo", page.Title, page.BackURL)
 						if page.Message != "" {
 							<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
 						}
@@ -844,7 +844,7 @@ templ AdminBoxes(page admindomain.AdminBoxListPage) {
 										<strong>{ item.StatusLabel }</strong>
 									</div>
 									<div class="admin-status-grid">
-										<p><span>Dimensoes</span><strong>{ item.DimensionsLabel }</strong></p>
+										<p><span>Dimensões</span><strong>{ item.DimensionsLabel }</strong></p>
 										<p><span>Peso embalagem</span><strong>{ item.WeightLabel }</strong></p>
 										<p><span>Ordem</span><strong>{ strconv.Itoa(item.SortOrder) }</strong></p>
 									</div>
@@ -874,7 +874,7 @@ templ AdminBoxForm(page admindomain.AdminBoxFormPage) {
 								<p class="admin-muted">Slug: { page.Form.Slug }</p>
 							}
 							<fieldset>
-								<legend>Dimensoes operacionais</legend>
+								<legend>Dimensões operacionais</legend>
 								<div class="admin-form-grid">
 									@adminTextField("height_mm", "Altura", page.Form.HeightMM, page.Errors.Get("height_mm"), "number", true)
 									@adminTextField("width_mm", "Largura", page.Form.WidthMM, page.Errors.Get("width_mm"), "number", true)
@@ -911,7 +911,7 @@ templ adminFormHeader(kicker string, title string, backURL string) {
 templ adminListHeader(title string, newURL string) {
 	<div class="admin-heading admin-heading-row">
 		<div>
-			<p class="brand-kicker">Catalogo</p>
+			<p class="brand-kicker">Catálogo</p>
 			<h1>{ title }</h1>
 		</div>
 		<div class="admin-heading-actions">
@@ -982,8 +982,8 @@ templ adminCheckboxField(name string, label string, checked bool) {
 
 templ adminShippingProfileFields(weight string, height string, width string, length string, errors admindomain.AdminFieldErrors) {
 	<fieldset class="admin-fieldset">
-		<legend>Perfil logistico</legend>
-		<p class="admin-muted">Obrigatorio para produtos ativos. O servidor deriva e protege esses dados.</p>
+		<legend>Perfil logístico</legend>
+		<p class="admin-muted">Obrigatório para produtos ativos. O servidor deriva e protege esses dados.</p>
 		<div class="admin-form-grid">
 			@adminTextField("shipping_weight_g", "Peso em gramas", weight, errors.Get("shipping_weight_g"), "number", false)
 			@adminTextField("shipping_height_mm", "Altura em mm", height, errors.Get("shipping_height_mm"), "number", false)
@@ -1041,7 +1041,7 @@ templ adminBasicTextForm(active string, title string, action string, backURL str
 			@components.Container() {
 				@adminShell(active) {
 					<div class="admin-main">
-						@adminFormHeader("Catalogo", title, backURL)
+						@adminFormHeader("Catálogo", title, backURL)
 						if message != "" {
 							<p class="checkout-alert checkout-alert-success">{ message }</p>
 						}
@@ -1050,7 +1050,7 @@ templ adminBasicTextForm(active string, title string, action string, backURL str
 							if !isNew {
 								<p class="admin-muted">Slug: { slug }</p>
 							}
-							@adminTextareaField("description", "Descricao", description, errors.Get("description"))
+							@adminTextareaField("description", "Descrição", description, errors.Get("description"))
 							@adminCheckboxField("is_active", "Ativo", isActive)
 							<div class="admin-form-actions">
 								<button class="btn-base btn-primary" type="submit">{ submitLabel }</button>
@@ -1073,7 +1073,7 @@ templ adminMetric(label string, value int, url string) {
 
 templ adminShell(active string) {
 	<div class="admin-shell">
-		<aside class="admin-sidebar" aria-label="Navegacao administrativa">
+		<aside class="admin-sidebar" aria-label="Navegação administrativa">
 			<strong>PrintLab Admin</strong>
 			<nav aria-label="Secoes administrativas">
 				if active == "dashboard" {
@@ -1121,10 +1121,10 @@ templ adminShell(active string) {
 }
 
 templ AdminUnavailable() {
-	@components.PrivateNoIndexLayout("Admin indisponivel | PrintLab", "Administracao temporariamente indisponivel.") {
+	@components.PrivateNoIndexLayout("Admin indisponível | PrintLab", "Administração temporariamente indisponível.") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Administração temporariamente indisponível.", "Nao foi possivel carregar a administracao agora.")
+				@components.EmptyState("Administração temporariamente indisponível.", "Não foi possível carregar a administração agora.")
 			}
 		</section>
 	}

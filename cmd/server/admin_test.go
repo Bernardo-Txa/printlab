@@ -373,7 +373,7 @@ func TestAdminOrderDetailRendersPrivateDataAndActions(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Cliente Teste", "cliente@example.com", "12345678909", "Iniciar producao", "/acompanhar/22222222-2222-2222-2222-222222222222"} {
+	for _, expected := range []string{"Cliente Teste", "cliente@example.com", "12345678909", "Iniciar produção", "/acompanhar/22222222-2222-2222-2222-222222222222"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected detail to contain %q", expected)
 		}

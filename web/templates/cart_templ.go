@@ -64,7 +64,7 @@ func CartPage(view cartdomain.CartView) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"cart-heading\"><p class=\"brand-kicker\">Carrinho</p><h1>Seu carrinho</h1><p>Revise os itens escolhidos. Frete e pagamento serao definidos na proxima etapa.</p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"cart-heading\"><p class=\"brand-kicker\">Carrinho</p><h1>Seu carrinho</h1><p>Revise os itens escolhidos. Frete e pagamento serão definidos na próxima etapa.</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -73,7 +73,7 @@ func CartPage(view cartdomain.CartView) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = components.EmptyState("Seu carrinho ainda esta vazio.", "Explore os produtos da PrintLab e adicione os experimentos que quiser acompanhar.").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = components.EmptyState("Seu carrinho ainda está vazio.", "Explore os produtos da PrintLab e adicione os experimentos que quiser acompanhar.").Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -155,7 +155,7 @@ func CartPage(view cartdomain.CartView) templ.Component {
 							return templ_7745c5c3_Err
 						}
 						if !line.Available {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"cart-line-status\">Indisponivel</span>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"cart-line-status\">Indisponível</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -183,14 +183,14 @@ func CartPage(view cartdomain.CartView) templ.Component {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"cart-line-prices\"><p><span>Preco unitario</span><strong>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"cart-line-prices\"><p><span>Preço unitário</span><strong>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(line.UnitPriceBRL)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/cart.templ`, Line: 51, Col: 68}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/cart.templ`, Line: 51, Col: 70}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -297,17 +297,17 @@ func CartPage(view cartdomain.CartView) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					if view.HasUnavailableItems {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<p class=\"cart-summary-alert\">Itens indisponiveis permanecem no carrinho para revisao, mas nao entram no subtotal.</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<p class=\"cart-summary-alert\">Itens indisponíveis permanecem no carrinho para revisão, mas não entram no subtotal.</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<p class=\"cart-summary-note\">Frete sera calculado posteriormente no checkout.</p>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<p class=\"cart-summary-note\">Frete será calculado posteriormente no checkout.</p>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if view.HasUnavailableItems {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"cart-checkout-soon\">Remova ou ajuste os itens indisponiveis para continuar.</span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"cart-checkout-soon\">Remova ou ajuste os itens indisponíveis para continuar.</span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -391,7 +391,7 @@ func CartUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Carrinho temporariamente indisponivel.", "Nao foi possivel carregar seu carrinho agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Carrinho temporariamente indisponível.", "Não foi possível carregar seu carrinho agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -407,7 +407,7 @@ func CartUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Carrinho indisponivel | PrintLab", "Carrinho temporariamente indisponivel.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var17), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Carrinho indisponível | PrintLab", "Carrinho temporariamente indisponível.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var17), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -52,7 +52,7 @@ func TestCheckoutShippingGetWithoutDetailsRedirectsToCheckoutDetails(t *testing.
 func TestCheckoutShippingGetShowsMissingProfileState(t *testing.T) {
 	page := checkoutShippingPageFixture()
 	page.Unavailable = true
-	page.Message = "Frete temporariamente indisponivel para este carrinho."
+	page.Message = "Frete temporariamente indisponível para este carrinho."
 	service := &fakeCheckoutShippingService{page: page}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
 	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
@@ -68,8 +68,8 @@ func TestCheckoutShippingGetShowsMissingProfileState(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, "Frete temporariamente indisponivel para este carrinho.") ||
-		!strings.Contains(body, "Frete indisponivel") {
+	if !strings.Contains(body, "Frete temporariamente indisponível para este carrinho.") ||
+		!strings.Contains(body, "Frete indisponível") {
 		t.Fatal("expected missing profile state")
 	}
 }
@@ -77,7 +77,7 @@ func TestCheckoutShippingGetShowsMissingProfileState(t *testing.T) {
 func TestCheckoutShippingGetShowsNoBoxState(t *testing.T) {
 	page := checkoutShippingPageFixture()
 	page.Unavailable = true
-	page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+	page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 	service := &fakeCheckoutShippingService{page: page}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
 	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
@@ -89,7 +89,7 @@ func TestCheckoutShippingGetShowsNoBoxState(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), "Nao conseguimos calcular automaticamente o frete para este carrinho.") {
+	if !strings.Contains(rec.Body.String(), "Não conseguimos calcular automaticamente o frete para este carrinho.") {
 		t.Fatal("expected no-box state")
 	}
 }
@@ -205,7 +205,7 @@ func TestCheckoutShippingPostValidServiceRedirects(t *testing.T) {
 
 func TestCheckoutShippingPostInvalidServiceRerenders(t *testing.T) {
 	page := checkoutShippingPageFixture()
-	page.Message = "A opcao selecionada nao esta mais disponivel. Escolha uma cotacao atual."
+	page.Message = "A opção selecionada não está mais disponível. Escolha uma cotação atual."
 	service := &fakeCheckoutShippingService{
 		selectResult: shipping.SelectResult{Page: page},
 		selectErr:    shipping.ErrInvalidService,
@@ -224,7 +224,7 @@ func TestCheckoutShippingPostInvalidServiceRerenders(t *testing.T) {
 	if rec.Header().Get("Cache-Control") != checkoutPrivateCacheControl {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
-	if !strings.Contains(rec.Body.String(), "A opcao selecionada nao esta mais disponivel.") {
+	if !strings.Contains(rec.Body.String(), "A opção selecionada não está mais disponível.") {
 		t.Fatal("expected invalid selection message")
 	}
 }

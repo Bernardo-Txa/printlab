@@ -167,11 +167,11 @@ func PrepareAdminProductListItem(item *AdminProductListItem) {
 		item.VariantCountLabel += " configurações"
 	}
 	if item.HasShippingProfile {
-		item.ShippingLabel = "Perfil logistico presente"
+		item.ShippingLabel = "Perfil logístico presente"
 	} else {
-		item.ShippingLabel = "Sem perfil logistico"
+		item.ShippingLabel = "Sem perfil logístico"
 		if item.IsActive {
-			item.Warnings = append(item.Warnings, "Produto ativo sem perfil logistico.")
+			item.Warnings = append(item.Warnings, "Produto ativo sem perfil logístico.")
 		}
 	}
 	if item.VariantCount == 0 {
@@ -891,7 +891,7 @@ func validateAdminProductForm(form AdminProductForm, create bool, id string) (Ad
 	}
 	price, err := ParseAdminBRLCents(form.PriceBRL)
 	if err != nil {
-		errorsByField.Add("price", "Informe um preco em reais, como 39,90.")
+		errorsByField.Add("price", "Informe um preço em reais, como 39,90.")
 	}
 	input.PriceCents = price
 	input.ShippingProfile = validateAdminProductShippingProfile(errorsByField, form.IsActive, form.ShippingWeightG, form.ShippingHeightMM, form.ShippingWidthMM, form.ShippingLengthMM)
@@ -931,7 +931,7 @@ func validateAdminVariantForm(form AdminVariantForm, create bool, productID stri
 		IsDefault: form.IsDefault && form.IsActive,
 	}
 	if !ValidUUID(input.ProductID) || (!create && !ValidUUID(input.ID)) {
-		errorsByField.Add("id", "Identificador invalido.")
+		errorsByField.Add("id", "Identificador inválido.")
 	}
 	if input.Name == "" {
 		errorsByField.Add("name", "Informe o nome.")
@@ -946,7 +946,7 @@ func validateAdminVariantForm(form AdminVariantForm, create bool, productID stri
 	if strings.TrimSpace(form.PriceBRL) != "" {
 		price, err := ParseAdminBRLCents(form.PriceBRL)
 		if err != nil {
-			errorsByField.Add("price", "Informe um preco em reais ou deixe vazio para herdar.")
+			errorsByField.Add("price", "Informe um preço em reais ou deixe vazio para herdar.")
 		} else {
 			input.PriceCents = &price
 		}
@@ -978,7 +978,7 @@ func validateAdminRecipeForm(form AdminRecipeForm, productID string, variantID s
 		Label:      strings.TrimSpace(form.Label),
 	}
 	if !ValidUUID(input.ProductID) || !ValidUUID(input.VariantID) || (componentID != "" && !ValidUUID(input.ID)) {
-		errorsByField.Add("id", "Identificador invalido.")
+		errorsByField.Add("id", "Identificador inválido.")
 	}
 	if !ValidUUID(input.MaterialID) {
 		errorsByField.Add("material_id", "Selecione um material.")
@@ -988,7 +988,7 @@ func validateAdminRecipeForm(form AdminRecipeForm, productID string, variantID s
 	}
 	weight, err := ParseAdminGramsToMilligrams(form.EstimatedWeight)
 	if err != nil {
-		errorsByField.Add("estimated_weight", "Informe peso em gramas com ate 3 casas decimais.")
+		errorsByField.Add("estimated_weight", "Informe peso em gramas com até 3 casas decimais.")
 	}
 	input.EstimatedWeightMg = weight
 	sortOrder, err := parseAdminNonNegativeInt(form.SortOrder)
@@ -1284,9 +1284,9 @@ func catalogSaveErrors(err error) AdminFieldErrors {
 	case errors.Is(err, ErrCommercialColors):
 		errorsByField.Add("commercial_color_ids", "Revise as cores selecionadas e a disponibilidade para ativar o produto.")
 	case errors.Is(err, ErrDuplicateSlug):
-		errorsByField.Add("name", "Nao foi possivel gerar um slug disponivel para este nome. Tente outro nome.")
+		errorsByField.Add("name", "Não foi possível gerar um slug disponível para este nome. Tente outro nome.")
 	case errors.Is(err, ErrDuplicateSKU):
-		errorsByField.Add("sku", "Este SKU ja esta em uso. Ajuste e tente novamente.")
+		errorsByField.Add("sku", "Este SKU já está em uso. Ajuste e tente novamente.")
 	}
 
 	return errorsByField

@@ -94,7 +94,7 @@ func infinitePayWebhookHandler(service paymentService) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		if !isJSONContentType(r.Header.Get("Content-Type")) {
-			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload invalido")
+			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload inválido")
 			return
 		}
 
@@ -102,24 +102,24 @@ func infinitePayWebhookHandler(service paymentService) http.HandlerFunc {
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxInfinitePayWebhookBodyBytes))
 		if err := decoder.Decode(&payload); err != nil {
 			if isMaxBytesError(err) {
-				writePaymentWebhookJSON(w, http.StatusRequestEntityTooLarge, false, "Payload invalido")
+				writePaymentWebhookJSON(w, http.StatusRequestEntityTooLarge, false, "Payload inválido")
 				return
 			}
-			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload invalido")
+			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload inválido")
 			return
 		}
 		if err := decoder.Decode(&struct{}{}); err != io.EOF {
 			if isMaxBytesError(err) {
-				writePaymentWebhookJSON(w, http.StatusRequestEntityTooLarge, false, "Payload invalido")
+				writePaymentWebhookJSON(w, http.StatusRequestEntityTooLarge, false, "Payload inválido")
 				return
 			}
-			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload invalido")
+			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload inválido")
 			return
 		}
 
 		if service == nil || !service.Available() {
 			logOperationalEvent(r.Context(), operationalLogLevelError, "payment_webhook_unavailable", "reason=service_unavailable")
-			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento indisponivel")
+			writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento indisponível")
 			return
 		}
 
@@ -192,19 +192,19 @@ func handlePaymentReturnError(w http.ResponseWriter, r *http.Request, err error,
 func handlePaymentWebhookError(w http.ResponseWriter, ctx context.Context, err error, result paymentsdomain.ReturnResult) {
 	switch {
 	case errors.Is(err, paymentsdomain.ErrInvalidReturn):
-		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload invalido")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Payload inválido")
 	case errors.Is(err, paymentsdomain.ErrPaymentNotFound),
 		errors.Is(err, paymentsdomain.ErrOrderNotFound):
-		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pedido nao encontrado")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pedido não encontrado")
 	case errors.Is(err, paymentsdomain.ErrPaymentNotConfirmed):
 		logOperationalEvent(ctx, operationalLogLevelWarning, "payment_webhook_invalid", "reason=not_confirmed")
-		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento ainda nao confirmado")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Pagamento ainda não confirmado")
 	case errors.Is(err, paymentsdomain.ErrAmountMismatch):
 		logOperationalEvent(ctx, operationalLogLevelError, "payment_webhook_processing_failed", "reason=amount_mismatch")
-		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Nao foi possivel confirmar o pagamento agora")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Não foi possível confirmar o pagamento agora")
 	default:
 		logOperationalEvent(ctx, operationalLogLevelError, "payment_webhook_processing_failed", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
-		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Nao foi possivel confirmar o pagamento agora")
+		writePaymentWebhookJSON(w, http.StatusBadRequest, false, "Não foi possível confirmar o pagamento agora")
 	}
 }
 

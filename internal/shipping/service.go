@@ -83,7 +83,7 @@ func (s *Service) Page(ctx context.Context, tokenHash []byte, selected bool) (Ch
 	_, page, err := s.prepareQuotes(ctx, tokenHash)
 	page.Selected = selected && page.Selected
 	if page.Selected {
-		page.Message = "Frete selecionado. Revisao do pedido sera a proxima etapa."
+		page.Message = "Frete selecionado. Revisão do pedido será a próxima etapa."
 	}
 	return page, err
 }
@@ -149,7 +149,7 @@ func (s *Service) Select(ctx context.Context, tokenHash []byte, serviceCode stri
 		}
 	}
 	if !found {
-		page.Message = "A opcao selecionada nao esta mais disponivel. Escolha uma cotacao atual."
+		page.Message = "A opção selecionada não está mais disponível. Escolha uma cotação atual."
 		return SelectResult{Page: page}, ErrInvalidService
 	}
 
@@ -219,7 +219,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	preparedItems, err := prepareQuoteProducts(items)
 	if err != nil {
 		page.Unavailable = true
-		page.Message = "Frete temporariamente indisponivel para este carrinho."
+		page.Message = "Frete temporariamente indisponível para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -230,14 +230,14 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if len(boxes) == 0 {
 		logShippingQuoteUnavailable("packaging", "no_active_boxes", nil)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
 	if s.calculator == nil || s.originCEP == "" || s.serviceList == "" {
 		logShippingQuoteUnavailable("config", "shipping_not_configured", nil)
 		page.Unavailable = true
-		page.Message = "Cotacao de frete temporariamente indisponivel."
+		page.Message = "Cotação de frete temporariamente indisponível."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -250,13 +250,13 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if err != nil {
 		logShippingQuoteUnavailable("planning", "planning_request_failed", err)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 	if len(planningQuotes) == 0 {
 		logShippingQuoteUnavailable("planning", "planning_no_valid_quotes", nil)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -266,7 +266,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if !ok {
 		logShippingQuoteUnavailable("planning", "planning_no_package", nil)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -279,7 +279,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
 		logNoFittingBoxDiagnostics(planningQuotes, idealPackage, boxes)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -313,7 +313,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if err != nil {
 		logShippingQuoteUnavailable("final", "final_request_failed", err)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 
@@ -321,7 +321,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if len(quotes) == 0 {
 		logShippingQuoteUnavailable("final", "final_no_valid_quotes", nil)
 		page.Unavailable = true
-		page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
+		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
 

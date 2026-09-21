@@ -91,7 +91,7 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 	}
 	body := rec.Body.String()
 	for _, expected := range []string{
-		"Etapa 3 - Revisao",
+		"Etapa 3 - Revisão",
 		"Produto Real",
 		"Padrao",
 		"R$ 79,80",
@@ -319,7 +319,7 @@ func TestOrderPageWithoutPaymentConfigShowsSafeUnavailableState(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, "Pagamento temporariamente indisponivel") {
+	if !strings.Contains(body, "Pagamento temporariamente indisponível") {
 		t.Fatal("expected unavailable payment message")
 	}
 	if strings.Contains(body, "Pagar agora") {
@@ -396,10 +396,10 @@ func TestOrderTrackingPageWithValidIDReturnsOK(t *testing.T) {
 		"12/09/2026 14:30",
 		"Pagamento",
 		"Aguardando pagamento",
-		"Producao",
-		"Sera iniciada apos a confirmacao do pagamento",
+		"Produção",
+		"Será iniciada após a confirmação do pagamento",
 		"Envio",
-		"Sera preparado apos a producao",
+		"Será preparado após a produção",
 		"Correios - PAC",
 	} {
 		if !strings.Contains(body, expected) {
@@ -636,7 +636,7 @@ func TestPaymentReturnMissingParamsShowsSafeError(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), "Pagamento nao confirmado") {
+	if !strings.Contains(rec.Body.String(), "Pagamento não confirmado") {
 		t.Fatal("expected safe payment error page")
 	}
 	if strings.Contains(rec.Body.String(), "order_nsu") {
@@ -704,7 +704,7 @@ func TestPaymentReturnPendingShowsPendingMessage(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), "Pagamento ainda nao foi confirmado") {
+	if !strings.Contains(rec.Body.String(), "Pagamento ainda não foi confirmado") {
 		t.Fatal("expected pending payment message")
 	}
 	if payment.lastReturnInput.OrderNSU != orderID || payment.lastReturnInput.TransactionNSU != "txn_123" || payment.lastReturnInput.Slug != "slug_123" {
@@ -811,7 +811,7 @@ func TestPaymentWebhookRejectsInvalidJSONAndOversizedBody(t *testing.T) {
 			if payment.webhookCalls != 0 {
 				t.Fatal("expected invalid webhook body not to call payment service")
 			}
-			assertPaymentWebhookResponse(t, rec, false, stringPtr("Payload invalido"))
+			assertPaymentWebhookResponse(t, rec, false, stringPtr("Payload inválido"))
 		})
 	}
 }
@@ -823,10 +823,10 @@ func TestPaymentWebhookRejectsUnsafeInputsAndMissingOrder(t *testing.T) {
 		err         error
 		wantMessage string
 	}{
-		{name: "invalid order_nsu", body: `{"invoice_slug":"slug_123","transaction_nsu":"txn_123","order_nsu":"not-a-uuid"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
-		{name: "missing transaction_nsu", body: `{"invoice_slug":"slug_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
-		{name: "missing invoice_slug", body: `{"transaction_nsu":"txn_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload invalido"},
-		{name: "missing order", body: validInfinitePayWebhookJSON(), err: paymentsdomain.ErrPaymentNotFound, wantMessage: "Pedido nao encontrado"},
+		{name: "invalid order_nsu", body: `{"invoice_slug":"slug_123","transaction_nsu":"txn_123","order_nsu":"not-a-uuid"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload inválido"},
+		{name: "missing transaction_nsu", body: `{"invoice_slug":"slug_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload inválido"},
+		{name: "missing invoice_slug", body: `{"transaction_nsu":"txn_123","order_nsu":"` + orderID + `"}`, err: paymentsdomain.ErrInvalidReturn, wantMessage: "Payload inválido"},
+		{name: "missing order", body: validInfinitePayWebhookJSON(), err: paymentsdomain.ErrPaymentNotFound, wantMessage: "Pedido não encontrado"},
 	}
 
 	for _, tt := range tests {
@@ -862,31 +862,31 @@ func TestPaymentWebhookReturnsRetryableFailureWhenPaymentCheckDoesNotConfirm(t *
 			name:        "pending",
 			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusPending, OrderID: orderID},
 			err:         paymentsdomain.ErrPaymentNotConfirmed,
-			wantMessage: "Pagamento ainda nao confirmado",
+			wantMessage: "Pagamento ainda não confirmado",
 		},
 		{
 			name:        "amount mismatch",
 			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
 			err:         paymentsdomain.ErrAmountMismatch,
-			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+			wantMessage: "Não foi possível confirmar o pagamento agora",
 		},
 		{
 			name:        "provider timeout",
 			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
 			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryTimeout, 0, paymentsdomain.ErrProviderUnavailable),
-			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+			wantMessage: "Não foi possível confirmar o pagamento agora",
 		},
 		{
 			name:        "provider 500",
 			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
 			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusInternalServerError, paymentsdomain.ErrProviderUnavailable),
-			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+			wantMessage: "Não foi possível confirmar o pagamento agora",
 		},
 		{
 			name:        "provider invalid json",
 			result:      paymentsdomain.ReturnResult{Status: paymentsdomain.ReturnStatusUnavailable, OrderID: orderID},
 			err:         paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationPaymentCheck, paymentsdomain.ProviderCategoryInvalidJSON, 0, paymentsdomain.ErrProviderUnavailable),
-			wantMessage: "Nao foi possivel confirmar o pagamento agora",
+			wantMessage: "Não foi possível confirmar o pagamento agora",
 		},
 	}
 

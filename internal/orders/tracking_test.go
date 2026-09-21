@@ -22,8 +22,8 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusWaiting,
 			shipping:   ShippingStatusWaiting,
 			wantPay:    "Aguardando pagamento",
-			wantProd:   "Sera iniciada apos a confirmacao do pagamento",
-			wantShip:   "Sera preparado apos a producao",
+			wantProd:   "Será iniciada após a confirmação do pagamento",
+			wantShip:   "Será preparado após a produção",
 		},
 		{
 			name:       "paid waiting",
@@ -31,8 +31,8 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusWaiting,
 			shipping:   ShippingStatusWaiting,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Aguardando producao",
-			wantShip:   "Aguardando producao",
+			wantProd:   "Aguardando produção",
+			wantShip:   "Aguardando produção",
 		},
 		{
 			name:       "paid in production",
@@ -40,8 +40,8 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusInProduction,
 			shipping:   ShippingStatusWaiting,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Em producao",
-			wantShip:   "Aguardando conclusao da producao",
+			wantProd:   "Em produção",
+			wantShip:   "Aguardando conclusão da produção",
 		},
 		{
 			name:       "paid completed waiting shipping",
@@ -49,8 +49,8 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusCompleted,
 			shipping:   ShippingStatusWaiting,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Producao concluida",
-			wantShip:   "Aguardando preparacao do envio",
+			wantProd:   "Produção concluída",
+			wantShip:   "Aguardando preparação do envio",
 		},
 		{
 			name:       "shipping preparing",
@@ -58,7 +58,7 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusCompleted,
 			shipping:   ShippingStatusPreparing,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Producao concluida",
+			wantProd:   "Produção concluída",
 			wantShip:   "Preparando envio",
 		},
 		{
@@ -67,7 +67,7 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusCompleted,
 			shipping:   ShippingStatusShipped,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Producao concluida",
+			wantProd:   "Produção concluída",
 			wantShip:   "Enviado",
 		},
 		{
@@ -76,7 +76,7 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 			production: ProductionStatusCompleted,
 			shipping:   ShippingStatusDelivered,
 			wantPay:    "Pagamento confirmado",
-			wantProd:   "Producao concluida",
+			wantProd:   "Produção concluída",
 			wantShip:   "Entregue",
 		},
 	}

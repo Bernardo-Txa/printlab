@@ -64,7 +64,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 2 - Entrega</h1><p>Escolha como deseja receber seu pedido.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <span class=\"checkout-step checkout-step-active\">2 Entrega</span> <span class=\"checkout-step\">3 Revisao</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 2 - Entrega</h1><p>Escolha como deseja receber seu pedido.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <span class=\"checkout-step checkout-step-active\">2 Entrega</span> <span class=\"checkout-step\">3 Revisão</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -138,12 +138,12 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 					}
 				} else if page.SelectedMethod == "shipping" {
 					if page.Unavailable || len(page.Quotes) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<section class=\"checkout-form-section\" aria-labelledby=\"shipping-unavailable\"><h2 id=\"shipping-unavailable\">Frete indisponivel</h2><p class=\"checkout-field-help\">Nao conseguimos calcular automaticamente o frete para este carrinho.</p></section>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<section class=\"checkout-form-section\" aria-labelledby=\"shipping-unavailable\"><h2 id=\"shipping-unavailable\">Frete indisponível</h2><p class=\"checkout-field-help\">Não conseguimos calcular automaticamente o frete para este carrinho.</p></section>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<form method=\"post\" action=\"/checkout/frete\"><input type=\"hidden\" name=\"delivery_method\" value=\"shipping\"><section class=\"checkout-form-section\" aria-labelledby=\"shipping-options\"><h2 id=\"shipping-options\">Opcoes de frete</h2><div class=\"shipping-options\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<form method=\"post\" action=\"/checkout/frete\"><input type=\"hidden\" name=\"delivery_method\" value=\"shipping\"><section class=\"checkout-form-section\" aria-labelledby=\"shipping-options\"><h2 id=\"shipping-options\">Opções de frete</h2><div class=\"shipping-options\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -401,12 +401,12 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<p>Selecione uma opcao para ver o total parcial.</p>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<p>Selecione uma opção para ver o total parcial.</p>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<p>Revisao do pedido sera a proxima etapa.</p></aside></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<p>Revisão do pedido será a próxima etapa.</p></aside></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -479,7 +479,7 @@ func CheckoutShippingUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Frete temporariamente indisponivel.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Frete temporariamente indisponível.", "Não foi possível carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -495,7 +495,7 @@ func CheckoutShippingUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Frete indisponivel | PrintLab", "Frete temporariamente indisponivel.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Frete indisponível | PrintLab", "Frete temporariamente indisponível.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

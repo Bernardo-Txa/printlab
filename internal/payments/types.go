@@ -302,21 +302,21 @@ func ReturnPageFor(result ReturnResult) ReturnPage {
 	case ReturnStatusPending:
 		return ReturnPage{
 			Title:            "Pagamento em analise",
-			Message:          "Pagamento ainda nao foi confirmado.",
+			Message:          "Pagamento ainda não foi confirmado.",
 			OrderID:          result.OrderID,
 			CanReturnToOrder: result.OrderID != "",
 		}
 	case ReturnStatusUnavailable:
 		return ReturnPage{
-			Title:            "Pagamento nao confirmado",
-			Message:          "Nao foi possivel confirmar o pagamento agora. Tente novamente.",
+			Title:            "Pagamento não confirmado",
+			Message:          "Não foi possível confirmar o pagamento agora. Tente novamente.",
 			OrderID:          result.OrderID,
 			CanReturnToOrder: result.OrderID != "",
 		}
 	default:
 		return ReturnPage{
-			Title:            "Pagamento nao confirmado",
-			Message:          "Nao foi possivel confirmar o pagamento agora. Tente novamente.",
+			Title:            "Pagamento não confirmado",
+			Message:          "Não foi possível confirmar o pagamento agora. Tente novamente.",
 			OrderID:          result.OrderID,
 			CanReturnToOrder: result.OrderID != "",
 		}

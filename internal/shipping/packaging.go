@@ -154,7 +154,7 @@ func FormatBRL(cents int64) string {
 
 func DeliveryTimeLabel(days *int) string {
 	if days == nil {
-		return "Prazo indisponivel"
+		return "Prazo indisponível"
 	}
 	if *days == 1 {
 		return "1 dia util"

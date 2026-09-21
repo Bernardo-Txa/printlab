@@ -21,7 +21,7 @@ func TestCatalogEmptyReturnsOK(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	if !strings.Contains(rec.Body.String(), "Os primeiros experimentos estao quase prontos.") {
+	if !strings.Contains(rec.Body.String(), "Os primeiros experimentos estão quase prontos.") {
 		t.Fatal("expected empty catalog state")
 	}
 }
@@ -73,7 +73,7 @@ func TestProductFoundReturnsOK(t *testing.T) {
 				Description:      "Descricao completa do produto.",
 			},
 			DisplayPriceBRL:   "R$ 100,00",
-			DisplayPriceLabel: "Preco-base",
+			DisplayPriceLabel: "Preço-base",
 			CanonicalPath:     "/produtos/produto-real",
 		},
 	}
@@ -116,7 +116,7 @@ func TestProductWithDefaultVariantReturnsOK(t *testing.T) {
 			},
 			SelectedVariant:   &products.ProductVariant{Name: "Padrao", Slug: "padrao", EffectivePriceBRL: "R$ 39,90", IsDefault: true},
 			DisplayPriceBRL:   "R$ 39,90",
-			DisplayPriceLabel: "Preco-base",
+			DisplayPriceLabel: "Preço-base",
 			CanonicalPath:     "/produtos/produto-real",
 		},
 	}
@@ -147,7 +147,7 @@ func TestProductWithSingleVariantDoesNotRenderPublicSelector(t *testing.T) {
 			},
 			SelectedVariant:   &products.ProductVariant{Name: "teste2", Slug: "teste2", EffectivePriceBRL: "R$ 169,90"},
 			DisplayPriceBRL:   "R$ 169,90",
-			DisplayPriceLabel: "Preco",
+			DisplayPriceLabel: "Preço",
 			CanonicalPath:     "/produtos/produto-real",
 		},
 	}
@@ -181,7 +181,7 @@ func TestProductWithVariantQueryReturnsOK(t *testing.T) {
 			},
 			SelectedVariant:   &products.ProductVariant{Name: "Grande", Slug: "grande", EffectivePriceBRL: "R$ 59,90"},
 			DisplayPriceBRL:   "R$ 59,90",
-			DisplayPriceLabel: "Preco",
+			DisplayPriceLabel: "Preço",
 			CanonicalPath:     "/produtos/produto-real",
 		},
 	}

@@ -54,7 +54,7 @@ func NormalizeCheckoutInput(input CheckoutInput) (CheckoutDetails, CheckoutInput
 
 	number, err := normalizeRequiredText(values.Number, MaxNumberLength)
 	if err != nil {
-		errorsByField["number"] = "Informe o numero."
+		errorsByField["number"] = "Informe o número."
 	} else {
 		values.Number = number
 	}
@@ -91,7 +91,7 @@ func NormalizeCheckoutInput(input CheckoutInput) (CheckoutDetails, CheckoutInput
 
 	countryCode, err := NormalizeCountryCode(values.CountryCode)
 	if err != nil {
-		errorsByField["country_code"] = "Pais indisponivel nesta etapa."
+		errorsByField["country_code"] = "País indisponível nesta etapa."
 	} else {
 		values.CountryCode = countryCode
 	}

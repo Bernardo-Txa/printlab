@@ -161,19 +161,19 @@ func orderPaymentView(page ordersdomain.OrderPage, service paymentService, payme
 	}
 	if paymentQuery == "indisponivel" {
 		view.ShowUnavailable = true
-		view.UnavailableMessage = "Pagamento temporariamente indisponivel. Tente novamente em alguns instantes."
+		view.UnavailableMessage = "Pagamento temporariamente indisponível. Tente novamente em alguns instantes."
 	}
 	if page.Status != ordersdomain.StatusPendingPayment {
 		return view
 	}
 	if service == nil || !service.Available() {
 		view.ShowUnavailable = true
-		view.UnavailableMessage = "Pagamento temporariamente indisponivel. Tente novamente em alguns instantes."
+		view.UnavailableMessage = "Pagamento temporariamente indisponível. Tente novamente em alguns instantes."
 		return view
 	}
 
 	view.CanPay = true
-	view.Message = "O pagamento sera concluido no ambiente seguro da InfinitePay."
+	view.Message = "O pagamento será concluído no ambiente seguro da InfinitePay."
 	return view
 }
 

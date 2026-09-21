@@ -137,7 +137,7 @@ func TestServicePageUnavailableWhenShippingProfileIsMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected unavailable page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Frete temporariamente indisponivel para este carrinho." {
+	if !page.Unavailable || page.Message != "Frete temporariamente indisponível para este carrinho." {
 		t.Fatalf("expected missing profile message, got %#v", page)
 	}
 	if len(calculator.requests) != 0 {
@@ -156,7 +156,7 @@ func TestServicePageUnavailableWhenNoShippingBoxExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected unavailable page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Nao conseguimos calcular automaticamente o frete para este carrinho." {
+	if !page.Unavailable || page.Message != "Não conseguimos calcular automaticamente o frete para este carrinho." {
 		t.Fatalf("expected no-box message, got %#v", page)
 	}
 	if len(calculator.requests) != 0 {
@@ -212,7 +212,7 @@ func TestServicePageUnavailableWhenNoBoxFitsPlanningPackage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected unavailable page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Nao conseguimos calcular automaticamente o frete para este carrinho." {
+	if !page.Unavailable || page.Message != "Não conseguimos calcular automaticamente o frete para este carrinho." {
 		t.Fatalf("expected no-fitting-box message, got %#v", page)
 	}
 	if len(calculator.requests) != 1 {
@@ -221,7 +221,7 @@ func TestServicePageUnavailableWhenNoBoxFitsPlanningPackage(t *testing.T) {
 }
 
 func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
-	genericMessage := "Nao conseguimos calcular automaticamente o frete para este carrinho."
+	genericMessage := "Não conseguimos calcular automaticamente o frete para este carrinho."
 	tests := []struct {
 		name        string
 		repository  *fakeShippingRepository
@@ -373,7 +373,7 @@ func TestServicePageLogsShippingNotConfigured(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected unavailable page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Cotacao de frete temporariamente indisponivel." {
+	if !page.Unavailable || page.Message != "Cotação de frete temporariamente indisponível." {
 		t.Fatalf("expected safe not configured message, got %#v", page)
 	}
 	if !strings.Contains(logs, "stage=config reason=shipping_not_configured") {

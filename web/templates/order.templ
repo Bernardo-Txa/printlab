@@ -9,18 +9,18 @@ import (
 )
 
 templ CheckoutReview(page ordersdomain.ReviewPage) {
-	@components.Layout("Revisao | PrintLab", "Revise produtos, dados, entrega e frete antes de criar o pedido.", "") {
+	@components.Layout("Revisão | PrintLab", "Revise produtos, dados, entrega e frete antes de criar o pedido.", "") {
 		<section class="checkout-section">
 			@components.Container() {
 				<div class="checkout-heading">
 					<p class="brand-kicker">Checkout</p>
-					<h1>Etapa 3 - Revisao</h1>
-					<p>Confira os dados da compra antes de confirmar. O pagamento sera disponibilizado na proxima etapa.</p>
+					<h1>Etapa 3 - Revisão</h1>
+					<p>Confira os dados da compra antes de confirmar. O pagamento será disponibilizado na próxima etapa.</p>
 				</div>
 				<div class="checkout-stepper" aria-label="Etapas do checkout">
 					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
 					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
-					<span class="checkout-step checkout-step-active">3 Revisao</span>
+					<span class="checkout-step checkout-step-active">3 Revisão</span>
 					<span class="checkout-step">4 Pagamento</span>
 				</div>
 				if page.Message != "" {
@@ -90,7 +90,7 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 									<p><span>Frete</span><strong>Grátis</strong></p>
 									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
 								} else {
-									<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+									<p><span>Serviço</span><strong>{ page.Shipping.ServiceName }</strong></p>
 									if page.Shipping.CarrierName != "" {
 										<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
 									}
@@ -139,7 +139,7 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 							<span>Total</span>
 							<strong>{ page.TotalBRL }</strong>
 						</div>
-						<p>O pedido sera criado com status aguardando pagamento.</p>
+						<p>O pedido será criado com status aguardando pagamento.</p>
 					</aside>
 				</div>
 			}
@@ -159,7 +159,7 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 				<div class="checkout-stepper" aria-label="Etapas do checkout">
 					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
 					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
-					<span class="checkout-step checkout-step-done">3 Revisao</span>
+					<span class="checkout-step checkout-step-done">3 Revisão</span>
 					<span class="checkout-step checkout-step-active">4 Pagamento</span>
 				</div>
 				<div class="order-status-panel">
@@ -199,7 +199,7 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 									<p><span>Frete</span><strong>Grátis</strong></p>
 									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
 								} else {
-									<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+									<p><span>Serviço</span><strong>{ page.Shipping.ServiceName }</strong></p>
 									if page.Shipping.CarrierName != "" {
 										<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
 									}
@@ -244,7 +244,7 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 						if page.TrackingURL != "" {
 							<a class="btn-base btn-secondary" href={ page.TrackingURL }>Acompanhar pedido</a>
 						}
-						<p>Use este numero apenas como referencia humana. O link do pedido usa o identificador seguro.</p>
+						<p>Use este número apenas como referência humana. O link do pedido usa o identificador seguro.</p>
 					</aside>
 				</div>
 			}
@@ -259,7 +259,7 @@ templ OrderTracking(page ordersdomain.TrackingPage) {
 				<div class="tracking-heading">
 					<p class="brand-kicker">Acompanhamento</p>
 					<h1>Pedido { page.OrderNumberLabel }</h1>
-					<p>Status basico do pedido, sem dados pessoais ou informacoes internas de pagamento.</p>
+					<p>Status básico do pedido, sem dados pessoais ou informações internas de pagamento.</p>
 				</div>
 				<div class="tracking-overview" aria-label="Resumo do pedido">
 					<p>
@@ -276,7 +276,7 @@ templ OrderTracking(page ordersdomain.TrackingPage) {
 					</p>
 					if page.ShippingServiceLabel != "" {
 						<p>
-							<span>Servico de envio</span>
+							<span>Serviço de envio</span>
 							<strong>{ page.ShippingServiceLabel }</strong>
 						</p>
 					}
@@ -312,30 +312,30 @@ templ PaymentReturn(page paymentsdomain.ReturnPage) {
 }
 
 templ OrderTrackingUnavailable() {
-	@components.PrivateNoIndexLayout("Acompanhamento indisponivel | PrintLab", "Acompanhamento temporariamente indisponivel.") {
+	@components.PrivateNoIndexLayout("Acompanhamento indisponível | PrintLab", "Acompanhamento temporariamente indisponível.") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Acompanhamento temporariamente indisponivel.", "Nao foi possivel carregar este acompanhamento agora. Tente novamente em alguns instantes.")
+				@components.EmptyState("Acompanhamento temporariamente indisponível.", "Não foi possível carregar este acompanhamento agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}
 }
 
 templ CheckoutReviewUnavailable() {
-	@components.Layout("Revisao indisponivel | PrintLab", "Revisao de checkout temporariamente indisponivel.", "") {
+	@components.Layout("Revisão indisponível | PrintLab", "Revisão de checkout temporariamente indisponível.", "") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Revisao temporariamente indisponivel.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.")
+				@components.EmptyState("Revisão temporariamente indisponível.", "Não foi possível carregar esta etapa agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}
 }
 
 templ OrderUnavailable() {
-	@components.Layout("Pedido indisponivel | PrintLab", "Pedido temporariamente indisponivel.", "") {
+	@components.Layout("Pedido indisponível | PrintLab", "Pedido temporariamente indisponível.", "") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Pedido temporariamente indisponivel.", "Nao foi possivel carregar este pedido agora. Tente novamente em alguns instantes.")
+				@components.EmptyState("Pedido temporariamente indisponível.", "Não foi possível carregar este pedido agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}

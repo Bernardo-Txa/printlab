@@ -162,9 +162,9 @@ func (s *Service) prepareProductDetail(detail *ProductDetail, variantSlug string
 		detail.DisplayPriceCents = selected.EffectivePriceCents
 		detail.DisplayPriceBRL = selected.EffectivePriceBRL
 		if selected.PriceCents != nil {
-			detail.DisplayPriceLabel = "Preco"
+			detail.DisplayPriceLabel = "Preço"
 		} else {
-			detail.DisplayPriceLabel = "Preco-base"
+			detail.DisplayPriceLabel = "Preço-base"
 		}
 		detail.Images = displayImages(detail.Product.Images, selected)
 		return
@@ -172,7 +172,7 @@ func (s *Service) prepareProductDetail(detail *ProductDetail, variantSlug string
 
 	detail.DisplayPriceCents = detail.Product.PriceCents
 	detail.DisplayPriceBRL = FormatBRL(detail.DisplayPriceCents)
-	detail.DisplayPriceLabel = "Preco-base"
+	detail.DisplayPriceLabel = "Preço-base"
 	detail.Images = displayImages(detail.Product.Images, nil)
 }
 

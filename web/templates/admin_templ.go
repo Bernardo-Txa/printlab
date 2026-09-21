@@ -432,14 +432,14 @@ func AdminOrders(page admindomain.OrderListPage) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</strong></p><p><span>Producao</span><strong>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</strong></p><p><span>Produção</span><strong>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var22 string
 							templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(order.ProductionStatusLabel)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 101, Col: 72}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 101, Col: 74}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 							if templ_7745c5c3_Err != nil {
@@ -531,14 +531,14 @@ func AdminOrders(page admindomain.OrderListPage) templ.Component {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span>Pagina ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span>Página ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var28 string
 						templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(page.Page))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 118, Col: 46}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 118, Col: 47}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 						if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func AdminOrders(page admindomain.OrderListPage) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">Proxima</a>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">Próxima</a>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -754,14 +754,14 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</strong></p><p><span>Producao</span><strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</strong></p><p><span>Produção</span><strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var39 string
 					templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(detail.ProductionStatusLabel)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 157, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 157, Col: 71}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 					if templ_7745c5c3_Err != nil {
@@ -793,12 +793,12 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</strong></p></div><section class=\"admin-panel\" aria-labelledby=\"admin-order-actions\"><h2 id=\"admin-order-actions\">Operacao</h2><div class=\"admin-action-grid\"><div><h3>Producao</h3>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</strong></p></div><section class=\"admin-panel\" aria-labelledby=\"admin-order-actions\"><h2 id=\"admin-order-actions\">Operação</h2><div class=\"admin-action-grid\"><div><h3>Produção</h3>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if len(detail.ProductionActions) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<p>Nenhuma acao de producao disponivel.</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<p>Nenhuma ação de produção disponível.</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -854,7 +854,7 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 						return templ_7745c5c3_Err
 					}
 					if len(detail.ShippingActions) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<p>Nenhuma acao de envio disponivel.</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<p>Nenhuma ação de envio disponível.</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -957,14 +957,14 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</strong></p></div></section><section class=\"admin-panel\" aria-labelledby=\"admin-order-address\"><h2 id=\"admin-order-address\">Entrega</h2><div class=\"admin-field-grid\"><p><span>Endereco</span><strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</strong></p></div></section><section class=\"admin-panel\" aria-labelledby=\"admin-order-address\"><h2 id=\"admin-order-address\">Entrega</h2><div class=\"admin-field-grid\"><p><span>Endereço</span><strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var52 string
 					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(detail.Address.LineOne)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 205, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 205, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 					if templ_7745c5c3_Err != nil {
@@ -983,14 +983,14 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</strong></p><p><span>Pais</span><strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</strong></p><p><span>País</span><strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var54 string
 					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(detail.Address.CountryCode)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 207, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 207, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
@@ -1006,14 +1006,14 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<p><span>Servico</span><strong>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<p><span>Serviço</span><strong>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var55 string
 						templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(detail.Shipping.ServiceName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 220, Col: 70}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 220, Col: 71}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 						if templ_7745c5c3_Err != nil {
@@ -1081,27 +1081,27 @@ func AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, err
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</strong></p><p><span>Dimensoes</span><strong>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</strong></p><p><span>Dimensões</span><strong>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var60 string
 						templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(detail.Shipping.DimensionsLabel)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 227, Col: 76}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 227, Col: 77}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</strong></p><p><span>Preco</span><strong>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</strong></p><p><span>Preço</span><strong>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var61 string
 						templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(detail.Shipping.PriceBRL)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 228, Col: 65}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 228, Col: 66}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 						if templ_7745c5c3_Err != nil {
@@ -1681,7 +1681,7 @@ func AdminProducts(page admindomain.AdminProductListPage) templ.Component {
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "<div class=\"admin-main\"><div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catalogo</p><h1>Produtos</h1></div><div class=\"admin-heading-actions\"><a class=\"btn-base btn-primary\" href=\"/admin/produtos/novo\">Novo produto</a></div></div><form class=\"admin-search-form\" method=\"get\" action=\"/admin/produtos\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "<div class=\"admin-main\"><div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catálogo</p><h1>Produtos</h1></div><div class=\"admin-heading-actions\"><a class=\"btn-base btn-primary\" href=\"/admin/produtos/novo\">Novo produto</a></div></div><form class=\"admin-search-form\" method=\"get\" action=\"/admin/produtos\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -2069,7 +2069,7 @@ func AdminProductForm(page admindomain.AdminProductFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminFormHeader("Catalogo", page.Title, page.BackURL).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminFormHeader("Catálogo", page.Title, page.BackURL).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -2136,7 +2136,7 @@ func AdminProductForm(page admindomain.AdminProductFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminTextField("price", "Preco", page.Form.PriceBRL, page.Errors.Get("price"), "text", true).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminTextField("price", "Preço", page.Form.PriceBRL, page.Errors.Get("price"), "text", true).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -2144,7 +2144,7 @@ func AdminProductForm(page admindomain.AdminProductFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminTextareaField("description", "Descricao", page.Form.Description, page.Errors.Get("description")).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminTextareaField("description", "Descrição", page.Form.Description, page.Errors.Get("description")).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -2649,7 +2649,7 @@ func AdminProductImages(page admindomain.AdminProductImagesPage) templ.Component
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 233, "<div class=\"admin-main\"><div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catalogo</p><h1>Imagens de ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 233, "<div class=\"admin-main\"><div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catálogo</p><h1>Imagens de ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -2776,14 +2776,14 @@ func AdminProductImages(page admindomain.AdminProductImagesPage) templ.Component
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 245, " ate ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 245, " até ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var150 string
 						templ_7745c5c3_Var150, templ_7745c5c3_Err = templ.JoinStringErrs(page.MaxFileSizeLabel)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 542, Col: 73}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 542, Col: 74}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var150))
 						if templ_7745c5c3_Err != nil {
@@ -3478,7 +3478,7 @@ func AdminVariantForm(page admindomain.AdminVariantFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminTextField("price", "Preco proprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminTextField("price", "Preço próprio", page.Form.PriceBRL, page.Errors.Get("price"), "text", false).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -4036,7 +4036,7 @@ func AdminColorForm(page admindomain.AdminColorFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminFormHeader("Catalogo", page.Title, page.BackURL).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminFormHeader("Catálogo", page.Title, page.BackURL).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -4289,14 +4289,14 @@ func AdminBoxes(page admindomain.AdminBoxListPage) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 364, "</strong></div><div class=\"admin-status-grid\"><p><span>Dimensoes</span><strong>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 364, "</strong></div><div class=\"admin-status-grid\"><p><span>Dimensões</span><strong>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var221 string
 						templ_7745c5c3_Var221, templ_7745c5c3_Err = templ.JoinStringErrs(item.DimensionsLabel)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 847, Col: 65}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/admin.templ`, Line: 847, Col: 66}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var221))
 						if templ_7745c5c3_Err != nil {
@@ -4491,7 +4491,7 @@ func AdminBoxForm(page admindomain.AdminBoxFormPage) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 378, "<fieldset><legend>Dimensoes operacionais</legend><div class=\"admin-form-grid\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 378, "<fieldset><legend>Dimensões operacionais</legend><div class=\"admin-form-grid\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -4668,7 +4668,7 @@ func adminListHeader(title string, newURL string) templ.Component {
 			templ_7745c5c3_Var237 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 388, "<div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catalogo</p><h1>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 388, "<div class=\"admin-heading admin-heading-row\"><div><p class=\"brand-kicker\">Catálogo</p><h1>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5328,7 +5328,7 @@ func adminShippingProfileFields(weight string, height string, width string, leng
 			templ_7745c5c3_Var275 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 442, "<fieldset class=\"admin-fieldset\"><legend>Perfil logistico</legend><p class=\"admin-muted\">Obrigatorio para produtos ativos. O servidor deriva e protege esses dados.</p><div class=\"admin-form-grid\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 442, "<fieldset class=\"admin-fieldset\"><legend>Perfil logístico</legend><p class=\"admin-muted\">Obrigatório para produtos ativos. O servidor deriva e protege esses dados.</p><div class=\"admin-form-grid\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5685,7 +5685,7 @@ func adminBasicTextForm(active string, title string, action string, backURL stri
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminFormHeader("Catalogo", title, backURL).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminFormHeader("Catálogo", title, backURL).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -5748,7 +5748,7 @@ func adminBasicTextForm(active string, title string, action string, backURL stri
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = adminTextareaField("description", "Descricao", description, errors.Get("description")).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminTextareaField("description", "Descrição", description, errors.Get("description")).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -5901,7 +5901,7 @@ func adminShell(active string) templ.Component {
 			templ_7745c5c3_Var300 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 475, "<div class=\"admin-shell\"><aside class=\"admin-sidebar\" aria-label=\"Navegacao administrativa\"><strong>PrintLab Admin</strong><nav aria-label=\"Secoes administrativas\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 475, "<div class=\"admin-shell\"><aside class=\"admin-sidebar\" aria-label=\"Navegação administrativa\"><strong>PrintLab Admin</strong><nav aria-label=\"Secoes administrativas\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -6047,7 +6047,7 @@ func AdminUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Administração temporariamente indisponível.", "Nao foi possivel carregar a administracao agora.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Administração temporariamente indisponível.", "Não foi possível carregar a administração agora.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -6063,7 +6063,7 @@ func AdminUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.PrivateNoIndexLayout("Admin indisponivel | PrintLab", "Administracao temporariamente indisponivel.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var302), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.PrivateNoIndexLayout("Admin indisponível | PrintLab", "Administração temporariamente indisponível.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var302), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

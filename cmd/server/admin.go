@@ -322,12 +322,12 @@ func adminOrderDetailPath(orderID string) string {
 func adminOrderMessages(r *http.Request) (string, string) {
 	switch r.URL.Query().Get("ok") {
 	case "producao":
-		return "Status de producao atualizado.", ""
+		return "Status de produção atualizado.", ""
 	case "envio":
 		return "Status de envio atualizado.", ""
 	}
 	if r.URL.Query().Get("erro") == "transicao" {
-		return "", "Status atualizado por outra operacao ou transicao invalida. Recarregue e tente novamente."
+		return "", "Status atualizado por outra operação ou transição inválida. Recarregue e tente novamente."
 	}
 
 	return "", ""

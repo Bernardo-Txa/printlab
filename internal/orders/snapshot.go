@@ -211,7 +211,7 @@ func StatusLabel(status string) string {
 		return "Pagamento confirmado"
 	}
 
-	return "Status indisponivel"
+	return "Status indisponível"
 }
 
 func TrackingPageFromRecord(record TrackingRecord) TrackingPage {
@@ -236,14 +236,14 @@ func TrackingPageFromRecord(record TrackingRecord) TrackingPage {
 			Description: "Status financeiro validado pelo servidor da PrintLab.",
 		},
 		{
-			Title:       "Producao",
+			Title:       "Produção",
 			StatusLabel: page.ProductionStatusLabel,
 			Description: "Status operacional resumido do preparo do pedido.",
 		},
 		{
 			Title:       "Envio",
 			StatusLabel: page.ShippingStatusLabel,
-			Description: "Acompanhamento basico da etapa de envio.",
+			Description: "Acompanhamento básico da etapa de envio.",
 		},
 	}
 
@@ -293,19 +293,19 @@ func validUUID(value string) bool {
 
 func productionTrackingLabel(paymentStatus string, productionStatus string) string {
 	if paymentStatus == StatusPendingPayment && productionStatus == ProductionStatusWaiting {
-		return "Sera iniciada apos a confirmacao do pagamento"
+		return "Será iniciada após a confirmação do pagamento"
 	}
 
 	switch productionStatus {
 	case ProductionStatusWaiting:
-		return "Aguardando producao"
+		return "Aguardando produção"
 	case ProductionStatusInProduction:
-		return "Em producao"
+		return "Em produção"
 	case ProductionStatusCompleted:
-		return "Producao concluida"
+		return "Produção concluída"
 	}
 
-	return "Status indisponivel"
+	return "Status indisponível"
 }
 
 func shippingTrackingLabel(paymentStatus string, productionStatus string, shippingStatus string) string {
@@ -319,19 +319,19 @@ func shippingTrackingLabel(paymentStatus string, productionStatus string, shippi
 	}
 
 	if paymentStatus == StatusPendingPayment && productionStatus == ProductionStatusWaiting {
-		return "Sera preparado apos a producao"
+		return "Será preparado após a produção"
 	}
 
 	switch productionStatus {
 	case ProductionStatusWaiting:
-		return "Aguardando producao"
+		return "Aguardando produção"
 	case ProductionStatusInProduction:
-		return "Aguardando conclusao da producao"
+		return "Aguardando conclusão da produção"
 	case ProductionStatusCompleted:
-		return "Aguardando preparacao do envio"
+		return "Aguardando preparação do envio"
 	}
 
-	return "Status indisponivel"
+	return "Status indisponível"
 }
 
 func shippingServiceLabel(carrierName string, serviceName string) string {

@@ -330,7 +330,7 @@ func (s *Service) prepareLine(item StoredItem) (CartLine, error) {
 	case !item.Product.IsActive:
 		line.Available = false
 		line.ProductAvailable = false
-		line.UnavailableReason = "Produto indisponivel."
+		line.UnavailableReason = "Produto indisponível."
 	case item.Variant == nil && item.ProductHasActiveVariants:
 		line.Available = false
 		line.ProductAvailable = true

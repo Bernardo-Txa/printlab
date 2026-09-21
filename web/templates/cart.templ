@@ -14,11 +14,11 @@ templ CartPage(view cartdomain.CartView) {
 				<div class="cart-heading">
 					<p class="brand-kicker">Carrinho</p>
 					<h1>Seu carrinho</h1>
-					<p>Revise os itens escolhidos. Frete e pagamento serao definidos na proxima etapa.</p>
+					<p>Revise os itens escolhidos. Frete e pagamento serão definidos na próxima etapa.</p>
 				</div>
 				if view.IsEmpty {
 					<div class="cart-empty">
-						@components.EmptyState("Seu carrinho ainda esta vazio.", "Explore os produtos da PrintLab e adicione os experimentos que quiser acompanhar.")
+						@components.EmptyState("Seu carrinho ainda está vazio.", "Explore os produtos da PrintLab e adicione os experimentos que quiser acompanhar.")
 						<a class="btn-base btn-primary" href="/produtos">Explorar produtos</a>
 					</div>
 				} else {
@@ -41,14 +41,14 @@ templ CartPage(view cartdomain.CartView) {
 												}
 											</div>
 											if !line.Available {
-												<span class="cart-line-status">Indisponivel</span>
+												<span class="cart-line-status">Indisponível</span>
 											}
 										</div>
 										if !line.Available {
 											<p class="cart-line-warning">{ line.UnavailableReason }</p>
 										}
 										<div class="cart-line-prices">
-											<p><span>Preco unitario</span><strong>{ line.UnitPriceBRL }</strong></p>
+											<p><span>Preço unitário</span><strong>{ line.UnitPriceBRL }</strong></p>
 											<p><span>Subtotal</span><strong>{ line.SubtotalBRL }</strong></p>
 										</div>
 										<div class="cart-line-actions">
@@ -72,11 +72,11 @@ templ CartPage(view cartdomain.CartView) {
 								<strong>{ view.SubtotalBRL }</strong>
 							</div>
 							if view.HasUnavailableItems {
-								<p class="cart-summary-alert">Itens indisponiveis permanecem no carrinho para revisao, mas nao entram no subtotal.</p>
+								<p class="cart-summary-alert">Itens indisponíveis permanecem no carrinho para revisão, mas não entram no subtotal.</p>
 							}
-							<p class="cart-summary-note">Frete sera calculado posteriormente no checkout.</p>
+							<p class="cart-summary-note">Frete será calculado posteriormente no checkout.</p>
 							if view.HasUnavailableItems {
-								<span class="cart-checkout-soon">Remova ou ajuste os itens indisponiveis para continuar.</span>
+								<span class="cart-checkout-soon">Remova ou ajuste os itens indisponíveis para continuar.</span>
 							} else {
 								<a class="btn-base btn-primary" href="/checkout/dados">Continuar para os dados</a>
 							}
@@ -90,10 +90,10 @@ templ CartPage(view cartdomain.CartView) {
 }
 
 templ CartUnavailable() {
-	@components.Layout("Carrinho indisponivel | PrintLab", "Carrinho temporariamente indisponivel.", "") {
+	@components.Layout("Carrinho indisponível | PrintLab", "Carrinho temporariamente indisponível.", "") {
 		<section class="section-block">
 			@components.Container() {
-				@components.EmptyState("Carrinho temporariamente indisponivel.", "Nao foi possivel carregar seu carrinho agora. Tente novamente em alguns instantes.")
+				@components.EmptyState("Carrinho temporariamente indisponível.", "Não foi possível carregar seu carrinho agora. Tente novamente em alguns instantes.")
 			}
 		</section>
 	}

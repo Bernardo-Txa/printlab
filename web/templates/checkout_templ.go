@@ -64,12 +64,12 @@ func CheckoutDetails(page customers.CheckoutPage) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 1 - Seus dados</h1><p>Usamos estes dados somente para preparar sua compra, entrega e contato relacionado ao pedido.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><span class=\"checkout-step checkout-step-active\">1 Dados</span> <span class=\"checkout-step\">2 Frete</span> <span class=\"checkout-step\">3 Revisao</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 1 - Seus dados</h1><p>Usamos estes dados somente para preparar sua compra, entrega e contato relacionado ao pedido.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><span class=\"checkout-step checkout-step-active\">1 Dados</span> <span class=\"checkout-step\">2 Frete</span> <span class=\"checkout-step\">3 Revisão</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if page.Form.Saved {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<p class=\"checkout-alert checkout-alert-success\">Dados salvos. O frete sera escolhido na proxima etapa.</p>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<p class=\"checkout-alert checkout-alert-success\">Dados salvos. O frete será escolhido na próxima etapa.</p>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -100,7 +100,7 @@ func CheckoutDetails(page customers.CheckoutPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessario para a documentacao do envio.", false, "cpf", "14").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessário para a documentação do envio.", false, "cpf", "14").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -116,7 +116,7 @@ func CheckoutDetails(page customers.CheckoutPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = CheckoutField("number", "Numero", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = CheckoutField("number", "Número", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -242,7 +242,7 @@ func CheckoutDetails(page customers.CheckoutPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</strong></div><p>Frete sera calculado na proxima etapa.</p></aside></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</strong></div><p>Frete será calculado na próxima etapa.</p></aside></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -825,7 +825,7 @@ func CheckoutDetailsUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Dados temporariamente indisponiveis.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Dados temporariamente indisponíveis.", "Não foi possível carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -841,7 +841,7 @@ func CheckoutDetailsUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Dados indisponiveis | PrintLab", "Dados de checkout temporariamente indisponiveis.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var39), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Dados indisponíveis | PrintLab", "Dados de checkout temporariamente indisponíveis.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var39), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

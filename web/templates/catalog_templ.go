@@ -62,7 +62,7 @@ func Catalog(catalog products.Catalog) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"catalog-page-hero-grid\"><div><p class=\"brand-kicker\">Catalogo PrintLab</p><h1>Experimentos que voce pode levar para casa.</h1><p>Produtos impressos em 3D com a linguagem de teste, cor e precisao da PrintLab.</p></div><div class=\"catalog-page-mark\" aria-hidden=\"true\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"catalog-page-hero-grid\"><div><p class=\"brand-kicker\">Catálogo PrintLab</p><h1>Experimentos que você pode levar para casa.</h1><p>Produtos impressos em 3D com a linguagem de teste, cor e precisao da PrintLab.</p></div><div class=\"catalog-page-mark\" aria-hidden=\"true\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -96,7 +96,7 @@ func Catalog(catalog products.Catalog) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"catalog-toolbar\"><div><p class=\"text-sm font-semibold uppercase tracking-normal text-primary\">Produtos</p><h2 id=\"catalogo-produtos\">Catalogo</h2></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"catalog-toolbar\"><div><p class=\"text-sm font-semibold uppercase tracking-normal text-primary\">Produtos</p><h2 id=\"catalogo-produtos\">Catálogo</h2></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -192,12 +192,12 @@ func Catalog(catalog products.Catalog) templ.Component {
 				}
 				if len(catalog.Products) == 0 {
 					if catalog.SelectedCategory != nil {
-						templ_7745c5c3_Err = components.EmptyState("Ainda nao ha experimentos nesta categoria.", "Estamos preparando o catalogo da PrintLab com produtos reais.").Render(ctx, templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = components.EmptyState("Ainda não há experimentos nesta categoria.", "Estamos preparando o catálogo da PrintLab com produtos reais.").Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = components.EmptyState("Os primeiros experimentos estao quase prontos.", "Estamos preparando o catalogo da PrintLab com produtos reais.").Render(ctx, templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = components.EmptyState("Os primeiros experimentos estão quase prontos.", "Estamos preparando o catálogo da PrintLab com produtos reais.").Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -240,7 +240,7 @@ func Catalog(catalog products.Catalog) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Quer falar sobre uma ideia?</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">O catalogo vai crescer com produtos reais da PrintLab. Enquanto isso, seguimos abertos para conversar sobre projetos em impressao 3D.</p></div><a class=\"cta-badge focus-ring\" href=\"/#contato\">Falar com a PrintLab</a></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Quer falar sobre uma ideia?</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">O catálogo vai crescer com produtos reais da PrintLab. Enquanto isso, seguimos abertos para conversar sobre projetos em impressão 3D.</p></div><a class=\"cta-badge focus-ring\" href=\"/#contato\">Falar com a PrintLab</a></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -256,7 +256,7 @@ func Catalog(catalog products.Catalog) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Produtos | PrintLab", "Catalogo de produtos impressos em 3D da PrintLab.", "/produtos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Produtos | PrintLab", "Catálogo de produtos impressos em 3D da PrintLab.", "/produtos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -313,7 +313,7 @@ func ProductDetail(detail products.ProductDetail, metaDescription string) templ.
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<a class=\"back-link\" href=\"/produtos\">Voltar ao catalogo</a><div class=\"product-detail-grid\"><div class=\"product-detail-visual\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<a class=\"back-link\" href=\"/produtos\">Voltar ao catálogo</a><div class=\"product-detail-grid\"><div class=\"product-detail-visual\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -637,7 +637,7 @@ func ProductDetail(detail products.ProductDetail, metaDescription string) templ.
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<label for=\"product-quantity\">Quantidade</label><div class=\"add-to-cart-controls\"><input id=\"product-quantity\" type=\"number\" name=\"quantity\" min=\"1\" max=\"99\" value=\"1\" required> <button class=\"btn-base btn-primary\" type=\"submit\">Adicionar ao carrinho</button></div></form><p>Frete e pagamento serao definidos na proxima etapa.</p></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<label for=\"product-quantity\">Quantidade</label><div class=\"add-to-cart-controls\"><input id=\"product-quantity\" type=\"number\" name=\"quantity\" min=\"1\" max=\"99\" value=\"1\" required> <button class=\"btn-base btn-primary\" type=\"submit\">Adicionar ao carrinho</button></div></form><p>Frete e pagamento serão definidos na próxima etapa.</p></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -710,7 +710,7 @@ func CatalogUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Catalogo temporariamente indisponivel.", "Nao foi possivel carregar os produtos agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Catálogo temporariamente indisponível.", "Não foi possível carregar os produtos agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -726,7 +726,7 @@ func CatalogUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Catalogo indisponivel | PrintLab", "Catalogo temporariamente indisponivel.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var31), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Catálogo indisponível | PrintLab", "Catálogo temporariamente indisponível.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var31), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -783,7 +783,7 @@ func ProductNotFound() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Produto nao encontrado.", "Esse experimento ainda nao esta disponivel no catalogo publico da PrintLab.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Produto não encontrado.", "Esse experimento ainda não está disponível no catálogo público da PrintLab.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -799,7 +799,7 @@ func ProductNotFound() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Produto nao encontrado | PrintLab", "Produto nao encontrado no catalogo da PrintLab.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Produto não encontrado | PrintLab", "Produto não encontrado no catálogo da PrintLab.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

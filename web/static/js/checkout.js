@@ -164,7 +164,7 @@
         return response.json();
       }).then(function (address) {
         fillAddress(form, address || {});
-        setStatus(status, "Endereco encontrado. Revise os campos antes de continuar.", "success");
+        setStatus(status, "Endereço encontrado. Revise os campos antes de continuar.", "success");
       }).catch(function (error) {
         if (error && error.name === "AbortError") {
           return;
@@ -172,11 +172,11 @@
 
         lastLookup = "";
         if (error && error.message === "not_found") {
-          setStatus(status, "CEP nao encontrado. Confira ou preencha o endereco manualmente.", "error");
+          setStatus(status, "CEP não encontrado. Confira ou preencha o endereço manualmente.", "error");
           return;
         }
 
-        setStatus(status, "Nao foi possivel consultar o CEP agora. Preencha o endereco manualmente.", "error");
+        setStatus(status, "Não foi possível consultar o CEP agora. Preencha o endereço manualmente.", "error");
       }).finally(function () {
         activeController = null;
       });

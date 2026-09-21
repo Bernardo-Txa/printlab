@@ -27,7 +27,7 @@ func TestCartPageWithoutCookieReturnsEmptyState(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), "Seu carrinho ainda esta vazio.") {
+	if !strings.Contains(rec.Body.String(), "Seu carrinho ainda está vazio.") {
 		t.Fatal("expected empty cart state")
 	}
 }

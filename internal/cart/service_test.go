@@ -342,7 +342,7 @@ func TestViewCalculatesCurrentPricesAndKeepsUnavailableItems(t *testing.T) {
 	if view.Lines[0].Image == nil || view.Lines[0].Image.ID != "variant-image" || view.Lines[0].Image.URL == "" {
 		t.Fatalf("expected variant image to be preferred and prepared, got %#v", view.Lines[0].Image)
 	}
-	if view.Lines[1].Available || view.Lines[1].UnavailableReason != "Produto indisponivel." {
+	if view.Lines[1].Available || view.Lines[1].UnavailableReason != "Produto indisponível." {
 		t.Fatalf("expected inactive product line, got %#v", view.Lines[1])
 	}
 	if view.Lines[2].Available || view.Lines[2].UnavailableReason != "Configuração indisponível." {

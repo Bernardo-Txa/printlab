@@ -65,7 +65,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 3 - Revisao</h1><p>Confira os dados da compra antes de confirmar. O pagamento sera disponibilizado na proxima etapa.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <a class=\"checkout-step checkout-step-done\" href=\"/checkout/frete\">2 Frete</a> <span class=\"checkout-step checkout-step-active\">3 Revisao</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"checkout-heading\"><p class=\"brand-kicker\">Checkout</p><h1>Etapa 3 - Revisão</h1><p>Confira os dados da compra antes de confirmar. O pagamento será disponibilizado na próxima etapa.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <a class=\"checkout-step checkout-step-done\" href=\"/checkout/frete\">2 Frete</a> <span class=\"checkout-step checkout-step-active\">3 Revisão</span> <span class=\"checkout-step\">4 Pagamento</span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -316,14 +316,14 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<p><span>Servico</span><strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<p><span>Serviço</span><strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(page.Shipping.ServiceName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 93, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 93, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -528,7 +528,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</strong></div><p>O pedido sera criado com status aguardando pagamento.</p></aside></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</strong></div><p>O pedido será criado com status aguardando pagamento.</p></aside></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -544,7 +544,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Revisao | PrintLab", "Revise produtos, dados, entrega e frete antes de criar o pedido.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Revisão | PrintLab", "Revise produtos, dados, entrega e frete antes de criar o pedido.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -614,7 +614,7 @@ func OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Order
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</h1><p>Finalize o pagamento no ambiente seguro da InfinitePay.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <a class=\"checkout-step checkout-step-done\" href=\"/checkout/frete\">2 Frete</a> <span class=\"checkout-step checkout-step-done\">3 Revisao</span> <span class=\"checkout-step checkout-step-active\">4 Pagamento</span></div><div class=\"order-status-panel\"><span>Status</span> <strong>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</h1><p>Finalize o pagamento no ambiente seguro da InfinitePay.</p></div><div class=\"checkout-stepper\" aria-label=\"Etapas do checkout\"><a class=\"checkout-step checkout-step-done\" href=\"/checkout/dados\">1 Dados</a> <a class=\"checkout-step checkout-step-done\" href=\"/checkout/frete\">2 Frete</a> <span class=\"checkout-step checkout-step-done\">3 Revisão</span> <span class=\"checkout-step checkout-step-active\">4 Pagamento</span></div><div class=\"order-status-panel\"><span>Status</span> <strong>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -741,14 +741,14 @@ func OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Order
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<p><span>Servico</span><strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<p><span>Serviço</span><strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var42 string
 					templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(page.Shipping.ServiceName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 202, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 202, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 					if templ_7745c5c3_Err != nil {
@@ -957,7 +957,7 @@ func OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Order
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<p>Use este numero apenas como referencia humana. O link do pedido usa o identificador seguro.</p></aside></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<p>Use este número apenas como referência humana. O link do pedido usa o identificador seguro.</p></aside></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1043,7 +1043,7 @@ func OrderTracking(page ordersdomain.TrackingPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</h1><p>Status basico do pedido, sem dados pessoais ou informacoes internas de pagamento.</p></div><div class=\"tracking-overview\" aria-label=\"Resumo do pedido\"><p><span>Pedido</span> <strong>Pedido ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</h1><p>Status básico do pedido, sem dados pessoais ou informações internas de pagamento.</p></div><div class=\"tracking-overview\" aria-label=\"Resumo do pedido\"><p><span>Pedido</span> <strong>Pedido ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1100,7 +1100,7 @@ func OrderTracking(page ordersdomain.TrackingPage) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				if page.ShippingServiceLabel != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<p><span>Servico de envio</span> <strong>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<p><span>Serviço de envio</span> <strong>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -1362,7 +1362,7 @@ func OrderTrackingUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Acompanhamento temporariamente indisponivel.", "Nao foi possivel carregar este acompanhamento agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Acompanhamento temporariamente indisponível.", "Não foi possível carregar este acompanhamento agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1378,7 +1378,7 @@ func OrderTrackingUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.PrivateNoIndexLayout("Acompanhamento indisponivel | PrintLab", "Acompanhamento temporariamente indisponivel.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var72), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.PrivateNoIndexLayout("Acompanhamento indisponível | PrintLab", "Acompanhamento temporariamente indisponível.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var72), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1435,7 +1435,7 @@ func CheckoutReviewUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Revisao temporariamente indisponivel.", "Nao foi possivel carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Revisão temporariamente indisponível.", "Não foi possível carregar esta etapa agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1451,7 +1451,7 @@ func CheckoutReviewUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Revisao indisponivel | PrintLab", "Revisao de checkout temporariamente indisponivel.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var75), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Revisão indisponível | PrintLab", "Revisão de checkout temporariamente indisponível.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var75), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1508,7 +1508,7 @@ func OrderUnavailable() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.EmptyState("Pedido temporariamente indisponivel.", "Nao foi possivel carregar este pedido agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.EmptyState("Pedido temporariamente indisponível.", "Não foi possível carregar este pedido agora. Tente novamente em alguns instantes.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1524,7 +1524,7 @@ func OrderUnavailable() templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("Pedido indisponivel | PrintLab", "Pedido temporariamente indisponivel.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var78), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("Pedido indisponível | PrintLab", "Pedido temporariamente indisponível.", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var78), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
