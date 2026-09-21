@@ -1,6 +1,6 @@
 # Fase 17.3.3 — Persistencia de cor no carrinho e pedido
 
-Status: Em execucao; implementada, aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 ## Escopo implementado
 
@@ -34,6 +34,11 @@ Rollback preferido: corrigir adiante preservando os dados. Remover as colunas pe
 - Executados com sucesso: `templ generate`, `gofmt`, `go test ./...`, `go vet ./...` e `go build ./...`. A suite completa foi executada com `TEST_DATABASE_URL` apontando para PostgreSQL 16 descartavel, incluindo as integracoes.
 - Migration aplicada tambem sobre fixtures legadas anteriores a 17.3.3: quantidades, valores, ausencia de cor e RLS preservados. Nenhum banco remoto foi acessado nessa verificacao.
 
-## Validacao manual pendente
+## Validacao manual em producao
 
-Em producao: escolher duas cores do mesmo produto, verificar linhas separadas, concluir checkout e conferir cor/variante no Admin. Repetir com produto sem cores. Nao declarar esta validacao concluida sem confirmacao operacional.
+Validado em producao:
+
+- Escolher duas cores do mesmo produto gera linhas separadas.
+- Checkout conclui preservando a cor comercial escolhida.
+- Pedido e Admin exibem cor e variante separadas.
+- Produto sem cores continua funcionando.

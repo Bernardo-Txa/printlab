@@ -1,6 +1,6 @@
 # Diagnostico de embalagem: no_fitting_box
 
-Status: instrumentacao temporaria implementada e testada; causa dimensional do incidente de producao ainda nao confirmada. Sem deploy automatico.
+Status: instrumentacao temporaria implementada e testada; calculo de frete validado novamente em producao apos ajuste operacional de embalagem. Sem deploy automatico por este documento.
 
 ## Evidencia e limites
 
@@ -8,7 +8,7 @@ O incidente informado apresentou `shipping package planning packages=2 dimension
 
 Esse log nao armazena dimensoes. `packages` conta cotacoes com `Package != nil`, nao volumes fisicos de um envio. `mapSuperFreteQuotes` conserva somente `packages[0]` de cada modalidade, e `firstReturnedPackage` escolhe o primeiro pacote mapeado. Assim, duas modalidades com dimensoes iguais geram exatamente esse log. Ele nao prova que houve dois volumes em uma modalidade, nem permite recuperar as dimensoes descartadas. Esse comportamento foi preservado; suporte multi-volume permanece fora do fluxo atual.
 
-A conexao Vercel consultada nao listou projetos acessiveis e nao permitiu obter o deployment do incidente. Sem dimensoes registradas ou reproducao identificada, nao e possivel classificar a causa como bug ou cadastro insuficiente. Os valores sinteticos dos testes nao sao medidas do incidente.
+Na auditoria original, a conexao Vercel consultada nao listou projetos acessiveis e nao permitiu obter o deployment do incidente. Sem dimensoes registradas ou reproducao identificada naquele momento, nao foi possivel classificar a causa como bug ou cadastro insuficiente. Os valores sinteticos dos testes nao sao medidas do incidente. Posteriormente, o fluxo de frete voltou a funcionar em producao apos a correcao operacional de embalagem confirmada pelo responsavel.
 
 Uma leitura somente das caixas ativas do projeto Supabase PrintLab encontrou, em ordem H/W/L:
 
@@ -43,11 +43,11 @@ Os indices sao posicionais, com base zero; caixas seguem a ordem do repository (
 
 Exemplo **sintetico de teste**, nao de producao: pacote 200 x 300 x 400 mm contra internas 240 x 120 x 160 mm resulta em eixos da caixa 120/160/240 e deficits 80/140/160 mm. Nenhuma tolerancia e aplicada, e a cotacao final nao e chamada.
 
-## Coleta operacional pendente
+## Registro operacional
 
-1. Publicar manualmente este commit quando autorizado; esta tarefa nao faz push em main nem deploy, para evitar disparo automatico.
-2. Reproduzir o mesmo carrinho e consultar o registro completo `shipping packaging diagnostic`, sem compartilhar dados pessoais.
-3. Conferir `planning_omitted=0` e `boxes_omitted=0`, dimensoes selecionadas e deficits de cada caixa.
-4. Se nenhuma caixa comportar o pacote, confirmar fisicamente as medidas cadastradas e decidir operacionalmente sobre embalagens reais. Nao alterar dados para forcar sucesso.
-5. Se houver varios volumes reais dentro de uma modalidade, validar esse contrato separadamente antes de mudar o fluxo de caixa unica.
-6. Registrar a causa confirmada e retirar esta instrumentacao detalhada apos concluir o incidente; preservar logs genericos e testes de encaixe.
+1. O diagnostico detalhado permanece documentado para interpretar eventuais novas falhas `no_fitting_box`.
+2. O fluxo de frete foi revalidado em producao apos a correcao operacional de embalagem.
+3. Se o erro voltar, reproduzir o carrinho afetado e consultar o registro completo `shipping packaging diagnostic`, sem compartilhar dados pessoais.
+4. Conferir `planning_omitted=0` e `boxes_omitted=0`, dimensoes selecionadas e deficits de cada caixa.
+5. Se nenhuma caixa comportar o pacote, confirmar fisicamente as medidas cadastradas e decidir operacionalmente sobre embalagens reais. Nao alterar dados para forcar sucesso.
+6. Se houver varios volumes reais dentro de uma modalidade, validar esse contrato separadamente antes de mudar o fluxo de caixa unica.

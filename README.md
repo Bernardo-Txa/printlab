@@ -60,11 +60,11 @@ IMPLEMENTADO:
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
 - Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 - Fase 16 — SEO e Performance concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, acessibilidade e Lighthouse 100 nas paginas publicas validadas.
-- Fase 17.1 e Fase 17.2 concluidas e validadas em producao; Fase 17.3.1 em execucao, aguardando validacao manual.
+- Fase 17.1, Fase 17.2 e Fase 17.3 concluidas e validadas em producao; retirada no local tambem validada em producao.
 
 PLANEJADO:
 
-- Fase 17.3 em execucao: selecao publica e persistencia de cor no carrinho/pedido implementadas, aguardando validacao manual; Fases 18 a 20 permanecem planejadas.
+- Fase 17 permanece em execucao para a proxima etapa planejada; Fases 18 a 20 permanecem planejadas.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 

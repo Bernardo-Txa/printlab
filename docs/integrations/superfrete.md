@@ -196,4 +196,4 @@ Nao criar dados ficticios em migration nem registrar secrets na documentacao. A 
 
 ## Diagnostico temporario de encaixe
 
-Falhas `no_fitting_box` registram somente dimensoes numericas em mm, contagem de cotacoes/caixas e deficits por eixo ordenado. O registro e limitado, sem PII ou identificadores persistentes. O algoritmo e o fluxo de cotacao permanecem iguais. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar o contador de pacotes, as unidades e a coleta manual pendente.
+Falhas `no_fitting_box` registram somente dimensoes numericas em mm, contagem de cotacoes/caixas e deficits por eixo ordenado. O registro e limitado, sem PII ou identificadores persistentes. O algoritmo e o fluxo de cotacao permanecem iguais. O calculo de frete foi revalidado em producao apos a correcao operacional de embalagem; consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.

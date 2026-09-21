@@ -42,10 +42,10 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
 | Fase 17.1 — Cadastro e slugs | Concluida; validada em producao |
 | Fase 17.2 — Logistica simplificada | Concluida; validada em producao |
-| Fase 17.3 — Cores e producao | Em execucao |
-| Fase 17.3.1 — Separacao de cor comercial e producao | Em execucao |
-| Fase 17.3.2 — Cores comerciais na pagina do produto | Em execucao; aguardando validacao manual |
-| Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Em execucao; aguardando validacao manual |
+| Fase 17.3 — Cores e producao | Concluida; validada em producao |
+| Fase 17.3.1 — Separacao de cor comercial e producao | Concluida; validada em producao |
+| Fase 17.3.2 — Cores comerciais na pagina do produto | Concluida; validada em producao |
+| Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Concluida; validada em producao |
 | Fase 18 — Conta do cliente e comunicacao transacional | Planejada |
 | Fase 18.1 — E-mail transacional PrintLab | Planejada |
 | Fase 18.2 — Autenticacao do cliente | Planejada |
@@ -723,7 +723,7 @@ Definition of Done:
 
 ## Fase 17 — Simplificacao do catalogo e administrativo
 
-Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao e logistica. As Fases 17.1 e 17.2 foram concluidas e validadas em producao; a Fase 17.3.1 esta em execucao e aguarda validacao manual.
+Objetivo: reduzir atrito no cadastro e separar com clareza configuracao comercial, producao, logistica e escolha comercial. As Fases 17.1, 17.2 e 17.3 foram concluidas e validadas em producao. A Fase 17 permanece em execucao para a proxima etapa planejada, sem iniciar nova fase neste documento.
 
 ### Fase 17.1 — Cadastro e slugs
 
@@ -746,13 +746,15 @@ Status: Concluida; validada em producao.
 
 ### Fase 17.3 — Cores e producao
 
-Status: Em execucao; a subfase 17.3.1 aguarda validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 - Preservar `materials` e `colors` como dados de producao usados por receita, `variant_filaments`, peso, snapshots e operacao.
-- A Fase 17.3.1 associa cores comerciais ao produto, separadas da cor de filamento e da receita.
-- A Fase 17.3.2 permite selecionar a cor na pagina publica. A [Fase 17.3.3](active/017-3-3-cor-no-carrinho-e-pedido.md) persiste essa escolha no carrinho e no snapshot do pedido, com exibicao no Admin; aguarda validacao manual.
+- A [Fase 17.3.1](completed/017-3-1-cores-comerciais.md) associa cores comerciais ao produto, separadas da cor de filamento e da receita.
+- A [Fase 17.3.2](completed/017-3-2-cores-na-pagina-produto.md) permite selecionar a cor na pagina publica.
+- A [Fase 17.3.3](completed/017-3-3-cor-no-carrinho-e-pedido.md) persiste essa escolha no carrinho e no snapshot do pedido, com exibicao no Admin.
 - Automatizacao de receita por cor comercial permanece fora deste escopo.
 - Fazer a escolha comercial fluir de produto para carrinho, pedido e producao sem criar variantes artificiais apenas para cor.
+- A melhoria transversal [Retirada no local](completed/retirada-no-local.md) foi concluida e validada em producao: `pickup` persiste entrega gratuita sem SuperFrete, sem caixa e sem perfil logistico, enquanto envio via SuperFrete permanece funcional.
 
 Dependencias: Fase 16.
 

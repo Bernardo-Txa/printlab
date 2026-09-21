@@ -179,7 +179,7 @@ O workflow atual aponta para o Supabase de desenvolvimento. Producao exigira pol
 
 `20260920224834_persist_commercial_colors.sql` adiciona `cart_items.color_id` opcional com FK para `colors`, indices unique parciais para produto/variante/cor, e `order_items.color_id`, `color_name`, `color_slug` opcionais com snapshot historico. Nao cria tabela, nao recalcula dados existentes e preserva RLS.
 
-Aplicar antes do backend atualizado. A versao antiga do upsert nao e compativel com os novos predicados dos indices: coordenar publicacao do schema e codigo. Corrigir adiante e o rollback preferido; remover colunas descartaria snapshots e recriar indices antigos pode conflitar com linhas de cores diferentes. Ver [plano 17.3.3](../plans/active/017-3-3-cor-no-carrinho-e-pedido.md).
+Aplicar antes do backend atualizado. A versao antiga do upsert nao e compativel com os novos predicados dos indices: coordenar publicacao do schema e codigo. Corrigir adiante e o rollback preferido; remover colunas descartaria snapshots e recriar indices antigos pode conflitar com linhas de cores diferentes. Ver [plano 17.3.3](../plans/completed/017-3-3-cor-no-carrinho-e-pedido.md).
 
 ## Retirada no local
 

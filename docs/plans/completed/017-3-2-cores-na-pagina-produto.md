@@ -1,6 +1,6 @@
 # Fase 17.3.2 — Cores comerciais na pagina do produto
 
-Status: Em execucao; aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 - Secao "Escolha a cor" somente para produtos com cores comerciais ativas vinculadas.
 - Swatches circulares usam hex validado; ausencia de hex usa fundo neutro e nome visivel.
@@ -16,4 +16,4 @@ Status: Em execucao; aguardando validacao manual em producao.
 - Testes de selecao, troca independente, hex, renderizacao, ausencia de cores e contrato de formulario do carrinho.
 - Geracao templ/CSS, gofmt, suite Go, vet e build.
 - Previa local do template inspecionada em Chromium: 390x1400 e 1440x1100, com cores claras/escuras/sem hex e selecao destacada.
-- Em producao: testar desktop/mobile, foco por teclado, cores claras/escuras/sem hex, selecao e troca de variantes, produto sem cores e adicionar ao carrinho.
+- Validacao manual em producao concluida: desktop/mobile, foco por teclado, cores claras/escuras/sem hex, selecao e troca de variantes, produto sem cores e adicionar ao carrinho.

@@ -6,17 +6,17 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Changed
 
-- Fase 17.3.1: cores comerciais passam a ser opcionais tambem para produtos ativos; o detalhe publico recebe as cores vinculadas ativas e ordenadas, sem alterar checkout ou receitas. Nenhuma migration adicional.
+- Fase 17.3 concluida e validada manualmente em producao: cores comerciais passam a ser opcionais tambem para produtos ativos, aparecem na pagina publica, acompanham carrinho/checkout/pedido/Admin e continuam independentes de variantes, receitas, frete e pagamentos.
 
 ### Added
 
-- Retirada no local no checkout: nova modalidade `pickup` com frete zero definido server-side, sem SuperFrete, caixa ou perfil logistico, persistida em carrinho e pedido por `delivery_method`. Pedido e Admin exibem “Retirada no local” e “Grátis”. Migration adiciona constraints condicionais para separar envio e retirada.
+- Retirada no local no checkout, concluida e validada manualmente em producao: nova modalidade `pickup` com frete zero definido server-side, sem SuperFrete, caixa ou perfil logistico, persistida em carrinho e pedido por `delivery_method`. Pedido e Admin exibem “Retirada no local” e “Grátis”. Migration adiciona constraints condicionais para separar envio e retirada.
 
-- Fase 17.3.3: cor comercial opcional acompanha carrinho, checkout e pedido; cores diferentes geram linhas separadas e o Admin exibe o snapshot escolhido. Migration adiciona referencias opcionais e snapshots nas tabelas existentes, sem alterar receitas, SuperFrete ou InfinitePay. Validada automaticamente em PostgreSQL local; validacao manual em producao pendente.
+- Fase 17.3.3: cor comercial opcional acompanha carrinho, checkout e pedido; cores diferentes geram linhas separadas e o Admin exibe o snapshot escolhido. Migration adiciona referencias opcionais e snapshots nas tabelas existentes, sem alterar receitas, SuperFrete ou InfinitePay. Validada automaticamente em PostgreSQL local e manualmente em producao.
 
-- Fase 17.3.2: swatches acessiveis de cores comerciais no detalhe publico, selecao independente de variantes via URL e canonical preservado. Sem migration, combinacoes automaticas ou envio de cor ao carrinho.
+- Fase 17.3.2: swatches acessiveis de cores comerciais no detalhe publico, selecao independente de variantes via URL e canonical preservado. Sem migration ou combinacoes automaticas. Validada manualmente em producao.
 
-- Fase 17.3.1 em execucao: relacao `product_colors` para separar cores comerciais de `colors`/`variant_filaments` de producao; nenhuma variante ou receita existente foi alterada.
+- Fase 17.3.1 concluida e validada manualmente em producao: relacao `product_colors` para separar cores comerciais de `colors`/`variant_filaments` de producao; nenhuma variante ou receita existente foi alterada.
 - Fase 17.2 concluida e validada manualmente em producao: perfil logistico autoritativo por produto, configuracoes sem logistica no Admin e cadastro simplificado de caixas. Nenhuma migration foi criada; colunas legadas de configuracoes permanecem inertes.
 - Fase 17.1 concluída e validada manualmente em produção: cadastro administrativo gera slugs no servidor para produtos, categorias, configurações, materiais, cores e caixas; colisões usam sufixos determinísticos, renomeações preservam slugs e o fluxo comum não expõe campo editável. Nenhuma migration foi criada e nenhum slug existente foi recalculado em lote.
 

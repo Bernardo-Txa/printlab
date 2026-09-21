@@ -1,6 +1,6 @@
 # Fase 17.3.1 — Separacao de cor comercial e producao
 
-Status: Em execucao; aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 ## Objetivo
 
@@ -26,11 +26,11 @@ Preparar a escolha de cor comercial do produto sem transformar cor comercial em 
 - O detalhe publico recebe cores comerciais ativas ordenadas, sem seletor novo ou alteracao no checkout.
 - Nenhuma migration adicional; reutilizada a relacao existente.
 
-## Validacao manual pendente
+## Validacao manual em producao
 
-- Selecionar, ordenar e remover cores comerciais no Admin.
-- Confirmar que a receita de cada configuracao continua independente da selecao comercial.
-- Confirmar que produtos ativos e inativos podem permanecer sem cores.
+- Selecionar, ordenar e remover cores comerciais no Admin: validado.
+- Receita de cada configuracao continua independente da selecao comercial: validado.
+- Produtos ativos e inativos podem permanecer sem cores: validado.
 
 ## Limites desta fase
 

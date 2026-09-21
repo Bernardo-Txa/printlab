@@ -1,6 +1,6 @@
 # Retirada no local
 
-Status: Implementada em codigo; aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 ## Objetivo
 
@@ -24,13 +24,14 @@ Migration criada:
 
 A migration adiciona `delivery_method` em `cart_shipping_selections` e `order_shipping_details`, com default `shipping` para preservar dados existentes. Constraints condicionais separam os campos validos de envio e retirada.
 
-## Validacao esperada
+## Validacao manual em producao
 
-- Criar carrinho com produto sem perfil logistico e seguir por retirada.
-- Confirmar que a etapa de entrega nao mostra erro de perfil/caixa para retirada.
-- Confirmar que a revisao mostra “Retirada no local” e “Grátis”.
-- Criar pedido e confirmar que o Admin mostra retirada sem transportadora/servico/caixa.
-- Confirmar que envio via SuperFrete continua cotando e persistindo normalmente.
+- Carrinho com produto sem perfil logistico consegue seguir por retirada.
+- Etapa de entrega nao mostra erro de perfil/caixa para retirada.
+- Revisao mostra “Retirada no local” e “Grátis”.
+- Pedido e Admin mostram retirada sem transportadora/servico/caixa.
+- Envio via SuperFrete continua cotando e persistindo normalmente.
+- Os dois fluxos de entrega foram testados em producao.
 
 ## Fora do escopo
 
