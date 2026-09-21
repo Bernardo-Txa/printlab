@@ -12,6 +12,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 19.2: sistema de movimento da PrintLab com tokens CSS, microinterações em navegação, botões, cards, swatches, variantes, carrinho, checkout e Admin, reveal progressivo sem ocultar conteúdo sem JavaScript, elemento decorativo lateral e suporte a `prefers-reduced-motion`.
+
 - Retirada no local no checkout, concluida e validada manualmente em producao: nova modalidade `pickup` com frete zero definido server-side, sem SuperFrete, caixa ou perfil logistico, persistida em carrinho e pedido por `delivery_method`. Pedido e Admin exibem “Retirada no local” e “Grátis”. Migration adiciona constraints condicionais para separar envio e retirada.
 
 - Fase 17.3.3: cor comercial opcional acompanha carrinho, checkout e pedido; cores diferentes geram linhas separadas e o Admin exibe o snapshot escolhido. Migration adiciona referencias opcionais e snapshots nas tabelas existentes, sem alterar receitas, SuperFrete ou InfinitePay. Validada automaticamente em PostgreSQL local e manualmente em producao.

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
+Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 20 planejadas. Fase 19 em execucao.
 
 ## Status das fases
 
@@ -39,7 +39,7 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 16 — SEO e performance | Concluida; validada em producao |
 | Fase 16.1 — SEO tecnico e baseline de performance | Concluida; validada em producao |
 | Fase 16.2 — Performance de imagens, cache estatico e acessibilidade | Concluida; validada em producao |
-| Fase 17 — Simplificacao do catalogo e administrativo | Em execucao |
+| Fase 17 — Simplificacao do catalogo e administrativo | Concluida; validada em producao |
 | Fase 17.1 — Cadastro e slugs | Concluida; validada em producao |
 | Fase 17.2 — Logistica simplificada | Concluida; validada em producao |
 | Fase 17.3 — Cores e producao | Concluida; validada em producao |
@@ -51,9 +51,9 @@ Status: Fases 0 a 16 concluidas. Fase 17 em execucao. Fases 18 a 20 planejadas.
 | Fase 18.2 — Autenticacao do cliente | Planejada |
 | Fase 18.3 — Minha conta / Meus pedidos | Planejada |
 | Fase 18.4 — Pagamentos pendentes e retomada | Planejada |
-| Fase 19 — Experiencia e acabamento comercial | Planejada |
-| Fase 19.1 — Revisao textual completa | Planejada |
-| Fase 19.2 — Motion e experiencia premium | Planejada |
+| Fase 19 — Experiencia e acabamento comercial | Em execucao |
+| Fase 19.1 — Revisao textual completa | Concluida |
+| Fase 19.2 — Motion e experiencia premium | Implementada; aguardando validacao manual |
 | Fase 19.3 — Regressao de UX/performance | Planejada |
 | Fase 20 — Preparacao final para producao | Planejada |
 | Fase 20.1 — Auditoria | Planejada |
@@ -792,7 +792,7 @@ Dependencias: Fase 17.
 
 ## Fase 19 — Experiencia e acabamento comercial
 
-Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. Tudo nesta fase permanece planejado.
+Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. A fase permanece em execucao; 19.3 continua planejada.
 
 ### Fase 19.1 — Revisao textual completa
 
@@ -803,6 +803,7 @@ Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. 
 
 - Adicionar interacoes proprias da PrintLab que sejam sutis, mobile-first, acessiveis, compatíveis com SSR e respeitem `prefers-reduced-motion`.
 - Nao transformar o site em SPA nem bloquear checkout.
+- Implementada com sistema de movimento CSS, reveal progressivo sem dependencia de conteudo em JavaScript, microinteracoes em componentes principais e elemento decorativo lateral da marca.
 
 ### Fase 19.3 — Regressao de UX/performance
 

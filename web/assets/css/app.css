@@ -34,6 +34,12 @@
 
 :root {
   --container-width: 72rem;
+  --motion-fast: 140ms;
+  --motion-normal: 220ms;
+  --motion-slow: 360ms;
+  --motion-enter: 420ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
 }
 
@@ -59,6 +65,15 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
     }
+
+    .motion-ready .motion-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .printlab-motion-rail {
+      display: none !important;
+    }
   }
 }
 
@@ -76,16 +91,80 @@
     @apply rounded-control outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
   }
 
+  .printlab-motion-rail {
+    @apply pointer-events-none fixed left-0 top-28 z-30 hidden h-72 w-10 overflow-hidden rounded-r-section border-y border-r border-border bg-surface/85 shadow-soft backdrop-blur lg:block;
+  }
+
+  .printlab-motion-rail::before,
+  .printlab-motion-rail::after {
+    content: "";
+    @apply absolute left-1/2 -translate-x-1/2 rounded-full;
+  }
+
+  .printlab-motion-rail::before {
+    @apply top-7 h-48 w-px bg-primary/25;
+  }
+
+  .printlab-motion-rail::after {
+    @apply top-6 size-3 bg-highlight-teal shadow-soft;
+    animation: printlab-rail-dot 4.8s var(--motion-ease) infinite;
+  }
+
+  .motion-ready .motion-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity var(--motion-enter) var(--motion-ease),
+      transform var(--motion-enter) var(--motion-ease);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .motion-ready .motion-reveal.motion-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   .nav-link {
-    @apply rounded-control px-1 py-2 text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+    @apply relative rounded-control px-2 py-2 text-muted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-ease);
+  }
+
+  .nav-link::after {
+    content: "";
+    @apply absolute inset-x-2 bottom-1 h-0.5 origin-left scale-x-0 rounded-full bg-highlight-teal;
+    transition: transform var(--motion-normal) var(--motion-ease);
+  }
+
+  .nav-link:hover {
+    @apply bg-surface-muted;
+    transform: translateY(-1px);
+  }
+
+  .nav-link:hover::after,
+  .nav-link:focus-visible::after {
+    transform: scaleX(1);
   }
 
   .brand-link {
     @apply flex min-w-0 items-center tracking-normal text-foreground outline-none;
+    transition: transform var(--motion-normal) var(--motion-spring);
+  }
+
+  .brand-link:hover {
+    transform: translateY(-1px) rotate(-0.5deg);
   }
 
   .brand-header-logo {
     @apply h-16 w-24 shrink-0 object-contain sm:h-[4.5rem] sm:w-28;
+    transition: transform var(--motion-normal) var(--motion-spring);
+  }
+
+  .brand-link:hover .brand-header-logo {
+    transform: scale(1.035);
   }
 
   .footer-logo {
@@ -94,6 +173,21 @@
 
   .btn-base {
     @apply inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .btn-base:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-base:active,
+  .btn-base.is-pressed {
+    transform: translateY(0) scale(0.985);
   }
 
   .btn-primary {
@@ -123,6 +217,7 @@
   .brand-kicker::before {
     content: "";
     @apply size-2 rounded-full bg-highlight-teal;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-highlight-teal) 18%, transparent);
   }
 
   .hero-section .brand-kicker {
@@ -145,6 +240,15 @@
       var(--color-secondary);
   }
 
+  .hero-brand-stage::after {
+    content: "";
+    @apply absolute right-8 top-10 h-24 w-3 rounded-full bg-highlight-yellow/80;
+    box-shadow:
+      -18px 42px 0 -2px color-mix(in oklab, var(--color-highlight-teal) 85%, transparent),
+      20px 94px 0 -4px color-mix(in oklab, var(--color-highlight-pink) 80%, transparent);
+    animation: printlab-soft-float 6s var(--motion-ease) infinite;
+  }
+
   .hero-brand-stage::before {
     content: "";
     @apply absolute inset-0 opacity-25;
@@ -156,6 +260,13 @@
 
   .hero-logo-shell {
     @apply absolute inset-x-5 top-7 z-10 mx-auto flex max-w-md items-center justify-center rounded-section bg-surface p-5 shadow-soft sm:inset-x-8 sm:top-8 sm:p-6;
+    transition:
+      transform var(--motion-slow) var(--motion-spring),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .hero-brand-stage:hover .hero-logo-shell {
+    transform: translateY(-3px) rotate(-0.4deg);
   }
 
   .hero-logo-image {
@@ -180,6 +291,25 @@
 
   .brand-layer {
     @apply block h-3 rounded-full;
+    transition: transform var(--motion-slow) var(--motion-spring);
+  }
+
+  .hero-brand-stage:hover .brand-layer-blue,
+  .catalog-preview:hover .catalog-shape-blue,
+  .catalog-page-mark:hover .brand-layer-blue {
+    transform: translateX(6px);
+  }
+
+  .hero-brand-stage:hover .brand-layer-teal,
+  .catalog-preview:hover .catalog-shape-teal,
+  .catalog-page-mark:hover .brand-layer-teal {
+    transform: translateX(12px);
+  }
+
+  .hero-brand-stage:hover .brand-layer-pink,
+  .catalog-preview:hover .catalog-shape-pink,
+  .catalog-page-mark:hover .brand-layer-pink {
+    transform: translateX(18px);
   }
 
   .brand-layer-blue {
@@ -208,6 +338,14 @@
 
   .dna-card {
     @apply min-h-52 overflow-hidden rounded-card p-6 text-primary-foreground shadow-soft transition-transform duration-200 hover:-translate-y-1;
+    transition:
+      transform var(--motion-normal) var(--motion-spring),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      filter var(--motion-normal) var(--motion-ease);
+  }
+
+  .dna-card:hover {
+    filter: saturate(1.08);
   }
 
   .dna-word {
@@ -274,6 +412,14 @@
 
   .process-step {
     @apply relative z-10 flex gap-4 rounded-card border border-border bg-surface p-5 shadow-soft transition-transform duration-200 hover:-translate-y-1 lg:flex-col;
+    transition:
+      transform var(--motion-normal) var(--motion-spring),
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .process-step:hover {
+    @apply border-primary/35;
   }
 
   .process-step h3 {
@@ -311,6 +457,7 @@
 
   .catalog-shape {
     @apply absolute rounded-card border border-white/25 shadow-soft;
+    transition: transform var(--motion-slow) var(--motion-spring);
   }
 
   .catalog-shape-blue {
@@ -375,6 +522,15 @@
 
   .category-pill {
     @apply inline-flex min-h-10 items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted outline-none transition-colors hover:border-highlight-teal hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .category-pill:hover {
+    transform: translateY(-1px);
   }
 
   .category-pill-active {
@@ -387,6 +543,16 @@
 
   .product-card {
     @apply min-h-full rounded-card border border-border bg-surface shadow-soft transition-transform duration-200 hover:-translate-y-1;
+    transition:
+      transform var(--motion-normal) var(--motion-spring),
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .product-card:hover,
+  .product-card:focus-within {
+    @apply border-primary/35;
+    box-shadow: 0 24px 60px -34px rgb(7 28 54 / 0.48);
   }
 
   .product-card-link {
@@ -443,6 +609,7 @@
 
   .product-visual-layer {
     @apply absolute left-8 h-4 rounded-full;
+    transition: transform var(--motion-slow) var(--motion-spring);
   }
 
   .product-visual-layer-blue {
@@ -459,6 +626,7 @@
 
   .product-visual-dot {
     @apply absolute right-10 top-10 size-14 rounded-control bg-highlight-yellow;
+    transition: transform var(--motion-slow) var(--motion-spring);
   }
 
   .product-visual-label {
@@ -467,6 +635,31 @@
 
   .product-media {
     @apply block h-56 w-full bg-secondary object-cover;
+    transition: transform var(--motion-slow) var(--motion-spring);
+  }
+
+  .product-card:hover .product-media,
+  .product-card:focus-within .product-media,
+  .product-detail-visual:hover .product-media {
+    transform: scale(1.035);
+  }
+
+  .product-card:hover .product-visual-layer-teal,
+  .product-card:focus-within .product-visual-layer-teal,
+  .product-detail-visual:hover .product-visual-layer-teal {
+    transform: translateX(10px);
+  }
+
+  .product-card:hover .product-visual-layer-pink,
+  .product-card:focus-within .product-visual-layer-pink,
+  .product-detail-visual:hover .product-visual-layer-pink {
+    transform: translateX(18px);
+  }
+
+  .product-card:hover .product-visual-dot,
+  .product-card:focus-within .product-visual-dot,
+  .product-detail-visual:hover .product-visual-dot {
+    transform: translate(-4px, 4px) rotate(8deg);
   }
 
   .product-gallery {
@@ -509,6 +702,13 @@
 
   .product-detail-visual {
     @apply overflow-hidden rounded-section border border-border bg-surface shadow-soft;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .product-detail-visual:hover {
+    @apply border-primary/30;
   }
 
   .product-detail-visual .product-visual {
@@ -553,6 +753,15 @@
 
   .variant-option {
     @apply flex min-h-16 flex-col justify-center gap-1 rounded-card border border-border bg-surface px-4 py-3 text-left no-underline outline-none transition-colors hover:border-highlight-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .variant-option:hover {
+    transform: translateY(-1px);
   }
 
   .variant-option span {
@@ -565,6 +774,7 @@
 
   .variant-option-active {
     @apply border-primary bg-surface-muted;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 16%, transparent);
   }
 
   .variant-summary {
@@ -627,6 +837,23 @@
   .add-to-cart-controls input,
   .cart-quantity-form input {
     @apply min-h-11 w-28 rounded-control border border-border bg-surface px-3 py-2 text-base font-semibold text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-ease);
+  }
+
+  .add-to-cart-controls input:focus,
+  .cart-quantity-form input:focus,
+  .checkout-field input:focus,
+  .admin-login-form input:focus,
+  .admin-login-form select:focus,
+  .admin-search-form input:focus,
+  .admin-field input:focus,
+  .admin-field select:focus,
+  .admin-field textarea:focus {
+    @apply border-primary;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 12%, transparent);
   }
 
   .cart-section {
@@ -659,6 +886,16 @@
 
   .cart-line {
     @apply grid overflow-hidden rounded-card border border-border bg-surface shadow-soft sm:grid-cols-[12rem_1fr];
+    transition:
+      transform var(--motion-normal) var(--motion-spring),
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .cart-line:hover,
+  .cart-line:focus-within {
+    @apply border-primary/30;
+    transform: translateY(-1px);
   }
 
   .cart-line-media .product-media,
@@ -716,10 +953,27 @@
 
   .cart-remove-button {
     @apply inline-flex min-h-11 items-center justify-center rounded-control border border-danger/35 bg-surface px-4 py-2 text-sm font-semibold text-danger outline-none transition-colors hover:bg-danger hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-danger;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .cart-remove-button:hover {
+    transform: translateY(-1px);
   }
 
   .cart-summary {
     @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .cart-summary:hover,
+  .cart-summary:focus-within {
+    @apply border-primary/25;
   }
 
   .cart-summary h2 {
@@ -777,6 +1031,15 @@
 
   .checkout-step {
     @apply flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  a.checkout-step:hover {
+    transform: translateY(-1px);
   }
 
   .checkout-step-active {
@@ -789,6 +1052,7 @@
 
   .checkout-alert {
     @apply mt-5 rounded-control border px-4 py-3 text-sm font-semibold;
+    animation: printlab-alert-in var(--motion-normal) var(--motion-ease) both;
   }
 
   .checkout-alert-success {
@@ -809,6 +1073,13 @@
 
   .checkout-form-section {
     @apply rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .checkout-form-section:focus-within {
+    @apply border-primary/40;
   }
 
   .checkout-form-section h2 {
@@ -833,6 +1104,9 @@
 
   .checkout-field input {
     @apply min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-base text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-fast) var(--motion-ease);
   }
 
   .checkout-field-help {
@@ -845,14 +1119,17 @@
 
   .checkout-field-help[data-cep-status="true"][data-state="loading"] {
     @apply text-primary;
+    animation: printlab-alert-in var(--motion-normal) var(--motion-ease) both;
   }
 
   .checkout-field-help[data-cep-status="true"][data-state="error"] {
     @apply font-semibold text-danger;
+    animation: printlab-alert-in var(--motion-normal) var(--motion-ease) both;
   }
 
   .checkout-field-error {
     @apply text-sm font-semibold text-danger;
+    animation: printlab-alert-in var(--motion-normal) var(--motion-ease) both;
   }
 
   .checkout-form-actions {
@@ -865,6 +1142,16 @@
 
   .shipping-option {
     @apply grid cursor-pointer grid-cols-[auto_1fr] gap-4 rounded-card border border-border bg-background p-4 transition hover:border-primary/40 hover:bg-surface-muted sm:grid-cols-[auto_1fr_auto] sm:items-center;
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .shipping-option:hover,
+  .shipping-option:focus-within {
+    transform: translateY(-1px);
   }
 
   .shipping-option input {
@@ -885,6 +1172,14 @@
 
   .checkout-summary {
     @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .checkout-summary:hover,
+  .checkout-summary:focus-within {
+    @apply border-primary/25;
   }
 
   .checkout-summary h2 {
@@ -989,6 +1284,14 @@
 
   .admin-nav-link {
     @apply text-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .admin-nav-link:hover {
+    transform: translateX(2px);
   }
 
   .admin-nav-active {
@@ -1005,6 +1308,15 @@
 
   .admin-metric {
     @apply rounded-card border border-border bg-surface p-5 shadow-soft transition-colors hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+    transition:
+      transform var(--motion-fast) var(--motion-spring),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .admin-metric:hover,
+  .admin-metric:focus-visible {
+    transform: translateY(-1px);
   }
 
   .admin-metric span {
@@ -1041,6 +1353,17 @@
   .admin-item,
   .admin-event {
     @apply rounded-card border border-border bg-surface p-5 shadow-soft;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .admin-panel:focus-within,
+  .admin-order-row:hover,
+  .admin-order-row:focus-within,
+  .admin-item:hover,
+  .admin-item:focus-within {
+    @apply border-primary/30;
   }
 
   .admin-empty {
@@ -1488,23 +1811,57 @@
 
   .cta-layout {
     @apply grid gap-8 rounded-section border border-border bg-surface p-6 shadow-soft sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .cta-layout:hover,
+  .cta-layout:focus-within {
+    @apply border-primary/25;
   }
 
   .cta-badge {
     @apply inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-soft;
+    transition:
+      transform var(--motion-fast) var(--motion-spring),
+      box-shadow var(--motion-normal) var(--motion-ease);
+  }
+
+  .cta-badge:hover {
+    transform: translateY(-1px);
   }
 
   .commercial-colors { @apply mt-6 space-y-3; }
   .commercial-colors h2 { @apply text-base font-semibold text-foreground; }
   .commercial-swatches { @apply flex flex-wrap gap-3; }
-  .commercial-swatch { @apply relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface; }
-  .commercial-swatch:hover { @apply border-primary; }
+  .commercial-swatch {
+    @apply relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface;
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+  .commercial-swatch:hover {
+    @apply border-primary;
+    transform: translateY(-1px) scale(1.035);
+  }
   .commercial-swatch[aria-current="true"] { @apply border-primary ring-2 ring-primary/20 ring-offset-2; }
-  .commercial-swatch-fill { @apply block size-8 rounded-full border border-border bg-surface-muted; }
-  .commercial-swatch-check { @apply absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white; }
+  .commercial-swatch-fill {
+    @apply block size-8 rounded-full border border-border bg-surface-muted;
+    transition: transform var(--motion-fast) var(--motion-spring);
+  }
+  .commercial-swatch:hover .commercial-swatch-fill { transform: scale(1.06); }
+  .commercial-swatch-check {
+    @apply absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white;
+    animation: printlab-check-in var(--motion-normal) var(--motion-spring) both;
+  }
   .commercial-color-name { @apply flex min-h-6 flex-wrap gap-x-2 text-sm; overflow-wrap: anywhere; }
   .commercial-color-name span { @apply text-muted; }
-  .commercial-color-name strong { @apply font-semibold text-foreground; }
+  .commercial-color-name strong {
+    @apply font-semibold text-foreground;
+    transition: color var(--motion-fast) var(--motion-ease);
+  }
 
   .empty-state {
     @apply flex flex-col items-center rounded-card border border-dashed border-border bg-surface p-8 text-center shadow-soft sm:p-10;
@@ -1512,5 +1869,47 @@
 
   .empty-state-icon {
     @apply mb-5 flex size-20 items-center justify-center rounded-section bg-surface-muted text-primary;
+  }
+}
+
+@keyframes printlab-rail-dot {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 185px);
+  }
+}
+
+@keyframes printlab-soft-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes printlab-alert-in {
+  from {
+    opacity: 0.01;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes printlab-check-in {
+  from {
+    opacity: 0.01;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
