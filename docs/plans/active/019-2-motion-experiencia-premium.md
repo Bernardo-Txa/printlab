@@ -10,6 +10,7 @@ Refinar a experiência visual da PrintLab com animações, transições e microi
 
 - Sistema centralizado de movimento em CSS com tokens `--motion-fast`, `--motion-normal`, `--motion-slow`, `--motion-enter`, `--motion-ease` e `--motion-spring`.
 - Microinterações para header, navegação, logo, botões, filtros, cards de produto, mídia de produto, variantes, swatches de cores comerciais, carrinho, checkout e Admin.
+- Direção visual premium da Home inspirada nas referências de alta fidelidade: hero escuro com grid técnico, cartão de marca, objetos CSS/SVG independentes, anotações manuscritas, profundidade e seção DNA com cards coloridos mais ricos.
 - Composição decorativa interna no hero e elementos gráficos secundários nos cards DNA, sem bloquear interação.
 - Reveal progressivo com `IntersectionObserver`, executado uma vez por elemento, usando somente `opacity` e `transform`.
 - Conteúdo permanece visível quando JavaScript está indisponível.
@@ -21,6 +22,7 @@ Refinar a experiência visual da PrintLab com animações, transições e microi
 - Nenhuma alteração de banco, schema ou migration.
 - Nenhuma alteração de checkout, carrinho, pedidos, pagamentos, SuperFrete, InfinitePay, autenticação, preços, variantes, cores comerciais ou APIs.
 - Nenhuma biblioteca nova de animação.
+- A imagem de referência não foi usada como banner, fundo ou screenshot; a composição foi reconstruída com HTML/CSS e assets existentes.
 - Nenhuma dependência de JavaScript para conteúdo principal ou fluxos comerciais.
 
 ## Validação técnica
