@@ -9,18 +9,19 @@ Refinar a experiência visual da PrintLab com animações, transições e microi
 ## Escopo implementado
 
 - Sistema centralizado de movimento em CSS com tokens `--motion-fast`, `--motion-normal`, `--motion-slow`, `--motion-enter`, `--motion-ease` e `--motion-spring`.
-- Microinterações para header, navegação, logo, botões, filtros, cards de produto, mídia de produto, variantes, swatches de cores comerciais, carrinho, checkout e Admin.
-- Composição decorativa interna no hero e elementos gráficos secundários nos cards DNA, sem bloquear interação.
+- Microinterações refinadas para header, navegação ativa, logo, botões com feedback de envio, filtros, cards de produto, mídia de produto, variantes, swatches de cores comerciais, controles de quantidade, carrinho, frete/retirada, checkout e Admin.
+- Composição decorativa interna no hero com parallax mínimo em desktop e elementos gráficos secundários nos cards DNA, sem bloquear interação.
 - Reveal progressivo com `IntersectionObserver`, executado uma vez por elemento, usando somente `opacity` e `transform`.
 - Conteúdo permanece visível quando JavaScript está indisponível.
 - Feedback visual rápido em botões submetidos, sem atrasar nem bloquear ações.
-- Suporte a `prefers-reduced-motion: reduce`, removendo animações decorativas e reduzindo transições.
+- Suporte reforçado a `prefers-reduced-motion: reduce`, removendo animações decorativas, parallax e reveals demorados, preservando estados funcionais.
 
 ## Limites preservados
 
 - Nenhuma alteração de banco, schema ou migration.
 - Nenhuma alteração de checkout, carrinho, pedidos, pagamentos, SuperFrete, InfinitePay, autenticação, preços, variantes, cores comerciais ou APIs.
 - Nenhuma biblioteca nova de animação.
+- Nenhum sistema paralelo de motion; os refinamentos reutilizam os tokens CSS e o `IntersectionObserver` existente.
 - Nenhuma dependência de JavaScript para conteúdo principal ou fluxos comerciais.
 
 ## Validação técnica

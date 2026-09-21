@@ -71,6 +71,17 @@
       transform: none !important;
     }
 
+    .hero-brand-stage::after,
+    .hero-geometry,
+    .brand-layer,
+    .dna-card-mark,
+    .checkout-alert,
+    .checkout-field-error,
+    .checkout-field-help[data-cep-status="true"],
+    .commercial-swatch-check {
+      animation: none !important;
+      transform: none !important;
+    }
   }
 }
 
@@ -234,12 +245,12 @@
 
   .hero-title {
     @apply mt-5 flex max-w-3xl min-w-0 flex-col text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.04em] text-secondary-foreground sm:text-6xl lg:text-7xl;
-    font-size: clamp(2.65rem, 11vw, 4.5rem);
+    font-size: clamp(2.3rem, 6vw, 4.15rem);
   }
 
   .hero-title > span {
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
 
   .hero-copy > p:not(.brand-kicker) {
@@ -1947,12 +1958,387 @@
     transition: color var(--motion-fast) var(--motion-ease);
   }
 
+
+
+  .nav-link.is-active,
+  .nav-link[aria-current="page"],
+  .nav-link[aria-current="location"] {
+    @apply text-foreground;
+    background: color-mix(in oklab, var(--color-surface-muted) 70%, transparent);
+  }
+
+  .nav-link.is-active::after,
+  .nav-link[aria-current="page"]::after,
+  .nav-link[aria-current="location"]::after {
+    transform: scaleX(1);
+  }
+
+  .nav-link-cart {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-link-cart::before {
+    content: "";
+    @apply absolute right-2 top-2 size-1.5 rounded-full bg-highlight-teal;
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+      opacity var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .nav-link-cart:hover::before,
+  .nav-link-cart:focus-visible::before,
+  .nav-link-cart.is-active::before,
+  .nav-link-cart[aria-current="page"]::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .btn-base {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-base::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 rounded-control;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.24), transparent);
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  .btn-base.is-submitting::after {
+    opacity: 1;
+    animation: printlab-button-sheen 980ms var(--motion-ease) infinite;
+  }
+
+  .btn-base:disabled,
+  .btn-base[aria-disabled="true"] {
+    @apply cursor-not-allowed opacity-60;
+    transform: none;
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 18px 42px -26px color-mix(in oklab, var(--color-primary) 78%, black 10%);
+  }
+
+  .btn-secondary:hover {
+    box-shadow: 0 16px 36px -30px rgb(7 28 54 / 0.42);
+  }
+
+  .hero-copy .brand-kicker,
+  .hero-title,
+  .hero-copy > p:not(.brand-kicker),
+  .hero-copy .btn-base,
+  .hero-brand-stage {
+    animation: printlab-hero-enter var(--motion-enter) var(--motion-ease) both;
+  }
+
+  .hero-title { animation-delay: 80ms; }
+  .hero-copy > p:not(.brand-kicker) { animation-delay: 140ms; }
+  .hero-copy .btn-base:first-child { animation-delay: 200ms; }
+  .hero-copy .btn-base:last-child { animation-delay: 245ms; }
+  .hero-brand-stage { animation-delay: 280ms; }
+
+  .hero-brand-stage {
+    --hero-parallax-x: 0;
+    --hero-parallax-y: 0;
+  }
+
+  .hero-brand-stage:hover .hero-logo-shell {
+    transform:
+      translate(calc(var(--hero-parallax-x) * -10px), calc(var(--hero-parallax-y) * -8px))
+      translateY(-3px)
+      rotate(-0.4deg);
+  }
+
+  .hero-brand-stage:hover .hero-molecule {
+    transform: translate(calc(var(--hero-parallax-x) * 12px), calc(var(--hero-parallax-y) * 10px));
+  }
+
+  .hero-brand-stage:hover::after {
+    transform: translate(calc(var(--hero-parallax-x) * 8px), calc(var(--hero-parallax-y) * 8px));
+  }
+
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: translateY(-3px) scale(1.006);
+  }
+
+  .product-card:active,
+  .variant-option:active,
+  .commercial-swatch:active,
+  .category-pill:active,
+  .category-pill.is-pressed,
+  .variant-option.is-pressed,
+  .commercial-swatch.is-pressed {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .product-detail-visual:hover,
+  .product-detail-visual:focus-within {
+    box-shadow: 0 28px 70px -42px rgb(7 28 54 / 0.5);
+  }
+
+  .product-gallery-thumbs .product-media,
+  .product-gallery-thumbs .product-visual {
+    transition:
+      transform var(--motion-normal) var(--motion-spring),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      opacity var(--motion-fast) var(--motion-ease);
+  }
+
+  .product-gallery-thumbs .product-media:hover,
+  .product-gallery-thumbs .product-visual:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 16px 34px -28px rgb(7 28 54 / 0.58);
+  }
+
+  .variant-option:hover,
+  .variant-option:focus-visible {
+    box-shadow: 0 18px 44px -34px rgb(7 28 54 / 0.48);
+  }
+
+  .variant-option-active {
+    position: relative;
+  }
+
+  .variant-option-active::after {
+    content: "";
+    @apply absolute right-3 top-3 size-2 rounded-full bg-highlight-teal;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-highlight-teal) 18%, transparent);
+  }
+
+  .production-summary p,
+  .product-price-panel {
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .production-summary p:hover,
+  .product-price-panel:hover {
+    @apply border-primary/25;
+    transform: translateY(-1px);
+  }
+
+  .add-to-cart-controls input:hover,
+  .cart-quantity-form input:hover,
+  .checkout-field input:hover {
+    @apply border-primary/40;
+  }
+
+  .add-to-cart-controls input.is-updated,
+  .cart-quantity-form input.is-updated {
+    animation: printlab-input-pulse 520ms var(--motion-ease) both;
+  }
+
+  .cart-line {
+    animation: printlab-list-in var(--motion-enter) var(--motion-ease) both;
+  }
+
+  .cart-line:nth-child(2) { animation-delay: 55ms; }
+  .cart-line:nth-child(3) { animation-delay: 110ms; }
+  .cart-line:nth-child(4) { animation-delay: 165ms; }
+
+  .cart-summary-row strong,
+  .checkout-summary-total strong,
+  .product-price-panel strong {
+    transition:
+      color var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .cart-summary:hover .cart-summary-row strong,
+  .checkout-summary:hover .checkout-summary-total strong,
+  .product-price-panel:hover strong {
+    transform: translateY(-1px);
+  }
+
+  .cart-remove-button:active,
+  .cart-remove-button.is-pressed {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .shipping-option:has(input:checked) {
+    @apply border-primary bg-surface;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 14%, transparent),
+      0 18px 44px -36px rgb(7 28 54 / 0.5);
+  }
+
+  .shipping-option:has(input:checked)::after {
+    content: "";
+    @apply absolute right-4 top-4 size-2 rounded-full bg-highlight-teal;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-highlight-teal) 18%, transparent);
+  }
+
+  .shipping-option {
+    position: relative;
+  }
+
+  .shipping-option.is-selected-now {
+    animation: printlab-choice-pop 520ms var(--motion-spring) both;
+  }
+
+  .checkout-step-active {
+    box-shadow: 0 14px 36px -28px color-mix(in oklab, var(--color-primary) 70%, black 20%);
+  }
+
+  .checkout-form-section:focus-within,
+  .checkout-summary:focus-within,
+  .cart-summary:focus-within {
+    box-shadow: 0 24px 58px -42px rgb(7 28 54 / 0.45);
+  }
+
+  .checkout-alert-success,
+  .checkout-alert-error,
+  .cart-summary-alert,
+  .cart-line-warning {
+    will-change: transform, opacity;
+  }
+
+  .commercial-swatch:focus-visible {
+    @apply border-primary;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 14%, transparent);
+  }
+
+  .commercial-swatch[aria-current="true"] .commercial-swatch-fill {
+    transform: scale(1.08);
+  }
+
+  .commercial-swatch[aria-current="true"] {
+    animation: printlab-choice-pop 360ms var(--motion-spring) both;
+  }
+
+  .commercial-color-name strong {
+    animation: printlab-alert-in var(--motion-normal) var(--motion-ease) both;
+  }
+
+  .dna-card:hover {
+    box-shadow: 0 30px 70px -42px rgb(7 28 54 / 0.56);
+  }
+
+  .dna-card:hover .dna-word {
+    transform: translateX(2px);
+  }
+
+  .dna-word {
+    transition: transform var(--motion-normal) var(--motion-spring);
+  }
+
+  .process-step:hover .step-number {
+    transform: scale(1.04) rotate(-2deg);
+  }
+
+  .step-number {
+    transition: transform var(--motion-normal) var(--motion-spring);
+  }
+
+  .footer-logo,
+  footer .nav-link {
+    transition:
+      transform var(--motion-fast) var(--motion-spring),
+      color var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease);
+  }
+
+  footer .nav-link:hover {
+    transform: translateY(-1px);
+  }
+
   .empty-state {
     @apply flex flex-col items-center rounded-card border border-dashed border-border bg-surface p-8 text-center shadow-soft sm:p-10;
   }
 
   .empty-state-icon {
     @apply mb-5 flex size-20 items-center justify-center rounded-section bg-surface-muted text-primary;
+  }
+}
+
+@media (hover: none) {
+  .product-card:hover,
+  .cart-line:hover,
+  .checkout-form-section:hover,
+  .shipping-option:hover,
+  .dna-card:hover,
+  .process-step:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-copy .brand-kicker,
+  .hero-title,
+  .hero-copy > p:not(.brand-kicker),
+  .hero-copy .btn-base,
+  .hero-brand-stage {
+    animation-duration: 280ms;
+  }
+
+  .motion-ready .motion-reveal {
+    transform: translateY(10px);
+  }
+
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: none;
+  }
+}
+
+@keyframes printlab-button-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes printlab-hero-enter {
+  from {
+    opacity: 0.88;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes printlab-input-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.025);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-highlight-teal) 16%, transparent);
+  }
+}
+
+@keyframes printlab-choice-pop {
+  0% {
+    transform: scale(0.98);
+  }
+  60% {
+    transform: scale(1.018);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes printlab-list-in {
+  from {
+    opacity: 0.01;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
