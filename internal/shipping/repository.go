@@ -129,9 +129,11 @@ func (r *PostgresRepository) GetSelection(ctx context.Context, cartID string) (S
 	var selection ShippingSelection
 	var deliveryTime pgtype.Int4
 	var carrierName pgtype.Text
+	var boxID pgtype.Text
 	err := r.pool.QueryRow(ctx, `
 		select
 			selection.cart_id::text,
+			selection.delivery_method,
 			selection.shipping_box_id::text,
 			selection.provider,
 			selection.service_code,
@@ -147,13 +149,15 @@ func (r *PostgresRepository) GetSelection(ctx context.Context, cartID string) (S
 			selection.quoted_at,
 			selection.expires_at
 		from public.cart_shipping_selections selection
-		join public.shipping_boxes box
+		left join public.shipping_boxes box
 			on box.id = selection.shipping_box_id
 			and box.is_active = true
 		where selection.cart_id = $1::uuid
+			and (selection.delivery_method = 'pickup' or box.id is not null)
 	`, cartID).Scan(
 		&selection.CartID,
-		&selection.ShippingBoxID,
+		&selection.DeliveryMethod,
+		&boxID,
 		&selection.Provider,
 		&selection.ServiceCode,
 		&selection.ServiceName,
@@ -172,10 +176,11 @@ func (r *PostgresRepository) GetSelection(ctx context.Context, cartID string) (S
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ShippingSelection{}, false, nil
 		}
-
 		return ShippingSelection{}, false, err
 	}
-
+	if boxID.Valid {
+		selection.ShippingBoxID = boxID.String
+	}
 	if carrierName.Valid {
 		selection.CarrierName = carrierName.String
 	}
@@ -191,6 +196,9 @@ func (r *PostgresRepository) SaveSelection(ctx context.Context, cartID string, s
 	if r == nil || r.pool == nil {
 		return ErrUnavailable
 	}
+	if selection.DeliveryMethod == "" {
+		selection.DeliveryMethod = DeliveryMethodShipping
+	}
 
 	var carrierName any
 	if selection.CarrierName != "" {
@@ -202,9 +210,14 @@ func (r *PostgresRepository) SaveSelection(ctx context.Context, cartID string, s
 		deliveryTime = *selection.DeliveryTimeDays
 	}
 
+	var boxID any
+	if selection.ShippingBoxID != "" {
+		boxID = selection.ShippingBoxID
+	}
 	_, err := r.pool.Exec(ctx, `
 		insert into public.cart_shipping_selections (
 			cart_id,
+			delivery_method,
 			shipping_box_id,
 			provider,
 			service_code,
@@ -221,8 +234,8 @@ func (r *PostgresRepository) SaveSelection(ctx context.Context, cartID string, s
 			expires_at
 		) values (
 			$1::uuid,
-			$2::uuid,
-			$3,
+			$2,
+			$3::uuid,
 			$4,
 			$5,
 			$6,
@@ -234,9 +247,11 @@ func (r *PostgresRepository) SaveSelection(ctx context.Context, cartID string, s
 			$12,
 			$13,
 			$14,
-			$15
+			$15,
+			$16
 		)
 		on conflict (cart_id) do update set
+			delivery_method = excluded.delivery_method,
 			shipping_box_id = excluded.shipping_box_id,
 			provider = excluded.provider,
 			service_code = excluded.service_code,
@@ -252,7 +267,7 @@ func (r *PostgresRepository) SaveSelection(ctx context.Context, cartID string, s
 			quoted_at = excluded.quoted_at,
 			expires_at = excluded.expires_at,
 			updated_at = now()
-	`, cartID, selection.ShippingBoxID, selection.Provider, selection.ServiceCode, selection.ServiceName, carrierName, selection.PriceCents, deliveryTime, selection.PackageWeightG, selection.PackageHeightMM, selection.PackageWidthMM, selection.PackageLengthMM, selection.InputHash, selection.QuotedAt, selection.ExpiresAt)
+	`, cartID, selection.DeliveryMethod, boxID, selection.Provider, selection.ServiceCode, selection.ServiceName, carrierName, selection.PriceCents, deliveryTime, selection.PackageWeightG, selection.PackageHeightMM, selection.PackageWidthMM, selection.PackageLengthMM, selection.InputHash, selection.QuotedAt, selection.ExpiresAt)
 
 	return err
 }

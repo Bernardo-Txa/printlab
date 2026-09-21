@@ -16,7 +16,7 @@ import (
 
 func TestCheckoutShippingGetWithoutCartRedirectsToCart(t *testing.T) {
 	service := &fakeCheckoutShippingService{}
-	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
 	rec := httptest.NewRecorder()
 
 	newTestHandlerWithShipping(t, service, nil, "").ServeHTTP(rec, req)
@@ -35,7 +35,7 @@ func TestCheckoutShippingGetWithoutCartRedirectsToCart(t *testing.T) {
 func TestCheckoutShippingGetWithoutDetailsRedirectsToCheckoutDetails(t *testing.T) {
 	service := &fakeCheckoutShippingService{pageErr: shipping.ErrDetailsRequired}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
-	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
 
@@ -55,7 +55,7 @@ func TestCheckoutShippingGetShowsMissingProfileState(t *testing.T) {
 	page.Message = "Frete temporariamente indisponivel para este carrinho."
 	service := &fakeCheckoutShippingService{page: page}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
-	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
 
@@ -80,7 +80,7 @@ func TestCheckoutShippingGetShowsNoBoxState(t *testing.T) {
 	page.Message = "Nao conseguimos calcular automaticamente o frete para este carrinho."
 	service := &fakeCheckoutShippingService{page: page}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
-	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
 
@@ -97,7 +97,7 @@ func TestCheckoutShippingGetShowsNoBoxState(t *testing.T) {
 func TestCheckoutShippingGetWithValidQuoteReturnsOK(t *testing.T) {
 	service := &fakeCheckoutShippingService{page: checkoutShippingPageFixture()}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
-	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
 	addValidCartCookie(t, cookies, req)
 	rec := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func TestCheckoutShippingGetWithValidQuoteReturnsOK(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Etapa 2 - Frete", "PAC", "R$ 18,90", "5 dias uteis"} {
+	for _, expected := range []string{"Etapa 2 - Entrega", "PAC", "R$ 18,90", "5 dias uteis"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected shipping page to contain %q", expected)
 		}
@@ -116,6 +116,46 @@ func TestCheckoutShippingGetWithValidQuoteReturnsOK(t *testing.T) {
 		if strings.Contains(body, forbidden) {
 			t.Fatalf("expected shipping page not to expose %q", forbidden)
 		}
+	}
+}
+
+func TestCheckoutShippingGetOffersPickupWithoutShippingQuote(t *testing.T) {
+	page := checkoutShippingPageFixture()
+	page.SelectedMethod = ""
+	service := &fakeCheckoutShippingService{page: page}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete", nil)
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithShipping(t, service, cookies, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	if service.lastMethod != "" {
+		t.Fatalf("expected no delivery method before choice, got %q", service.lastMethod)
+	}
+	if !strings.Contains(rec.Body.String(), "Retirar no local") {
+		t.Fatal("expected pickup option")
+	}
+}
+
+func TestCheckoutShippingPostPickupRedirectsToReview(t *testing.T) {
+	service := &fakeCheckoutShippingService{selectResult: shipping.SelectResult{Page: shipping.CheckoutShippingPage{Selected: true, SelectedMethod: shipping.DeliveryMethodPickup}}}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := checkoutShippingFormRequest(url.Values{"delivery_method": {shipping.DeliveryMethodPickup}, "price": {"999999"}})
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithShipping(t, service, cookies, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkout/revisao" {
+		t.Fatalf("expected pickup redirect to review, got status %d location %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if service.lastMethod != shipping.DeliveryMethodPickup || service.lastServiceCode != "" {
+		t.Fatalf("expected pickup selection without service code, got method %q service %q", service.lastMethod, service.lastServiceCode)
 	}
 }
 
@@ -214,6 +254,7 @@ func checkoutShippingPageFixture() shipping.CheckoutShippingPage {
 			SubtotalBRL:   "R$ 79,80",
 		},
 		ProductsSubtotalBRL: "R$ 79,80",
+		SelectedMethod:      shipping.DeliveryMethodShipping,
 		Quotes: []shipping.ShippingQuote{
 			{
 				Provider:     shipping.ProviderSuperFrete,
@@ -253,11 +294,13 @@ type fakeCheckoutShippingService struct {
 
 	lastSelected    bool
 	lastServiceCode string
+	lastMethod      string
 }
 
-func (s *fakeCheckoutShippingService) Page(_ context.Context, _ []byte, selected bool) (shipping.CheckoutShippingPage, error) {
+func (s *fakeCheckoutShippingService) DeliveryPage(_ context.Context, _ []byte, method string) (shipping.CheckoutShippingPage, error) {
 	s.pageCalls++
-	s.lastSelected = selected
+	s.lastSelected = false
+	s.lastMethod = method
 	if s.pageErr != nil {
 		return shipping.CheckoutShippingPage{}, s.pageErr
 	}
@@ -265,9 +308,10 @@ func (s *fakeCheckoutShippingService) Page(_ context.Context, _ []byte, selected
 	return s.page, nil
 }
 
-func (s *fakeCheckoutShippingService) Select(_ context.Context, _ []byte, serviceCode string) (shipping.SelectResult, error) {
+func (s *fakeCheckoutShippingService) SelectDelivery(_ context.Context, _ []byte, method, serviceCode string) (shipping.SelectResult, error) {
 	s.selectCalls++
 	s.lastServiceCode = serviceCode
+	s.lastMethod = method
 	if s.selectErr != nil {
 		return s.selectResult, s.selectErr
 	}

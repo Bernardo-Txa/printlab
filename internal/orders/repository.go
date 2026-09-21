@@ -330,15 +330,18 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 		return ReviewPage{}, err
 	}
 
-	currentHash, err := shipping.BuildCartInputHash(params.OriginPostalCode, details.Address.PostalCode, params.ServiceCodes, shippingItems, box)
-	if err != nil {
-		if errors.Is(err, shipping.ErrAmountOverflow) {
-			return ReviewPage{}, ErrAmountOverflow
+	if shippingDetails.DeliveryMethod != shipping.DeliveryMethodPickup {
+		currentHash, err := shipping.BuildCartInputHash(params.OriginPostalCode, details.Address.PostalCode, params.ServiceCodes, shippingItems, box)
+		if err != nil {
+			if errors.Is(err, shipping.ErrAmountOverflow) {
+				return ReviewPage{}, ErrAmountOverflow
+			}
+			return ReviewPage{}, ErrShippingChanged
 		}
-		return ReviewPage{}, ErrShippingChanged
-	}
-	if !bytes.Equal(selectionHash, currentHash) {
-		return ReviewPage{}, ErrShippingChanged
+		if !bytes.Equal(selectionHash, currentHash) {
+			return ReviewPage{}, ErrShippingChanged
+		}
+
 	}
 
 	page := ReviewPage{
@@ -705,10 +708,14 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 	var deliveryTime pgtype.Int4
 	var inputHash []byte
 	var quotedAt time.Time
+	var boxID, boxName, boxSlug pgtype.Text
+	var boxIH, boxIW, boxIL, boxEH, boxEW, boxEL, boxSort pgtype.Int4
+	var boxWeight pgtype.Int8
 	var expiresAt time.Time
 
 	err := q.QueryRow(ctx, `
 		select
+			selection.delivery_method,
 			selection.provider,
 			selection.service_code,
 			selection.service_name,
@@ -734,11 +741,13 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 			box.packaging_weight_g,
 			box.sort_order
 		from public.cart_shipping_selections selection
-		join public.shipping_boxes box
+		left join public.shipping_boxes box
 			on box.id = selection.shipping_box_id
 			and box.is_active = true
 		where selection.cart_id = $1::uuid
+			and (selection.delivery_method = 'pickup' or box.id is not null)
 	`, cartID).Scan(
+		&selection.DeliveryMethod,
 		&selection.Provider,
 		&selection.ServiceCode,
 		&selection.ServiceName,
@@ -752,17 +761,8 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 		&inputHash,
 		&quotedAt,
 		&expiresAt,
-		&box.ID,
-		&box.Name,
-		&box.Slug,
-		&box.Internal.Height,
-		&box.Internal.Width,
-		&box.Internal.Length,
-		&box.External.Height,
-		&box.External.Width,
-		&box.External.Length,
-		&box.PackagingWeightG,
-		&box.SortOrder,
+		&boxID, &boxName, &boxSlug,
+		&boxIH, &boxIW, &boxIL, &boxEH, &boxEW, &boxEL, &boxWeight, &boxSort,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -771,7 +771,34 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 
 		return ReviewShipping{}, shipping.ShippingBox{}, nil, ErrUnavailable
 	}
-	if selection.Provider != shipping.ProviderSuperFrete {
+	if boxID.Valid {
+		box.ID = boxID.String
+		box.Name = boxName.String
+		box.Slug = boxSlug.String
+	}
+	if boxIH.Valid {
+		box.Internal.Height = int(boxIH.Int32)
+		box.Internal.Width = int(boxIW.Int32)
+		box.Internal.Length = int(boxIL.Int32)
+		box.External.Height = int(boxEH.Int32)
+		box.External.Width = int(boxEW.Int32)
+		box.External.Length = int(boxEL.Int32)
+		box.PackagingWeightG = boxWeight.Int64
+		box.SortOrder = int(boxSort.Int32)
+	}
+	if selection.DeliveryMethod == shipping.DeliveryMethodPickup {
+		if selection.PriceCents != 0 || selection.Provider != "" || selection.ServiceCode != "" || selection.ServiceName != "" {
+			return ReviewShipping{}, shipping.ShippingBox{}, nil, ErrShippingChanged
+		}
+		if !expiresAt.After(now) {
+			return ReviewShipping{}, shipping.ShippingBox{}, nil, ErrShippingExpired
+		}
+		selection.DeliveryTime = ""
+		selection.ShippingBoxName = ""
+		selection.QuotedAt = &quotedAt
+		return selection, shipping.ShippingBox{}, inputHash, nil
+	}
+	if selection.DeliveryMethod != shipping.DeliveryMethodShipping || selection.Provider != shipping.ProviderSuperFrete {
 		return ReviewShipping{}, shipping.ShippingBox{}, nil, ErrShippingChanged
 	}
 	if !expiresAt.After(now) {
@@ -870,6 +897,7 @@ func (r *PostgresRepository) insertOrderShipping(ctx context.Context, q queryer,
 	_, err := q.Exec(ctx, `
 		insert into public.order_shipping_details (
 			order_id,
+			delivery_method,
 			provider,
 			service_code,
 			service_name,
@@ -893,9 +921,10 @@ func (r *PostgresRepository) insertOrderShipping(ctx context.Context, q queryer,
 			$9,
 			$10,
 			$11,
-			$12
+			$12,
+			$13
 		)
-	`, orderID, details.Provider, details.ServiceCode, details.ServiceName, textOrNil(details.CarrierName), intOrNil(details.DeliveryTimeDays), details.ShippingBoxName, details.PackageWeightG, details.PackageHeightMM, details.PackageWidthMM, details.PackageLengthMM, timeOrNil(details.QuotedAt))
+	`, orderID, details.DeliveryMethod, details.Provider, details.ServiceCode, details.ServiceName, textOrNil(details.CarrierName), intOrNil(details.DeliveryTimeDays), details.ShippingBoxName, details.PackageWeightG, details.PackageHeightMM, details.PackageWidthMM, details.PackageLengthMM, timeOrNil(details.QuotedAt))
 	return err
 }
 
@@ -1162,6 +1191,7 @@ func (r *PostgresRepository) orderShipping(ctx context.Context, q queryer, order
 	var deliveryTime pgtype.Int4
 	err := q.QueryRow(ctx, `
 		select
+			delivery_method,
 			service_name,
 			carrier_name,
 			delivery_time_days,
@@ -1173,6 +1203,7 @@ func (r *PostgresRepository) orderShipping(ctx context.Context, q queryer, order
 		from public.order_shipping_details
 		where order_id = $1::uuid
 	`, orderID).Scan(
+		&details.DeliveryMethod,
 		&details.ServiceName,
 		&carrierName,
 		&deliveryTime,

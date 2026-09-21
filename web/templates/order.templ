@@ -66,29 +66,37 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 								<p><span>CPF</span><strong>{ page.Customer.MaskedCPF }</strong></p>
 							</div>
 						</section>
-						<section class="checkout-form-section" aria-labelledby="review-address">
-							<div class="review-section-header">
-								<h2 id="review-address">Entrega</h2>
-								<a href="/checkout/dados">Editar dados</a>
-							</div>
-							<div class="review-address">
-								<p>{ page.Address.LineOne }</p>
-								<p>{ page.Address.LineTwo }</p>
-								<p>{ page.Address.CountryCode }</p>
-							</div>
-						</section>
+						if page.Shipping.DeliveryMethod != "pickup" {
+							<section class="checkout-form-section" aria-labelledby="review-address">
+								<div class="review-section-header">
+									<h2 id="review-address">Entrega</h2>
+									<a href="/checkout/dados">Editar dados</a>
+								</div>
+								<div class="review-address">
+									<p>{ page.Address.LineOne }</p>
+									<p>{ page.Address.LineTwo }</p>
+									<p>{ page.Address.CountryCode }</p>
+								</div>
+							</section>
+						}
 						<section class="checkout-form-section" aria-labelledby="review-shipping">
 							<div class="review-section-header">
 								<h2 id="review-shipping">Frete</h2>
 								<a href="/checkout/frete">Alterar frete</a>
 							</div>
 							<div class="review-detail-grid">
-								<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
-								if page.Shipping.CarrierName != "" {
-									<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+								if page.Shipping.DeliveryMethod == "pickup" {
+									<p><span>Entrega</span><strong>Retirada no local</strong></p>
+									<p><span>Frete</span><strong>Grátis</strong></p>
+									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+								} else {
+									<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+									if page.Shipping.CarrierName != "" {
+										<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+									}
+									<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
+									<p><span>Frete</span><strong>{ page.Shipping.PriceBRL }</strong></p>
 								}
-								<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
-								<p><span>Frete</span><strong>{ page.Shipping.PriceBRL }</strong></p>
 							</div>
 						</section>
 						<div class="checkout-form-actions">
@@ -121,7 +129,11 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 						</div>
 						<div class="checkout-summary-total">
 							<span>Frete</span>
-							<strong>{ page.ShippingPriceBRL }</strong>
+							if page.Shipping.DeliveryMethod == "pickup" {
+								<strong>Grátis</strong>
+							} else {
+								<strong>{ page.ShippingPriceBRL }</strong>
+							}
 						</div>
 						<div class="checkout-summary-total checkout-summary-grand-total">
 							<span>Total</span>
@@ -182,11 +194,17 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 						<section class="checkout-form-section" aria-labelledby="order-shipping">
 							<h2 id="order-shipping">Frete</h2>
 							<div class="review-detail-grid">
-								<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
-								if page.Shipping.CarrierName != "" {
-									<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+								if page.Shipping.DeliveryMethod == "pickup" {
+									<p><span>Entrega</span><strong>Retirada no local</strong></p>
+									<p><span>Frete</span><strong>Grátis</strong></p>
+									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+								} else {
+									<p><span>Servico</span><strong>{ page.Shipping.ServiceName }</strong></p>
+									if page.Shipping.CarrierName != "" {
+										<p><span>Transportadora</span><strong>{ page.Shipping.CarrierName }</strong></p>
+									}
+									<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
 								}
-								<p><span>Prazo</span><strong>{ page.Shipping.DeliveryTime }</strong></p>
 							</div>
 						</section>
 					</div>
@@ -198,7 +216,11 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 						</div>
 						<div class="checkout-summary-total">
 							<span>Frete</span>
-							<strong>{ page.ShippingPriceBRL }</strong>
+							if page.Shipping.DeliveryMethod == "pickup" {
+								<strong>Grátis</strong>
+							} else {
+								<strong>{ page.ShippingPriceBRL }</strong>
+							}
 						</div>
 						<div class="checkout-summary-total checkout-summary-grand-total">
 							<span>Total</span>
@@ -274,7 +296,7 @@ templ OrderTracking(page ordersdomain.TrackingPage) {
 }
 
 templ PaymentReturn(page paymentsdomain.ReturnPage) {
-	@components.Layout(page.Title + " | PrintLab", page.Message, "") {
+	@components.Layout(page.Title+" | PrintLab", page.Message, "") {
 		<section class="section-block">
 			@components.Container() {
 				<div class="checkout-form-section">

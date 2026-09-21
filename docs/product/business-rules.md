@@ -106,13 +106,13 @@ Configuracao com price_cents = 5990: 5990
 Configuracao com price_cents = 0: 0
 ```
 
-Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionado no backend. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Pagamento InfinitePay usa esses valores congelados; descontos continuam planejados.
+Carrinho recalcula precos e subtotais no backend. Entrega e selecionada no backend: envio calcula frete via SuperFrete e retirada no local define frete zero server-side. Pedido recalcula subtotal, frete e total no POST de revisao antes de congelar valores historicos. Pagamento InfinitePay usa esses valores congelados; descontos continuam planejados.
 
 ## Frete implementado
 
-- Frete e sempre calculado no backend.
+- Frete e sempre determinado no backend.
 - O navegador nunca determina preco de frete, prazo, transportadora, peso ou dimensoes.
-- `POST /checkout/frete` recebe somente `service_code` como escolha do cliente e revalida a cotacao atual antes de persistir.
+- `POST /checkout/frete` recebe `delivery_method` e, para envio, somente `service_code` como escolha do cliente; o backend revalida a cotacao atual ou grava retirada gratuita antes de persistir.
 - Produtos possuem perfil logistico autoritativo em gramas e milimetros, separado da receita de producao 3D.
 - Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.
 - Configuracoes nao alteram o perfil logistico; colunas legadas em `product_variants` sao inertes.
@@ -126,15 +126,16 @@ Carrinho recalcula precos e subtotais no backend. Frete e calculado e selecionad
 - `packaging_weight_g` representa caixa/protecao/enchimento padrao e e somado ao peso dos produtos.
 - A cotacao SuperFrete acontece em duas etapas: `products` para obter pacote ideal e `package` com caixa real para obter preco final.
 - Somente a cotacao final com a caixa fisica real e apresentada ao cliente.
+- Retirada no local (`pickup`) nao chama SuperFrete, nao exige caixa, nao exige perfil logistico e persiste `shipping_price_cents = 0`.
 - Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
-- A selecao de frete expira em 30 minutos.
-- A selecao e invalidada por `input_hash` quando carrinho, quantidade, configuracao, perfil logistico, CEP, servicos ou caixa mudam.
+- A selecao de entrega expira em 30 minutos.
+- A selecao de envio e invalidada por `input_hash` quando carrinho, quantidade, configuracao, perfil logistico, CEP, servicos ou caixa mudam.
 - Multi-volume, etiqueta/postagem e rastreio permanecem planejados.
 
 ## Pedidos implementados
 
-- Pedido e criado somente a partir de carrinho valido, nao convertido, nao vazio, sem itens indisponiveis, com dados completos e frete selecionado valido.
-- `GET /checkout/revisao` nao recota SuperFrete; apenas valida expiracao e `input_hash` da selecao persistida.
+- Pedido e criado somente a partir de carrinho valido, nao convertido, nao vazio, sem itens indisponiveis, com dados completos e entrega selecionada valida.
+- `GET /checkout/revisao` nao recota SuperFrete; para envio valida expiracao e `input_hash` da selecao persistida, e para retirada valida `delivery_method=pickup`, frete zero e campos de servico vazios.
 - `POST /checkout/revisao` recalcula precos, subtotal, frete e total no servidor.
 - O browser envia `review_fingerprint` apenas para detectar revisao antiga; ele nao define valores financeiros.
 - Se o fingerprint divergir, nenhum pedido e criado.

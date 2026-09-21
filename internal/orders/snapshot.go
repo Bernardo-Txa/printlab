@@ -56,6 +56,7 @@ type reviewFingerprintAddress struct {
 }
 
 type reviewFingerprintShipping struct {
+	DeliveryMethod   string `json:"delivery_method"`
 	Provider         string `json:"provider"`
 	ServiceCode      string `json:"service_code"`
 	ServiceName      string `json:"service_name"`
@@ -122,6 +123,7 @@ func buildReviewFingerprint(page ReviewPage, inputHash []byte) (string, error) {
 			CountryCode: page.Address.CountryCode,
 		},
 		Shipping: reviewFingerprintShipping{
+			DeliveryMethod:   page.Shipping.DeliveryMethod,
 			Provider:         page.Shipping.Provider,
 			ServiceCode:      page.Shipping.ServiceCode,
 			ServiceName:      page.Shipping.ServiceName,

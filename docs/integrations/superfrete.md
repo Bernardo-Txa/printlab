@@ -106,6 +106,8 @@ Segunda chamada:
 
 Somente o preco da segunda chamada e apresentado ao cliente.
 
+A modalidade `pickup` (retirada no local) nao pertence ao fluxo SuperFrete. Ela e selecionada e persistida pelo backend com `delivery_method=pickup`, preco zero e campos de servico vazios, sem chamada de planejamento, sem chamada final, sem perfil logistico e sem caixa.
+
 ## Embalagem
 
 Produto cru, perfil logistico protegido e caixa fisica sao conceitos diferentes.

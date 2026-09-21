@@ -194,7 +194,7 @@ A Fase 8 adiciona frete:
 - A Fase 8 criou perfis logisticos opcionais em `products` e `product_variants`; desde a Fase 17.2, somente `products.shipping_*` e autoritativo e as colunas de variante sao legado inerte.
 - Produto ativo exige perfil completo e positivo; produto inativo aceita perfil ausente ou completo.
 - `shipping_boxes` guarda caixas fisicas reais, com medidas internas para encaixe, medidas externas para transportadora e `packaging_weight_g` para embalagem/protecao padrao.
-- `cart_shipping_selections` guarda selecao de frete 1:1 por carrinho, com provider, servico, preco em centavos, prazo, snapshot do pacote real, `input_hash`, `quoted_at` e `expires_at`.
+- `cart_shipping_selections` guarda selecao de entrega 1:1 por carrinho, com `delivery_method`. Para `shipping`, grava provider, servico, preco em centavos, prazo, snapshot do pacote real, `input_hash`, `quoted_at` e `expires_at`; para `pickup`, grava retirada no local com preco zero e sem caixa/SuperFrete.
 - A escolha da menor caixa valida usa menor volume interno, menor peso de embalagem, menor `sort_order`, `name` e `id`.
 - Multi-volume permanece fora do escopo.
 
@@ -205,7 +205,7 @@ A Fase 9 adiciona pedidos:
 - `orders.order_number` e sequencial e serve apenas como referencia humana.
 - `orders.source_cart_id` e unique quando preenchido, impedindo pedido duplicado para o mesmo carrinho.
 - `order_customer_details` e `order_shipping_addresses` guardam snapshots privados.
-- `order_shipping_details` guarda servico, transportadora, prazo, caixa, peso e dimensoes externas cotadas.
+- `order_shipping_details` guarda `delivery_method`. Para envio, preserva servico, transportadora, prazo, caixa, peso e dimensoes externas cotadas; para retirada, preserva a modalidade explicita com frete zero.
 - `order_items` guarda snapshots de produto, variante, SKU, preco, quantidade, subtotal e producao por unidade.
 - `order_item_filaments` guarda componentes de receita sem FK para materiais, cores ou receita original.
 - RLS fica habilitado nas tabelas de pedido, sem policies publicas.

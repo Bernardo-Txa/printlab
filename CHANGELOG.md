@@ -10,6 +10,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Retirada no local no checkout: nova modalidade `pickup` com frete zero definido server-side, sem SuperFrete, caixa ou perfil logistico, persistida em carrinho e pedido por `delivery_method`. Pedido e Admin exibem “Retirada no local” e “Grátis”. Migration adiciona constraints condicionais para separar envio e retirada.
+
 - Fase 17.3.3: cor comercial opcional acompanha carrinho, checkout e pedido; cores diferentes geram linhas separadas e o Admin exibe o snapshot escolhido. Migration adiciona referencias opcionais e snapshots nas tabelas existentes, sem alterar receitas, SuperFrete ou InfinitePay. Validada automaticamente em PostgreSQL local; validacao manual em producao pendente.
 
 - Fase 17.3.2: swatches acessiveis de cores comerciais no detalhe publico, selecao independente de variantes via URL e canonical preservado. Sem migration, combinacoes automaticas ou envio de cor ao carrinho.

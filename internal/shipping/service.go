@@ -81,16 +81,53 @@ func NewService(repository Repository, cart CartService, customers CustomerRepos
 
 func (s *Service) Page(ctx context.Context, tokenHash []byte, selected bool) (CheckoutShippingPage, error) {
 	_, page, err := s.prepareQuotes(ctx, tokenHash)
-	if err != nil {
-		return page, err
-	}
-
 	page.Selected = selected && page.Selected
 	if page.Selected {
 		page.Message = "Frete selecionado. Revisao do pedido sera a proxima etapa."
 	}
+	return page, err
+}
 
+// DeliveryPage renders the method choice. It only quotes shipping when the
+// customer explicitly chooses shipping or already has a saved shipping choice.
+func (s *Service) DeliveryPage(ctx context.Context, tokenHash []byte, method string) (CheckoutShippingPage, error) {
+	if method == DeliveryMethodShipping {
+		return s.Page(ctx, tokenHash, false)
+	}
+	if method != "" && method != DeliveryMethodPickup {
+		return CheckoutShippingPage{}, ErrInvalidDeliveryMethod
+	}
+	activeCart, view, _, err := s.readyCustomer(ctx, tokenHash)
+	page := CheckoutShippingPage{Cart: view, ProductsSubtotalBRL: view.SubtotalBRL, PickupAvailable: true, SelectedMethod: method}
+	if err != nil {
+		return page, err
+	}
+	selection, found, err := s.repository.GetSelection(ctx, activeCart.ID)
+	if err != nil {
+		return page, ErrUnavailable
+	}
+	if method == "" && found {
+		page.SelectedMethod = selection.DeliveryMethod
+	}
+	if page.SelectedMethod == DeliveryMethodShipping {
+		return s.Page(ctx, tokenHash, found)
+	}
+	if page.SelectedMethod == DeliveryMethodPickup {
+		page.ShippingPriceBRL = FormatBRL(0)
+		page.PartialTotalBRL = view.SubtotalBRL
+	}
 	return page, nil
+}
+
+func (s *Service) SelectDelivery(ctx context.Context, tokenHash []byte, method, serviceCode string) (SelectResult, error) {
+	switch method {
+	case DeliveryMethodPickup:
+		return s.selectPickup(ctx, tokenHash)
+	case DeliveryMethodShipping:
+		return s.Select(ctx, tokenHash, serviceCode)
+	default:
+		return SelectResult{}, ErrInvalidDeliveryMethod
+	}
 }
 
 func (s *Service) Select(ctx context.Context, tokenHash []byte, serviceCode string) (SelectResult, error) {
@@ -118,6 +155,7 @@ func (s *Service) Select(ctx context.Context, tokenHash []byte, serviceCode stri
 
 	now := s.now()
 	selection := ShippingSelection{
+		DeliveryMethod:   DeliveryMethodShipping,
 		CartID:           prepared.Cart.ID,
 		ShippingBoxID:    prepared.Package.Box.ID,
 		Provider:         chosen.Provider,
@@ -142,11 +180,37 @@ func (s *Service) Select(ctx context.Context, tokenHash []byte, serviceCode stri
 	return SelectResult{Page: page}, nil
 }
 
+func (s *Service) selectPickup(ctx context.Context, tokenHash []byte) (SelectResult, error) {
+	activeCart, _, _, err := s.readyCustomer(ctx, tokenHash)
+	if err != nil {
+		return SelectResult{}, err
+	}
+	now := s.now()
+	selection := ShippingSelection{
+		CartID:          activeCart.ID,
+		DeliveryMethod:  DeliveryMethodPickup,
+		Provider:        "",
+		ServiceCode:     "",
+		ServiceName:     "",
+		PriceCents:      0,
+		PackageWeightG:  0,
+		PackageHeightMM: 0,
+		PackageWidthMM:  0,
+		PackageLengthMM: 0,
+		InputHash:       make([]byte, 32),
+		QuotedAt:        now,
+		ExpiresAt:       now.Add(s.quoteExpiresIn),
+	}
+	if err := s.repository.SaveSelection(ctx, activeCart.ID, selection); err != nil {
+		return SelectResult{}, ErrUnavailable
+	}
+	return SelectResult{Page: CheckoutShippingPage{Selected: true, SelectedMethod: DeliveryMethodPickup, PickupAvailable: true, ShippingPriceBRL: FormatBRL(0)}}, nil
+}
+
 func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (PreparedQuote, CheckoutShippingPage, error) {
 	activeCart, cartView, details, items, err := s.readyCheckout(ctx, tokenHash)
 	page := CheckoutShippingPage{
-		Cart:                cartView,
-		ProductsSubtotalBRL: cartView.SubtotalBRL,
+		Cart: cartView, ProductsSubtotalBRL: cartView.SubtotalBRL, PickupAvailable: true, SelectedMethod: DeliveryMethodShipping,
 	}
 	if err != nil {
 		return PreparedQuote{}, page, err
@@ -273,6 +337,10 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	}
 	if found && validSelection(selection, packageSnapshot.InputHash, s.now()) && markSelectedQuote(prepared.Quotes, selection.ServiceCode) {
 		prepared.Selection = &selection
+		page.SelectedMethod = selection.DeliveryMethod
+		if page.SelectedMethod == "" {
+			page.SelectedMethod = DeliveryMethodShipping
+		}
 	}
 
 	page.Quotes = prepared.Quotes
@@ -282,32 +350,41 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	return prepared, page, nil
 }
 
-func (s *Service) readyCheckout(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, customers.CheckoutDetails, []CartItem, error) {
+func (s *Service) readyCustomer(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, customers.CheckoutDetails, error) {
 	if s == nil || s.repository == nil || s.cart == nil || s.customers == nil {
-		return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, nil, ErrUnavailable
+		return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, ErrUnavailable
 	}
 
 	activeCart, cartView, err := s.cart.CheckoutCart(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, cartdomain.ErrInvalidToken) || errors.Is(err, cartdomain.ErrNotFound) {
-			return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, nil, ErrCartRequired
+			return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, ErrCartRequired
 		}
 
-		return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, nil, ErrUnavailable
+		return cartdomain.Cart{}, cartdomain.CartView{}, customers.CheckoutDetails{}, ErrUnavailable
 	}
 	if cartView.IsEmpty || len(cartView.Lines) == 0 {
-		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, nil, ErrEmptyCart
+		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrEmptyCart
 	}
 	if cartView.HasUnavailableItems {
-		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, nil, ErrUnavailableItems
+		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrUnavailableItems
 	}
 
 	details, found, err := s.customers.Get(ctx, activeCart.ID)
 	if err != nil {
-		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, nil, ErrUnavailable
+		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrUnavailable
 	}
 	if !found {
-		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, nil, ErrDetailsRequired
+		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrDetailsRequired
+	}
+
+	return activeCart, cartView, details, nil
+}
+
+func (s *Service) readyCheckout(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, customers.CheckoutDetails, []CartItem, error) {
+	activeCart, cartView, details, err := s.readyCustomer(ctx, tokenHash)
+	if err != nil {
+		return activeCart, cartView, details, nil, err
 	}
 
 	items, err := s.repository.ListCartItems(ctx, activeCart.ID)

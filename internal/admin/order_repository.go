@@ -383,6 +383,7 @@ func (r *PostgresRepository) orderShipping(ctx context.Context, q orderQueryer, 
 	var quotedAt pgtype.Timestamptz
 	err := q.QueryRow(ctx, `
 		select
+ delivery_method,
 			provider,
 			service_code,
 			service_name,
@@ -397,6 +398,7 @@ func (r *PostgresRepository) orderShipping(ctx context.Context, q orderQueryer, 
 		from public.order_shipping_details
 		where order_id = $1::uuid
 	`, orderID).Scan(
+		&details.DeliveryMethod,
 		&details.Provider,
 		&details.ServiceCode,
 		&details.ServiceName,

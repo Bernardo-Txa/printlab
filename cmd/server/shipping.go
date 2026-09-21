@@ -13,8 +13,8 @@ import (
 )
 
 type checkoutShippingService interface {
-	Page(ctx context.Context, tokenHash []byte, selected bool) (shipping.CheckoutShippingPage, error)
-	Select(ctx context.Context, tokenHash []byte, serviceCode string) (shipping.SelectResult, error)
+	DeliveryPage(ctx context.Context, tokenHash []byte, method string) (shipping.CheckoutShippingPage, error)
+	SelectDelivery(ctx context.Context, tokenHash []byte, method, serviceCode string) (shipping.SelectResult, error)
 }
 
 func checkoutShippingPageHandler(service checkoutShippingService, cookies *cartdomain.CookieManager) http.HandlerFunc {
@@ -32,7 +32,7 @@ func checkoutShippingPageHandler(service checkoutShippingService, cookies *cartd
 			return
 		}
 
-		page, err := service.Page(r.Context(), tokenHash, r.URL.Query().Get("selecionado") == "1")
+		page, err := service.DeliveryPage(r.Context(), tokenHash, r.URL.Query().Get("delivery_method"))
 		if err != nil {
 			handleCheckoutShippingError(w, r, err, page)
 			return
@@ -67,7 +67,12 @@ func selectShippingHandler(service checkoutShippingService, cookies *cartdomain.
 			return
 		}
 
-		result, err := service.Select(r.Context(), tokenHash, strings.TrimSpace(r.PostFormValue("service_code")))
+		method := strings.TrimSpace(r.PostFormValue("delivery_method"))
+		// Older shipping forms remain accepted; new forms always send an explicit method.
+		if method == "" {
+			method = shipping.DeliveryMethodShipping
+		}
+		result, err := service.SelectDelivery(r.Context(), tokenHash, method, strings.TrimSpace(r.PostFormValue("service_code")))
 		if err != nil {
 			handleCheckoutShippingError(w, r, err, result.Page)
 			return
@@ -85,6 +90,8 @@ func handleCheckoutShippingError(w http.ResponseWriter, r *http.Request, err err
 		http.Redirect(w, r, "/carrinho", http.StatusSeeOther)
 	case errors.Is(err, shipping.ErrDetailsRequired):
 		http.Redirect(w, r, "/checkout/dados", http.StatusSeeOther)
+	case errors.Is(err, shipping.ErrInvalidDeliveryMethod):
+		http.Error(w, "invalid delivery method", http.StatusBadRequest)
 	case errors.Is(err, shipping.ErrInvalidService):
 		renderHTML(w, r, http.StatusBadRequest, templates.CheckoutShipping(page))
 	case errors.Is(err, shipping.ErrNoQuotes):

@@ -156,16 +156,18 @@ Salvamento bem-sucedido renova a validade do carrinho e do cookie e redireciona 
 
 ## Frete
 
-`GET /checkout/frete` exige cookie de carrinho valido, carrinho ativo, pelo menos um item, nenhum item indisponivel e dados de checkout ja salvos. Sem carrinho valido, redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`.
+`GET /checkout/frete` exige cookie de carrinho valido, carrinho ativo, pelo menos um item, nenhum item indisponivel e dados de checkout ja salvos. Sem carrinho valido, redireciona para `/carrinho`. Sem dados, redireciona para `/checkout/dados`. A pagina permite escolher `shipping` ou `pickup` via `delivery_method`.
 
-O service resolve o perfil logistico efetivo de cada linha: variante com perfil completo sobrescreve o produto; caso contrario usa o perfil completo do produto. Campos parciais nao sao misturados. Produto sem perfil efetivo torna a cotacao indisponivel sem estimativa ficticia.
+Para `shipping`, o service resolve o perfil logistico efetivo de cada linha a partir do produto. Produto sem perfil efetivo torna a cotacao indisponivel sem estimativa ficticia.
+
+Para `pickup`, o service nao chama SuperFrete, nao lista caixas e nao exige perfil logistico. O backend persiste preco zero, `delivery_method=pickup` e campos operacionais vazios.
 
 A cotacao usa duas chamadas SuperFrete:
 
 1. Planejamento com `products`, usando peso em kg e dimensoes em cm convertidos a partir dos valores internos em gramas e milimetros.
 2. Cotacao final com `package`, usando peso dos produtos somado a `shipping_boxes.packaging_weight_g` e dimensoes externas da menor caixa real compativel.
 
-Somente o resultado da segunda chamada e apresentado ao cliente. O POST recebe apenas `service_code`, reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
+Somente o resultado da segunda chamada e apresentado ao cliente. O POST recebe `delivery_method` e, para envio, apenas `service_code`; reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
 
 Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` atual diverge por mudanca de carrinho, variante, perfil logistico, CEP, servicos ou caixa.
 
@@ -173,7 +175,7 @@ Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` at
 
 `GET /checkout/revisao` exige carrinho valido, nao convertido, nao vazio, sem itens indisponiveis, com dados completos e frete selecionado valido. Se faltar dados, redireciona para `/checkout/dados`; se faltar frete valido, redireciona para `/checkout/frete`; se faltar carrinho valido, redireciona para `/carrinho`.
 
-A revisao nao chama a SuperFrete. Ela recalcula o `input_hash` esperado para a selecao persistida e compara com o valor salvo em `cart_shipping_selections`.
+A revisao nao chama a SuperFrete. Para envio, ela recalcula o `input_hash` esperado para a selecao persistida e compara com o valor salvo em `cart_shipping_selections`. Para retirada, valida `delivery_method=pickup`, frete zero e campos de servico/transportadora vazios.
 
 `POST /checkout/revisao` recebe apenas `review_fingerprint` como deteccao de tela antiga. O backend revalida disponibilidade, dados, frete, subtotal e total, cria o pedido em uma transacao PostgreSQL, converte o carrinho com `converted_at`, limpa dados temporarios e expira o cookie depois do commit.
 

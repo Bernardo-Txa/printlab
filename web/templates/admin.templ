@@ -212,17 +212,23 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 							<section class="admin-panel" aria-labelledby="admin-order-shipping">
 								<h2 id="admin-order-shipping">Frete</h2>
 								<div class="admin-field-grid">
-									<p><span>Servico</span><strong>{ detail.Shipping.ServiceName }</strong></p>
-									if detail.Shipping.CarrierName != "" {
-										<p><span>Transportadora</span><strong>{ detail.Shipping.CarrierName }</strong></p>
-									}
-									<p><span>Prazo</span><strong>{ detail.Shipping.DeliveryTime }</strong></p>
-									<p><span>Caixa</span><strong>{ detail.Shipping.ShippingBoxName }</strong></p>
-									<p><span>Peso</span><strong>{ detail.Shipping.PackageWeightLabel }</strong></p>
-									<p><span>Dimensoes</span><strong>{ detail.Shipping.DimensionsLabel }</strong></p>
-									<p><span>Preco</span><strong>{ detail.Shipping.PriceBRL }</strong></p>
-									if detail.Shipping.QuotedAtLabel != "" {
-										<p><span>Cotado em</span><strong>{ detail.Shipping.QuotedAtLabel }</strong></p>
+									if detail.Shipping.DeliveryMethod == "pickup" {
+										<p><span>Entrega</span><strong>Retirada no local</strong></p>
+										<p><span>Frete</span><strong>Grátis</strong></p>
+										<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+									} else {
+										<p><span>Servico</span><strong>{ detail.Shipping.ServiceName }</strong></p>
+										if detail.Shipping.CarrierName != "" {
+											<p><span>Transportadora</span><strong>{ detail.Shipping.CarrierName }</strong></p>
+										}
+										<p><span>Prazo</span><strong>{ detail.Shipping.DeliveryTime }</strong></p>
+										<p><span>Caixa</span><strong>{ detail.Shipping.ShippingBoxName }</strong></p>
+										<p><span>Peso</span><strong>{ detail.Shipping.PackageWeightLabel }</strong></p>
+										<p><span>Dimensoes</span><strong>{ detail.Shipping.DimensionsLabel }</strong></p>
+										<p><span>Preco</span><strong>{ detail.Shipping.PriceBRL }</strong></p>
+										if detail.Shipping.QuotedAtLabel != "" {
+											<p><span>Cotado em</span><strong>{ detail.Shipping.QuotedAtLabel }</strong></p>
+										}
 									}
 								</div>
 							</section>
@@ -401,7 +407,7 @@ templ AdminProducts(page admindomain.AdminProductListPage) {
 }
 
 templ AdminProductForm(page admindomain.AdminProductFormPage) {
-	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Produto administrativo da PrintLab.") {
+	@components.PrivateNoIndexLayout(page.Title+" | PrintLab", "Produto administrativo da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell("products") {
@@ -424,20 +430,20 @@ templ AdminProductForm(page admindomain.AdminProductFormPage) {
 								@adminCheckboxField("is_featured", "Destacado", page.Form.IsFeatured)
 							</div>
 							<section class="admin-panel" aria-labelledby="admin-product-commercial-colors">
-									<h2 id="admin-product-commercial-colors">Cores disponíveis</h2>
-									<p class="admin-muted">Marque as cores disponíveis para venda. Para remover uma cor, desmarque-a. A receita de produção permanece independente.</p>
-									<p class="admin-muted">A ordem é salva com o produto: números menores aparecem primeiro.</p>
-									<div class="admin-checkbox-grid">
-										for _, color := range page.CommercialColors {
-											<div>
-												<label class="admin-checkbox"><input type="checkbox" name="commercial_color_ids" value={ color.ID } checked?={ color.Selected }/>{ color.Label }</label>
-												<label class="admin-field" for={ "commercial_color_order_" + color.ID }>
-													<span>{ "Ordem — " + color.Label }</span>
-													<input id={ "commercial_color_order_" + color.ID } name={ "commercial_color_order_" + color.ID } type="number" min="0" max="2147483647" step="1" value={ color.SortOrder }/>
-												</label>
-											</div>
-										}
-									</div>
+								<h2 id="admin-product-commercial-colors">Cores disponíveis</h2>
+								<p class="admin-muted">Marque as cores disponíveis para venda. Para remover uma cor, desmarque-a. A receita de produção permanece independente.</p>
+								<p class="admin-muted">A ordem é salva com o produto: números menores aparecem primeiro.</p>
+								<div class="admin-checkbox-grid">
+									for _, color := range page.CommercialColors {
+										<div>
+											<label class="admin-checkbox"><input type="checkbox" name="commercial_color_ids" value={ color.ID } checked?={ color.Selected }/>{ color.Label }</label>
+											<label class="admin-field" for={ "commercial_color_order_" + color.ID }>
+												<span>{ "Ordem — " + color.Label }</span>
+												<input id={ "commercial_color_order_" + color.ID } name={ "commercial_color_order_" + color.ID } type="number" min="0" max="2147483647" step="1" value={ color.SortOrder }/>
+											</label>
+										</div>
+									}
+								</div>
 								if len(page.CommercialColors) == 0 {
 									<p class="admin-muted">Nenhuma cor cadastrada. <a href="/admin/cores">Cadastrar cores</a></p>
 								}
@@ -681,7 +687,7 @@ templ AdminCategoryForm(page admindomain.AdminCategoryFormPage) {
 }
 
 templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
-	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Configuração administrativa da PrintLab.") {
+	@components.PrivateNoIndexLayout(page.Title+" | PrintLab", "Configuração administrativa da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell("products") {
@@ -792,7 +798,7 @@ templ AdminColors(page admindomain.AdminColorListPage) {
 }
 
 templ AdminColorForm(page admindomain.AdminColorFormPage) {
-	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Cor administrativa da PrintLab.") {
+	@components.PrivateNoIndexLayout(page.Title+" | PrintLab", "Cor administrativa da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell("colors") {
@@ -853,7 +859,7 @@ templ AdminBoxes(page admindomain.AdminBoxListPage) {
 }
 
 templ AdminBoxForm(page admindomain.AdminBoxFormPage) {
-	@components.PrivateNoIndexLayout(page.Title + " | PrintLab", "Caixa administrativa da PrintLab.") {
+	@components.PrivateNoIndexLayout(page.Title+" | PrintLab", "Caixa administrativa da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell("boxes") {
@@ -998,7 +1004,7 @@ templ adminRecipeFields(materialID string, colorID string, weight string, label 
 }
 
 templ adminSimpleEntityList(active string, title string, newURL string) {
-	@components.PrivateNoIndexLayout(title + " administrativos | PrintLab", title + " administrativos da PrintLab.") {
+	@components.PrivateNoIndexLayout(title+" administrativos | PrintLab", title+" administrativos da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell(active) {
@@ -1030,7 +1036,7 @@ templ adminEntityCard(name string, slug string, status string, detailURL string,
 }
 
 templ adminBasicTextForm(active string, title string, action string, backURL string, submitLabel string, message string, name string, slug string, description string, isActive bool, isNew bool, errors admindomain.AdminFieldErrors) {
-	@components.PrivateNoIndexLayout(title + " | PrintLab", title + " administrativo da PrintLab.") {
+	@components.PrivateNoIndexLayout(title+" | PrintLab", title+" administrativo da PrintLab.") {
 		<section class="admin-section">
 			@components.Container() {
 				@adminShell(active) {

@@ -57,7 +57,8 @@ O pedido copia valores autoritativos no momento da confirmacao:
 - nome, slug, SKU, quantidade, preco unitario e subtotal de cada item;
 - subtotal de produtos, frete e total em centavos;
 - dados de cliente e endereco como snapshot privado;
-- transportadora, servico, prazo, caixa, peso e dimensoes externas do frete;
+- modalidade de entrega (`shipping` ou `pickup`);
+- transportadora, servico, prazo, caixa, peso e dimensoes externas do frete quando houver envio;
 - tempo estimado de impressao e peso estimado de filamento por unidade quando houver variante com receita;
 - componentes de receita por material, cor, peso e label.
 
@@ -75,11 +76,12 @@ Snapshots operacionais de producao e embalagem sao preservados no pedido. Eles n
 - dados de contato e endereco completos;
 - selecao de frete existente;
 - selecao de frete nao expirada;
-- `input_hash` de frete ainda compativel com carrinho, CEP, servicos, perfis logisticos e caixa.
+- para envio, `input_hash` de frete ainda compativel com carrinho, CEP, servicos, perfis logisticos e caixa;
+- para retirada, `delivery_method=pickup`, frete zero e campos de servico/transportadora vazios.
 
 Sem dados de checkout, redireciona para `/checkout/dados`. Sem frete valido, redireciona para `/checkout/frete`. Carrinho ausente, vazio ou com item indisponivel redireciona para `/carrinho`.
 
-A revisao nao recota a SuperFrete. Ela apenas valida a selecao persistida e o `input_hash` atual.
+A revisao nao recota a SuperFrete. Para envio, ela valida a selecao persistida e o `input_hash` atual. Para retirada, ela valida a modalidade explicita e o frete zero definido pelo servidor.
 
 Respostas da revisao usam `Cache-Control: private, no-store`.
 
@@ -132,6 +134,8 @@ Se a mesma confirmacao for enviada duas vezes, a segunda tentativa deve redireci
 - transportadora;
 - prazo;
 - subtotal, frete e total.
+
+Pedidos de retirada exibem “Retirada no local” e “Grátis”, sem transportadora, servico SuperFrete ou endereco publico de retirada.
 
 Dados operacionais como SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem no snapshot para operacao futura, mas nao aparecem na interface publica do comprador.
 

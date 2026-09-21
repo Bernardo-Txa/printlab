@@ -13,12 +13,12 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 			@components.Container() {
 				<div class="checkout-heading">
 					<p class="brand-kicker">Checkout</p>
-					<h1>Etapa 2 - Frete</h1>
-					<p>Escolha uma cotacao calculada agora com base no carrinho e no endereco informado.</p>
+					<h1>Etapa 2 - Entrega</h1>
+					<p>Escolha como deseja receber seu pedido.</p>
 				</div>
 				<div class="checkout-stepper" aria-label="Etapas do checkout">
 					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
-					<span class="checkout-step checkout-step-active">2 Frete</span>
+					<span class="checkout-step checkout-step-active">2 Entrega</span>
 					<span class="checkout-step">3 Revisao</span>
 					<span class="checkout-step">4 Pagamento</span>
 				</div>
@@ -31,38 +31,67 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 				}
 				<div class="checkout-layout">
 					<div class="checkout-form">
-						if page.Unavailable || len(page.Quotes) == 0 {
-							<section class="checkout-form-section" aria-labelledby="shipping-unavailable">
-								<h2 id="shipping-unavailable">Frete indisponivel</h2>
-								<p class="checkout-field-help">Nao conseguimos calcular automaticamente o frete para este carrinho.</p>
-							</section>
-						} else {
-							<form method="post" action="/checkout/frete">
-								<section class="checkout-form-section" aria-labelledby="shipping-options">
-									<h2 id="shipping-options">Opcoes de frete</h2>
-									<div class="shipping-options">
-										for _, quote := range page.Quotes {
-											<label class="shipping-option">
-												<input type="radio" name="service_code" value={ quote.ServiceCode } checked?={ quote.Selected }/>
-												<span>
-													<strong>{ quote.ServiceName }</strong>
-													if quote.CarrierName != "" {
-														<small>{ quote.CarrierName }</small>
-													}
-												</span>
-												<span>
-													<strong>{ quote.PriceBRL }</strong>
-													<small>{ quote.DeliveryTime }</small>
-												</span>
-											</label>
-										}
-									</div>
-								</section>
-								<div class="checkout-form-actions">
-									<button class="btn-base btn-primary" type="submit">Selecionar frete</button>
-									<a class="btn-base btn-secondary" href="/checkout/dados">Voltar aos dados</a>
+						<section class="checkout-form-section" aria-labelledby="delivery-methods">
+							<h2 id="delivery-methods">Como você deseja receber?</h2>
+							<form method="get" action="/checkout/frete">
+								<div class="shipping-options">
+									<label class="shipping-option">
+										<input type="radio" name="delivery_method" value="shipping" required checked?={ page.SelectedMethod == "shipping" }/>
+										<span><strong>Receber em casa</strong><small>Calcular frete e prazo de entrega</small></span>
+									</label>
+									<label class="shipping-option">
+										<input type="radio" name="delivery_method" value="pickup" required checked?={ page.SelectedMethod == "pickup" }/>
+										<span><strong>Retirar no local</strong><small>Combinaremos o horário da retirada após a confirmação do pedido.</small></span>
+										<span><strong>Grátis</strong></span>
+									</label>
 								</div>
+								<div class="checkout-form-actions"><button class="btn-base btn-secondary" type="submit">Escolher modalidade</button></div>
 							</form>
+						</section>
+						if page.SelectedMethod == "pickup" {
+							<section class="checkout-form-section" aria-labelledby="pickup-details">
+								<h2 id="pickup-details">Retirada no local</h2>
+								<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+								<form method="post" action="/checkout/frete">
+									<input type="hidden" name="delivery_method" value="pickup"/>
+									<div class="checkout-form-actions"><button class="btn-base btn-primary" type="submit">Continuar com retirada grátis</button></div>
+								</form>
+							</section>
+						} else if page.SelectedMethod == "shipping" {
+							if page.Unavailable || len(page.Quotes) == 0 {
+								<section class="checkout-form-section" aria-labelledby="shipping-unavailable">
+									<h2 id="shipping-unavailable">Frete indisponivel</h2>
+									<p class="checkout-field-help">Nao conseguimos calcular automaticamente o frete para este carrinho.</p>
+								</section>
+							} else {
+								<form method="post" action="/checkout/frete">
+									<input type="hidden" name="delivery_method" value="shipping"/>
+									<section class="checkout-form-section" aria-labelledby="shipping-options">
+										<h2 id="shipping-options">Opcoes de frete</h2>
+										<div class="shipping-options">
+											for _, quote := range page.Quotes {
+												<label class="shipping-option">
+													<input type="radio" name="service_code" value={ quote.ServiceCode } checked?={ quote.Selected }/>
+													<span>
+														<strong>{ quote.ServiceName }</strong>
+														if quote.CarrierName != "" {
+															<small>{ quote.CarrierName }</small>
+														}
+													</span>
+													<span>
+														<strong>{ quote.PriceBRL }</strong>
+														<small>{ quote.DeliveryTime }</small>
+													</span>
+												</label>
+											}
+										</div>
+									</section>
+									<div class="checkout-form-actions">
+										<button class="btn-base btn-primary" type="submit">Selecionar frete</button>
+										<a class="btn-base btn-secondary" href="/checkout/dados">Voltar aos dados</a>
+									</div>
+								</form>
+							}
 						}
 					</div>
 					<aside class="checkout-summary" aria-label="Resumo do checkout">
@@ -93,7 +122,11 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 						if page.ShippingPriceBRL != "" {
 							<div class="checkout-summary-total">
 								<span>Frete</span>
-								<strong>{ page.ShippingPriceBRL }</strong>
+								if page.SelectedMethod == "pickup" {
+									<strong>Grátis</strong>
+								} else {
+									<strong>{ page.ShippingPriceBRL }</strong>
+								}
 							</div>
 							<div class="checkout-summary-total">
 								<span>Total parcial</span>

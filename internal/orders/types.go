@@ -117,6 +117,7 @@ type ReviewAddress struct {
 }
 
 type ReviewShipping struct {
+	DeliveryMethod   string
 	Provider         string
 	ServiceCode      string
 	ServiceName      string
@@ -175,6 +176,7 @@ type OrderItem struct {
 }
 
 type OrderShipping struct {
+	DeliveryMethod   string
 	ServiceName      string
 	CarrierName      string
 	DeliveryTimeDays *int

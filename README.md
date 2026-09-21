@@ -137,7 +137,7 @@ Banco implementado:
 - Dados de contato e endereco sao salvos em transacao e removidos por `ON DELETE CASCADE` quando o carrinho for removido.
 - `products` possui o perfil logistico autoritativo em gramas e milimetros. As colunas equivalentes em `product_variants` permanecem apenas como schema legado inerte.
 - `shipping_boxes` guarda caixas fisicas reais com medidas internas, externas, peso de embalagem, status ativo e ordenacao.
-- `cart_shipping_selections` guarda a escolha de frete por carrinho com snapshot do pacote real, preco em centavos, prazo, validade de 30 minutos e `input_hash`.
+- `cart_shipping_selections` guarda a escolha de entrega por carrinho com `delivery_method`. Para envio, preserva snapshot do pacote real, preco em centavos, prazo, validade de 30 minutos e `input_hash`; para retirada no local, grava frete zero sem SuperFrete, caixa ou perfil logistico.
 - `carts.converted_at` marca carrinhos convertidos em pedido.
 - `orders`, `order_customer_details`, `order_shipping_addresses`, `order_shipping_details`, `order_items` e `order_item_filaments` guardam snapshots historicos de pedido.
 - Pedidos criados pelo checkout nascem com status `pending_payment` e moeda `BRL`.

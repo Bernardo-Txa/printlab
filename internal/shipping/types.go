@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	ProviderSuperFrete = "superfrete"
-	QuoteTTL           = 30 * time.Minute
+	ProviderSuperFrete     = "superfrete"
+	DeliveryMethodShipping = "shipping"
+	DeliveryMethodPickup   = "pickup"
+	QuoteTTL               = 30 * time.Minute
 )
 
 var (
@@ -23,6 +25,7 @@ var (
 	ErrNoShippingBoxes        = errors.New("shipping boxes unavailable")
 	ErrNoFittingBox           = errors.New("shipping box not found")
 	ErrNoQuotes               = errors.New("shipping quotes unavailable")
+	ErrInvalidDeliveryMethod  = errors.New("invalid delivery method")
 	ErrInvalidService         = errors.New("shipping service invalid")
 	ErrAmountOverflow         = errors.New("shipping amount overflow")
 	ErrInvalidPackage         = errors.New("shipping package invalid")
@@ -79,6 +82,7 @@ type ShippingQuote struct {
 }
 
 type ShippingSelection struct {
+	DeliveryMethod   string
 	CartID           string
 	ShippingBoxID    string
 	Provider         string
@@ -105,6 +109,8 @@ type PreparedQuote struct {
 }
 
 type CheckoutShippingPage struct {
+	PickupAvailable     bool
+	SelectedMethod      string
 	Cart                cartdomain.CartView
 	Quotes              []ShippingQuote
 	ProductsSubtotalBRL string

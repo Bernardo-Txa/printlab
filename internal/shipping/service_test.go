@@ -58,6 +58,67 @@ func TestServicePageRequiresCartAndCustomerDetails(t *testing.T) {
 	}
 }
 
+func TestServicePickupDoesNotRequireShippingProfileOrCalculator(t *testing.T) {
+	repository := &fakeShippingRepository{items: nil, boxes: nil}
+	service := shippingServiceFixture(t, repository, nil)
+
+	result, err := service.SelectDelivery(context.Background(), []byte("token-hash"), DeliveryMethodPickup, "")
+	if err != nil {
+		t.Fatalf("expected pickup selection, got %v", err)
+	}
+	if len(repository.savedSelections) != 1 {
+		t.Fatalf("expected one saved selection, got %d", len(repository.savedSelections))
+	}
+	selection := repository.savedSelections[0]
+	if selection.DeliveryMethod != DeliveryMethodPickup || selection.PriceCents != 0 || selection.ShippingBoxID != "" {
+		t.Fatalf("unexpected pickup selection: %#v", selection)
+	}
+	if !result.Page.Selected || result.Page.SelectedMethod != DeliveryMethodPickup {
+		t.Fatalf("expected selected pickup page, got %#v", result.Page)
+	}
+}
+
+func TestServiceDeliveryPageRestoresShippingSelectionWithQuotes(t *testing.T) {
+	now := time.Date(2026, 9, 21, 12, 0, 0, 0, time.UTC)
+	boxes := shippingBoxesFixture()
+	repository := &fakeShippingRepository{
+		items: shippingCartItemsFixture(),
+		boxes: boxes,
+		selection: ShippingSelection{
+			DeliveryMethod: DeliveryMethodShipping,
+			Provider:       ProviderSuperFrete,
+			ServiceCode:    "1",
+			InputHash:      shippingInputHashFixture(t, boxes[1]),
+			ExpiresAt:      now.Add(time.Minute),
+		},
+		selectionFound: true,
+	}
+	calculator := shippingCalculatorFixture()
+	service := shippingServiceFixture(t, repository, calculator, WithClock(func() time.Time {
+		return now
+	}))
+
+	page, err := service.DeliveryPage(context.Background(), []byte("token-hash"), "")
+	if err != nil {
+		t.Fatalf("expected delivery page, got %v", err)
+	}
+	if page.SelectedMethod != DeliveryMethodShipping || !page.Selected || page.ShippingPriceBRL != "R$ 18,90" {
+		t.Fatalf("expected saved shipping selection with quotes, got %#v", page)
+	}
+	if len(calculator.requests) != 2 {
+		t.Fatalf("expected shipping restore to quote through SuperFrete, got %d calls", len(calculator.requests))
+	}
+}
+
+func TestServiceRejectsInvalidDeliveryMethod(t *testing.T) {
+	service := shippingServiceFixture(t, &fakeShippingRepository{}, shippingCalculatorFixture())
+
+	_, err := service.SelectDelivery(context.Background(), []byte("token-hash"), "drone", "")
+	if !errors.Is(err, ErrInvalidDeliveryMethod) {
+		t.Fatalf("expected invalid delivery method, got %v", err)
+	}
+}
+
 func TestServicePageUnavailableWhenShippingProfileIsMissing(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{

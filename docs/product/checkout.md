@@ -17,8 +17,9 @@ O checkout transforma uma intencao de compra em pedido pendente de pagamento, co
 - Quando JavaScript esta disponivel, a etapa de dados aplica mascaras progressivas de CPF, telefone brasileiro e CEP.
 - Quando JavaScript esta disponivel, a etapa de dados consulta CEP via endpoint interno do backend e preenche rua, bairro, cidade e UF.
 - Respostas HTML que podem conter PII usam `Cache-Control: private, no-store`.
-- `GET /checkout/frete` renderiza opcoes de frete SSR quando a cotacao esta disponivel.
-- `POST /checkout/frete` recebe somente `service_code`, revalida a cotacao atual e persiste a selecao.
+- `GET /checkout/frete` renderiza a escolha de modalidade de entrega e, quando `delivery_method=shipping`, opcoes de frete SSR quando a cotacao esta disponivel.
+- `POST /checkout/frete` recebe `delivery_method` e, para envio, somente `service_code`; o backend revalida a escolha e persiste a selecao.
+- A etapa de entrega oferece `pickup` (retirada no local), uma modalidade gratuita persistida server-side. Ela nao consulta a SuperFrete nem depende de perfil logistico ou caixa.
 - A selecao bem-sucedida redireciona para `/checkout/revisao`.
 - `GET /checkout/revisao` revisa produtos, dados, entrega, frete e total sem recotar SuperFrete.
 - `POST /checkout/revisao` cria pedido com snapshot imutavel e status `pending_payment`.
@@ -97,14 +98,17 @@ Contato e endereco sao lidos por uma unica consulta SQL com `JOIN`, para observa
 
 Quando o carrinho for removido, `ON DELETE CASCADE` remove `cart_customer_details` e `cart_shipping_addresses`. Carrinhos expirados e PII temporaria associada sao removidos pelo job diario `printlab_transient_data_cleanup`.
 
-## Frete
+## Entrega
 
-A etapa de frete exige:
+A etapa de entrega exige:
 
 - carrinho anonimo existente;
 - carrinho nao vazio;
 - nenhum item indisponivel;
-- contato e endereco ja salvos;
+- contato e endereco ja salvos.
+
+Quando o cliente escolhe receber em casa (`delivery_method=shipping`), o frete exige tambem:
+
 - perfil logistico completo no produto de todos os itens;
 - pelo menos uma caixa real ativa cadastrada;
 - SuperFrete configurada para cotacao real.
@@ -113,13 +117,17 @@ Se nao houver carrinho valido, a rota redireciona para `/carrinho`. Se os dados 
 
 O backend calcula frete em duas etapas: envia `products` para a SuperFrete obter pacote ideal, escolhe a menor caixa fisica real compativel usando medidas internas e rotacao, soma `packaging_weight_g` ao peso dos produtos e faz a cotacao final com `package` usando medidas externas da caixa. Apenas o resultado final e apresentado ao cliente.
 
-Frete selecionado expira em 30 minutos e e invalidado por `input_hash` quando carrinho, quantidade, variante, perfil logistico do produto, CEP, servicos ou caixa mudam.
+Quando `delivery_method=pickup`, o backend ignora a cotacao de frete, salva preco zero e campos operacionais vazios. A revisao e o pedido exibem “Retirada no local” e “Grátis”; a modalidade `shipping` continua com as validacoes e o fingerprint existentes.
+
+A retirada nao mostra endereco publico nesta versao. A mensagem exibida ao comprador e: “Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.”
+
+Selecao de entrega expira em 30 minutos. No envio, ela tambem e invalidada por `input_hash` quando carrinho, quantidade, variante, perfil logistico do produto, CEP, servicos ou caixa mudam.
 
 Falhas de frete mantem mensagem publica generica. Internamente, a aplicacao diferencia indisponibilidade de configuracao, ausencia de caixas, falha na chamada de planejamento, ausencia de pacote retornado, caixa inexistente para o pacote, falha na chamada final e ausencia de cotacoes finais validas, sem logar PII ou secrets.
 
 ## Revisao e pedido
 
-`GET /checkout/revisao` exige carrinho valido e nao convertido, carrinho nao vazio, itens disponiveis, dados completos e selecao de frete existente, nao expirada e com `input_hash` valido.
+`GET /checkout/revisao` exige carrinho valido e nao convertido, carrinho nao vazio, itens disponiveis, dados completos e selecao de entrega existente e nao expirada. Para envio, o `input_hash` do frete tambem precisa continuar valido; para retirada, o backend exige `delivery_method=pickup`, preco zero e campos de transportadora/servico vazios.
 
 Se dados faltarem, redireciona para `/checkout/dados`. Se frete faltar, expirar ou divergir do carrinho atual, redireciona para `/checkout/frete`. Se o carrinho faltar, estiver vazio ou possuir item indisponivel, redireciona para `/carrinho`.
 
@@ -127,7 +135,7 @@ A revisao mostra CPF mascarado e usa `Cache-Control: private, no-store`.
 
 Snapshots operacionais de produção e embalagem são preservados no pedido, mas não são apresentados na experiência pública do comprador.
 
-Na experiencia publica de revisao e pedido, o comprador ve produto, variante, quantidade, valores, dados necessarios, endereco, servico de frete, transportadora, prazo, frete e total. SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores, caixa fisica, peso e dimensoes do pacote permanecem fora da UI publica.
+Na experiencia publica de revisao e pedido, o comprador ve produto, variante, cor comercial quando houver, quantidade, valores, dados necessarios, modalidade de entrega, frete e total. Para envio, tambem ve endereco, servico de frete, transportadora e prazo. Para retirada, ve “Retirada no local”, “Grátis” e a orientacao de combinacao posterior de horario. SKU interno, tempo de impressao, consumo de filamento, componentes da receita, materiais, cores de producao, caixa fisica, peso e dimensoes do pacote permanecem fora da UI publica.
 
 O POST de revisao recalcula produtos, disponibilidade, subtotal, frete e total no servidor. O campo oculto `review_fingerprint` serve somente para detectar revisao antiga entre GET e POST; nao e secret e nao determina preco.
 
@@ -160,7 +168,7 @@ Se `INFINITEPAY_HANDLE` nao estiver configurado, a pagina informa indisponibilid
 ## Regras obrigatorias
 
 - O frontend nao determina preco final.
-- O frontend nao determina frete; ele envia somente a escolha `service_code`.
+- O frontend nao determina frete; ele envia somente `delivery_method` e, para envio, `service_code`.
 - O frontend nao determina status de pedido.
 - O frontend nao confirma pagamento.
 - Pedido deve ser criado em transacao unica e idempotente por `source_cart_id`.

@@ -202,6 +202,7 @@ type OrderAddress struct {
 }
 
 type OrderShipping struct {
+	DeliveryMethod     string
 	Provider           string
 	ServiceCode        string
 	ServiceName        string

@@ -578,10 +578,11 @@ Campos:
 | Coluna | Tipo | Nulo | Default | Observacao |
 | --- | --- | --- | --- | --- |
 | `cart_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.carts(id)`. |
-| `shipping_box_id` | `uuid` | nao | - | Caixa real usada na cotacao final. |
-| `provider` | `text` | nao | - | Provedor da cotacao, inicialmente `superfrete`. |
-| `service_code` | `text` | nao | - | Codigo do servico retornado pela integracao. |
-| `service_name` | `text` | nao | - | Nome do servico retornado pela integracao. |
+| `delivery_method` | `text` | nao | `'shipping'` | Modalidade explicita: `shipping` ou `pickup`. |
+| `shipping_box_id` | `uuid` | sim | - | Caixa real usada na cotacao final quando `delivery_method='shipping'`. |
+| `provider` | `text` | nao | - | Provedor da cotacao; vazio para `pickup`. |
+| `service_code` | `text` | nao | - | Codigo do servico retornado pela integracao; vazio para `pickup`. |
+| `service_name` | `text` | nao | - | Nome do servico retornado pela integracao; vazio para `pickup`. |
 | `carrier_name` | `text` | sim | - | Transportadora, quando retornada. |
 | `price_cents` | `bigint` | nao | - | Preco final de frete em centavos. |
 | `delivery_time_days` | `integer` | sim | - | Prazo retornado, quando existir. |
@@ -598,19 +599,16 @@ Campos:
 Foreign keys:
 
 - `cart_shipping_selections_cart_id_fkey`: `cart_id` referencia `public.carts(id)` com `on delete cascade`.
-- `cart_shipping_selections_shipping_box_id_fkey`: `shipping_box_id` referencia `public.shipping_boxes(id)`.
+- `cart_shipping_selections_shipping_box_id_fkey`: `shipping_box_id` referencia `public.shipping_boxes(id)` quando preenchido.
 
 Constraints:
 
 - `cart_shipping_selections_pkey`: chave primaria em `cart_id`.
-- `cart_shipping_selections_provider_not_blank`: `btrim(provider) <> ''`.
-- `cart_shipping_selections_service_code_not_blank`: `btrim(service_code) <> ''`.
-- `cart_shipping_selections_service_name_not_blank`: `btrim(service_name) <> ''`.
+- `cart_shipping_selections_delivery_method_allowed`: `delivery_method in ('shipping', 'pickup')`.
+- `cart_shipping_selections_pickup_fields`: para `pickup`, exige caixa nula, provider/servico vazios, preco zero, prazo nulo e pacote zerado; para `shipping`, exige caixa, provider/servico preenchidos, preco nao negativo e pacote positivo.
 - `cart_shipping_selections_carrier_name_not_blank`: `carrier_name is null or btrim(carrier_name) <> ''`.
 - `cart_shipping_selections_price_cents_non_negative`: `price_cents >= 0`.
 - `cart_shipping_selections_delivery_time_days_non_negative`: `delivery_time_days is null or delivery_time_days >= 0`.
-- `cart_shipping_selections_package_weight_positive`: `package_weight_g > 0`.
-- `cart_shipping_selections_package_dimensions_positive`: dimensoes do pacote maiores que zero.
 - `cart_shipping_selections_input_hash_length`: `octet_length(input_hash) = 32`.
 - `cart_shipping_selections_expires_after_quoted`: `expires_at > quoted_at`.
 
@@ -625,7 +623,8 @@ Semantica:
 - `input_hash` inclui CEP de origem, CEP de destino, produtos, variantes, quantidades, perfil logistico efetivo, caixa real, dimensoes externas, peso de embalagem e configuracao de servicos/opcoes.
 - Nome, CPF, e-mail, telefone, rua e demais PII desnecessaria nao entram no hash.
 - Se o hash atual divergir ou `expires_at` estiver no passado, a selecao e ignorada.
-- O pedido revalida a cotacao antes de congelar valores historicos.
+- Em `delivery_method='pickup'`, `price_cents` e zero, campos de transportadora/servico ficam vazios/nulos e a selecao nao depende de caixa, perfil logistico ou SuperFrete.
+- O pedido revalida a selecao antes de congelar valores historicos.
 
 RLS:
 
@@ -856,9 +855,10 @@ Campos:
 | Coluna | Tipo | Nulo | Default | Observacao |
 | --- | --- | --- | --- | --- |
 | `order_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.orders(id)`. |
-| `provider` | `text` | nao | - | Provedor de frete, inicialmente `superfrete`. |
-| `service_code` | `text` | nao | - | Codigo do servico selecionado. |
-| `service_name` | `text` | nao | - | Nome do servico selecionado. |
+| `delivery_method` | `text` | nao | `'shipping'` | Modalidade congelada: `shipping` ou `pickup`. |
+| `provider` | `text` | nao | - | Provedor de frete; vazio para `pickup`. |
+| `service_code` | `text` | nao | - | Codigo do servico selecionado; vazio para `pickup`. |
+| `service_name` | `text` | nao | - | Nome do servico selecionado; vazio para `pickup`. |
 | `carrier_name` | `text` | sim | - | Transportadora, quando retornada. |
 | `delivery_time_days` | `integer` | sim | - | Prazo em dias uteis, quando retornado. |
 | `shipping_box_name` | `text` | nao | - | Nome da caixa usada na cotacao final. |
@@ -877,6 +877,7 @@ Semantica:
 
 - Nao possui FK para `shipping_boxes`.
 - O nome da caixa, dimensoes externas, peso, transportadora, servico, prazo e preco em `orders.shipping_price_cents` sao historicos.
+- Em pedidos de retirada, `delivery_method='pickup'`, `orders.shipping_price_cents=0`, provider/servico/caixa ficam vazios e transportadora/prazo ficam nulos.
 
 RLS:
 
@@ -1188,7 +1189,7 @@ A preferencia atual e armazenar dinheiro como inteiro em centavos:
 R$ 39,90 -> 3990
 ```
 
-O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Frete selecionado foi implementado em `cart_shipping_selections.price_cents`, sempre a partir de cotacao server-side revalidada. Pedido congela subtotal, frete e total final em `orders`. Pagamento InfinitePay registra valores em centavos em `order_payments`. Descontos continuam planejados.
+O preco-base de produto foi implementado em `products.price_cents`. Subtotal de carrinho e calculado em leitura pelo backend. Entrega selecionada foi implementada em `cart_shipping_selections.price_cents`: para envio, sempre a partir de cotacao server-side revalidada; para retirada, zero definido server-side. Pedido congela subtotal, frete e total final em `orders`. Pagamento InfinitePay registra valores em centavos em `order_payments`. Descontos continuam planejados.
 
 ## IDs
 

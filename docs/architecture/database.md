@@ -156,7 +156,7 @@ Valores financeiros futuros nao devem usar `float32` ou `float64` como represent
 
 O preco-base de produto foi implementado em `products.price_cents`. Variantes podem sobrescrever esse valor com `product_variants.price_cents`; `null` significa fallback para o preco-base, enquanto `0` e override explicito.
 
-Carrinho calcula subtotal atual em leitura. Dados de contato/endereco pertencem ao carrinho ate a criacao do pedido. Frete selecionado usa `cart_shipping_selections.price_cents`. Pedido congela subtotal, frete e total definitivo em `orders`. Pagamento InfinitePay persiste `amount_cents` e `paid_amount_cents` em centavos; descontos continuam planejados.
+Carrinho calcula subtotal atual em leitura. Dados de contato/endereco pertencem ao carrinho ate a criacao do pedido. Entrega selecionada usa `cart_shipping_selections.delivery_method` e `price_cents`: envio grava cotacao server-side da SuperFrete e retirada no local grava frete zero server-side. Pedido congela subtotal, frete e total definitivo em `orders`. Pagamento InfinitePay persiste `amount_cents` e `paid_amount_cents` em centavos; descontos continuam planejados.
 
 ## Producao 3D
 
