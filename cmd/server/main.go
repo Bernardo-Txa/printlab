@@ -51,6 +51,11 @@ func main() {
 	if db.Configured() {
 		log.Print("database configured")
 	}
+	if cfg.SuperFreteConfigured {
+		log.Printf("superfrete configured environment=%s services=%s", cfg.SuperFreteEnv, cfg.SuperFreteServiceCodesValue)
+	} else {
+		log.Print("superfrete not configured")
+	}
 
 	addr := ":" + cfg.Port
 	log.Printf("printlab web listening on %s", addr)

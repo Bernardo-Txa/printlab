@@ -348,15 +348,17 @@ func mapSuperFreteQuotes(externalQuotes []superFreteQuoteDTO) []SuperFreteQuote 
 	quotes := make([]SuperFreteQuote, 0, len(externalQuotes))
 	for _, external := range externalQuotes {
 		if external.HasError {
-			logSuperFreteServiceError(external)
+			logDiscardedSuperFreteQuote(external, classifySuperFreteServiceError(external.Error))
 			continue
 		}
 		if external.ID == 0 || strings.TrimSpace(external.Name) == "" {
+			logDiscardedSuperFreteQuote(external, "invalid_service")
 			continue
 		}
 
 		priceCents, err := DecimalToCents(string(external.Price))
 		if err != nil {
+			logDiscardedSuperFreteQuote(external, "invalid_price")
 			continue
 		}
 
@@ -372,7 +374,11 @@ func mapSuperFreteQuotes(externalQuotes []superFreteQuoteDTO) []SuperFreteQuote 
 			returnedPackage, err := mapSuperFretePackage(external.Packages[0])
 			if err == nil {
 				quote.Package = &returnedPackage
+			} else {
+				logSuperFreteQuotePackageIssue(external, "invalid_package")
 			}
+		} else {
+			logSuperFreteQuotePackageIssue(external, "package_missing")
 		}
 
 		quotes = append(quotes, quote)
@@ -381,17 +387,47 @@ func mapSuperFreteQuotes(externalQuotes []superFreteQuoteDTO) []SuperFreteQuote 
 	return quotes
 }
 
-func logSuperFreteServiceError(external superFreteQuoteDTO) {
+func logDiscardedSuperFreteQuote(external superFreteQuoteDTO, reason string) {
 	serviceName := safeSuperFreteLogValue(external.Name)
 	switch {
 	case external.ID != 0 && serviceName != "":
-		log.Printf("shipping quote service unavailable service_code=%d service_name=%q reason=service_error", external.ID, serviceName)
+		log.Printf("shipping quote discarded service_code=%d service_name=%q reason=%s", external.ID, serviceName, reason)
 	case external.ID != 0:
-		log.Printf("shipping quote service unavailable service_code=%d reason=service_error", external.ID)
+		log.Printf("shipping quote discarded service_code=%d reason=%s", external.ID, reason)
 	case serviceName != "":
-		log.Printf("shipping quote service unavailable service_name=%q reason=service_error", serviceName)
+		log.Printf("shipping quote discarded service_name=%q reason=%s", serviceName, reason)
 	default:
-		log.Print("shipping quote service unavailable reason=service_error")
+		log.Printf("shipping quote discarded reason=%s", reason)
+	}
+}
+
+func logSuperFreteQuotePackageIssue(external superFreteQuoteDTO, reason string) {
+	serviceName := safeSuperFreteLogValue(external.Name)
+	switch {
+	case external.ID != 0 && serviceName != "":
+		log.Printf("shipping quote package unavailable service_code=%d service_name=%q reason=%s", external.ID, serviceName, reason)
+	case external.ID != 0:
+		log.Printf("shipping quote package unavailable service_code=%d reason=%s", external.ID, reason)
+	case serviceName != "":
+		log.Printf("shipping quote package unavailable service_name=%q reason=%s", serviceName, reason)
+	default:
+		log.Printf("shipping quote package unavailable reason=%s", reason)
+	}
+}
+
+func classifySuperFreteServiceError(raw string) string {
+	message := strings.ToLower(raw)
+	switch {
+	case strings.Contains(message, "cep") || strings.Contains(message, "postal"):
+		return "invalid_postal_code"
+	case strings.Contains(message, "dimens") || strings.Contains(message, "medid") || strings.Contains(message, "altura") || strings.Contains(message, "largura") || strings.Contains(message, "comprimento"):
+		return "unsupported_dimensions"
+	case strings.Contains(message, "pacote") || strings.Contains(message, "package") || strings.Contains(message, "peso") || strings.Contains(message, "weight"):
+		return "invalid_package"
+	case strings.Contains(message, "serv") || strings.Contains(message, "modalidade") || strings.Contains(message, "indispon") || strings.Contains(message, "unavailable"):
+		return "service_unavailable"
+	default:
+		return "unknown_service_error"
 	}
 }
 

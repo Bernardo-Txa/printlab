@@ -285,7 +285,9 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 				}},
 			},
 			wantLogs: []string{
-				"shipping package planning packages=1 dimension_variants=1",
+				"shipping package planning valid_quotes=1 quotes_with_package=1 dimension_variants=1",
+				"shipping packaging boxes candidate_boxes=1",
+				"shipping packaging box index=0",
 				"stage=packaging reason=no_fitting_box",
 			},
 		},
@@ -418,8 +420,38 @@ func TestServicePageLogsPlanningDimensionVariants(t *testing.T) {
 	if page.Unavailable {
 		t.Fatalf("expected available page, got %#v", page)
 	}
-	if !strings.Contains(logs, "shipping package planning packages=2 dimension_variants=2 dimensions_differ=true") {
+	if !strings.Contains(logs, "shipping package planning valid_quotes=2 quotes_with_package=2 dimension_variants=2") || !strings.Contains(logs, "shipping package planning dimensions_differ=true") {
 		t.Fatalf("expected planning dimension diagnostic, got %q", logs)
+	}
+}
+
+func TestServicePageLogsSafePlanningAndFinalDiagnostics(t *testing.T) {
+	calculator := shippingCalculatorFixture()
+	service := shippingServiceFixture(t, &fakeShippingRepository{
+		items: shippingCartItemsFixture(),
+		boxes: shippingBoxesFixture(),
+	}, calculator)
+
+	logs := captureShippingLogs(t, func() {
+		_, _ = service.Page(context.Background(), []byte("token-hash"), false)
+	})
+	for _, want := range []string{
+		"shipping quote request stage=planning product_lines=1 units=2 services=2",
+		"shipping quote request stage=planning line=0 quantity=2 weight_g=285 height_mm=210 width_mm=105 length_mm=90",
+		"shipping package planning valid_quotes=1 quotes_with_package=1 dimension_variants=1",
+		"shipping packaging boxes candidate_boxes=3",
+		"shipping packaging box index=0 internal_h_mm=110 internal_w_mm=150 internal_l_mm=230",
+		"shipping quote request stage=final package_weight_g=690 package_h_mm=140 package_w_mm=180 package_l_mm=260 services=2",
+		"shipping quote response stage=final final_valid_quotes=2",
+	} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("expected log %q, got %q", want, logs)
+		}
+	}
+	for _, forbidden := range []string{"20020050", "52998224725", "joao@example.com", "27999999999", "Rua Um", "Produto Real", "product-1", "variant-1"} {
+		if strings.Contains(logs, forbidden) {
+			t.Fatalf("expected shipping logs not to include %q: %q", forbidden, logs)
+		}
 	}
 }
 

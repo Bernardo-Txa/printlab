@@ -89,8 +89,8 @@ npx supabase --version
 - Repository de dados de checkout cobre uso de transacao, upserts 1:1 por `cart_id`, colunas explicitas e teste opcional de rollback com `TEST_DATABASE_URL`.
 - Handlers de `/checkout/dados` cobrem redirect sem carrinho, GET com carrinho, POST valido, CPF invalido, endereco invalido, origem cross-site invalida e resposta generica sem detalhes internos.
 - Packaging de frete cobre rotacao, eixo incompativel apesar de volume suficiente, menor caixa, desempates deterministicos, ausencia de caixa, fallback de perfil produto/variante, conversoes de unidade, arredondamento conservador cm -> mm, dinheiro em centavos, peso final e overflow.
-- Cliente SuperFrete cobre Authorization Bearer, `User-Agent`, `Content-Type`, endpoint `/api/v0/calculator`, payload `products`, payload `package`, parsing 200, erros HTTP, timeout, JSON invalido e ausencia de token em mensagens de erro.
-- Service de frete cobre pre-condicoes de carrinho/dados, ausencia de perfil logistico, ausencia de caixa, caixa sem encaixe, duas chamadas SuperFrete, uso de caixa real na cotacao final, preco revalidado, persistencia de selecao, selecao expirada, hash divergente e servico indisponivel.
+- Cliente SuperFrete cobre Authorization Bearer, `User-Agent`, `Content-Type`, endpoint `/api/v0/calculator`, payload `products`, payload `package`, parsing 200 com preco/peso/dimensoes como string ou numero, pacote ausente, pacote invalido, `has_error` com cotacao valida, todos os servicos com `has_error`, erros HTTP 400/401/429/500, timeout, JSON invalido e ausencia de token em mensagens de erro.
+- Service de frete cobre pre-condicoes de carrinho/dados, ausencia de perfil logistico, ausencia de caixa, caixa sem encaixe, duas chamadas SuperFrete, uso de caixa real na cotacao final, preco revalidado, logs seguros de planejamento/final/caixas, persistencia de selecao, selecao expirada, hash divergente e servico indisponivel.
 - Repository de frete cobre queries explicitamente escopadas por carrinho e teste opcional com `TEST_DATABASE_URL` para perfis, caixas ativas, upsert de selecao e ignorar caixa inativa.
 - Handlers de `/checkout/frete` cobrem redirect sem carrinho, redirect sem dados, estados sem perfil/caixa, cotacao valida, `Cache-Control: private, no-store`, POST cross-site rejeitado, selecao valida e POST que ignora preco malicioso do navegador.
 - Cliente Supabase Auth cobre login por senha, HTTP 400, HTTP 429, HTTP 500, timeout, erro de rede, JSON invalido, resposta sem user e user UUID invalido, sem expor senha nos erros.
@@ -128,3 +128,10 @@ O teste opcional de transacao de `internal/customers` usa `TEST_DATABASE_URL` pa
 - Fixtures pequenas e explicitas.
 - Testes de erro tao importantes quanto testes de sucesso.
 - Webhooks devem ter testes de idempotencia antes de producao.
+
+
+## Teste de contrato SuperFrete opcional
+
+`go test ./...` nao chama a SuperFrete real. O teste `TestSuperFreteContractCalculatorOptIn` fica ignorado por padrao e roda somente com `SUPERFRETE_CONTRACT_TEST=1` e configuracao SuperFrete completa em ambiente local autorizado. Ele usa `SUPERFRETE_ENV`, `SUPERFRETE_API_TOKEN`, `SUPERFRETE_ORIGIN_POSTAL_CODE`, `SUPERFRETE_CONTACT_EMAIL`, `SUPERFRETE_SERVICES` e, opcionalmente, `SUPERFRETE_TEST_DESTINATION_POSTAL_CODE`.
+
+O teste real valida o contrato products -> package -> cotacao final sem imprimir token, CEP ou e-mail nos logs de teste. Nunca execute esse teste com credenciais de producao sem autorizacao operacional explicita.

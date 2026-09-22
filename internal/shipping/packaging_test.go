@@ -67,6 +67,25 @@ func TestSelectSmallestBoxNoFittingBox(t *testing.T) {
 	}
 }
 
+func TestPlanningPackageFitsReferenceBox(t *testing.T) {
+	product := DimensionsMM{Height: 100, Width: 70, Length: 70}
+	box := ShippingBox{ID: "reference", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}}
+	selected, err := SelectSmallestBox(product, []ShippingBox{box})
+	if err != nil {
+		t.Fatalf("expected 183g 100x70x70 planning package to fit 100x200x200 internal box, got %v", err)
+	}
+	if selected.ID != box.ID {
+		t.Fatalf("expected reference box, got %#v", selected)
+	}
+}
+
+func TestPlanningPackageRejectsNonFittingReferenceBox(t *testing.T) {
+	_, err := SelectSmallestBox(DimensionsMM{Height: 201, Width: 70, Length: 70}, []ShippingBox{{ID: "reference", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}}})
+	if !errors.Is(err, ErrNoFittingBox) {
+		t.Fatalf("expected non-fitting package to be rejected, got %v", err)
+	}
+}
+
 func TestEffectiveShippingProfileFallback(t *testing.T) {
 	productProfile := ShippingProfile{WeightG: 280, Dimensions: DimensionsMM{Height: 90, Width: 105, Length: 210}}
 

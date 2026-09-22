@@ -1,12 +1,12 @@
 # Diagnostico de embalagem: no_fitting_box
 
-Status: instrumentacao temporaria implementada e testada; calculo de frete validado novamente em producao apos ajuste operacional de embalagem. Sem deploy automatico por este documento.
+Status: instrumentacao implementada e testada; esta revisao nao declara nova validacao em producao. Sem deploy automatico por este documento.
 
 ## Evidencia e limites
 
-O incidente informado apresentou `shipping package planning packages=2 dimension_variants=1` e `shipping quote unavailable stage=packaging reason=no_fitting_box`.
+O incidente informado apresentou log equivalente a `shipping package planning ... quotes_with_package=2 dimension_variants=1` e `shipping quote unavailable stage=packaging reason=no_fitting_box`.
 
-Esse log nao armazena dimensoes. `packages` conta cotacoes com `Package != nil`, nao volumes fisicos de um envio. `mapSuperFreteQuotes` conserva somente `packages[0]` de cada modalidade, e `firstReturnedPackage` escolhe o primeiro pacote mapeado. Assim, duas modalidades com dimensoes iguais geram exatamente esse log. Ele nao prova que houve dois volumes em uma modalidade, nem permite recuperar as dimensoes descartadas. Esse comportamento foi preservado; suporte multi-volume permanece fora do fluxo atual.
+O log resumido nao armazena CEP, carrinho, cliente ou identificadores. `quotes_with_package` conta cotacoes com `Package != nil`, nao volumes fisicos de um envio. `mapSuperFreteQuotes` conserva somente `packages[0]` de cada modalidade, e `firstReturnedPackage` escolhe o primeiro pacote mapeado. Assim, duas modalidades com dimensoes iguais geram exatamente esse log. Ele nao prova que houve dois volumes em uma modalidade. Esse comportamento foi preservado; suporte multi-volume permanece fora do fluxo atual.
 
 Na auditoria original, a conexao Vercel consultada nao listou projetos acessiveis e nao permitiu obter o deployment do incidente. Sem dimensoes registradas ou reproducao identificada naquele momento, nao foi possivel classificar a causa como bug ou cadastro insuficiente. Os valores sinteticos dos testes nao sao medidas do incidente. Posteriormente, o fluxo de frete voltou a funcionar em producao apos a correcao operacional de embalagem confirmada pelo responsavel.
 
@@ -26,7 +26,15 @@ A [referencia oficial de cotacao SuperFrete](https://superfrete.readme.io/refere
 
 O sistema converte as dimensoes retornadas para milimetros, arredondando para cima; compara-as ao espaco **interno** de caixas ativas, com rotacao por ordenacao dos eixos. A cotacao final usa dimensoes **externas** da caixa escolhida e peso logistico dos itens mais embalagem. Nao foi comprovado erro de conversao, rotacao ou selecao. Nao substituir internas por externas, somar pacotes entre modalidades ou relaxar medidas.
 
-## Instrumentacao temporaria
+## Instrumentacao segura
+
+O fluxo registra tambem:
+
+- antes do planejamento: `shipping quote request stage=planning product_lines=N units=N services=N` e linhas com quantidade, peso e dimensoes;
+- apos o planejamento: `shipping package planning valid_quotes=N quotes_with_package=N dimension_variants=N`;
+- caixas candidatas: `shipping packaging boxes candidate_boxes=N` e uma linha por caixa com indice, dimensoes internas/externas, peso de embalagem, encaixe e deficit por eixo ordenado;
+- antes da cotacao final: `shipping quote request stage=final package_weight_g=... package_h_mm=... package_w_mm=... package_l_mm=... services=N`;
+- apos a cotacao final: `shipping quote response stage=final final_valid_quotes=N`.
 
 Somente no caminho de falha da selecao, um registro `shipping packaging diagnostic reason=no_fitting_box selection=first_returned_package data=...` contem:
 
@@ -46,8 +54,8 @@ Exemplo **sintetico de teste**, nao de producao: pacote 200 x 300 x 400 mm contr
 ## Registro operacional
 
 1. O diagnostico detalhado permanece documentado para interpretar eventuais novas falhas `no_fitting_box`.
-2. O fluxo de frete foi revalidado em producao apos a correcao operacional de embalagem.
-3. Se o erro voltar, reproduzir o carrinho afetado e consultar o registro completo `shipping packaging diagnostic`, sem compartilhar dados pessoais.
+2. Apos deploy, validar manualmente em producao antes de declarar o incidente encerrado.
+3. Se o erro voltar, reproduzir o carrinho afetado e consultar os logs seguros de planejamento, caixas e o registro completo `shipping packaging diagnostic`, sem compartilhar dados pessoais.
 4. Conferir `planning_omitted=0` e `boxes_omitted=0`, dimensoes selecionadas e deficits de cada caixa.
 5. Se nenhuma caixa comportar o pacote, confirmar fisicamente as medidas cadastradas e decidir operacionalmente sobre embalagens reais. Nao alterar dados para forcar sucesso.
 6. Se houver varios volumes reais dentro de uma modalidade, validar esse contrato separadamente antes de mudar o fluxo de caixa unica.

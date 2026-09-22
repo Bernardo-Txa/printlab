@@ -276,6 +276,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		return PreparedQuote{}, page, nil
 	}
 
+	logShippingQuoteRequest("planning", preparedItems, 0, DimensionsMM{}, len(s.serviceCodes))
 	planningQuotes, err := s.calculator.Calculate(ctx, SuperFreteCalculatorRequest{
 		FromPostalCode: s.originCEP,
 		ToPostalCode:   details.Address.PostalCode,
@@ -305,11 +306,13 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		return PreparedQuote{}, page, nil
 	}
 
-	box, err := SelectSmallestBox(DimensionsMM{
+	idealDimensions := DimensionsMM{
 		Height: idealPackage.HeightMM,
 		Width:  idealPackage.WidthMM,
 		Length: idealPackage.LengthMM,
-	}, boxes)
+	}
+	logBoxFitDiagnostics(idealDimensions, boxes)
+	box, err := SelectSmallestBox(idealDimensions, boxes)
 	if err != nil {
 		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
 		logNoFittingBoxDiagnostics(planningQuotes, idealPackage, boxes)
@@ -334,6 +337,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		Dimensions: box.External,
 		InputHash:  inputHash,
 	}
+	logShippingQuoteRequest("final", nil, totalWeightG, box.External, len(s.serviceCodes))
 	finalQuotes, err := s.calculator.Calculate(ctx, SuperFreteCalculatorRequest{
 		FromPostalCode: s.originCEP,
 		ToPostalCode:   details.Address.PostalCode,
@@ -353,6 +357,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	}
 
 	quotes := shippingQuotes(finalQuotes)
+	log.Printf("shipping quote response stage=final final_valid_quotes=%d", len(quotes))
 	if len(quotes) == 0 {
 		logShippingQuoteUnavailable("final", "final_no_valid_quotes", nil)
 		page.Unavailable = true
@@ -505,6 +510,22 @@ func logShippingQuoteUnavailable(stage string, reason string, err error) {
 	log.Printf("shipping quote unavailable stage=%s reason=%s", stage, reason)
 }
 
+func logShippingQuoteRequest(stage string, items []QuoteProduct, packageWeightG int64, packageDimensions DimensionsMM, services int) {
+	if stage == "planning" {
+		units := 0
+		for _, item := range items {
+			units += item.Quantity
+		}
+		log.Printf("shipping quote request stage=planning product_lines=%d units=%d services=%d", len(items), units, services)
+		for i, item := range items {
+			log.Printf("shipping quote request stage=planning line=%d quantity=%d weight_g=%d height_mm=%d width_mm=%d length_mm=%d", i, item.Quantity, item.Profile.WeightG, item.Profile.Dimensions.Height, item.Profile.Dimensions.Width, item.Profile.Dimensions.Length)
+		}
+		return
+	}
+
+	log.Printf("shipping quote request stage=final package_weight_g=%d package_h_mm=%d package_w_mm=%d package_l_mm=%d services=%d", packageWeightG, packageDimensions.Height, packageDimensions.Width, packageDimensions.Length, services)
+}
+
 func logPlanningPackageDiagnostics(quotes []SuperFreteQuote) {
 	type packageDimensions struct {
 		height int
@@ -526,21 +547,33 @@ func logPlanningPackageDiagnostics(quotes []SuperFreteQuote) {
 			length: quote.Package.LengthMM,
 		}] = struct{}{}
 	}
-	if packages == 0 {
-		return
-	}
+	log.Printf("shipping package planning valid_quotes=%d quotes_with_package=%d dimension_variants=%d", len(quotes), packages, len(variants))
 	if len(variants) > 1 {
-		log.Printf("shipping package planning packages=%d dimension_variants=%d dimensions_differ=true", packages, len(variants))
-		return
+		log.Print("shipping package planning dimensions_differ=true")
 	}
+}
 
-	log.Printf("shipping package planning packages=%d dimension_variants=%d", packages, len(variants))
+func logBoxFitDiagnostics(packageDimensions DimensionsMM, boxes []ShippingBox) {
+	log.Printf("shipping packaging boxes candidate_boxes=%d", len(boxes))
+	packageAxes := sortedDimensions(packageDimensions)
+	for i, box := range boxes {
+		boxAxes := sortedDimensions(box.Internal)
+		fits := FitsInside(packageDimensions, box.Internal)
+		deficit := [3]int{}
+		if packageDimensions.Valid() && box.Internal.Valid() {
+			for axis := range deficit {
+				deficit[axis] = max(0, packageAxes[axis]-boxAxes[axis])
+			}
+		}
+		log.Printf("shipping packaging box index=%d internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d external_h_mm=%d external_w_mm=%d external_l_mm=%d packaging_weight_g=%d fits=%t deficit_small_mm=%d deficit_mid_mm=%d deficit_large_mm=%d", i, box.Internal.Height, box.Internal.Width, box.Internal.Length, box.External.Height, box.External.Width, box.External.Length, box.PackagingWeightG, fits, deficit[0], deficit[1], deficit[2])
+	}
 }
 
 func shippingQuotes(superFreteQuotes []SuperFreteQuote) []ShippingQuote {
 	quotes := make([]ShippingQuote, 0, len(superFreteQuotes))
 	for _, externalQuote := range superFreteQuotes {
 		if externalQuote.PriceCents < 0 || externalQuote.ServiceCode == "" || externalQuote.ServiceName == "" {
+			log.Printf("shipping quote discarded service_code=%q service_name=%q reason=invalid_final_quote", safeSuperFreteLogValue(externalQuote.ServiceCode), safeSuperFreteLogValue(externalQuote.ServiceName))
 			continue
 		}
 

@@ -70,7 +70,13 @@ Erros do cliente preservam classificacao segura para diagnostico operacional:
 - `request_failed`;
 - `response_read_failed`.
 
-O `Error()` nao inclui token, corpo bruto da SuperFrete, payload de cotacao, CEP ou dados do cliente.
+O `Error()` nao inclui token, corpo bruto da SuperFrete, payload de cotacao, CEP ou dados do cliente. Rejeicoes por servico retornadas com HTTP 200 e `has_error=true` sao classificadas sem expor a mensagem externa bruta:
+
+- `service_unavailable`;
+- `invalid_package`;
+- `invalid_postal_code`;
+- `unsupported_dimensions`;
+- `unknown_service_error`.
 
 ## Estrategia de cotacao
 
@@ -94,15 +100,18 @@ Primeira chamada:
 - envia `services`;
 - envia `options` com adicionais desabilitados;
 - envia `products`, um item por linha logistica do carrinho;
-- usa peso em kg e dimensoes em cm somente no DTO externo.
-- registra a quantidade de cotacoes com pacote mapeado e se diferentes modalidades retornaram dimensoes diferentes; esse contador nao representa volumes fisicos.
+- usa peso em kg e dimensoes em cm somente no DTO externo;
+- registra antes da chamada apenas totais de linhas, unidades, quantidade de servicos e, por linha, quantidade, peso em gramas e dimensoes em milimetros, sem nome, ID, CEP, carrinho ou cliente;
+- registra apos a chamada a quantidade de cotacoes validas, cotacoes com pacote e variantes dimensionais; esse contador nao representa volumes fisicos.
 
 Segunda chamada:
 
 - envia `package`;
 - usa dimensoes externas da caixa fisica selecionada;
 - usa peso final em kg, calculado por peso logistico dos produtos + `packaging_weight_g`;
-- nao envia `products` simultaneamente.
+- nao envia `products` simultaneamente;
+- registra antes da chamada somente peso total em gramas, dimensoes externas do pacote em milimetros e quantidade de servicos;
+- registra apos a chamada a quantidade de cotacoes finais validas.
 
 Somente o preco da segunda chamada e apresentado ao cliente.
 
@@ -135,7 +144,7 @@ A escolha da caixa permite rotacao por comparacao dos tres eixos ordenados. Volu
 
 Servicos com erro especifico na resposta da SuperFrete sao ignorados quando outros servicos validos existem. Se nenhuma cotacao valida existir, o checkout mostra indisponibilidade generica.
 
-Quando a resposta HTTP 200 contem servico com `has_error=true`, a aplicacao ignora esse servico no resultado publico e registra somente `service_code`, `service_name` quando disponivel e categoria generica de indisponibilidade. A mensagem bruta externa do campo `error` nao deve ser logada.
+Quando a resposta HTTP 200 contem servico com `has_error=true`, a aplicacao ignora esse servico no resultado publico e registra somente `service_code`, `service_name` quando disponivel e uma categoria segura. A mensagem bruta externa do campo `error` nao deve ser logada. Cotacoes descartadas por erro do servico ou preco invalido registram apenas codigo, nome seguro do servico e motivo fixo. Quando a cotacao e valida, mas o pacote vem ausente ou invalido, o log usa `shipping quote package unavailable` com os mesmos campos seguros.
 
 Falhas de frete sao classificadas internamente por estagio e motivo seguro:
 
@@ -147,6 +156,8 @@ Falhas de frete sao classificadas internamente por estagio e motivo seguro:
 - `no_fitting_box`;
 - `final_request_failed`;
 - `final_no_valid_quotes`.
+
+O runtime emite no startup somente `superfrete configured environment=<env> services=<lista>` ou `superfrete not configured`. Esse log nao inclui token, CEP de origem nem e-mail operacional.
 
 Mensagens publicas continuam genericas e nao devem revelar CEP, CPF, telefone, e-mail, endereco, token, corpo externo ou detalhes de configuracao.
 
@@ -196,4 +207,4 @@ Nao criar dados ficticios em migration nem registrar secrets na documentacao. A 
 
 ## Diagnostico temporario de encaixe
 
-Falhas `no_fitting_box` registram somente dimensoes numericas em mm, contagem de cotacoes/caixas e deficits por eixo ordenado. O registro e limitado, sem PII ou identificadores persistentes. O algoritmo e o fluxo de cotacao permanecem iguais. O calculo de frete foi revalidado em producao apos a correcao operacional de embalagem; consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.
+Falhas `no_fitting_box` registram somente dimensoes numericas em mm, contagem de cotacoes/caixas e deficits por eixo ordenado. O registro e limitado, sem PII ou identificadores persistentes. O algoritmo e o fluxo de cotacao permanecem iguais. Esta correcao reforca diagnosticos e testes; a validacao real em producao deve ser feita manualmente apos deploy. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.

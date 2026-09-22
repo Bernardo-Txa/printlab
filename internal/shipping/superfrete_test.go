@@ -109,6 +109,88 @@ func TestSuperFreteClientSendsPackagePayload(t *testing.T) {
 	}
 }
 
+func TestSuperFreteClientAcceptsStringAndNumberFields(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "strings",
+			body: superFreteResponseJSON("1", "PAC", "18.90", "12", "16", "24", "0.47", 5),
+		},
+		{
+			name: "numbers",
+			body: `[{
+				"id":1,
+				"name":"PAC",
+				"price":18.90,
+				"delivery_time":5,
+				"company":{"name":"Correios"},
+				"packages":[{"dimensions":{"height":12,"width":16,"length":24},"weight":0.47}],
+				"has_error":false
+			}]`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer server.Close()
+
+			client := newTestSuperFreteClient(t, server.URL, "superfrete-test-token")
+			quotes, err := client.Calculate(context.Background(), SuperFreteCalculatorRequest{
+				FromPostalCode: "01153000",
+				ToPostalCode:   "20020050",
+				Services:       "1",
+				Package:        &SuperFretePackage{WeightKG: 0.47, HeightCM: 12, WidthCM: 16, LengthCM: 24},
+			})
+			if err != nil {
+				t.Fatalf("expected quote response, got %v", err)
+			}
+			if len(quotes) != 1 || quotes[0].PriceCents != 1890 || quotes[0].Package == nil || quotes[0].Package.HeightMM != 120 || quotes[0].Package.WeightKG != 0.47 {
+				t.Fatalf("expected parsed quote from %s fields, got %#v", tt.name, quotes)
+			}
+		})
+	}
+}
+
+func TestSuperFreteClientLogsPackageMissingAndInvalidPackage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[
+			{"id":1,"name":"PAC","price":"18.90","delivery_time":5,"company":{"name":"Correios"},"packages":[],"has_error":false},
+			{"id":2,"name":"SEDEX","price":"31.40","delivery_time":2,"company":{"name":"Correios"},"packages":[{"dimensions":{"height":"0","width":"16","length":"24"},"weight":"0.47"}],"has_error":false}
+		]`))
+	}))
+	defer server.Close()
+
+	client := newTestSuperFreteClient(t, server.URL, "superfrete-test-token")
+	var quotes []SuperFreteQuote
+	var err error
+	logs := captureShippingLogs(t, func() {
+		quotes, err = client.Calculate(context.Background(), SuperFreteCalculatorRequest{
+			FromPostalCode: "01153000",
+			ToPostalCode:   "20020050",
+			Services:       "1,2",
+			Package:        &SuperFretePackage{WeightKG: 0.47, HeightCM: 12, WidthCM: 16, LengthCM: 24},
+		})
+	})
+	if err != nil {
+		t.Fatalf("expected quote response, got %v", err)
+	}
+	if len(quotes) != 2 || quotes[0].ServiceCode != "1" || quotes[0].Package != nil || quotes[1].ServiceCode != "2" || quotes[1].Package != nil {
+		t.Fatalf("expected quotes to remain available while invalid package data is omitted, got %#v", quotes)
+	}
+	for _, want := range []string{`shipping quote package unavailable service_code=1 service_name="PAC" reason=package_missing`, `shipping quote package unavailable service_code=2 service_name="SEDEX" reason=invalid_package`} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("expected log %q, got %q", want, logs)
+		}
+	}
+}
+
 func TestSuperFreteClientSkipsServiceErrors(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -136,12 +218,53 @@ func TestSuperFreteClientSkipsServiceErrors(t *testing.T) {
 	if len(quotes) != 1 || quotes[0].ServiceCode != "1" {
 		t.Fatalf("expected only valid service, got %#v", quotes)
 	}
-	if !strings.Contains(logs, `shipping quote service unavailable service_code=2 service_name="SEDEX" reason=service_error`) {
+	if !strings.Contains(logs, `shipping quote discarded service_code=2 service_name="SEDEX" reason=unknown_service_error`) {
 		t.Fatalf("expected safe service error log, got %q", logs)
 	}
 	for _, forbidden := range []string{"raw carrier failure", "20020050", "superfrete-test-token"} {
 		if strings.Contains(logs, forbidden) {
 			t.Fatalf("expected service error log not to include %q: %q", forbidden, logs)
+		}
+	}
+}
+
+func TestSuperFreteClientClassifiesAllServiceErrorsSafely(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[
+			{"id":1,"name":"PAC","price":"0","company":{"name":"Correios"},"packages":[],"has_error":true,"error":"servico indisponivel para o destino 20020050"},
+			{"id":2,"name":"SEDEX","price":"0","company":{"name":"Correios"},"packages":[],"has_error":true,"error":"CEP invalido 20020050"},
+			{"id":17,"name":"Mini Envios","price":"0","company":{"name":"Correios"},"packages":[],"has_error":true,"error":"dimensoes nao suportadas"},
+			{"id":33,"name":"J&T","price":"0","company":{"name":"J&T"},"packages":[],"has_error":true,"error":"falha desconhecida superfrete-test-token"}
+		]`))
+	}))
+	defer server.Close()
+
+	client := newTestSuperFreteClient(t, server.URL, "superfrete-test-token")
+	var quotes []SuperFreteQuote
+	var err error
+	logs := captureShippingLogs(t, func() {
+		quotes, err = client.Calculate(context.Background(), SuperFreteCalculatorRequest{
+			FromPostalCode: "01153000",
+			ToPostalCode:   "20020050",
+			Services:       "1,2,17,33",
+			Package:        &SuperFretePackage{WeightKG: 0.47, HeightCM: 12, WidthCM: 16, LengthCM: 24},
+		})
+	})
+	if err != nil {
+		t.Fatalf("expected quote response, got %v", err)
+	}
+	if len(quotes) != 0 {
+		t.Fatalf("expected no valid quotes, got %#v", quotes)
+	}
+	for _, want := range []string{"reason=service_unavailable", "reason=invalid_postal_code", "reason=unsupported_dimensions", "reason=unknown_service_error"} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("expected %q in logs, got %q", want, logs)
+		}
+	}
+	for _, forbidden := range []string{"20020050", "superfrete-test-token", "falha desconhecida"} {
+		if strings.Contains(logs, forbidden) {
+			t.Fatalf("expected safe logs not to include %q: %q", forbidden, logs)
 		}
 	}
 }
