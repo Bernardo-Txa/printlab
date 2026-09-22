@@ -145,7 +145,7 @@ func Home() templ.Component {
 				}
 				return nil
 			})
-			templ_7745c5c3_Err = components.Section("como-funciona", "Como funciona", "Da ideia ao objeto, com etapas transparentes.", "O processo completo será apresentado com mais detalhes em breve. A base visual já mostra como a PrintLab pretende organizar cada conversa criativa.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.Section("como-funciona", "Como funciona", "Da ideia ao objeto, com etapas transparentes.", "Da conversa inicial ao objeto final, cada etapa ajuda a transformar sua ideia em uma peça viável e bem resolvida.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -165,7 +165,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catálogo futuro</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que você vai poder levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentação.</p><div class=\"mt-8\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catálogo PrintLab</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que você pode levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">Conheça os produtos da PrintLab e explore peças criadas com cor, forma e impressão 3D.</p><div class=\"mt-8\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

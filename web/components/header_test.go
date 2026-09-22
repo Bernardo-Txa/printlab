@@ -3,6 +3,7 @@ package components
 import (
 	"bytes"
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -14,6 +15,7 @@ func TestHeaderRendersBrandNavigationAndGuestActions(t *testing.T) {
 
 	for _, expected := range []string{
 		`src="/static/images/branding/logo-printlab-small-v1.webp"`,
+		`<nav class="site-header-actions" aria-label="Ações do usuário">`,
 		`href="/#inicio">Início`,
 		`href="/produtos">Produtos`,
 		`href="/#como-funciona">Como funciona`,
@@ -52,6 +54,27 @@ func TestHeaderRendersAuthenticatedActionsAndPostLogout(t *testing.T) {
 	}
 	if strings.Contains(html, `href="/login"`) || strings.Contains(html, `>Entrar<`) {
 		t.Fatalf("expected authenticated header not to show login action, got %s", html)
+	}
+}
+
+func TestFooterKeepsReadableLinksAndHeaderColorsScoped(t *testing.T) {
+	html := renderComponent(t, Footer())
+	if !strings.Contains(html, `aria-label="Navegação do rodapé"`) || !strings.Contains(html, `class="nav-link"`) {
+		t.Fatalf("expected footer navigation links, got %s", html)
+	}
+
+	css, err := os.ReadFile("../../web/assets/css/app.css")
+	if err != nil {
+		t.Fatalf("expected source CSS to be readable, got %v", err)
+	}
+	cssText := string(css)
+	for _, expected := range []string{".site-header .nav-link:focus-visible", "footer .nav-link:focus-visible"} {
+		if !strings.Contains(cssText, expected) {
+			t.Fatalf("expected CSS scoping assertion %q", expected)
+		}
+	}
+	if strings.Contains(cssText, "\n  .nav-link:focus-visible {") {
+		t.Fatal("expected dark header focus styles not to apply globally")
 	}
 }
 

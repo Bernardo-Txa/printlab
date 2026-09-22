@@ -61,10 +61,18 @@ func TestHomeHandler(t *testing.T) {
 	if !strings.Contains(body, components.WhatsAppGeneralURL()) || !strings.Contains(body, "Falar com a PrintLab no WhatsApp") {
 		t.Fatal("expected homepage contact CTA to point to official WhatsApp")
 	}
-	if strings.Contains(body, "O canal oficial de atendimento será definido em breve") {
-		t.Fatal("expected homepage not to contain obsolete contact copy")
+	for _, obsolete := range []string{
+		"O canal oficial de atendimento será definido em breve",
+		"será apresentado com mais detalhes em breve",
+		"Catálogo futuro",
+		"vai poder levar",
+		"base real para receber os primeiros objetos",
+	} {
+		if strings.Contains(body, obsolete) {
+			t.Fatalf("expected homepage not to contain obsolete copy %q", obsolete)
+		}
 	}
-	for _, expected := range []string{"PrintLab | Impressão 3D", "Laboratório de impressão 3D", "Precisão", "objetos físicos", "linguagem própria", "fabricação digital", "técnica", "imaginação", "propósito", "espaço", "apresentação", "frasco de laboratório"} {
+	for _, expected := range []string{"PrintLab | Impressão 3D", "Laboratório de impressão 3D", "Precisão", "objetos físicos", "linguagem própria", "fabricação digital", "técnica", "imaginação", "propósito", "espaço", "frasco de laboratório"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected homepage copy to contain %q", expected)
 		}

@@ -47,7 +47,7 @@ func Header() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"site-header-inner\"><div class=\"site-header-brand-row\"><a class=\"brand-link focus-ring\" href=\"/\" aria-label=\"PrintLab - início\"><img class=\"brand-header-logo\" src=\"/static/images/branding/logo-printlab-small-v1.webp\" width=\"256\" height=\"192\" alt=\"\"></a><div class=\"site-header-actions\" aria-label=\"Ações do usuário\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"site-header-inner\"><div class=\"site-header-brand-row\"><a class=\"brand-link focus-ring\" href=\"/\" aria-label=\"PrintLab - início\"><img class=\"brand-header-logo\" src=\"/static/images/branding/logo-printlab-small-v1.webp\" width=\"256\" height=\"192\" alt=\"\"></a><nav class=\"site-header-actions\" aria-label=\"Ações do usuário\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -96,7 +96,7 @@ func Header() templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></div><div class=\"site-header-nav-row\"><nav class=\"site-primary-nav\" aria-label=\"Navegação principal\"><ul class=\"site-nav\"><li><a class=\"nav-link\" href=\"/#inicio\">Início</a></li><li><a class=\"nav-link\" href=\"/produtos\">Produtos</a></li><li><a class=\"nav-link\" href=\"/#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"/#lab\">Sobre</a></li><li><a class=\"nav-link\" href=\"/#contato\">Contato</a></li></ul></nav></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</nav></div><div class=\"site-header-nav-row\"><nav class=\"site-primary-nav\" aria-label=\"Navegação principal\"><ul class=\"site-nav\"><li><a class=\"nav-link\" href=\"/#inicio\">Início</a></li><li><a class=\"nav-link\" href=\"/produtos\">Produtos</a></li><li><a class=\"nav-link\" href=\"/#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"/#lab\">Sobre</a></li><li><a class=\"nav-link\" href=\"/#contato\">Contato</a></li></ul></nav></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

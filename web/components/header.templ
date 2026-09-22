@@ -10,7 +10,7 @@ templ Header() {
 					<a class="brand-link focus-ring" href="/" aria-label="PrintLab - início">
 						<img class="brand-header-logo" src="/static/images/branding/logo-printlab-small-v1.webp" width="256" height="192" alt=""/>
 					</a>
-					<div class="site-header-actions" aria-label="Ações do usuário">
+					<nav class="site-header-actions" aria-label="Ações do usuário">
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
 							<a class="nav-link site-header-account" href="/conta" aria-label="Minha conta">
 								@accountIcon()
@@ -31,7 +31,7 @@ templ Header() {
 								<button class="nav-link nav-link-button" type="submit">Sair</button>
 							</form>
 						}
-					</div>
+					</nav>
 				</div>
 				<div class="site-header-nav-row">
 					<nav class="site-primary-nav" aria-label="Navegação principal">
