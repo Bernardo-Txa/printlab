@@ -78,6 +78,9 @@ func TestPickupCartToOrder(t *testing.T) {
 	if page.Shipping.DeliveryMethod != shipping.DeliveryMethodPickup || page.ShippingPriceCents != 0 || page.TotalCents != 5180 {
 		t.Fatalf("unexpected pickup review: shipping=%+v total=%d", page.Shipping, page.TotalCents)
 	}
+	if page.HasAddress {
+		t.Fatal("expected pickup review not to expose address")
+	}
 
 	result, err := repo.Confirm(ctx, tokenHash, page.Fingerprint, now, params)
 	if err != nil {
@@ -104,8 +107,8 @@ func TestPickupCartToOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if detail.Shipping.DeliveryMethod != shipping.DeliveryMethodPickup || detail.Shipping.PriceBRL != "R$ 0,00" || detail.Shipping.ServiceName != "" {
-		t.Fatalf("unexpected admin pickup shipping: %+v", detail.Shipping)
+	if detail.Shipping.DeliveryMethod != shipping.DeliveryMethodPickup || detail.Shipping.PriceBRL != "R$ 0,00" || detail.Shipping.ServiceName != "" || detail.HasAddress {
+		t.Fatalf("unexpected admin pickup detail: shipping=%+v hasAddress=%t", detail.Shipping, detail.HasAddress)
 	}
 }
 

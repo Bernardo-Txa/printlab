@@ -285,7 +285,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if page.HasAddress {
+				if page.HasAddress && page.Shipping.DeliveryMethod != "pickup" {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<section class=\"checkout-form-section\" aria-labelledby=\"review-address\"><div class=\"review-section-header\"><span class=\"checkout-section-icon\" aria-hidden=\"true\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -294,7 +294,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span><div><h2 id=\"review-address\">Endereço de entrega</h2><p>Destino usado para a cotação selecionada.</p></div><a href=\"/checkout/dados\">Editar dados</a></div><div class=\"review-address\"><p>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span><div><h2 id=\"review-address\">Endereço de entrega</h2><p>Destino usado para a cotação selecionada.</p></div><a href=\"/checkout/frete?delivery_method=shipping#shipping-address\">Editar endereço</a></div><div class=\"review-address\"><p>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -703,14 +703,14 @@ func OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Order
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</strong></div><div><span>Status</span><strong>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</strong></div><div><span>Status</span><strong class=\"order-status-badge\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(page.StatusLabel)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 175, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/order.templ`, Line: 175, Col: 82}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {

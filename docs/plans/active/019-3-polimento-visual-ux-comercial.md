@@ -245,7 +245,7 @@ Implementado nesta subfase:
 
 ## 19.3.5 — Carrinho e checkout
 
-Status: Correções de UX/fluxo implementadas; aguardando nova validação manual.
+Status: Correções finais implementadas; aguardando nova validação manual.
 
 O carrinho atual é visualmente satisfatório.
 
@@ -282,8 +282,13 @@ Implementado nesta subfase:
 - etapa Dados coleta apenas dados de contato, sem exigir endereço;
 - etapa Entrega permite escolher receber em casa ou retirar no local antes de solicitar endereço;
 - endereço de entrega fica em `POST /checkout/frete/endereco`, com máscaras e ViaCEP preservados;
-- pickup não exige endereço nem chama SuperFrete;
+- pickup não exige endereço, não exibe endereço antigo e não chama SuperFrete;
+- Admin aceita pedido pickup sem `order_shipping_addresses`, enquanto shipping continua exigindo endereço;
 - cotações SuperFrete aparecem somente após endereço salvo para entrega;
+- ViaCEP e máscara de CEP foram movidos corretamente para a etapa Entrega;
+- stepper usa marcadores circulares com label separado e estado textual apenas para leitor de tela;
+- revisão alinha headers, métricas de produto e link `Editar endereço` para a etapa Entrega;
+- pagamento separa status visualmente e mantém card InfinitePay com ícone pequeno;
 - etapa Revisão com blocos de Produtos, Dados pessoais, Endereço de entrega e Entrega, links discretos de edição e CTA Confirmar pedido;
 - etapa Pagamento com status do pedido, card de InfinitePay por POST e ação secundária de acompanhamento;
 - resumo lateral com sticky offset compatível com header sticky, destaque de total e leitura mobile;
@@ -556,7 +561,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.1 — Header, navegação e identidade global: Implementada; aguardando validação manual.
 - 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
 - 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
-- 19.3.5 — Carrinho e checkout: Correções de UX/fluxo implementadas; aguardando nova validação manual.
+- 19.3.5 — Carrinho e checkout: Correções finais implementadas; aguardando nova validação manual.
 - 19.3.6 — Revisão textual pt-BR: Planejada; não iniciada neste pacote.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

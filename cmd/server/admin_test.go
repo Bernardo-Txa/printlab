@@ -348,6 +348,7 @@ func TestAdminOrderDetailRendersPrivateDataAndActions(t *testing.T) {
 			LineTwo:     "Centro - Sao Paulo/SP - CEP 01001-000",
 			CountryCode: "BR",
 		},
+		HasAddress: true,
 		Shipping: admindomain.OrderShipping{
 			ServiceName:        "PAC",
 			DeliveryTime:       "5 dias uteis",

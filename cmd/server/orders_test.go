@@ -102,6 +102,8 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 		"***.***.***-25",
 		`href="/checkout/dados"`,
 		`href="/checkout/frete"`,
+		`href="/checkout/frete?delivery_method=shipping#shipping-address"`,
+		"Editar endereço",
 		`name="review_fingerprint"`,
 		"Unitário",
 		"Alterar entrega",
@@ -133,6 +135,39 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 	} {
 		if strings.Contains(body, forbiddenOperationalData) {
 			t.Fatalf("expected review page not to render operational data %q", forbiddenOperationalData)
+		}
+	}
+}
+
+func TestCheckoutReviewPickupDoesNotRenderAddress(t *testing.T) {
+	page := orderReviewPageFixture()
+	page.Shipping = ordersdomain.ReviewShipping{DeliveryMethod: "pickup", PriceCents: 0, PriceBRL: "R$ 0,00"}
+	page.ShippingPriceCents = 0
+	page.ShippingPriceBRL = "R$ 0,00"
+	page.TotalCents = page.ProductsSubtotalCents
+	page.TotalBRL = page.ProductsSubtotalBRL
+	page.HasAddress = false
+	page.Address.LineOne = "Avenida Paulista, 1000"
+	service := &fakeOrderReviewService{reviewPage: page}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/revisao", nil)
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithOrders(t, service, cookies, "").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	body := rec.Body.String()
+	for _, forbidden := range []string{"Endereço de entrega", "Avenida Paulista", "Editar endereço"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected pickup review not to render %q", forbidden)
+		}
+	}
+	for _, expected := range []string{"Retirada no local", "Grátis"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected pickup review to contain %q", expected)
 		}
 	}
 }
@@ -1086,6 +1121,7 @@ func orderReviewPageFixture() ordersdomain.ReviewPage {
 			LineOne:     "Rua Um, 12A - Apto 302",
 			LineTwo:     "Centro - Vila Velha/ES - CEP 29100-000",
 		},
+		HasAddress: true,
 		Shipping: ordersdomain.ReviewShipping{
 			Provider:         "superfrete",
 			ServiceCode:      "1",

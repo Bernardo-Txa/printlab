@@ -87,6 +87,35 @@ func TestAdminOrderListAvoidsPIIAndPaymentIdentifiers(t *testing.T) {
 	}
 }
 
+func TestAdminGetOrderHandlesPickupAddressOptional(t *testing.T) {
+	source, err := os.ReadFile("order_repository.go")
+	if err != nil {
+		t.Fatalf("expected repository source to be readable, got %v", err)
+	}
+	getSource, ok := adminFunctionSource(string(source), "func (r *PostgresRepository) GetOrder")
+	if !ok {
+		t.Fatal("expected GetOrder to exist")
+	}
+	for _, expected := range []string{
+		"shippingDetails, err := r.orderShipping",
+		"address, found, err := r.orderAddress",
+		"detail.HasAddress = true",
+		"detail.Shipping.DeliveryMethod != shipping.DeliveryMethodPickup",
+	} {
+		if !strings.Contains(getSource, expected) {
+			t.Fatalf("expected GetOrder source to contain %q", expected)
+		}
+	}
+
+	addressSource, ok := adminFunctionSource(string(source), "func (r *PostgresRepository) orderAddress")
+	if !ok {
+		t.Fatal("expected orderAddress to exist")
+	}
+	if !strings.Contains(addressSource, "(OrderAddress, bool, error)") || !strings.Contains(addressSource, "return OrderAddress{}, false, nil") {
+		t.Fatal("expected orderAddress to report missing address without failing")
+	}
+}
+
 func adminFunctionSource(source string, marker string) (string, bool) {
 	start := -1
 	offset := 0

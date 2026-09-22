@@ -49,7 +49,7 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 										<span class="shipping-option-price"><strong>Grátis</strong></span>
 									</label>
 								</div>
-								<div class="checkout-form-actions"><button class="btn-base btn-secondary" type="submit">Ver opções de entrega</button></div>
+								<div class="checkout-form-actions"><button class="btn-base btn-secondary" type="submit">Atualizar modalidade</button></div>
 							</form>
 						</section>
 						if page.SelectedMethod == "pickup" {
@@ -57,14 +57,14 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 								<div class="checkout-section-header">
 									<span class="checkout-section-icon" aria-hidden="true">@checkoutPickupIcon()</span>
 									<div>
-										<h2 id="pickup-details">Retirada no local</h2>
-										<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+										<h2 id="pickup-details">Retirada selecionada</h2>
+										<p>Combinaremos o horário após a confirmação do pedido.</p>
 									</div>
 								</div>
 								<div class="pickup-price"><span>Frete</span><strong>Grátis</strong></div>
 								<form method="post" action="/checkout/frete">
 									<input type="hidden" name="delivery_method" value="pickup"/>
-									<div class="checkout-form-actions"><button class="btn-base btn-primary" type="submit">Continuar com retirada grátis</button></div>
+									<div class="checkout-form-actions"><button class="btn-base btn-primary" type="submit">Continuar para revisão</button></div>
 								</form>
 							</section>
 						} else if page.SelectedMethod == "shipping" {
@@ -102,7 +102,7 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 											<p>Não conseguimos calcular automaticamente o frete para este carrinho agora.</p>
 										</div>
 									</div>
-									<a class="btn-base btn-secondary" href="/checkout/dados">Revisar dados de entrega</a>
+									<a class="btn-base btn-secondary" href="/checkout/frete?delivery_method=shipping#shipping-address">Revisar endereço</a>
 								</section>
 							} else if page.AddressForm.Found {
 								<form method="post" action="/checkout/frete">
@@ -185,6 +185,7 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 				</div>
 			}
 		</section>
+		<script src="/static/js/checkout.js" defer></script>
 	}
 }
 
@@ -195,5 +196,6 @@ templ CheckoutShippingUnavailable() {
 				@components.EmptyState("Frete temporariamente indisponível.", "Não foi possível carregar esta etapa agora. Tente novamente em alguns instantes.")
 			}
 		</section>
+		<script src="/static/js/checkout.js" defer></script>
 	}
 }

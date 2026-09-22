@@ -407,7 +407,7 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 		Items:                 items,
 		Customer:              details.Customer,
 		Address:               details.Address,
-		HasAddress:            details.HasAddress,
+		HasAddress:            details.HasAddress && shippingDetails.DeliveryMethod != shipping.DeliveryMethodPickup,
 		Shipping:              shippingDetails,
 		ShippingPriceCents:    shippingDetails.PriceCents,
 		ProductsSubtotalCents: 0,

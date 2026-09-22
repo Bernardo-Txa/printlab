@@ -173,6 +173,7 @@ type OrderDetail struct {
 	TotalBRL              string
 	Customer              OrderCustomer
 	Address               OrderAddress
+	HasAddress            bool
 	Shipping              OrderShipping
 	Payment               OrderPayment
 	Items                 []OrderDetailItem

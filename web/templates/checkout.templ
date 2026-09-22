@@ -39,7 +39,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 								@CheckoutField("full_name", "Nome completo", "text", "name", "", page.Form.Values.FullName, page.Form.Errors.Message("full_name"), false)
 								@CheckoutField("email", "E-mail", "email", "email", "", page.Form.Values.Email, page.Form.Errors.Message("email"), false)
 								@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), "", false, "phone", "15")
-								@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessário para a documentação do envio.", false, "cpf", "14")
+								@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Usado para identificação do pedido.", false, "cpf", "14")
 							</div>
 						</section>
 						<div class="checkout-form-actions">

@@ -199,14 +199,16 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 									<p><span>CPF</span><strong>{ detail.Customer.CPF }</strong></p>
 								</div>
 							</section>
-							<section class="admin-panel" aria-labelledby="admin-order-address">
-								<h2 id="admin-order-address">Entrega</h2>
-								<div class="admin-field-grid">
-									<p><span>Endereço</span><strong>{ detail.Address.LineOne }</strong></p>
-									<p><span>Cidade</span><strong>{ detail.Address.LineTwo }</strong></p>
-									<p><span>País</span><strong>{ detail.Address.CountryCode }</strong></p>
-								</div>
-							</section>
+							if detail.HasAddress {
+								<section class="admin-panel" aria-labelledby="admin-order-address">
+									<h2 id="admin-order-address">Entrega</h2>
+									<div class="admin-field-grid">
+										<p><span>Endereço</span><strong>{ detail.Address.LineOne }</strong></p>
+										<p><span>Cidade</span><strong>{ detail.Address.LineTwo }</strong></p>
+										<p><span>País</span><strong>{ detail.Address.CountryCode }</strong></p>
+									</div>
+								</section>
+							}
 						</div>
 						<div class="admin-detail-grid">
 							<section class="admin-panel" aria-labelledby="admin-order-shipping">

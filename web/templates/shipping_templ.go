@@ -159,7 +159,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> <span class=\"shipping-option-copy\"><strong>Retirar no local</strong><small>Combinaremos o horário da retirada após a confirmação do pedido.</small></span> <span class=\"shipping-option-price\"><strong>Grátis</strong></span></label></div><div class=\"checkout-form-actions\"><button class=\"btn-base btn-secondary\" type=\"submit\">Ver opções de entrega</button></div></form></section>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> <span class=\"shipping-option-copy\"><strong>Retirar no local</strong><small>Combinaremos o horário da retirada após a confirmação do pedido.</small></span> <span class=\"shipping-option-price\"><strong>Grátis</strong></span></label></div><div class=\"checkout-form-actions\"><button class=\"btn-base btn-secondary\" type=\"submit\">Atualizar modalidade</button></div></form></section>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -172,7 +172,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span><div><h2 id=\"pickup-details\">Retirada no local</h2><p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p></div></div><div class=\"pickup-price\"><span>Frete</span><strong>Grátis</strong></div><form method=\"post\" action=\"/checkout/frete\"><input type=\"hidden\" name=\"delivery_method\" value=\"pickup\"><div class=\"checkout-form-actions\"><button class=\"btn-base btn-primary\" type=\"submit\">Continuar com retirada grátis</button></div></form></section>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span><div><h2 id=\"pickup-details\">Retirada selecionada</h2><p>Combinaremos o horário após a confirmação do pedido.</p></div></div><div class=\"pickup-price\"><span>Frete</span><strong>Grátis</strong></div><form method=\"post\" action=\"/checkout/frete\"><input type=\"hidden\" name=\"delivery_method\" value=\"pickup\"><div class=\"checkout-form-actions\"><button class=\"btn-base btn-primary\" type=\"submit\">Continuar para revisão</button></div></form></section>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -240,7 +240,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span><div><h2 id=\"shipping-unavailable\">Frete indisponível</h2><p>Não conseguimos calcular automaticamente o frete para este carrinho agora.</p></div></div><a class=\"btn-base btn-secondary\" href=\"/checkout/dados\">Revisar dados de entrega</a></section>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span><div><h2 id=\"shipping-unavailable\">Frete indisponível</h2><p>Não conseguimos calcular automaticamente o frete para este carrinho agora.</p></div></div><a class=\"btn-base btn-secondary\" href=\"/checkout/frete?delivery_method=shipping#shipping-address\">Revisar endereço</a></section>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -526,7 +526,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</section><script src=\"/static/js/checkout.js\" defer></script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -599,7 +599,7 @@ func CheckoutShippingUnavailable() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</section><script src=\"/static/js/checkout.js\" defer></script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

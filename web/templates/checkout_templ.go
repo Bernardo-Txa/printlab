@@ -116,7 +116,7 @@ func CheckoutDetails(page customers.CheckoutPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessário para a documentação do envio.", false, "cpf", "14").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Usado para identificação do pedido.", false, "cpf", "14").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

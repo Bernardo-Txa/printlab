@@ -128,17 +128,22 @@ func (r *PostgresRepository) GetOrder(ctx context.Context, orderID string) (Orde
 	}
 	detail.Customer = customer
 
-	address, err := r.orderAddress(ctx, r.pool, orderID)
-	if err != nil {
-		return OrderDetail{}, err
-	}
-	detail.Address = address
-
 	shippingDetails, err := r.orderShipping(ctx, r.pool, orderID, detail.ShippingPriceCents)
 	if err != nil {
 		return OrderDetail{}, err
 	}
 	detail.Shipping = shippingDetails
+
+	address, found, err := r.orderAddress(ctx, r.pool, orderID)
+	if err != nil {
+		return OrderDetail{}, err
+	}
+	if found {
+		detail.Address = address
+		detail.HasAddress = true
+	} else if detail.Shipping.DeliveryMethod != shipping.DeliveryMethodPickup {
+		return OrderDetail{}, ErrUnavailable
+	}
 
 	payment, err := r.orderPayment(ctx, r.pool, orderID)
 	if err != nil {
@@ -333,7 +338,7 @@ func (r *PostgresRepository) orderCustomer(ctx context.Context, q orderQueryer, 
 	return customer, nil
 }
 
-func (r *PostgresRepository) orderAddress(ctx context.Context, q orderQueryer, orderID string) (OrderAddress, error) {
+func (r *PostgresRepository) orderAddress(ctx context.Context, q orderQueryer, orderID string) (OrderAddress, bool, error) {
 	var address OrderAddress
 	var complement pgtype.Text
 	err := q.QueryRow(ctx, `
@@ -360,9 +365,9 @@ func (r *PostgresRepository) orderAddress(ctx context.Context, q orderQueryer, o
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return OrderAddress{}, ErrOrderNotFound
+			return OrderAddress{}, false, nil
 		}
-		return OrderAddress{}, ErrUnavailable
+		return OrderAddress{}, false, ErrUnavailable
 	}
 	if complement.Valid {
 		address.Complement = complement.String
@@ -373,7 +378,7 @@ func (r *PostgresRepository) orderAddress(ctx context.Context, q orderQueryer, o
 	}
 	address.LineTwo = address.District + " - " + address.City + "/" + address.State + " - CEP " + FormatPostalCode(address.PostalCode)
 
-	return address, nil
+	return address, true, nil
 }
 
 func (r *PostgresRepository) orderShipping(ctx context.Context, q orderQueryer, orderID string, shippingPriceCents int64) (OrderShipping, error) {
