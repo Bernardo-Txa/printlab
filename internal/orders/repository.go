@@ -205,7 +205,7 @@ func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]
 	if id == "" {
 		return []AccountOrder{}, nil
 	}
-	rows, err := r.pool.Query(ctx, `select order_number, created_at, status, total_cents, public_tracking_id::text from public.orders where customer_auth_user_id=$1::uuid order by created_at desc`, id)
+	rows, err := r.pool.Query(ctx, `select id::text, order_number, created_at, status, total_cents, public_tracking_id::text from public.orders where customer_auth_user_id=$1::uuid order by created_at desc`, id)
 	if err != nil {
 		return nil, ErrUnavailable
 	}
@@ -215,7 +215,7 @@ func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]
 		var o AccountOrder
 		var total int64
 		var tracking string
-		if err := rows.Scan(&o.OrderNumber, &o.CreatedAt, &o.Status, &total, &tracking); err != nil {
+		if err := rows.Scan(&o.ID, &o.OrderNumber, &o.CreatedAt, &o.Status, &total, &tracking); err != nil {
 			return nil, ErrUnavailable
 		}
 		o.StatusLabel = StatusLabel(o.Status)

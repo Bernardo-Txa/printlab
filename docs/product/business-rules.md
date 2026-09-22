@@ -77,7 +77,7 @@ Antes de finalizar uma compra, o backend deve:
 
 - Checkout continua sem conta obrigatoria.
 - Dados de contato e endereco pertencem ao carrinho anonimo atual.
-- Nao ha entidade permanente de cliente nesta fase.
+- Cliente autenticado pode salvar perfil de contato/endereco em `customer_profiles`; checkout convidado continua usando apenas dados temporarios do carrinho.
 - Cada carrinho pode possuir um conjunto de contato e um endereco de entrega atual.
 - A coleta de PII so ocorre quando ha carrinho existente, nao vazio e sem itens indisponiveis.
 - Contato e endereco sao persistidos juntos em transacao.
@@ -167,6 +167,10 @@ Carrinho recalcula precos e subtotais no backend. Entrega e selecionada no backe
 - `paid_amount` pode divergir de `amount` e e persistido sem ser usado para validar o total do pedido.
 - Redirect, query string, `receipt_url` e `capture_method` do navegador nao confirmam pagamento.
 - Checkout abandonado, retorno/webhook com `paid=false` ou falha de API mantem o pedido pendente.
+- Cliente autenticado pode retomar pagamento pendente pela conta somente quando `orders.customer_auth_user_id` corresponde exatamente ao UUID Supabase Auth da sessao.
+- Pedido guest com `customer_auth_user_id` nulo nunca e retomado pela conta, mesmo que o e-mail do snapshot seja igual ao e-mail autenticado.
+- A retomada nao confirma pagamento; ela apenas cria ou reutiliza checkout hospedado InfinitePay apos autorizacao e revalidacao server-side.
+- Nao ha TTL arbitrario, cancelamento automatico ou cron de exclusao para pendencias abandonadas nesta fase.
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
 
@@ -291,7 +295,7 @@ Filamento fisico, inventario, lotes, custo por kg e reserva de material permanec
 - A Fase 17.2 implementa um unico perfil logistico autoritativo por produto e uma interface simplificada de caixas; foi validada manualmente em producao. Nenhuma migration foi necessaria.
 - Materiais e cores permanecem dados de producao. `product_colors` separa as cores comerciais disponiveis para cada produto sem alterar `variant_filaments`.
 - A Fase 18 planeja conta opcional de cliente com checkout convidado preservado. Autenticacao de cliente nao concede autorizacao administrativa.
-- A retomada de pagamento para cliente autenticado e uma funcionalidade futura; `pending_payment` continua como estado interno necessario.
+- A retomada de pagamento para cliente autenticado foi implementada na Fase 18.4 com ownership por UUID Supabase Auth; `pending_payment` continua como estado interno necessario.
 
 ## Imagens
 

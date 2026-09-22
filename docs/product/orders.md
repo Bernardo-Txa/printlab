@@ -246,11 +246,15 @@ Erros publicos nao retornam detalhes PostgreSQL, connection strings ou dados pes
 
 ## Evolucao planejada
 
-Na Fase 18, a conta de cliente sera opcional e o checkout convidado continuara suportado. `pending_payment` permanece necessario internamente para preservar snapshots, `payment_check` e webhook idempotente; a Fase 18.4 podera oferecer retomada de pagamento ao cliente autenticado somente com autorizacao e revalidacao server-side. Pedidos pendentes abandonados terao politica operacional futura, sem apagamento automatico antes de definir retencao e implicacoes financeiras.
+Na Fase 18, a conta de cliente e opcional e o checkout convidado continua suportado. `pending_payment` permanece necessario internamente para preservar snapshots, `payment_check` e webhook idempotente. A Fase 18.4 adicionou retomada de pagamento em `/conta` somente para pedido autenticado cujo `orders.customer_auth_user_id` corresponde exatamente ao UUID da sessao Supabase Auth. A retomada usa `POST /conta/pedidos/{id}/pagar`, revalida ownership, status, pagamento local, snapshots e total no fluxo transacional de `internal/payments`, e redireciona server-side para checkout InfinitePay validado pela allowlist existente.
+
+Pedidos de convidado continuam com `customer_auth_user_id` nulo e nao podem ser reivindicados ou retomados pela conta, mesmo que e-mail, CPF ou telefone coincidam. `/pedido/{id}` e `POST /pedido/{id}/pagar` permanecem publicos por capability para pagamento imediato pos-checkout e para checkout convidado.
+
+Nao ha politica comercial de expiracao/cancelamento automatico nesta fase. Pedidos pendentes antigos permanecem persistidos como evidencia historica/financeira, nao sao apagados, nao mudam automaticamente para `paid`, nao entram em producao e nao sao cancelados por cron. Qualquer TTL, expiracao ou cancelamento futuro exige regra comercial explicita e, se necessario, nova modelagem de status.
 
 ## Cor comercial — Fase 17.3.3
 
 A cor opcional do item acompanha os resumos do checkout, a revisao e o pedido. A confirmacao valida novamente a disponibilidade e o vinculo ao produto; o fingerprint inclui ID, nome e slug da cor. `order_items.color_id` referencia o catalogo e `color_name`/`color_slug` congelam o nome comercial para exibicao publica e no Admin. Renomeacao ou exclusao posterior nao altera esse snapshot. Pedidos antigos continuam sem cor comercial. Variantes, receitas, precos, frete e pagamentos mantem suas regras.
 # Ownership de pedidos de clientes
 
-Pedidos criados com sessão de cliente autenticada armazenam o UUID do usuário Supabase Auth em `orders.customer_auth_user_id`. O checkout convidado continua suportado e grava `NULL`. Pedidos históricos não são associados retroativamente por e-mail; `/conta` e `/checkout/dados` podem reutilizar o snapshot do pedido mais recente somente quando `orders.customer_auth_user_id` é exatamente o UUID da sessão autenticada.
+Pedidos criados com sessão de cliente autenticada armazenam o UUID do usuário Supabase Auth em `orders.customer_auth_user_id`. O checkout convidado continua suportado e grava `NULL`. Pedidos históricos não são associados retroativamente por e-mail; `/conta`, `/checkout/dados` e a retomada de pagamento usam somente `orders.customer_auth_user_id` exatamente igual ao UUID da sessão autenticada.

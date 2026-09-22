@@ -97,6 +97,60 @@ func TestStartCheckoutReusesExistingPendingCheckout(t *testing.T) {
 	}
 }
 
+func TestStartCheckoutForCustomerUsesOwnedRepositoryPath(t *testing.T) {
+	repository := &fakePaymentRepository{}
+	gateway := &fakePaymentGateway{}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	_, err := service.StartCheckoutForCustomer(context.Background(), testOrderID, "11111111-1111-1111-1111-111111111111")
+	if err != nil {
+		t.Fatalf("expected customer checkout start, got %v", err)
+	}
+	if repository.lastCustomerAuthUserID != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("expected customer auth id passed to repository, got %q", repository.lastCustomerAuthUserID)
+	}
+	if gateway.createCalls != 1 {
+		t.Fatalf("expected provider call, got %d", gateway.createCalls)
+	}
+}
+
+func TestStartCheckoutForCustomerReusesExistingPendingCheckout(t *testing.T) {
+	repository := &fakePaymentRepository{
+		reuseCheckout: &CheckoutStartResult{
+			OrderID:     testOrderID,
+			CheckoutURL: "https://checkout.infinitepay.com.br/existing",
+			Reused:      true,
+		},
+	}
+	gateway := &fakePaymentGateway{}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	result, err := service.StartCheckoutForCustomer(context.Background(), testOrderID, "11111111-1111-1111-1111-111111111111")
+	if err != nil {
+		t.Fatalf("expected reused checkout, got %v", err)
+	}
+	if !result.Reused || result.CheckoutURL != "https://checkout.infinitepay.com.br/existing" {
+		t.Fatalf("expected reused customer checkout result, got %#v", result)
+	}
+	if gateway.createCalls != 0 {
+		t.Fatal("expected provider not to be called when customer checkout is reused")
+	}
+}
+
+func TestStartCheckoutForCustomerDoesNotCallProviderWhenOwnershipFails(t *testing.T) {
+	repository := &fakePaymentRepository{checkoutErr: ErrOrderNotFound}
+	gateway := &fakePaymentGateway{}
+	service := NewService(repository, gateway, "printlab", "https://printlab.example")
+
+	_, err := service.StartCheckoutForCustomer(context.Background(), testOrderID, "11111111-1111-1111-1111-111111111111")
+	if !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("expected ErrOrderNotFound, got %v", err)
+	}
+	if gateway.createCalls != 0 {
+		t.Fatal("expected provider not to be called when ownership fails")
+	}
+}
+
 func TestStartCheckoutPaidOrderDoesNotCreateCheckout(t *testing.T) {
 	repository := &fakePaymentRepository{checkoutErr: ErrOrderAlreadyPaid}
 	gateway := &fakePaymentGateway{}
@@ -478,9 +532,10 @@ type fakePaymentRepository struct {
 	targetErr     error
 	markPaidErr   error
 
-	markPaidCalls int
-	lastPayment   VerifiedPayment
-	lastPaidAt    time.Time
+	markPaidCalls          int
+	lastPayment            VerifiedPayment
+	lastPaidAt             time.Time
+	lastCustomerAuthUserID string
 }
 
 func (r *fakePaymentRepository) CreateOrReuseCheckout(ctx context.Context, orderID string, create CheckoutCreator) (CheckoutStartResult, error) {
@@ -500,6 +555,11 @@ func (r *fakePaymentRepository) CreateOrReuseCheckout(ctx context.Context, order
 	}
 
 	return CheckoutStartResult{OrderID: order.ID, CheckoutURL: created.URL}, nil
+}
+
+func (r *fakePaymentRepository) CreateOrReuseCheckoutForCustomer(ctx context.Context, orderID string, customerAuthUserID string, create CheckoutCreator) (CheckoutStartResult, error) {
+	r.lastCustomerAuthUserID = customerAuthUserID
+	return r.CreateOrReuseCheckout(ctx, orderID, create)
 }
 
 func (r *fakePaymentRepository) PaymentTargetByOrderNSU(_ context.Context, _ string) (PaymentVerificationTarget, error) {

@@ -160,6 +160,8 @@ Redirect do navegador apos pagamento nunca devera ser considerado prova suficien
 
 Na integracao InfinitePay implementada, `POST /pedido/{id}/pagar` valida origem, monta payload apenas com snapshots de pedido, compara o total em centavos com `orders.total_cents` e aceita redirect apenas para checkout hospedado em host explicitamente autorizado da InfinitePay.
 
+Na area autenticada de cliente, `POST /conta/pedidos/{id}/pagar` exige sessao Supabase Auth, valida origem e autoriza retomada exclusivamente por `orders.customer_auth_user_id = profile.ID` dentro do fluxo transacional de pagamentos. E-mail, CPF, telefone, `order_number` e `public_tracking_id` nao participam da autorizacao. Pedido inexistente, pedido de outro cliente e pedido guest nao revelam existencia para a conta.
+
 `GET /pagamento/retorno` usa somente `order_nsu`, `transaction_nsu` e `slug` para chamar `payment_check` server-side. Query params como `receipt_url` e `capture_method` nao sao fonte de autoridade.
 
 Webhooks InfinitePay sao apenas gatilho para `payment_check` server-side e nao confirmam pagamento diretamente pelo payload recebido.
@@ -346,6 +348,7 @@ Use environment variables para configuracoes sensiveis. `.env.example` deve cont
 - Recebimento real de webhook InfinitePay em producao foi validado na Fase 11.
 - Acompanhamento publico de pedido esta implementado por `public_tracking_id`, sem login e com minimizacao de dados.
 - Processamento de pagamento existe como checkout hospedado InfinitePay, retorno por `payment_check` e webhook redundante por `payment_check`.
+- Retomada autenticada de pagamento usa os mesmos checks e a mesma allowlist de checkout URL; nao renderiza `checkout_url` no HTML da conta e nao cria endpoint JSON com URL de pagamento.
 - As tabelas de negocio implementadas cobrem catalogo, variantes, receita estimada de producao, imagens, carrinho, dados temporarios de checkout, frete e pedidos.
 - `GET /ready` nao expoe detalhes internos do PostgreSQL.
 - Nao ha escrita publica em Storage, alteracao administrativa de valores/dados de pedidos ou postagem/rastreio externo. Upload de imagens existe apenas no Admin, com signed upload URL e finalizacao server-side.

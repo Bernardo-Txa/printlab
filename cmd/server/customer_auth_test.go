@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 )
 
 func TestSignupValidCreatesSupabaseUser(t *testing.T) {
@@ -269,11 +271,11 @@ func TestAccountRendersAuthenticatedUser(t *testing.T) {
 func TestAccountGetLoadsCustomerProfile(t *testing.T) {
 	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
 	profiles := &fakeAccountProfileService{profile: accountSavedProfile(), found: true}
-	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{OrderNumber: 1001, StatusLabel: "Aguardando pagamento", TotalBRL: "R$ 99,90", TrackingURL: "/acompanhar/abc"}}}
+	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{ID: orderID, OrderNumber: 1001, CreatedAt: accountOrderDate(), Status: ordersdomain.StatusPendingPayment, StatusLabel: "Aguardando pagamento", TotalBRL: "R$ 99,90", TrackingURL: "/acompanhar/abc"}}}
 	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
 	rec := httptest.NewRecorder()
 
-	accountHandler(auth, ordersService, profiles, "https://printlab.test").ServeHTTP(rec, req)
+	accountHandler(auth, ordersService, profiles, &fakePaymentService{available: true}, "https://printlab.test").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
@@ -284,8 +286,36 @@ func TestAccountGetLoadsCustomerProfile(t *testing.T) {
 			t.Fatalf("expected account page to contain %q", expected)
 		}
 	}
+	for _, expected := range []string{"22/09/2026", "Retomar pagamento", `action="/conta/pedidos/` + orderID + `/pagar"`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected pending payment CTA to contain %q", expected)
+		}
+	}
+	if strings.Contains(body, "checkout.infinitepay") {
+		t.Fatal("expected account page not to render checkout URL")
+	}
 	if profiles.getID != accountTestAuthProfile().ID {
 		t.Fatalf("expected profile lookup by auth id, got %q", profiles.getID)
+	}
+}
+
+func TestAccountPaidOrderDoesNotShowResumePaymentCTA(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{ID: orderID, OrderNumber: 1001, CreatedAt: accountOrderDate(), Status: ordersdomain.StatusPaid, StatusLabel: "Pago", TotalBRL: "R$ 99,90", TrackingURL: "/acompanhar/abc"}}}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, ordersService, &fakeAccountProfileService{}, &fakePaymentService{available: true}, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if strings.Contains(body, "Retomar pagamento") {
+		t.Fatal("expected paid order not to show resume payment CTA")
+	}
+	if !strings.Contains(body, "Pagamento confirmado.") {
+		t.Fatal("expected paid order confirmation copy")
 	}
 }
 
@@ -298,7 +328,7 @@ func TestAccountGetFallbackLatestOrderUsesAuthUserID(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
 	rec := httptest.NewRecorder()
 
-	accountHandler(auth, ordersService, profiles, "https://printlab.test").ServeHTTP(rec, req)
+	accountHandler(auth, ordersService, profiles, nil, "https://printlab.test").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
@@ -317,7 +347,7 @@ func TestAccountWithoutProfileOrOrderUsesSupabaseNameAndEmail(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
 	rec := httptest.NewRecorder()
 
-	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, "https://printlab.test").ServeHTTP(rec, req)
+	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, nil, "https://printlab.test").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
@@ -397,13 +427,151 @@ func TestAccountSavedQueryShowsSuccessMessage(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta?salvo=1", nil)
 	rec := httptest.NewRecorder()
 
-	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, "https://printlab.test").ServeHTTP(rec, req)
+	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, nil, "https://printlab.test").ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
 	if !strings.Contains(rec.Body.String(), "Dados atualizados com sucesso.") {
 		t.Fatal("expected account success message")
+	}
+}
+
+func TestAccountResumePaymentRequiresAuthentication(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, resolveErr: customerauth.ErrUnauthenticated}
+	payment := &fakePaymentService{available: true}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/login?next=") {
+		t.Fatalf("expected redirect to login, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if payment.customerStartCalls != 0 {
+		t.Fatal("expected unauthenticated request not to call payment service")
+	}
+}
+
+func TestAccountResumePaymentRejectsCrossSiteOrigin(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	payment := &fakePaymentService{available: true}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if payment.customerStartCalls != 0 {
+		t.Fatal("expected forbidden request not to call payment service")
+	}
+}
+
+func TestAccountResumePaymentRedirectsToInfinitePayForOwner(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	payment := &fakePaymentService{available: true, startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID, CheckoutURL: "https://checkout.infinitepay.com.br/checkout-slug"}}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "https://checkout.infinitepay.com.br/checkout-slug" {
+		t.Fatalf("expected InfinitePay redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if payment.lastStartOrderID != orderID || payment.lastStartCustomerID != accountTestAuthProfile().ID {
+		t.Fatalf("expected order and session customer id, got order=%q customer=%q", payment.lastStartOrderID, payment.lastStartCustomerID)
+	}
+}
+
+func TestAccountResumePaymentOtherCustomerLooksNotFound(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	payment := &fakePaymentService{available: true, startErr: paymentsdomain.ErrOrderNotFound}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected not found, got %d", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), orderID) {
+		t.Fatal("expected not found response not to reveal order id")
+	}
+}
+
+func TestAccountResumePaymentPaidOrderRedirectsWithMessage(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	payment := &fakePaymentService{available: true, startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID}, startErr: paymentsdomain.ErrOrderAlreadyPaid}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?pagamento=confirmado" {
+		t.Fatalf("expected confirmed redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+func TestAccountResumePaymentRejectsInvalidCheckoutURL(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	payment := &fakePaymentService{available: true, startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID, CheckoutURL: "https://evil.example/checkout"}}
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?pagamento=indisponivel" {
+		t.Fatalf("expected unavailable redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+func TestAccountResumePaymentProviderErrorLogsSafeDiagnostics(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	providerErr := paymentsdomain.NewProviderError(paymentsdomain.ProviderOperationCreateCheckout, paymentsdomain.ProviderCategoryHTTP5xx, http.StatusServiceUnavailable, paymentsdomain.ErrProviderUnavailable)
+	providerErr.Message = "invalid customer Joao Silva cliente@example.com +5527999999999 Rua Um https://checkout.infinitepay.com.br/checkout-slug"
+	payment := &fakePaymentService{available: true, startResult: paymentsdomain.CheckoutStartResult{OrderID: orderID}, startErr: providerErr}
+	var logs strings.Builder
+	oldWriter := log.Writer()
+	oldFlags := log.Flags()
+	log.SetOutput(&logs)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(oldWriter)
+		log.SetFlags(oldFlags)
+	})
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta/pedidos/"+orderID+"/pagar", nil)
+	req.SetPathValue("id", orderID)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountResumePaymentHandler(auth, payment, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?pagamento=indisponivel" {
+		t.Fatalf("expected unavailable redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	logText := logs.String()
+	for _, expected := range []string{"event=customer_payment_resume_unavailable", "reason=provider_unavailable", "provider=infinitepay"} {
+		if !strings.Contains(logText, expected) {
+			t.Fatalf("expected log to contain %q, got %q", expected, logText)
+		}
+	}
+	for _, leaked := range []string{"Joao", "cliente@example.com", "+5527999999999", "Rua Um", "checkout-slug"} {
+		if strings.Contains(logText, leaked) {
+			t.Fatalf("expected resume log not to leak %q, got %q", leaked, logText)
+		}
 	}
 }
 
@@ -468,6 +636,10 @@ func accountTestAuthProfile() customerauth.Profile {
 
 func accountSavedProfile() customerprofile.Profile {
 	return customerprofile.Profile{AuthUserID: accountTestAuthProfile().ID, FullName: "Perfil Salvo", Phone: "27988887777", CPF: "52998224725", PostalCode: "29100000", Street: "Rua Perfil", Number: "123", District: "Centro", City: "Vila Velha", State: "ES", CountryCode: customers.CountryCodeBR}
+}
+
+func accountOrderDate() time.Time {
+	return time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
 }
 
 type fakeAccountProfileService struct {

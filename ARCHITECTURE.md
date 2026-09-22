@@ -19,6 +19,7 @@ IMPLEMENTADO:
 - Criacao de pedido pendente de pagamento em `POST /checkout/revisao`.
 - Exibicao de pedido por UUID em `GET /pedido/{id}`.
 - Inicio de pagamento InfinitePay em `POST /pedido/{id}/pagar`.
+- Retomada autenticada de pagamento pendente em `POST /conta/pedidos/{id}/pagar`.
 - Retorno de pagamento em `GET /pagamento/retorno`, validado por `payment_check` server-side.
 - Webhook InfinitePay em `POST /webhooks/infinitepay`, validado por `payment_check` server-side.
 - Acompanhamento seguro de pedido em `GET /acompanhar/{public_tracking_id}`.
@@ -115,7 +116,7 @@ A etapa de frete tambem e server-side. O navegador envia somente a escolha da op
 
 A revisao de checkout e server-side e nao recota a SuperFrete. Ela valida o carrinho atual, dados de checkout, selecao de frete, expiracao e `input_hash`. O POST recalcula subtotal, frete e total no backend, compara `review_fingerprint` apenas para detectar tela antiga, cria pedido em transacao PostgreSQL, converte o carrinho e remove dados temporarios. Pedido e snapshot historico e nao depende futuramente de catalogo, receita, dados temporarios ou caixa de frete.
 
-O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
+O pagamento InfinitePay tambem e server-side. A pagina do pedido inicia `POST /pedido/{id}/pagar`; o backend monta o payload a partir do snapshot do pedido, confere o total, envia `redirect_url` e `webhook_url` gerados no servidor e redireciona o comprador para checkout hospedado. A conta de cliente pode retomar pedido `pending_payment` por `POST /conta/pedidos/{id}/pagar`, usando o mesmo dominio de pagamentos e autorizacao transacional por `orders.customer_auth_user_id = profile.ID`. O retorno em `/pagamento/retorno` e o webhook em `/webhooks/infinitepay` nunca confirmam pagamento diretamente: ambos chamam `payment_check` e so marcam o pedido como `paid` quando a InfinitePay confirma pagamento e valor.
 
 
 O fluxo publico de cliente usa Supabase Auth como fonte oficial de identidade e sessao. Rotas `/cadastro`, `/login`, `/recuperar-senha`, `/auth/callback`, `/auth/session`, `/conta` e `POST /logout` ficam separadas do Admin. O backend nao armazena senha, nao cria hash proprio, nao cria token de recuperacao proprio e nao persiste access token/refresh token no banco. Para SSR, os tokens emitidos pelo Supabase ficam em cookies HttpOnly `printlab_customer_access_token` e `printlab_customer_refresh_token`, SameSite=Lax, Path=/ e Secure em producao/HTTPS. O servidor valida usuario em `GET /auth/v1/user`, renova por `grant_type=refresh_token` quando necessario e limpa cookies no logout. Dados de contato/endereco autenticados ficam em `customer_profiles`, vinculados somente por UUID Supabase Auth; pedidos e fallbacks tambem usam esse UUID, nunca e-mail.
@@ -304,6 +305,7 @@ GET /checkout/revisao -> revisa carrinho, dados, frete e total sem recotar Super
 POST /checkout/revisao -> cria pedido pendente de pagamento em transacao e redireciona 303 para /pedido/{uuid}
 GET /pedido/{id} -> exibe pedido por UUID com status humano e sem PII completa
 POST /pedido/{id}/pagar -> cria ou reutiliza checkout InfinitePay e redireciona 303 para checkout hospedado
+POST /conta/pedidos/{id}/pagar -> retoma checkout InfinitePay somente para dono autenticado
 GET /pagamento/retorno -> valida payment_check; pago redireciona 303 para /pedido/{uuid}?pagamento=confirmado
 POST /webhooks/infinitepay -> valida identificadores, chama payment_check e responde JSON
 GET /acompanhar/{public_tracking_id} -> acompanhamento SSR minimizado, sem PII, valores ou IDs internos

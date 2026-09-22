@@ -19,8 +19,19 @@ func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 }
 
 func (r *PostgresRepository) CreateOrReuseCheckout(ctx context.Context, orderID string, create CheckoutCreator) (CheckoutStartResult, error) {
+	return r.createOrReuseCheckout(ctx, orderID, "", create)
+}
+
+func (r *PostgresRepository) CreateOrReuseCheckoutForCustomer(ctx context.Context, orderID string, customerAuthUserID string, create CheckoutCreator) (CheckoutStartResult, error) {
+	return r.createOrReuseCheckout(ctx, orderID, customerAuthUserID, create)
+}
+
+func (r *PostgresRepository) createOrReuseCheckout(ctx context.Context, orderID string, customerAuthUserID string, create CheckoutCreator) (CheckoutStartResult, error) {
 	if r == nil || r.pool == nil || create == nil {
 		return CheckoutStartResult{}, ErrUnavailable
+	}
+	if customerAuthUserID == "" && orderID == "" {
+		return CheckoutStartResult{}, ErrInvalidOrderID
 	}
 
 	tx, err := r.pool.Begin(ctx)
@@ -31,7 +42,7 @@ func (r *PostgresRepository) CreateOrReuseCheckout(ctx context.Context, orderID 
 		_ = tx.Rollback(ctx)
 	}()
 
-	order, err := r.checkoutOrderForUpdate(ctx, tx, orderID)
+	order, err := r.checkoutOrderForUpdate(ctx, tx, orderID, customerAuthUserID)
 	if err != nil {
 		return CheckoutStartResult{}, err
 	}
@@ -173,10 +184,10 @@ func (r *PostgresRepository) MarkPaid(ctx context.Context, orderNSU string, paym
 	return ReturnResult{Status: ReturnStatusConfirmed, OrderID: target.OrderID}, nil
 }
 
-func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.Tx, orderID string) (CheckoutOrder, error) {
+func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.Tx, orderID string, customerAuthUserID string) (CheckoutOrder, error) {
 	var order CheckoutOrder
 	var complement pgtype.Text
-	err := tx.QueryRow(ctx, `
+	query := `
 		select
 			o.id::text,
 			o.order_number,
@@ -200,8 +211,14 @@ func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.
 		join public.order_shipping_details shipping
 			on shipping.order_id = o.id
 		where o.id = $1::uuid
-		for update of o
-	`, orderID).Scan(
+	`
+	args := []any{orderID}
+	if customerAuthUserID != "" {
+		query += " and o.customer_auth_user_id = $2::uuid"
+		args = append(args, customerAuthUserID)
+	}
+	query += " for update of o"
+	err := tx.QueryRow(ctx, query, args...).Scan(
 		&order.ID,
 		&order.OrderNumber,
 		&order.Status,

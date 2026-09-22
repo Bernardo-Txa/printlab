@@ -17,6 +17,7 @@ const maxInfinitePayWebhookBodyBytes = 64 << 10
 type paymentService interface {
 	Available() bool
 	StartCheckout(ctx context.Context, orderID string) (paymentsdomain.CheckoutStartResult, error)
+	StartCheckoutForCustomer(ctx context.Context, orderID string, customerAuthUserID string) (paymentsdomain.CheckoutStartResult, error)
 	ConfirmReturn(ctx context.Context, input paymentsdomain.ReturnInput) (paymentsdomain.ReturnResult, error)
 	ConfirmWebhook(ctx context.Context, input paymentsdomain.WebhookInput) (paymentsdomain.ReturnResult, error)
 }

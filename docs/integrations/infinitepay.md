@@ -119,6 +119,8 @@ Falhas de API, abandono do checkout, retorno sem pagamento confirmado ou `paid=f
 
 `POST /pedido/{id}/pagar` reutiliza um checkout pendente existente quando houver `checkout_url` valida.
 
+`POST /conta/pedidos/{id}/pagar` reutiliza o mesmo fluxo de `internal/payments` para retomada autenticada pela conta. Antes de criar ou reutilizar checkout, o repository carrega e bloqueia o pedido com `orders.id` e `orders.customer_auth_user_id` iguais ao UUID Supabase Auth da sessao. Pedidos guest e pedidos de outro cliente nao sao retomaveis pela conta. A resposta ao navegador continua sendo apenas redirect server-side para URL InfinitePay validada por `ValidateCheckoutURL`; `checkout_url` nao aparece no HTML de `/conta` nem em JSON.
+
 Se o pedido ja estiver `paid`, a rota redireciona de volta para `/pedido/{id}` e nao cria novo checkout.
 
 `GET /pagamento/retorno` e idempotente: retornos repetidos para pagamento ja confirmado mantem o pedido pago sem duplicar registros.
@@ -193,6 +195,8 @@ event=payment_checkout_unavailable level=error reason=provider_unavailable provi
 ```
 
 Divergencias de valor tambem sao eventos operacionais seguros: no checkout/retorno usam `payment_checkout_unavailable` ou `payment_check_failed` com `reason=amount_mismatch`; no webhook usam `payment_webhook_processing_failed level=error reason=amount_mismatch`. Elas nao sao classificadas como indisponibilidade do provider.
+
+Na retomada pela conta, falhas usam eventos seguros como `customer_payment_resume_failed` e `customer_payment_resume_unavailable`, sem PII, `checkout_url`, `transaction_nsu`, `invoice_slug`, payload InfinitePay ou secrets.
 
 ## Webhook InfinitePay
 

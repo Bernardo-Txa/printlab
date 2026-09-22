@@ -15,6 +15,9 @@ type AccountPageView struct {
 	Saved   customerprofile.Profile
 	Errors  customers.FieldErrors
 	Success bool
+	Message string
+	MessageIsError bool
+	PaymentAvailable bool
 }
 
 templ SignupPage(form customerauth.SignupForm) {
@@ -149,11 +152,36 @@ templ AccountPage(view AccountPageView) {
 				</div>
 				<div class="admin-panel account-panel">
 					<h2>Meus pedidos</h2>
+					if view.Message != "" {
+						if view.MessageIsError {
+							<p class="checkout-alert checkout-alert-error">{ view.Message }</p>
+						} else {
+							<p class="checkout-alert checkout-alert-success">{ view.Message }</p>
+						}
+					}
 					if len(view.Orders) == 0 {
 						<p>Você ainda não tem pedidos associados a esta conta.</p>
 					} else {
 						for _, order := range view.Orders {
-							<p><strong>Pedido #{ fmt.Sprint(order.OrderNumber) }</strong> · { order.StatusLabel } · { order.TotalBRL } · <a href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a></p>
+							<div class="checkout-summary-line">
+								<div>
+									<strong>Pedido #{ fmt.Sprint(order.OrderNumber) }</strong>
+									<span>{ order.CreatedAt.Format("02/01/2006") }</span>
+									<span>{ order.StatusLabel }</span>
+									if order.Status == orders.StatusPaid {
+										<span>Pagamento confirmado.</span>
+									}
+								</div>
+								<div>
+									<p>{ order.TotalBRL }</p>
+									<a href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a>
+									if view.PaymentAvailable && order.Status == orders.StatusPendingPayment && order.ID != "" {
+										<form method="post" action={ "/conta/pedidos/" + order.ID + "/pagar" }>
+											<button class="btn-base btn-primary" type="submit">Retomar pagamento</button>
+										</form>
+									}
+								</div>
+							</div>
 						}
 					}
 				</div>

@@ -1304,12 +1304,14 @@ type fakePaymentService struct {
 	returnErr     error
 	webhookErr    error
 
-	startCalls       int
-	returnCalls      int
-	webhookCalls     int
-	lastStartOrderID string
-	lastReturnInput  paymentsdomain.ReturnInput
-	lastWebhookInput paymentsdomain.WebhookInput
+	startCalls          int
+	customerStartCalls  int
+	returnCalls         int
+	webhookCalls        int
+	lastStartOrderID    string
+	lastStartCustomerID string
+	lastReturnInput     paymentsdomain.ReturnInput
+	lastWebhookInput    paymentsdomain.WebhookInput
 }
 
 func (s *fakePaymentService) Available() bool {
@@ -1319,6 +1321,23 @@ func (s *fakePaymentService) Available() bool {
 func (s *fakePaymentService) StartCheckout(_ context.Context, orderID string) (paymentsdomain.CheckoutStartResult, error) {
 	s.startCalls++
 	s.lastStartOrderID = orderID
+	if s.startErr != nil {
+		return s.startResult, s.startErr
+	}
+	if s.startResult.CheckoutURL == "" {
+		return paymentsdomain.CheckoutStartResult{
+			OrderID:     orderID,
+			CheckoutURL: "https://checkout.infinitepay.com.br/checkout-slug",
+		}, nil
+	}
+
+	return s.startResult, nil
+}
+
+func (s *fakePaymentService) StartCheckoutForCustomer(_ context.Context, orderID string, customerAuthUserID string) (paymentsdomain.CheckoutStartResult, error) {
+	s.customerStartCalls++
+	s.lastStartOrderID = orderID
+	s.lastStartCustomerID = customerAuthUserID
 	if s.startErr != nil {
 		return s.startResult, s.startErr
 	}

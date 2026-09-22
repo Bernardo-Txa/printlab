@@ -18,6 +18,7 @@ func TestRepositoryUsesTransactionsLocksAndOrderSnapshots(t *testing.T) {
 		"tx.rollback(ctx)",
 		"for update of o",
 		"for update of o, p",
+		"o.customer_auth_user_id = $2::uuid",
 		"public.order_customer_details",
 		"public.order_shipping_addresses",
 		"public.order_shipping_details",
@@ -39,6 +40,8 @@ func TestRepositoryUsesTransactionsLocksAndOrderSnapshots(t *testing.T) {
 		"checkout_url=%",
 		"checkout_url = %",
 		"transaction_nsu=%",
+		"customer.email =",
+		"customer.cpf",
 	} {
 		if strings.Contains(sql, forbidden) {
 			t.Fatalf("expected repository source not to contain %q", forbidden)

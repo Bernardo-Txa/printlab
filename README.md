@@ -59,6 +59,7 @@ IMPLEMENTADO:
 - Fase 14.2 — MFA TOTP obrigatorio no Admin validado em producao. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
 - Fase 18.2 — Autenticação de clientes com Supabase Auth: cadastro, confirmação de e-mail, login, logout, recuperação de senha e `/conta` inicial, mantendo Admin e checkout convidado separados.
+- Fase 18.4 — Retomada autenticada de pagamentos pendentes pela conta, reutilizando o fluxo InfinitePay server-side e preservando checkout convidado.
 - Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 - Fase 16 — SEO e Performance concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, acessibilidade e Lighthouse 100 nas paginas publicas validadas.
 - Fase 17.1, Fase 17.2 e Fase 17.3 concluidas e validadas em producao; retirada no local tambem validada em producao.
@@ -358,7 +359,7 @@ curl -i -X POST http://localhost:8080/webhooks/infinitepay \
   -d '{"invoice_slug":"slug","transaction_nsu":"txn","order_nsu":"00000000-0000-0000-0000-000000000000"}'
 ```
 
-`POST /pedido/<uuid>/pagar` exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS para criar ou reutilizar checkout InfinitePay. O payload de criacao do link envia `redirect_url` e `webhook_url` gerados no servidor. O redirect do navegador nao confirma pagamento; `/pagamento/retorno` e `/webhooks/infinitepay` chamam `payment_check` server-side e so marcam o pedido como `paid` quando a InfinitePay confirma `success=true`, `paid=true` e valor igual ao total congelado do pedido. Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente.
+`POST /pedido/<uuid>/pagar` exige `INFINITEPAY_HANDLE` e `SITE_URL` HTTPS para criar ou reutilizar checkout InfinitePay. O payload de criacao do link envia `redirect_url` e `webhook_url` gerados no servidor. O redirect do navegador nao confirma pagamento; `/pagamento/retorno` e `/webhooks/infinitepay` chamam `payment_check` server-side e so marcam o pedido como `paid` quando a InfinitePay confirma `success=true`, `paid=true` e valor igual ao total congelado do pedido. Checkouts pendentes criados antes da Fase 11 nao recebem `webhook_url` retroativamente. Cliente autenticado tambem pode retomar pagamento pendente em `POST /conta/pedidos/{id}/pagar`, autorizado somente por `orders.customer_auth_user_id` igual ao UUID Supabase Auth da sessao; pedido guest nao e reivindicado por e-mail.
 
 ## Supabase local
 

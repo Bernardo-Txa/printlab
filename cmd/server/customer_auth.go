@@ -13,6 +13,7 @@ import (
 	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
+	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
@@ -205,7 +206,7 @@ type accountProfileService interface {
 	Save(context.Context, customerprofile.Profile) error
 }
 
-func accountHandler(service customerAuthService, ordersService accountOrdersService, profiles accountProfileService, siteURL string) http.HandlerFunc {
+func accountHandler(service customerAuthService, ordersService accountOrdersService, profiles accountProfileService, payment paymentService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setCustomerAuthPrivateHeaders(w)
 		profile, ok := requireCustomerSession(w, r, service)
@@ -214,7 +215,8 @@ func accountHandler(service customerAuthService, ordersService accountOrdersServ
 		}
 		customerOrders := accountOrdersForProfile(r.Context(), ordersService, profile.ID)
 		stored := accountProfileForDisplay(r.Context(), profile, ordersService, profiles)
-		renderHTML(w, r, http.StatusOK, templates.AccountPage(templates.AccountPageView{Profile: profile, Orders: customerOrders, Saved: stored, Success: r.URL.Query().Get("salvo") == "1"}))
+		paymentStatus := r.URL.Query().Get("pagamento")
+		renderHTML(w, r, http.StatusOK, templates.AccountPage(templates.AccountPageView{Profile: profile, Orders: customerOrders, Saved: stored, Success: r.URL.Query().Get("salvo") == "1", PaymentAvailable: payment != nil && payment.Available(), Message: accountMessage(paymentStatus), MessageIsError: accountMessageIsError(paymentStatus)}))
 	}
 }
 
@@ -246,6 +248,76 @@ func accountSaveHandler(service customerAuthService, ordersService accountOrders
 		}
 		http.Redirect(w, r, "/conta?salvo=1", 303)
 	}
+}
+
+func accountResumePaymentHandler(service customerAuthService, payment paymentService, siteURL string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		setCustomerAuthPrivateHeaders(w)
+		profile, ok := requireCustomerSession(w, r, service)
+		if !ok {
+			return
+		}
+		if !validMutationSource(r, siteURL) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		orderID := r.PathValue("id")
+		if !paymentsdomain.ValidOrderID(orderID) {
+			http.NotFound(w, r)
+			return
+		}
+		if payment == nil || !payment.Available() {
+			logOperationalEvent(r.Context(), operationalLogLevelError, "customer_payment_resume_unavailable", "reason=service_unavailable")
+			http.Redirect(w, r, "/conta?pagamento=indisponivel", http.StatusSeeOther)
+			return
+		}
+		result, err := payment.StartCheckoutForCustomer(r.Context(), orderID, profile.ID)
+		if err != nil {
+			handleAccountResumePaymentError(w, r, err)
+			return
+		}
+		if err := paymentsdomain.ValidateCheckoutURL(result.CheckoutURL); err != nil {
+			handleAccountResumePaymentError(w, r, err)
+			return
+		}
+		http.Redirect(w, r, result.CheckoutURL, http.StatusSeeOther)
+	}
+}
+
+func handleAccountResumePaymentError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, paymentsdomain.ErrInvalidOrderID),
+		errors.Is(err, paymentsdomain.ErrOrderNotFound):
+		http.NotFound(w, r)
+	case errors.Is(err, paymentsdomain.ErrOrderAlreadyPaid):
+		http.Redirect(w, r, "/conta?pagamento=confirmado", http.StatusSeeOther)
+	case errors.Is(err, paymentsdomain.ErrOrderNotPayable):
+		http.Redirect(w, r, "/conta?pagamento=nao-retomavel", http.StatusSeeOther)
+	default:
+		if errors.Is(err, paymentsdomain.ErrAmountMismatch) {
+			logOperationalEvent(r.Context(), operationalLogLevelError, "customer_payment_resume_failed", "reason=amount_mismatch")
+		} else {
+			logOperationalEvent(r.Context(), operationalLogLevelError, "customer_payment_resume_unavailable", "reason=provider_unavailable"+paymentProviderLogSuffix(err))
+		}
+		http.Redirect(w, r, "/conta?pagamento=indisponivel", http.StatusSeeOther)
+	}
+}
+
+func accountMessage(paymentStatus string) string {
+	switch paymentStatus {
+	case "confirmado":
+		return "Pagamento deste pedido já foi confirmado."
+	case "indisponivel":
+		return "Não foi possível retomar o pagamento agora. Tente novamente em alguns instantes."
+	case "nao-retomavel":
+		return "Não foi possível retomar este pagamento."
+	default:
+		return ""
+	}
+}
+
+func accountMessageIsError(paymentStatus string) bool {
+	return paymentStatus == "indisponivel" || paymentStatus == "nao-retomavel"
 }
 
 func accountOrdersForProfile(ctx context.Context, ordersService accountOrdersService, profileID string) []ordersdomain.AccountOrder {

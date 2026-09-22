@@ -775,20 +775,28 @@ Objetivo: oferecer conta opcional e comunicacao transacional sem remover o check
 
 ### Fase 18.2 — Autenticacao do cliente
 
-- Usar Supabase Auth passwordless/Magic Link como preferencia arquitetural.
-- Manter o fluxo de cliente separado do Admin: sem acesso a `/admin`, sem herdar autorizacao administrativa e sem inferir papel por autenticacao.
+Status: concluida e validada em producao.
+
+- Usa Supabase Auth por e-mail/senha, confirmacao de e-mail e recuperacao oficial.
+- Mantem o fluxo de cliente separado do Admin: sem acesso a `/admin`, sem herdar autorizacao administrativa e sem inferir papel por autenticacao.
 
 ### Fase 18.3 — Minha conta / Meus pedidos
+
+Status: concluida e validada em producao.
 
 - Permitir que cliente autenticado consulte somente pedidos associados server-side a sua identidade.
 - Manter checkout convidado e acompanhamento publico seguro.
 - Tratar eventual reivindicacao de pedido antigo de convidado como funcionalidade futura, somente apos prova de posse do e-mail.
+- Fase 18.3.1 de perfil do cliente e preenchimento automatico concluida e validada em producao.
 
 ### Fase 18.4 — Pagamentos pendentes e retomada
 
+Status: implementada; aguardando validacao manual em producao.
+
 - Preservar `pending_payment` internamente: o pedido anterior ao checkout InfinitePay congela snapshots e suporta `payment_check` e webhook idempotente.
-- Oferecer retomada somente para pedido ainda valido, com revalidacao server-side e sem pagamento ja confirmado.
-- Definir politica para pendencias abandonadas sem apagar automaticamente evidencias financeiras ou pedidos.
+- Oferecer retomada em `/conta` somente para pedido do cliente autenticado, autorizado por `orders.customer_auth_user_id`.
+- Reutilizar `internal/payments`, com revalidacao server-side e sem pagamento ja confirmado.
+- Nao reivindicar pedido guest por e-mail e nao apagar/cancelar pendencias automaticamente.
 
 Dependencias: Fase 17.
 

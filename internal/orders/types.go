@@ -143,6 +143,7 @@ type ConfirmResult struct {
 }
 
 type AccountOrder struct {
+	ID          string
 	OrderNumber int64
 	CreatedAt   time.Time
 	Status      string

@@ -11,6 +11,7 @@ type CheckoutCreator func(ctx context.Context, order CheckoutOrder) (CheckoutCre
 
 type Repository interface {
 	CreateOrReuseCheckout(ctx context.Context, orderID string, create CheckoutCreator) (CheckoutStartResult, error)
+	CreateOrReuseCheckoutForCustomer(ctx context.Context, orderID string, customerAuthUserID string, create CheckoutCreator) (CheckoutStartResult, error)
 	PaymentTargetByOrderNSU(ctx context.Context, orderNSU string) (PaymentVerificationTarget, error)
 	MarkPaid(ctx context.Context, orderNSU string, payment VerifiedPayment, paidAt time.Time) (ReturnResult, error)
 }
@@ -71,6 +72,29 @@ func (s *Service) StartCheckout(ctx context.Context, orderID string) (CheckoutSt
 	}
 
 	return s.repository.CreateOrReuseCheckout(ctx, canonicalOrderID, func(ctx context.Context, order CheckoutOrder) (CheckoutCreated, error) {
+		request, err := BuildCheckoutRequest(order, s.handle, s.redirectURL, s.webhookURL)
+		if err != nil {
+			return CheckoutCreated{}, err
+		}
+
+		return s.gateway.CreateCheckout(ctx, request)
+	})
+}
+
+func (s *Service) StartCheckoutForCustomer(ctx context.Context, orderID string, customerAuthUserID string) (CheckoutStartResult, error) {
+	canonicalOrderID, ok := CanonicalOrderNSU(orderID)
+	if !ok {
+		return CheckoutStartResult{}, ErrInvalidOrderID
+	}
+	canonicalCustomerID, ok := CanonicalOrderNSU(customerAuthUserID)
+	if !ok {
+		return CheckoutStartResult{OrderID: canonicalOrderID}, ErrOrderNotFound
+	}
+	if !s.Available() {
+		return CheckoutStartResult{OrderID: canonicalOrderID}, ErrPaymentNotConfigured
+	}
+
+	return s.repository.CreateOrReuseCheckoutForCustomer(ctx, canonicalOrderID, canonicalCustomerID, func(ctx context.Context, order CheckoutOrder) (CheckoutCreated, error) {
 		request, err := BuildCheckoutRequest(order, s.handle, s.redirectURL, s.webhookURL)
 		if err != nil {
 			return CheckoutCreated{}, err
