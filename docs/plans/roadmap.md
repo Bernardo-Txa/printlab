@@ -54,7 +54,7 @@ Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 plan
 | Fase 18.4 — Pagamentos pendentes e retomada | Concluida; validada em producao |
 | Fase 19 — Experiencia e acabamento comercial | Em execucao |
 | Fase 19.1 — Revisao textual completa | Concluida |
-| Fase 19.2 — Motion e experiencia premium | Concluida |
+| Fase 19.2 — Motion e experiencia premium | Implementada; validacao visual final integrada a Fase 19.3 |
 | Fase 19.3 — Polimento visual, consistencia de marca e UX comercial | Planejada |
 | Fase 19.4 — Performance e regressao para producao | Planejada |
 | Fase 20 — Preparacao final para producao | Planejada |
@@ -814,7 +814,7 @@ Status: concluida.
 
 ### Fase 19.2 — Motion e experiencia premium
 
-Status: concluida.
+Status: implementada; validacao visual final integrada a Fase 19.3.
 
 - Adicionar interacoes proprias da PrintLab que sejam sutis, mobile-first, acessiveis, compatíveis com SSR e respeitem `prefers-reduced-motion`.
 - Nao transformar o site em SPA nem bloquear checkout.

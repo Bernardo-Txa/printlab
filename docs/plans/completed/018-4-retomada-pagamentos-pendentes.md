@@ -1,6 +1,6 @@
 # Fase 18.4 — Pagamentos pendentes e retomada
 
-Status: Implementada; aguardando validacao manual em producao.
+Status: Concluida; validada manualmente em producao.
 
 ## Escopo implementado
 
@@ -39,3 +39,13 @@ Nenhuma migration foi criada. A fase usa `orders.customer_auth_user_id` e `order
 - Repository/source: ownership por `o.customer_auth_user_id = $2::uuid`, transacao/locks preservados e sem fallback por e-mail.
 
 Executar antes de publicar: `templ generate`, `gofmt` e `go test ./...`.
+
+## Validacao manual em producao
+
+Validado pelo responsável:
+
+- pedido `pending_payment` aparece na conta com Retomar pagamento;
+- retomada redireciona corretamente para InfinitePay;
+- abandono do checkout mantém pedido pendente e retomável;
+- pedido pago não exibe CTA de retomada;
+- `/conta` continua protegida por autenticação.
