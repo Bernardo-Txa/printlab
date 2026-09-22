@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 planejada.
+Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 planejada. Fase 21 planejada para pos-go-live.
 
 ## Status das fases
 
@@ -61,6 +61,7 @@ Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 plan
 | Fase 20.1 — Auditoria | Planejada |
 | Fase 20.2 — Correcao de bloqueadores | Planejada |
 | Fase 20.3 — Go-live | Planejada |
+| Fase 21 — Enderecos salvos e checkout recorrente | Planejada; pos-go-live |
 
 ## Processo de planos
 
@@ -904,3 +905,28 @@ Objetivo: auditar e liberar a operacao comercial somente quando as Fases 17 a 19
 - Exigir aprovacao explicita do responsavel antes de declarar a operacao comercial pronta.
 
 Dependencias: Fases 17, 18 e 19.
+
+## Fase 21 — Enderecos salvos e checkout recorrente
+
+Status: planejada; pos-go-live.
+
+Plano: [021-enderecos-salvos-checkout-recorrente.md](021-enderecos-salvos-checkout-recorrente.md).
+
+Objetivo: permitir que clientes autenticados salvem multiplos enderecos, definam um endereco padrao e selecionem o endereco desejado durante o checkout, preservando checkout guest e snapshots historicos de pedidos.
+
+Principios:
+
+- Supabase Auth UUID continua sendo a identidade oficial do cliente.
+- Nunca associar enderecos por e-mail.
+- `customer_profiles` permanece responsavel por dados pessoais; enderecos passam a ser entidade futura separada.
+- Checkout convidado permanece funcionando.
+- Pedidos continuam congelando endereco como snapshot historico.
+
+Subfases propostas:
+
+- 21.1 — Modelo e persistencia de enderecos.
+- 21.2 — Minha Conta / gerenciamento de enderecos.
+- 21.3 — Selecao de endereco no checkout.
+- 21.4 — Migracao/compatibilidade e validacao em producao.
+
+Dependencias: Fase 19 concluida; Fase 20 concluida; go-live estabilizado.
