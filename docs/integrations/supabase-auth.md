@@ -40,7 +40,7 @@ Rotas publicas implementadas na Fase 18.2:
 - `POST /auth/session`
 - `GET /conta`
 
-O cliente usa e-mail e senha no Supabase Auth. Cadastro exige confirmacao de e-mail pelo fluxo oficial do Supabase. Recuperacao de senha tambem usa o fluxo oficial, sem token proprio da PrintLab. `/auth/callback` recebe o retorno do Supabase; um script estatico coleta os tokens enviados no fragmento da URL e chama `/auth/session`, que grava cookies HttpOnly com os tokens de sessao emitidos pelo Supabase.
+O cliente usa e-mail e senha no Supabase Auth. Cadastro exige confirmacao de e-mail pelo fluxo oficial do Supabase. Recuperacao de senha tambem usa o fluxo oficial, sem token proprio da PrintLab. `/auth/callback?code=...` troca o auth code por uma sessao em `POST /auth/v1/token?grant_type=pkce`, grava cookies HttpOnly com os tokens emitidos pelo Supabase e redireciona para `/conta` ou `/recuperar-senha/nova` quando `type=recovery`. Retornos compatíveis que ainda entreguem `access_token` e `refresh_token` no hash da URL continuam suportados por `/static/js/auth-callback.js` + `POST /auth/session`.
 
 A PrintLab nao cria tabela de cliente, nao cria hash de senha, nao cria token proprio, nao persiste access token/refresh token no banco e nao associa pedidos a conta nesta fase. Os cookies de cliente apenas transportam a sessao oficial do Supabase para SSR e sao limpos no logout.
 

@@ -64,6 +64,18 @@ func (s *Service) RecoverPassword(ctx context.Context, email string, redirectTo 
 	return nil
 }
 
+func (s *Service) CompleteCallbackCode(ctx context.Context, w http.ResponseWriter, code string) error {
+	if !s.Available() {
+		return ErrUnavailable
+	}
+	session, err := s.provider.ExchangeCode(ctx, code)
+	if err != nil {
+		return SafeProviderError(err)
+	}
+	s.cookies.WriteSession(w, session, s.now().UTC())
+	return nil
+}
+
 func (s *Service) CompleteCallbackSession(ctx context.Context, w http.ResponseWriter, session AuthSession) error {
 	if !s.Available() {
 		return ErrUnavailable

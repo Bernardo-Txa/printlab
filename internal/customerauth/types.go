@@ -13,8 +13,10 @@ const (
 	DefaultAccessTTL  = time.Hour
 	RefreshCookieTTL  = 30 * 24 * time.Hour
 
-	MessageSignupConfirmation = "Conta criada. Verifique seu e-mail para confirmar o cadastro."
+	MessageSignupConfirmation = "Conta criada com sucesso! Enviamos um e-mail para confirmar seu endereço. Abra o e-mail e clique no link de confirmação antes de entrar. Não recebeu? Verifique o spam ou solicite um novo e-mail."
 	MessageInvalidLogin       = "E-mail ou senha inválidos."
+	MessageEmailNotConfirmed  = "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada."
+	MessageCallbackInvalid    = "Este link expirou ou já foi utilizado. Solicite um novo link."
 	MessageRecoverySent       = "Se existir uma conta para este e-mail, enviaremos as instruções de recuperação."
 	MessagePasswordUpdated    = "Senha atualizada. Entre novamente para continuar."
 )
@@ -30,12 +32,14 @@ var (
 	ErrInvalidRedirect     = errors.New("customer auth invalid redirect")
 	ErrExpiredSession      = errors.New("customer session expired")
 	ErrInvalidSessionToken = errors.New("customer invalid session token")
+	ErrEmailNotConfirmed   = errors.New("customer email not confirmed")
 )
 
 type Provider interface {
 	SignUp(context.Context, SignUpInput) (SignUpResult, error)
 	SignInWithPassword(context.Context, string, string) (AuthSession, error)
 	RecoverPassword(context.Context, string, string) error
+	ExchangeCode(context.Context, string) (AuthSession, error)
 	UpdatePassword(context.Context, string, string) error
 	RefreshSession(context.Context, string) (AuthSession, error)
 	GetUser(context.Context, string) (AuthUser, error)

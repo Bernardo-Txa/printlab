@@ -90,6 +90,24 @@ func TestLoginInvalidShowsGenericMessage(t *testing.T) {
 	}
 }
 
+func TestLoginUnconfirmedEmailShowsConfirmationMessage(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true, loginErr: customerauth.ErrEmailNotConfirmed}
+	handler := newCustomerAuthTestHandler(service)
+	form := url.Values{"email": {"cliente@example.com"}, "password": {"senha-segura"}, "next": {"/conta"}}
+	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), customerauth.MessageEmailNotConfirmed) {
+		t.Fatal("expected email confirmation message")
+	}
+}
+
 func TestLoginRejectsOpenRedirect(t *testing.T) {
 	service := &fakeCustomerAuthService{available: true}
 	handler := newCustomerAuthTestHandler(service)
@@ -140,6 +158,68 @@ func TestAuthSessionCallbackSetsSupabaseSession(t *testing.T) {
 	}
 }
 
+func TestAuthCodeCallbackExchangesCodeAndRedirectsToAccount(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/auth/callback?code=auth-code", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta" {
+		t.Fatalf("expected redirect to account, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if !service.callbackCodeCalled || service.callbackCode != "auth-code" {
+		t.Fatalf("expected code exchange, got %#v", service)
+	}
+}
+
+func TestAuthCodeCallbackRecoveryRedirectsToNewPassword(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/auth/callback?code=auth-code&type=recovery", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/recuperar-senha/nova" {
+		t.Fatalf("expected redirect to new password, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+func TestAuthCodeCallbackInvalidShowsSafeMessage(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true, callbackCodeErr: customerauth.ErrRejected}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/auth/callback?code=expired-code", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, customerauth.MessageCallbackInvalid) || strings.Contains(body, "expired-code") {
+		t.Fatal("expected safe callback error without code")
+	}
+}
+
+func TestAuthCallbackWithoutCodeOrTokensRendersFallback(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/auth/callback", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200 fallback, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "auth-callback.js") {
+		t.Fatal("expected JS fallback for hash token callback")
+	}
+}
+
 func TestAccountRequiresAuthentication(t *testing.T) {
 	service := &fakeCustomerAuthService{available: true, resolveErr: customerauth.ErrUnauthenticated}
 	handler := newCustomerAuthTestHandler(service)
@@ -169,6 +249,19 @@ func TestAccountRendersAuthenticatedUser(t *testing.T) {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected account page to contain %q", expected)
 		}
+	}
+}
+
+func TestNewPasswordRequiresRecoverySession(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true, resolveErr: customerauth.ErrUnauthenticated}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/recuperar-senha/nova", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/login?next=") {
+		t.Fatalf("expected redirect to login, got %d %q", rec.Code, rec.Header().Get("Location"))
 	}
 }
 
@@ -227,6 +320,10 @@ type fakeCustomerAuthService struct {
 	callbackCalled bool
 	callbackErr    error
 
+	callbackCodeCalled bool
+	callbackCode       string
+	callbackCodeErr    error
+
 	updateErr error
 
 	logoutCalled bool
@@ -251,6 +348,11 @@ func (s *fakeCustomerAuthService) RecoverPassword(_ context.Context, email strin
 	s.recoveryCalled = true
 	s.recoveryEmail = email
 	return s.recoveryErr
+}
+func (s *fakeCustomerAuthService) CompleteCallbackCode(_ context.Context, _ http.ResponseWriter, code string) error {
+	s.callbackCodeCalled = true
+	s.callbackCode = code
+	return s.callbackCodeErr
 }
 func (s *fakeCustomerAuthService) CompleteCallbackSession(_ context.Context, _ http.ResponseWriter, _ customerauth.AuthSession) error {
 	s.callbackCalled = true

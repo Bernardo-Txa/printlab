@@ -18,6 +18,7 @@ type customerAuthService interface {
 	SignUp(context.Context, customerauth.SignUpInput) error
 	Login(context.Context, http.ResponseWriter, string, string) error
 	RecoverPassword(context.Context, string, string) error
+	CompleteCallbackCode(context.Context, http.ResponseWriter, string) error
 	CompleteCallbackSession(context.Context, http.ResponseWriter, customerauth.AuthSession) error
 	UpdatePassword(context.Context, http.ResponseWriter, *http.Request, string) error
 	Logout(context.Context, http.ResponseWriter, *http.Request)
@@ -100,6 +101,9 @@ func loginHandler(service customerAuthService) http.HandlerFunc {
 		if err := service.Login(r.Context(), w, email, password); err != nil {
 			logCustomerAuthError(r.Context(), "customer_login_failed", err)
 			form.Message = customerauth.MessageInvalidLogin
+			if errors.Is(err, customerauth.ErrEmailNotConfirmed) {
+				form.Message = customerauth.MessageEmailNotConfirmed
+			}
 			renderHTML(w, r, http.StatusUnauthorized, templates.LoginPage(form))
 			return
 		}
@@ -207,7 +211,16 @@ func authCallbackHandler(service customerAuthService) http.HandlerFunc {
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
 			return
 		}
-		renderHTML(w, r, http.StatusOK, templates.AuthCallbackPage())
+		if code := strings.TrimSpace(r.URL.Query().Get("code")); code != "" {
+			if err := service.CompleteCallbackCode(r.Context(), w, code); err != nil {
+				logCustomerAuthError(r.Context(), "customer_callback_code_failed", err)
+				renderHTML(w, r, callbackErrorStatus(err), templates.AuthCallbackPage(customerauth.MessageCallbackInvalid))
+				return
+			}
+			http.Redirect(w, r, callbackNextPath(r), http.StatusSeeOther)
+			return
+		}
+		renderHTML(w, r, http.StatusOK, templates.AuthCallbackPage(""))
 	}
 }
 
@@ -246,6 +259,20 @@ func authSessionHandler(service customerAuthService) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{"next": next})
 	}
+}
+
+func callbackNextPath(r *http.Request) string {
+	if r != nil && r.URL.Query().Get("type") == "recovery" {
+		return "/recuperar-senha/nova"
+	}
+	return "/conta"
+}
+
+func callbackErrorStatus(err error) int {
+	if errors.Is(err, customerauth.ErrUnavailable) || errors.Is(err, customerauth.ErrConfiguration) {
+		return http.StatusServiceUnavailable
+	}
+	return http.StatusBadRequest
 }
 
 func customerSessionMiddleware(next http.Handler, service customerAuthService) http.Handler {

@@ -15,7 +15,8 @@ Implementar a fundação da autenticação pública de clientes da PrintLab com 
 - `POST /logout` para encerrar sessão no Supabase Auth e limpar cookies HttpOnly locais dos tokens da sessão Supabase.
 - `GET /recuperar-senha` e `POST /recuperar-senha` usando recuperação oficial do Supabase Auth.
 - `GET /recuperar-senha/nova` e `POST /recuperar-senha/nova` para definir nova senha após callback de recuperação.
-- `GET /auth/callback` e `POST /auth/session` para converter o retorno com tokens do Supabase em cookies HttpOnly server-side.
+- `GET /auth/callback` troca `?code=...` retornado pelo Supabase por sessão no backend e grava cookies HttpOnly.
+- `POST /auth/session` permanece como fallback compatível para retornos com `access_token` e `refresh_token` no hash da URL.
 - `GET /conta` com versão inicial da área de conta: nome, e-mail, status ativo e botão Sair.
 - Header público alterna entre `Entrar` e `Minha conta`/`Sair` quando há sessão de cliente válida.
 - Guard de rota para `/conta` e nova senha.
@@ -86,12 +87,12 @@ Não foi implementado:
 - `templ generate`
 - `gofmt`
 - `go test ./...`
-
-Validações ainda obrigatórias antes de concluir a fase:
-
 - `go vet ./...`
 - `go build ./...`
 - `git diff --check`
+
+Validações ainda obrigatórias antes de concluir a fase:
+
 - validação manual real em produção conforme briefing da fase.
 
 ## Validação manual pendente

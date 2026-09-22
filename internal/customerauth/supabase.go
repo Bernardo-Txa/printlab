@@ -91,6 +91,15 @@ func (c *SupabaseClient) RecoverPassword(ctx context.Context, email string, redi
 	return c.request(ctx, http.MethodPost, "recover", "", redirectTo, map[string]string{"email": strings.TrimSpace(email)}, &struct{}{})
 }
 
+func (c *SupabaseClient) ExchangeCode(ctx context.Context, code string) (AuthSession, error) {
+	if strings.TrimSpace(code) == "" || strings.ContainsAny(code, "\r\n") {
+		return AuthSession{}, ErrRejected
+	}
+	var result AuthSession
+	err := c.request(ctx, http.MethodPost, "token", "", "", map[string]string{"auth_code": strings.TrimSpace(code)}, &result)
+	return validSession(result, err)
+}
+
 func (c *SupabaseClient) UpdatePassword(ctx context.Context, accessToken string, password string) error {
 	if accessToken == "" || password == "" {
 		return ErrRejected
@@ -166,6 +175,8 @@ func (c *SupabaseClient) request(ctx context.Context, method string, path string
 	if path == "token" {
 		if m, ok := payload.(map[string]string); ok && m["refresh_token"] != "" {
 			query.Set("grant_type", "refresh_token")
+		} else if m, ok := payload.(map[string]string); ok && m["auth_code"] != "" {
+			query.Set("grant_type", "pkce")
 		} else {
 			query.Set("grant_type", "password")
 		}
@@ -195,7 +206,7 @@ func (c *SupabaseClient) request(ctx context.Context, method string, path string
 	case http.StatusTooManyRequests:
 		return ErrRateLimited
 	case http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusUnprocessableEntity, http.StatusNotFound:
-		return ErrRejected
+		return rejectedAuthError(response.Body)
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return ErrUnavailable
@@ -220,11 +231,20 @@ func (c *SupabaseClient) request(ctx context.Context, method string, path string
 	return nil
 }
 
+func rejectedAuthError(body io.Reader) error {
+	data, _ := io.ReadAll(io.LimitReader(body, maxAuthResponseBytes))
+	lower := strings.ToLower(string(data))
+	if strings.Contains(lower, "email_not_confirmed") || strings.Contains(lower, "email not confirmed") || strings.Contains(lower, "not confirmed") {
+		return ErrEmailNotConfirmed
+	}
+	return ErrRejected
+}
+
 func SafeProviderError(err error) error {
 	if err == nil {
 		return nil
 	}
-	for _, safe := range []error{ErrRejected, ErrRateLimited, ErrInvalidResponse, ErrConfiguration, ErrUnauthenticated} {
+	for _, safe := range []error{ErrRejected, ErrRateLimited, ErrInvalidResponse, ErrConfiguration, ErrUnauthenticated, ErrEmailNotConfirmed, ErrInvalidSessionToken} {
 		if errors.Is(err, safe) {
 			return safe
 		}

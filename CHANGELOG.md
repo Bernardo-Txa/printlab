@@ -6,6 +6,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Changed
 
+- Fase 18.2: callback de autenticação de cliente passa a trocar `?code=...` do Supabase por sessão no backend, preservando fallback por hash token e corrigindo confirmação de e-mail e recuperação de senha.
+
 - Fase 19.1: revisão ortográfica e textual em português brasileiro para textos exibidos no site, checkout, carrinho, pedidos, Admin, mensagens de erro, acessibilidade e SEO, sem alterar layout, regras de negócio, banco ou integrações.
 
 - Fase 17.3 concluida e validada manualmente em producao: cores comerciais passam a ser opcionais tambem para produtos ativos, aparecem na pagina publica, acompanham carrinho/checkout/pedido/Admin e continuam independentes de variantes, receitas, frete e pagamentos.
@@ -133,6 +135,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 - `form-action` da CSP passa a permitir somente os origins exatos de checkout InfinitePay ja aceitos por `ValidateCheckoutURL`, mantendo API InfinitePay apenas server-side.
 
 ### Changed
+
+- Fase 18.2: callback de autenticação de cliente passa a trocar `?code=...` do Supabase por sessão no backend, preservando fallback por hash token e corrigindo confirmação de e-mail e recuperação de senha.
 
 - Versao minima de Go atualizada para 1.26.0.
 - Assets estaticos passaram a ser servidos via `embed.FS` para melhorar compatibilidade com deploy na Vercel.

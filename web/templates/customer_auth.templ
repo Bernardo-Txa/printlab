@@ -146,7 +146,7 @@ templ AccountPage(profile customerauth.Profile) {
 	}
 }
 
-templ AuthCallbackPage() {
+templ AuthCallbackPage(message string) {
 	@components.PrivateNoIndexLayout("Confirmando acesso | PrintLab", "Confirmação segura de acesso à conta PrintLab.") {
 		<section class="admin-auth-section">
 			@components.Container() {
@@ -154,7 +154,11 @@ templ AuthCallbackPage() {
 					<div class="admin-auth-heading">
 						<p class="brand-kicker">Conta PrintLab</p>
 						<h1>Confirmando seu acesso</h1>
-						<p data-auth-callback-status="true" aria-live="polite">Aguarde enquanto finalizamos a autenticação.</p>
+						if message != "" {
+							<p class="checkout-alert checkout-alert-error" data-auth-callback-status="true" aria-live="polite">{ message }</p>
+						} else {
+							<p data-auth-callback-status="true" aria-live="polite">Aguarde enquanto finalizamos a autenticação.</p>
+						}
 					</div>
 					<noscript>
 						<p class="checkout-alert checkout-alert-error">Ative o JavaScript para concluir a confirmação de acesso.</p>
