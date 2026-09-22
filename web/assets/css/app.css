@@ -508,15 +508,125 @@
   }
 
   .account-profile-form {
-    @apply mt-6;
+    @apply mt-6 gap-0;
   }
 
   .account-profile-card {
-    @apply bg-surface;
+    @apply border-primary/10 bg-surface-muted/45 p-4 shadow-none sm:p-5;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(238 246 251 / 0.62)),
+      var(--color-surface-muted);
   }
 
-  .account-profile-card .checkout-fields {
-    @apply mt-5;
+  .account-profile-card + .account-profile-card {
+    @apply mt-4;
+  }
+
+  .account-profile-card-header {
+    @apply flex items-start gap-3;
+  }
+
+  .account-profile-card-icon {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-full border border-highlight-teal/25 bg-highlight-teal/10 text-primary;
+  }
+
+  .account-profile-card-icon svg {
+    @apply size-5;
+  }
+
+  .account-profile-card-copy {
+    @apply min-w-0;
+  }
+
+  .account-profile-card-copy h3 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .account-profile-card-copy p {
+    @apply mt-1 text-sm leading-6 text-muted;
+  }
+
+  .account-profile-grid {
+    @apply mt-5 grid gap-4;
+  }
+
+  .account-profile-grid-personal {
+    @apply md:grid-cols-2;
+  }
+
+  .account-profile-grid-personal .checkout-field:nth-child(1),
+  .account-profile-grid-personal .checkout-field:nth-child(2) {
+    @apply md:col-span-2;
+  }
+
+  .account-profile-grid-address {
+    @apply md:grid-cols-6;
+  }
+
+  .account-profile-grid-address .checkout-field:nth-child(1),
+  .account-profile-grid-address .checkout-field:nth-child(3) {
+    @apply md:col-span-2;
+  }
+
+  .account-profile-grid-address .checkout-field:nth-child(2),
+  .account-profile-grid-address .checkout-field:nth-child(4) {
+    @apply md:col-span-4;
+  }
+
+  .account-profile-grid-address .checkout-field:nth-child(5) {
+    @apply md:col-span-2;
+  }
+
+  .account-profile-grid-address .checkout-field:nth-child(6) {
+    @apply md:col-span-3;
+  }
+
+  .account-profile-grid-address .checkout-field:nth-child(7) {
+    @apply md:col-span-1;
+  }
+
+  .account-profile-form .checkout-field {
+    @apply gap-2.5;
+  }
+
+  .account-profile-form .checkout-field label {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .account-profile-form .checkout-field input {
+    @apply min-h-12 border-border/80 bg-white/85 shadow-sm;
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .account-profile-form .checkout-field input:hover {
+    @apply border-primary/35 bg-white;
+  }
+
+  .account-profile-form .checkout-field input:focus-visible {
+    @apply border-primary bg-white;
+    box-shadow:
+      0 0 0 3px rgb(16 197 183 / 0.18),
+      0 12px 28px -24px rgb(7 28 54 / 0.62);
+  }
+
+  .account-profile-form .checkout-field input[readonly] {
+    @apply border-highlight-blue/20 bg-highlight-blue/5 text-foreground;
+  }
+
+  .account-profile-form .checkout-field-help {
+    @apply text-xs leading-5;
+  }
+
+  .account-profile-actions {
+    @apply mt-5 flex border-t border-border/70 pt-5 sm:justify-end;
+  }
+
+  .account-profile-actions .btn-base {
+    @apply w-full sm:w-auto;
   }
 
   .account-security-grid {

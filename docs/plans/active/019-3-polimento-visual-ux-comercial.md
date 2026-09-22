@@ -240,6 +240,7 @@ Implementado nesta subfase:
 - cards próprios de pedidos com status, acompanhamento e retomada por POST;
 - empty state de pedidos com CTA para produtos;
 - formulário de dados agrupado em Dados pessoais e Endereço de entrega;
+- refinamento visual final de Dados pessoais e Endereço de entrega com headers iconográficos, grids próprios e ações do formulário integradas à dashboard;
 - seção Segurança e conta com e-mail, status, recuperação de senha e logout por POST.
 
 ## 19.3.5 — Carrinho e checkout

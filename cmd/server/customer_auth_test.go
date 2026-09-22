@@ -365,10 +365,38 @@ func TestAccountGetLoadsCustomerProfile(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Perfil Salvo", `value="27988887777"`, "Pedido #1001", `data-checkout-mask="phone"`, `data-checkout-mask="cpf"`, `data-checkout-mask="cep"`, `data-cep-lookup-endpoint="/api/cep"`} {
+	for _, expected := range []string{
+		`id="dados"`,
+		`method="post" action="/conta"`,
+		`data-cep-lookup-endpoint="/api/cep"`,
+		"Dados pessoais",
+		"Seus dados de contato e identificação.",
+		"Endereço de entrega",
+		"Usado para agilizar entregas em compras futuras.",
+		"Salvar alterações",
+		"Perfil Salvo",
+		`name="full_name"`,
+		`value="27988887777"`,
+		`id="account_email"`,
+		`readonly`,
+		`data-checkout-mask="phone"`,
+		`data-checkout-mask="cpf"`,
+		`data-checkout-mask="cep"`,
+		`name="postal_code"`,
+		`name="street"`,
+		`name="number"`,
+		`name="complement"`,
+		`name="district"`,
+		`name="city"`,
+		`name="state"`,
+		"Pedido #1001",
+	} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected account page to contain %q", expected)
 		}
+	}
+	if strings.Contains(body, "pedidos autenticados") {
+		t.Fatal("expected technical copy to be removed")
 	}
 	for _, expected := range []string{"22/09/2026", "Retomar pagamento", `action="/conta/pedidos/` + orderID + `/pagar"`} {
 		if !strings.Contains(body, expected) {

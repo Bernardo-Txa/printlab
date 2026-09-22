@@ -193,7 +193,7 @@ templ AccountPage(view AccountPageView) {
 							<div class="account-section-heading">
 								<p class="brand-kicker">Meus pedidos</p>
 								<h2 id="account-orders-title">Pedidos</h2>
-								<p>Acompanhe seus pedidos autenticados e retome pagamentos pendentes.</p>
+								<p>Acompanhe seus pedidos e retome pagamentos pendentes quando necessário.</p>
 							</div>
 							if view.Message != "" {
 								if view.MessageIsError {
@@ -254,9 +254,16 @@ templ AccountPage(view AccountPageView) {
 							<form method="post" action="/conta" class="account-profile-form checkout-form" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
 								<input type="hidden" name="country_code" value="BR"/>
 								<section class="account-profile-card" aria-labelledby="account-contact">
-									<h3 id="account-contact">Dados pessoais</h3>
-									<p>Nome, e-mail e documentos usados no checkout.</p>
-									<div class="checkout-fields">
+									<div class="account-profile-card-header">
+										<span class="account-profile-card-icon" aria-hidden="true">
+											@accountProfileIcon()
+										</span>
+										<div class="account-profile-card-copy">
+											<h3 id="account-contact">Dados pessoais</h3>
+											<p>Seus dados de contato e identificação.</p>
+										</div>
+									</div>
+									<div class="account-profile-grid account-profile-grid-personal">
 										@CheckoutField("full_name", "Nome completo", "text", "name", "", view.Saved.FullName, view.Errors.Message("full_name"), false)
 										@AccountReadonlyEmailField(view.Profile.Email)
 										@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", view.Saved.Phone, view.Errors.Message("phone"), "", false, "phone", "15")
@@ -264,9 +271,16 @@ templ AccountPage(view AccountPageView) {
 									</div>
 								</section>
 								<section class="account-profile-card" aria-labelledby="account-shipping">
-									<h3 id="account-shipping">Endereço de entrega</h3>
-									<p>Endereço usado para acelerar compras futuras.</p>
-									<div class="checkout-fields">
+									<div class="account-profile-card-header">
+										<span class="account-profile-card-icon" aria-hidden="true">
+											@accountAddressIcon()
+										</span>
+										<div class="account-profile-card-copy">
+											<h3 id="account-shipping">Endereço de entrega</h3>
+											<p>Usado para agilizar entregas em compras futuras.</p>
+										</div>
+									</div>
+									<div class="account-profile-grid account-profile-grid-address">
 										@CheckoutPostalCodeField(view.Saved.PostalCode, view.Errors.Message("postal_code"))
 										@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", view.Saved.Street, view.Errors.Message("street"), false)
 										@CheckoutField("number", "Número", "text", "address-line2", "", view.Saved.Number, view.Errors.Message("number"), false)
@@ -276,7 +290,7 @@ templ AccountPage(view AccountPageView) {
 										@CheckoutField("state", "UF", "text", "address-level1", "", view.Saved.State, view.Errors.Message("state"), false)
 									</div>
 								</section>
-								<div class="checkout-form-actions">
+								<div class="account-profile-actions">
 									<button class="btn-base btn-primary" type="submit">Salvar alterações</button>
 								</div>
 							</form>
@@ -315,6 +329,21 @@ templ AccountPage(view AccountPageView) {
 		</section>
 		<script src="/static/js/checkout.js" defer></script>
 	}
+}
+
+templ accountProfileIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
+}
+
+templ accountAddressIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M5.25 10.7 12 5l6.75 5.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M7.2 9.7V19h9.6V9.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M10 19v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
 }
 
 func accountFirstName(view AccountPageView) string {
