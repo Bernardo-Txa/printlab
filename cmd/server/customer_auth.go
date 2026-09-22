@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
+	"github.com/Bernardo-Txa/printlab/internal/customers"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
@@ -194,26 +196,57 @@ func newPasswordHandler(service customerAuthService) http.HandlerFunc {
 	}
 }
 
-func accountHandler(service customerAuthService, ordersService interface{}) http.HandlerFunc {
+type accountOrdersService interface {
+	ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
+}
+type accountProfileService interface {
+	Get(context.Context, string) (customerprofile.Profile, bool, error)
+	Save(context.Context, customerprofile.Profile) error
+}
+
+func accountHandler(service customerAuthService, ordersService accountOrdersService, profiles accountProfileService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setCustomerAuthPrivateHeaders(w)
 		profile, ok := requireCustomerSession(w, r, service)
 		if !ok {
 			return
 		}
-		listing, ok := ordersService.(interface {
-			ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
-		})
-		if !ok {
-			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
-			return
-		}
-		customerOrders, err := listing.ListForCustomer(r.Context(), profile.ID)
+		customerOrders, err := ordersService.ListForCustomer(r.Context(), profile.ID)
 		if err != nil {
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
 			return
 		}
-		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile, customerOrders))
+		stored, _, _ := profiles.Get(r.Context(), profile.ID)
+		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile, customerOrders, stored))
+	}
+}
+
+func accountSaveHandler(service customerAuthService, profiles accountProfileService, siteURL string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		setCustomerAuthPrivateHeaders(w)
+		profile, ok := requireCustomerSession(w, r, service)
+		if !ok {
+			return
+		}
+		if !validMutationSource(r, siteURL) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid profile", 400)
+			return
+		}
+		input := customers.CheckoutInput{FullName: r.PostFormValue("full_name"), Phone: r.PostFormValue("phone"), CPF: r.PostFormValue("cpf"), PostalCode: r.PostFormValue("postal_code"), Street: r.PostFormValue("street"), Number: r.PostFormValue("number"), Complement: r.PostFormValue("complement"), District: r.PostFormValue("district"), City: r.PostFormValue("city"), State: r.PostFormValue("state"), CountryCode: "BR"}
+		_, values, errs := customers.NormalizeCheckoutInput(input)
+		if errs.Any() {
+			renderHTML(w, r, 400, templates.AccountPage(profile, nil, customerprofile.FromCheckout(profile.ID, values)))
+			return
+		}
+		if err := profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, values)); err != nil {
+			renderHTML(w, r, 503, templates.AuthUnavailable())
+			return
+		}
+		http.Redirect(w, r, "/conta?salvo=1", 303)
 	}
 }
 

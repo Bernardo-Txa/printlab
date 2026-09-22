@@ -14,6 +14,7 @@ import (
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
@@ -214,15 +215,17 @@ func newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db *database.D
 	mux.HandleFunc("POST /recuperar-senha/nova", newPasswordHandler(customerAuth))
 	mux.HandleFunc("GET /auth/callback", authCallbackHandler(customerAuth))
 	mux.HandleFunc("POST /auth/session", authSessionHandler(customerAuth))
-	mux.HandleFunc("GET /conta", accountHandler(customerAuth, orderReview))
+	profileService := customerprofile.NewService(customerprofile.NewPostgresRepository(db.Pool()))
+	mux.HandleFunc("GET /conta", accountHandler(customerAuth, accountOrdersAdapter{service: orderReview}, profileService, siteURL))
+	mux.HandleFunc("POST /conta", accountSaveHandler(customerAuth, profileService, siteURL))
 	mux.HandleFunc("POST /logout", logoutHandler(customerAuth))
 	mux.HandleFunc("GET /logout", methodNotAllowedHandler(http.MethodPost))
 	mux.HandleFunc("GET /carrinho", cartPageHandler(shoppingCart, cartCookies))
 	mux.HandleFunc("POST /carrinho/adicionar", addCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("POST /carrinho/itens/{id}/quantidade", updateCartItemQuantityHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("POST /carrinho/itens/{id}/remover", removeCartItemHandler(shoppingCart, cartCookies, siteURL))
-	mux.HandleFunc("GET /checkout/dados", checkoutDetailsPageHandler(checkoutDetails, cartCookies))
-	mux.HandleFunc("POST /checkout/dados", saveCheckoutDetailsHandler(checkoutDetails, cartCookies, siteURL))
+	mux.HandleFunc("GET /checkout/dados", checkoutDetailsPageHandler(checkoutDetails, cartCookies, profileService))
+	mux.HandleFunc("POST /checkout/dados", saveCheckoutDetailsHandler(checkoutDetails, cartCookies, siteURL, profileService))
 	mux.HandleFunc("GET /api/cep/{cep}", postalCodeLookupHandler(postalCodeLookup))
 	mux.HandleFunc("GET /checkout/frete", checkoutShippingPageHandler(checkoutShipping, cartCookies))
 	mux.HandleFunc("POST /checkout/frete", selectShippingHandler(checkoutShipping, cartCookies, siteURL))

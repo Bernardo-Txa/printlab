@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
@@ -18,7 +20,7 @@ type checkoutDetailsService interface {
 	Save(ctx context.Context, tokenHash []byte, input customers.CheckoutInput) (customers.SaveResult, error)
 }
 
-func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager) http.HandlerFunc {
+func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager, profiles accountProfileService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, tokenHash, ok := checkoutToken(cookies, r)
 		if !ok {
@@ -37,12 +39,17 @@ func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdom
 			handleCheckoutDetailsError(w, r, err, customers.CheckoutPage{})
 			return
 		}
+		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok {
+			if saved, found, _ := profiles.Get(r.Context(), profile.ID); found && page.Form.Values.FullName == "" {
+				page.Form.Values = saved.CheckoutInput(profile.Email)
+			}
+		}
 
 		renderHTML(w, r, http.StatusOK, templates.CheckoutDetails(page))
 	}
 }
 
-func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager, siteURL string) http.HandlerFunc {
+func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager, siteURL string, profiles accountProfileService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !validMutationSource(r, siteURL) {
 			http.Error(w, "forbidden", http.StatusForbidden)
@@ -72,6 +79,9 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 		}
 
 		ensureCartCookies(cookies).SetCookie(w, token, result.ExpiresAt)
+		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok {
+			_ = profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, result.Page.Form.Values))
+		}
 		http.Redirect(w, r, "/checkout/frete", http.StatusSeeOther)
 	}
 }

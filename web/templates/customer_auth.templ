@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
 	"github.com/Bernardo-Txa/printlab/internal/orders"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/web/components"
 )
 
@@ -128,7 +129,7 @@ templ NewPasswordPage(form customerauth.NewPasswordForm) {
 	}
 }
 
-templ AccountPage(profile customerauth.Profile, customerOrders []orders.AccountOrder) {
+templ AccountPage(profile customerauth.Profile, customerOrders []orders.AccountOrder, saved customerprofile.Profile) {
 	@components.PrivateNoIndexLayout("Minha conta | PrintLab", "Área inicial da sua conta PrintLab.") {
 		<section class="section-block">
 			@components.Container() {
@@ -146,6 +147,22 @@ templ AccountPage(profile customerauth.Profile, customerOrders []orders.AccountO
 							<p><strong>Pedido #{ fmt.Sprint(order.OrderNumber) }</strong> · { order.StatusLabel } · { order.TotalBRL } · <a href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a></p>
 						}
 					}
+				</div>
+				<div class="admin-panel account-panel"><h2>Dados pessoais e endereço</h2>
+					<form method="post" action="/conta" class="admin-login-form">
+						<label>Nome completo<input name="full_name" value={ saved.FullName } required></label>
+						<label>E-mail<input value={ profile.Email } readonly></label>
+						<label>Telefone/WhatsApp<input name="phone" value={ saved.Phone } required></label>
+						<label>CPF<input name="cpf" value={ saved.CPF } required></label>
+						<label>CEP<input name="postal_code" value={ saved.PostalCode } required></label>
+						<label>Rua<input name="street" value={ saved.Street } required></label>
+						<label>Número<input name="number" value={ saved.Number } required></label>
+						<label>Complemento<input name="complement" value={ saved.Complement }></label>
+						<label>Bairro<input name="district" value={ saved.District } required></label>
+						<label>Cidade<input name="city" value={ saved.City } required></label>
+						<label>UF<input name="state" value={ saved.State } required></label>
+						<button class="btn-base btn-primary" type="submit">Salvar dados</button>
+					</form>
 				</div>
 				<div class="admin-panel account-panel">
 					<h2>Conta ativa</h2>

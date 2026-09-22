@@ -21,6 +21,17 @@ type orderReviewService interface {
 	Track(ctx context.Context, trackingID string) (ordersdomain.TrackingPage, error)
 }
 
+type accountOrdersAdapter struct{ service orderReviewService }
+
+func (a accountOrdersAdapter) ListForCustomer(ctx context.Context, id string) ([]ordersdomain.AccountOrder, error) {
+	if s, ok := a.service.(interface {
+		ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
+	}); ok {
+		return s.ListForCustomer(ctx, id)
+	}
+	return nil, ordersdomain.ErrUnavailable
+}
+
 func checkoutReviewPageHandler(service orderReviewService, cookies *cartdomain.CookieManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, tokenHash, ok := checkoutToken(cookies, r)
