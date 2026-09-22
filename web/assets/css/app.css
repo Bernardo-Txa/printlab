@@ -326,8 +326,226 @@
     @apply flex flex-wrap gap-4 text-sm text-muted;
   }
 
-  .account-panel {
-    @apply mt-8 max-w-3xl;
+  .account-page {
+    @apply scroll-mt-20 py-8 sm:py-12;
+  }
+
+  .account-hero {
+    @apply relative overflow-hidden rounded-section p-6 text-primary-foreground shadow-soft sm:p-8 lg:p-10;
+    background:
+      radial-gradient(circle at 12% 8%, rgb(17 135 244 / 0.36), transparent 32%),
+      radial-gradient(circle at 88% 18%, rgb(16 197 183 / 0.26), transparent 30%),
+      linear-gradient(135deg, #071c36 0%, #000f20 72%, #071c36 100%);
+  }
+
+  .account-hero::after {
+    content: "";
+    @apply pointer-events-none absolute -right-10 -bottom-16 h-44 w-44 rounded-full border border-highlight-teal/30;
+    box-shadow:
+      0 0 0 18px rgb(17 135 244 / 0.08),
+      0 0 0 36px rgb(16 197 183 / 0.06);
+  }
+
+  .account-hero-content {
+    @apply relative z-10 max-w-3xl;
+  }
+
+  .account-hero .brand-kicker {
+    @apply border-white/20 bg-white/10 text-primary-foreground shadow-none;
+  }
+
+  .account-hero h1 {
+    @apply mt-5 text-balance text-5xl font-semibold leading-none tracking-normal sm:text-6xl;
+  }
+
+  .account-hero p:not(.brand-kicker) {
+    @apply mt-4 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg;
+  }
+
+  .account-hero-greeting {
+    @apply font-semibold text-primary-foreground;
+  }
+
+  .account-shell {
+    @apply mt-8 grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start;
+  }
+
+  .account-navigation {
+    @apply flex gap-2 overflow-x-auto rounded-card border border-border bg-surface p-3 shadow-soft lg:sticky lg:top-28 lg:flex-col lg:overflow-visible;
+  }
+
+  .account-nav-link {
+    @apply whitespace-nowrap rounded-control px-3 py-2 text-sm font-semibold text-muted outline-none transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .account-content {
+    @apply grid gap-6;
+  }
+
+  .account-section {
+    @apply scroll-mt-28 rounded-section border border-border bg-surface p-5 shadow-soft sm:p-6;
+    transition:
+      border-color var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-spring);
+  }
+
+  .account-section:hover,
+  .account-section:focus-within {
+    @apply border-primary/25;
+  }
+
+  .account-section-heading {
+    @apply max-w-3xl;
+  }
+
+  .account-section-heading h2 {
+    @apply mt-3 text-3xl font-semibold leading-tight text-foreground;
+  }
+
+  .account-section-heading p:not(.brand-kicker) {
+    @apply mt-2 text-sm leading-6 text-muted;
+  }
+
+  .account-overview {
+    @apply mt-6 grid gap-4 sm:grid-cols-3;
+  }
+
+  .account-stat-card,
+  .account-order-card,
+  .account-profile-card,
+  .account-security-card,
+  .account-empty-state {
+    @apply rounded-card border border-border bg-background p-5 shadow-soft;
+  }
+
+  .account-stat-card {
+    @apply relative overflow-hidden;
+  }
+
+  .account-stat-card::after {
+    content: "";
+    @apply absolute -right-5 -top-5 size-16 rounded-full bg-highlight-blue/10;
+  }
+
+  .account-stat-card span,
+  .account-order-meta span,
+  .account-security-card dt {
+    @apply text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .account-stat-card strong {
+    @apply mt-3 block text-3xl font-semibold text-foreground;
+  }
+
+  .account-stat-card p,
+  .account-profile-card > p,
+  .account-security-card p,
+  .account-empty-state p {
+    @apply mt-2 text-sm leading-6 text-muted;
+  }
+
+  .account-order-list {
+    @apply mt-6 grid gap-4;
+  }
+
+  .account-order-card {
+    @apply bg-surface;
+  }
+
+  .account-order-header {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .account-order-header h3 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .account-order-header p {
+    @apply mt-1 text-sm text-muted;
+  }
+
+  .account-order-status {
+    @apply inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-normal;
+  }
+
+  .account-order-status-pending {
+    @apply border-highlight-yellow/40 bg-highlight-yellow/15 text-foreground;
+  }
+
+  .account-order-status-paid {
+    @apply border-highlight-teal/40 bg-highlight-teal/15 text-foreground;
+  }
+
+  .account-order-meta {
+    @apply mt-5 grid gap-3 sm:grid-cols-3;
+  }
+
+  .account-order-meta p {
+    @apply rounded-control border border-border bg-surface-muted px-3 py-2;
+  }
+
+  .account-order-meta strong {
+    @apply mt-1 block text-sm font-semibold text-foreground;
+  }
+
+  .account-order-actions {
+    @apply mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap;
+  }
+
+  .account-order-actions form {
+    @apply contents;
+  }
+
+  .account-empty-state {
+    @apply mt-6 flex flex-col items-start gap-3 border-dashed;
+  }
+
+  .account-empty-state h3,
+  .account-profile-card h3,
+  .account-security-card h3 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .account-profile-form {
+    @apply mt-6;
+  }
+
+  .account-profile-card {
+    @apply bg-surface;
+  }
+
+  .account-profile-card .checkout-fields {
+    @apply mt-5;
+  }
+
+  .account-security-grid {
+    @apply mt-6 grid gap-4 lg:grid-cols-3;
+  }
+
+  .account-security-card {
+    @apply bg-surface;
+  }
+
+  .account-security-card dl {
+    @apply mt-4 grid gap-3;
+  }
+
+  .account-security-card dl div {
+    @apply rounded-control border border-border bg-surface-muted px-3 py-2;
+  }
+
+  .account-security-card dd {
+    @apply mt-1 break-words text-sm font-semibold text-foreground;
+  }
+
+  .account-security-card .btn-base,
+  .account-security-card form {
+    @apply mt-4;
+  }
+
+  .account-logout-button {
+    @apply border border-danger/30 bg-danger/10 text-danger hover:bg-danger hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-danger;
   }
 
   .brand-link {

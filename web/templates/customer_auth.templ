@@ -2,6 +2,8 @@ package templates
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
 	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
@@ -143,97 +145,229 @@ templ NewPasswordPage(form customerauth.NewPasswordForm) {
 
 templ AccountPage(view AccountPageView) {
 	@components.PrivateNoIndexLayout("Minha conta | PrintLab", "Área inicial da sua conta PrintLab.") {
-		<section class="section-block">
+		<section class="account-page">
 			@components.Container() {
-				<div class="section-heading">
-					<p class="brand-kicker">Conta PrintLab</p>
-					<h1>Minha conta</h1>
-					<p>Área segura para consultar seus dados e pedidos.</p>
-				</div>
-				<div class="admin-panel account-panel">
-					<h2>Meus pedidos</h2>
-					if view.Message != "" {
-						if view.MessageIsError {
-							<p class="checkout-alert checkout-alert-error">{ view.Message }</p>
-						} else {
-							<p class="checkout-alert checkout-alert-success">{ view.Message }</p>
+				<header class="account-hero motion-reveal">
+					<div class="account-hero-content">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Minha conta</h1>
+						if accountFirstName(view) != "" {
+							<p class="account-hero-greeting">Olá, { accountFirstName(view) }.</p>
 						}
-					}
-					if len(view.Orders) == 0 {
-						<p>Você ainda não tem pedidos associados a esta conta.</p>
-					} else {
-						for _, order := range view.Orders {
-							<div class="checkout-summary-line">
-								<div>
-									<strong>Pedido #{ fmt.Sprint(order.OrderNumber) }</strong>
-									<span>{ order.CreatedAt.Format("02/01/2006") }</span>
-									<span>{ order.StatusLabel }</span>
-									if order.Status == orders.StatusPaid {
-										<span>Pagamento confirmado.</span>
-									}
-								</div>
-								<div>
-									<p>{ order.TotalBRL }</p>
-									<a href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a>
-									if view.PaymentAvailable && order.Status == orders.StatusPendingPayment && order.ID != "" {
-										<form method="post" action={ "/conta/pedidos/" + order.ID + "/pagar" }>
-											<button class="btn-base btn-primary" type="submit">Retomar pagamento</button>
-										</form>
-									}
-								</div>
-							</div>
-						}
-					}
-				</div>
-				<div class="admin-panel account-panel"><h2>Dados pessoais e endereço</h2>
-					if view.Success {
-						<p class="checkout-alert checkout-alert-success">Dados atualizados com sucesso.</p>
-					}
-					if view.Errors.Any() {
-						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
-					}
-					<form method="post" action="/conta" class="checkout-form" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
-						<input type="hidden" name="country_code" value="BR"/>
-						<section class="checkout-form-section" aria-labelledby="account-contact">
-							<h3 id="account-contact">Contato</h3>
-							<div class="checkout-fields">
-								@CheckoutField("full_name", "Nome completo", "text", "name", "", view.Saved.FullName, view.Errors.Message("full_name"), false)
-								@AccountReadonlyEmailField(view.Profile.Email)
-								@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", view.Saved.Phone, view.Errors.Message("phone"), "", false, "phone", "15")
-								@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", view.Saved.CPF, view.Errors.Message("cpf"), "", false, "cpf", "14")
-							</div>
-						</section>
-						<section class="checkout-form-section" aria-labelledby="account-shipping">
-							<h3 id="account-shipping">Endereço</h3>
-							<div class="checkout-fields">
-								@CheckoutPostalCodeField(view.Saved.PostalCode, view.Errors.Message("postal_code"))
-								@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", view.Saved.Street, view.Errors.Message("street"), false)
-								@CheckoutField("number", "Número", "text", "address-line2", "", view.Saved.Number, view.Errors.Message("number"), false)
-								@CheckoutField("complement", "Complemento", "text", "address-line3", "", view.Saved.Complement, view.Errors.Message("complement"), true)
-								@CheckoutField("district", "Bairro", "text", "address-level3", "", view.Saved.District, view.Errors.Message("district"), false)
-								@CheckoutField("city", "Cidade", "text", "address-level2", "", view.Saved.City, view.Errors.Message("city"), false)
-								@CheckoutField("state", "UF", "text", "address-level1", "", view.Saved.State, view.Errors.Message("state"), false)
-							</div>
-						</section>
-						<button class="btn-base btn-primary" type="submit">Salvar dados</button>
-					</form>
-				</div>
-				<div class="admin-panel account-panel">
-					<h2>Conta ativa</h2>
-					<div class="admin-field-grid">
-						if view.Profile.Name != "" {
-							<p><span>Nome</span><strong>{ view.Profile.Name }</strong></p>
-						}
-						<p><span>E-mail</span><strong>{ view.Profile.Email }</strong></p>
-						<p><span>Status</span><strong>Ativa</strong></p>
+						<p>Gerencie seus dados, acompanhe seus pedidos e continue suas compras com facilidade.</p>
 					</div>
-					<form method="post" action="/logout">
-						<button class="btn-base btn-secondary" type="submit">Sair</button>
-					</form>
+				</header>
+				<div class="account-shell">
+					<nav class="account-navigation" aria-label="Navegação da conta">
+						<a class="account-nav-link" href="#visao-geral">Visão geral</a>
+						<a class="account-nav-link" href="#pedidos">Pedidos</a>
+						<a class="account-nav-link" href="#dados">Meus dados</a>
+						<a class="account-nav-link" href="#seguranca">Segurança</a>
+					</nav>
+					<div class="account-content">
+						<section id="visao-geral" class="account-section motion-reveal" aria-labelledby="account-overview-title">
+							<div class="account-section-heading">
+								<p class="brand-kicker">Visão geral</p>
+								<h2 id="account-overview-title">Resumo da conta</h2>
+								<p>Um panorama rápido dos seus pedidos, pagamentos e dados salvos.</p>
+							</div>
+							<div class="account-overview">
+								<article class="account-stat-card">
+									<span>Pedidos</span>
+									<strong>{ fmt.Sprint(len(view.Orders)) }</strong>
+									<p>{ accountOrdersSummary(len(view.Orders)) }</p>
+								</article>
+								<article class="account-stat-card">
+									<span>Pagamentos</span>
+									<strong>{ fmt.Sprint(accountPendingPayments(view.Orders)) }</strong>
+									<p>{ accountPendingSummary(accountPendingPayments(view.Orders)) }</p>
+								</article>
+								<article class="account-stat-card">
+									<span>Dados</span>
+									<strong>{ accountDataStatus(view.Saved) }</strong>
+									<p>Usados para agilizar o checkout.</p>
+								</article>
+							</div>
+						</section>
+						<section id="pedidos" class="account-section motion-reveal" aria-labelledby="account-orders-title">
+							<div class="account-section-heading">
+								<p class="brand-kicker">Meus pedidos</p>
+								<h2 id="account-orders-title">Pedidos</h2>
+								<p>Acompanhe seus pedidos autenticados e retome pagamentos pendentes.</p>
+							</div>
+							if view.Message != "" {
+								if view.MessageIsError {
+									<p class="checkout-alert checkout-alert-error">{ view.Message }</p>
+								} else {
+									<p class="checkout-alert checkout-alert-success">{ view.Message }</p>
+								}
+							}
+							if len(view.Orders) == 0 {
+								<div class="account-empty-state">
+									<h3>Você ainda não fez nenhum pedido.</h3>
+									<p>Quando você comprar usando esta conta, seus pedidos aparecerão aqui.</p>
+									<a class="btn-base btn-primary" href="/produtos">Ver produtos</a>
+								</div>
+							} else {
+								<div class="account-order-list">
+									for _, order := range view.Orders {
+										<article class="account-order-card motion-reveal">
+											<div class="account-order-header">
+												<div>
+													<h3>Pedido #{ fmt.Sprint(order.OrderNumber) }</h3>
+													<p>{ order.CreatedAt.Format("02/01/2006") }</p>
+												</div>
+												<span class={ accountOrderStatusClass(order.Status) }>{ order.StatusLabel }</span>
+											</div>
+											<div class="account-order-meta">
+												<p><span>Data</span><strong>{ order.CreatedAt.Format("02/01/2006") }</strong></p>
+												<p><span>Total</span><strong>{ order.TotalBRL }</strong></p>
+												if order.Status == orders.StatusPaid {
+													<p><span>Pagamento</span><strong>Pagamento confirmado.</strong></p>
+												}
+											</div>
+											<div class="account-order-actions">
+												if view.PaymentAvailable && order.Status == orders.StatusPendingPayment && order.ID != "" {
+													<form method="post" action={ "/conta/pedidos/" + order.ID + "/pagar" }>
+														<button class="btn-base btn-primary" type="submit">Retomar pagamento</button>
+													</form>
+												}
+												<a class="btn-base btn-secondary" href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a>
+											</div>
+										</article>
+									}
+								</div>
+							}
+						</section>
+						<section id="dados" class="account-section motion-reveal" aria-labelledby="account-data-title">
+							<div class="account-section-heading">
+								<p class="brand-kicker">Meus dados</p>
+								<h2 id="account-data-title">Meus dados</h2>
+								<p>Essas informações ajudam a preencher seu checkout mais rápido.</p>
+							</div>
+							if view.Success {
+								<p class="checkout-alert checkout-alert-success">Dados atualizados com sucesso.</p>
+							}
+							if view.Errors.Any() {
+								<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
+							}
+							<form method="post" action="/conta" class="account-profile-form checkout-form" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
+								<input type="hidden" name="country_code" value="BR"/>
+								<section class="account-profile-card" aria-labelledby="account-contact">
+									<h3 id="account-contact">Dados pessoais</h3>
+									<p>Nome, e-mail e documentos usados no checkout.</p>
+									<div class="checkout-fields">
+										@CheckoutField("full_name", "Nome completo", "text", "name", "", view.Saved.FullName, view.Errors.Message("full_name"), false)
+										@AccountReadonlyEmailField(view.Profile.Email)
+										@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", view.Saved.Phone, view.Errors.Message("phone"), "", false, "phone", "15")
+										@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", view.Saved.CPF, view.Errors.Message("cpf"), "", false, "cpf", "14")
+									</div>
+								</section>
+								<section class="account-profile-card" aria-labelledby="account-shipping">
+									<h3 id="account-shipping">Endereço de entrega</h3>
+									<p>Endereço usado para acelerar compras futuras.</p>
+									<div class="checkout-fields">
+										@CheckoutPostalCodeField(view.Saved.PostalCode, view.Errors.Message("postal_code"))
+										@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", view.Saved.Street, view.Errors.Message("street"), false)
+										@CheckoutField("number", "Número", "text", "address-line2", "", view.Saved.Number, view.Errors.Message("number"), false)
+										@CheckoutField("complement", "Complemento", "text", "address-line3", "", view.Saved.Complement, view.Errors.Message("complement"), true)
+										@CheckoutField("district", "Bairro", "text", "address-level3", "", view.Saved.District, view.Errors.Message("district"), false)
+										@CheckoutField("city", "Cidade", "text", "address-level2", "", view.Saved.City, view.Errors.Message("city"), false)
+										@CheckoutField("state", "UF", "text", "address-level1", "", view.Saved.State, view.Errors.Message("state"), false)
+									</div>
+								</section>
+								<div class="checkout-form-actions">
+									<button class="btn-base btn-primary" type="submit">Salvar alterações</button>
+								</div>
+							</form>
+						</section>
+						<section id="seguranca" class="account-section motion-reveal" aria-labelledby="account-security-title">
+							<div class="account-section-heading">
+								<p class="brand-kicker">Segurança</p>
+								<h2 id="account-security-title">Segurança e conta</h2>
+								<p>Recursos de acesso da sua conta PrintLab.</p>
+							</div>
+							<div class="account-security-grid">
+								<article class="account-security-card">
+									<h3>Conta ativa</h3>
+									<dl>
+										<div><dt>E-mail</dt><dd>{ view.Profile.Email }</dd></div>
+										<div><dt>Status da conta</dt><dd>Ativa</dd></div>
+									</dl>
+								</article>
+								<article class="account-security-card">
+									<h3>Senha</h3>
+									<p>Precisa trocar sua senha? Enviaremos um link seguro para o seu e-mail.</p>
+									<a class="btn-base btn-secondary" href="/recuperar-senha">Redefinir senha</a>
+								</article>
+								<article class="account-security-card account-security-card-logout">
+									<h3>Sessão</h3>
+									<p>Use esta ação para encerrar o acesso neste navegador.</p>
+									<form method="post" action="/logout">
+										<button class="btn-base account-logout-button" type="submit">Sair da conta</button>
+									</form>
+								</article>
+							</div>
+						</section>
+					</div>
 				</div>
 			}
 		</section>
 		<script src="/static/js/checkout.js" defer></script>
+	}
+}
+
+func accountFirstName(view AccountPageView) string {
+	name := strings.TrimSpace(view.Saved.FullName)
+	if name == "" {
+		name = strings.TrimSpace(view.Profile.Name)
+	}
+	if name == "" {
+		return ""
+	}
+	return strings.Fields(name)[0]
+}
+
+func accountPendingPayments(ordersList []orders.AccountOrder) int {
+	count := 0
+	for _, order := range ordersList {
+		if order.Status == orders.StatusPendingPayment {
+			count++
+		}
+	}
+	return count
+}
+
+func accountOrdersSummary(count int) string {
+	if count == 1 {
+		return "1 pedido associado à sua conta."
+	}
+	return fmt.Sprintf("%d pedidos associados à sua conta.", count)
+}
+
+func accountPendingSummary(count int) string {
+	if count == 1 {
+		return "1 pedido aguardando pagamento."
+	}
+	return fmt.Sprintf("%d pedidos aguardando pagamento.", count)
+}
+
+func accountDataStatus(profile customerprofile.Profile) string {
+	if strings.TrimSpace(profile.FullName) != "" && strings.TrimSpace(profile.Phone) != "" && strings.TrimSpace(profile.CPF) != "" && strings.TrimSpace(profile.PostalCode) != "" && strings.TrimSpace(profile.Street) != "" && strings.TrimSpace(profile.Number) != "" && strings.TrimSpace(profile.District) != "" && strings.TrimSpace(profile.City) != "" && strings.TrimSpace(profile.State) != "" {
+		return "Dados cadastrados"
+	}
+	return "Complete seus dados"
+}
+
+func accountOrderStatusClass(status string) string {
+	className := "account-order-status"
+	switch status {
+	case orders.StatusPendingPayment:
+		return className + " account-order-status-pending"
+	case orders.StatusPaid:
+		return className + " account-order-status-paid"
+	default:
+		return className
 	}
 }
 

@@ -160,6 +160,8 @@ Preservar diferenças funcionais entre catálogo, checkout, conta e Admin.
 
 ## 19.3.4 — Minha Conta
 
+Status: implementada; aguardando validação visual manual.
+
 A área `/conta` precisa de revisão visual completa.
 
 Funcionalidades existentes devem ser preservadas:
@@ -213,7 +215,9 @@ B) subpáginas como:
 
 `/conta/seguranca`
 
-Criar subpáginas somente se trouxer vantagem clara de organização, navegação mobile e escalabilidade.
+Decisão desta fase: manter uma dashboard única em `/conta`, sem criar subpáginas. O volume atual de funcionalidades ainda não justifica rotas separadas para pedidos, dados e segurança; a página única recebeu navegação interna por âncoras reais para preparar uma separação futura se a conta crescer.
+
+Criar subpáginas somente se trouxer vantagem clara de organização, navegação mobile e escalabilidade em fase futura.
 
 Não criar complexidade apenas por estética.
 
@@ -227,6 +231,16 @@ Pedidos devem ter melhor apresentação visual, incluindo:
 - retomada de pagamento quando aplicável.
 
 Status devem utilizar badges claros e acessíveis.
+
+Implementado nesta subfase:
+
+- hero próprio da conta com identidade PrintLab;
+- navegação interna para Visão geral, Pedidos, Meus dados e Segurança;
+- cards de resumo sem novas consultas;
+- cards próprios de pedidos com status, acompanhamento e retomada por POST;
+- empty state de pedidos com CTA para produtos;
+- formulário de dados agrupado em Dados pessoais e Endereço de entrega;
+- seção Segurança e conta com e-mail, status, recuperação de senha e logout por POST.
 
 ## 19.3.5 — Carrinho e checkout
 

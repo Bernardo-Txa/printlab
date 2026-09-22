@@ -246,7 +246,7 @@ func accountSaveHandler(service customerAuthService, ordersService accountOrders
 			renderHTML(w, r, 503, templates.AuthUnavailable())
 			return
 		}
-		http.Redirect(w, r, "/conta?salvo=1", 303)
+		http.Redirect(w, r, "/conta?salvo=1#dados", 303)
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -261,9 +263,91 @@ func TestAccountRendersAuthenticatedUser(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Minha conta", "Maria Cliente", "maria@example.com", "Conta ativa"} {
+	for _, expected := range []string{"Conta PrintLab", "Minha conta", "Olá, Maria.", "maria@example.com", "Conta ativa", "Redefinir senha"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected account page to contain %q", expected)
+		}
+	}
+}
+
+func TestAccountRendersDashboardNavigationAndSecurity(t *testing.T) {
+	service := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	handler := newCustomerAuthTestHandler(service)
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{
+		`class="account-hero`,
+		`href="#visao-geral">Visão geral`,
+		`href="#pedidos">Pedidos`,
+		`href="#dados">Meus dados`,
+		`href="#seguranca">Segurança`,
+		`id="visao-geral"`,
+		`id="pedidos"`,
+		`id="dados"`,
+		`id="seguranca"`,
+		`href="/recuperar-senha">Redefinir senha`,
+		`method="post" action="/logout"`,
+		"Sair da conta",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected account dashboard to contain %q", expected)
+		}
+	}
+	if strings.Contains(body, "admin-panel account-panel") {
+		t.Fatal("expected account dashboard not to use admin panel layout")
+	}
+}
+
+func TestAccountEmptyOrdersShowsCustomerEmptyState(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, nil, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Você ainda não fez nenhum pedido.", "Quando você comprar usando esta conta", `href="/produtos">Ver produtos`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected empty orders state to contain %q", expected)
+		}
+	}
+	if strings.Contains(body, "Você ainda não tem pedidos associados a esta conta.") {
+		t.Fatal("expected old empty copy to be removed")
+	}
+}
+
+func TestAccountDoesNotExposeInternalUUIDAsVisibleText(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{ID: orderID, OrderNumber: 1001, CreatedAt: accountOrderDate(), Status: ordersdomain.StatusPendingPayment, StatusLabel: "Aguardando pagamento", TotalBRL: "R$ 99,90", TrackingURL: "/acompanhar/abc"}}}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, ordersService, &fakeAccountProfileService{}, &fakePaymentService{available: true}, "https://printlab.test").ServeHTTP(rec, req)
+
+	visibleText := regexp.MustCompile(`<[^>]+>`).ReplaceAllString(rec.Body.String(), " ")
+	if strings.Contains(visibleText, orderID) || strings.Contains(visibleText, accountTestAuthProfile().ID) {
+		t.Fatalf("expected internal UUIDs not to appear as visible text, got %s", visibleText)
+	}
+}
+
+func TestAccountDoesNotCreateNewAccountRoutes(t *testing.T) {
+	source, err := os.ReadFile("main.go")
+	if err != nil {
+		t.Fatalf("expected main.go to be readable, got %v", err)
+	}
+	for _, forbidden := range []string{"/conta/dados", "/conta/seguranca", "/conta/pedidos\""} {
+		if strings.Contains(string(source), forbidden) {
+			t.Fatalf("expected no new account subroute %q", forbidden)
 		}
 	}
 }
@@ -369,7 +453,7 @@ func TestAccountPostValidSavesProfile(t *testing.T) {
 
 	accountSaveHandler(auth, &fakeOrderReviewService{}, profiles, "https://printlab.test").ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?salvo=1" {
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?salvo=1#dados" {
 		t.Fatalf("expected saved redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
 	}
 	if !profiles.saveCalled || profiles.saved.AuthUserID != accountTestAuthProfile().ID || profiles.saved.FullName != "Joao Silva" {
