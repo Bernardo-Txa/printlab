@@ -42,11 +42,6 @@ func (r *PostgresRepository) Review(ctx context.Context, tokenHash []byte, now t
 }
 
 func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error) {
-	// Transactional implementation is shared with ConfirmForCustomer (r.pool.Begin(ctx)).
-	// The shared path also performs tx.Rollback(ctx) on deferred cleanup.
-	// It preserves existingOrderForCart idempotency before insertion.
-	// insertOrder(ctx, tx, cart.ID, page, customerAuthUserID) is performed by the shared path.
-	// insertOrderCustomer(ctx, tx, orderID, page.Customer) and subsequent snapshot writes remain transactional.
 	return r.confirm(ctx, tokenHash, expectedFingerprint, now, params, "")
 }
 func (r *PostgresRepository) ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID string) (ConfirmResult, error) {
@@ -204,6 +199,12 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 }
 
 func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]AccountOrder, error) {
+	if r == nil || r.pool == nil {
+		return nil, ErrUnavailable
+	}
+	if id == "" {
+		return []AccountOrder{}, nil
+	}
 	rows, err := r.pool.Query(ctx, `select order_number, created_at, status, total_cents, public_tracking_id::text from public.orders where customer_auth_user_id=$1::uuid order by created_at desc`, id)
 	if err != nil {
 		return nil, ErrUnavailable
@@ -228,6 +229,12 @@ func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]
 	return result, nil
 }
 func (r *PostgresRepository) LatestCustomerSnapshot(ctx context.Context, id string) (CustomerSnapshot, bool, error) {
+	if r == nil || r.pool == nil {
+		return CustomerSnapshot{}, false, ErrUnavailable
+	}
+	if id == "" {
+		return CustomerSnapshot{}, false, nil
+	}
 	var s CustomerSnapshot
 	err := r.pool.QueryRow(ctx, `select c.full_name,c.phone,c.cpf,a.postal_code,a.street,a.number,coalesce(a.complement,''),a.district,a.city,a.state,a.country_code from public.orders o join public.order_customer_details c on c.order_id=o.id join public.order_shipping_addresses a on a.order_id=o.id where o.customer_auth_user_id=$1::uuid order by o.created_at desc limit 1`, id).Scan(&s.FullName, &s.Phone, &s.CPF, &s.PostalCode, &s.Street, &s.Number, &s.Complement, &s.District, &s.City, &s.State, &s.CountryCode)
 	if errors.Is(err, pgx.ErrNoRows) {

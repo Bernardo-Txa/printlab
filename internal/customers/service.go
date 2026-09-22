@@ -58,6 +58,7 @@ func (s *Service) Page(ctx context.Context, tokenHash []byte, saved bool) (Check
 	if found {
 		form.Values = InputFromDetails(details)
 		form.Saved = saved
+		form.Found = true
 	}
 
 	return CheckoutPage{Cart: cartView, Form: form}, nil

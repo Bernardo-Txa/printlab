@@ -20,7 +20,7 @@ type checkoutDetailsService interface {
 	Save(ctx context.Context, tokenHash []byte, input customers.CheckoutInput) (customers.SaveResult, error)
 }
 
-func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager, profiles accountProfileService) http.HandlerFunc {
+func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdomain.CookieManager, profiles accountProfileService, ordersService accountOrdersService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, tokenHash, ok := checkoutToken(cookies, r)
 		if !ok {
@@ -39,12 +39,8 @@ func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdom
 			handleCheckoutDetailsError(w, r, err, customers.CheckoutPage{})
 			return
 		}
-		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok {
-			if saved, found, profileErr := profiles.Get(r.Context(), profile.ID); profileErr == nil && found && page.Form.Values.FullName == "" {
-				page.Form.Values = saved.CheckoutInput(profile.Email)
-			} else if page.Form.Values.FullName == "" {
-				page.Form.Values.FullName, page.Form.Values.Email = profile.Name, profile.Email
-			}
+		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok && !page.Form.Found {
+			page.Form.Values = checkoutFallbackInput(r.Context(), profile, profiles, ordersService)
 		}
 
 		renderHTML(w, r, http.StatusOK, templates.CheckoutDetails(page))
@@ -81,11 +77,41 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 		}
 
 		ensureCartCookies(cookies).SetCookie(w, token, result.ExpiresAt)
-		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok {
-			_ = profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, result.Page.Form.Values))
+		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok && profiles != nil {
+			if err := profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, result.Page.Form.Values)); err != nil {
+				logCustomerAuthError(r.Context(), "customer_profile_sync_failed", err)
+			}
 		}
 		http.Redirect(w, r, "/checkout/frete", http.StatusSeeOther)
 	}
+}
+
+func checkoutFallbackInput(ctx context.Context, profile customerauth.Profile, profiles accountProfileService, ordersService accountOrdersService) customers.CheckoutInput {
+	if profiles != nil {
+		saved, found, err := profiles.Get(ctx, profile.ID)
+		if err != nil {
+			logCustomerAuthError(ctx, "customer_profile_load_failed", err)
+		} else if found {
+			return saved.CheckoutInput(profile.Email)
+		}
+	}
+	if snapshot, found := latestCustomerSnapshotForProfile(ctx, ordersService, profile.ID); found {
+		return customerprofile.Profile{
+			AuthUserID:  profile.ID,
+			FullName:    snapshot.FullName,
+			Phone:       snapshot.Phone,
+			CPF:         snapshot.CPF,
+			PostalCode:  snapshot.PostalCode,
+			Street:      snapshot.Street,
+			Number:      snapshot.Number,
+			Complement:  snapshot.Complement,
+			District:    snapshot.District,
+			City:        snapshot.City,
+			State:       snapshot.State,
+			CountryCode: snapshot.CountryCode,
+		}.CheckoutInput(profile.Email)
+	}
+	return customers.CheckoutInput{FullName: profile.Name, Email: profile.Email, CountryCode: customers.CountryCodeBR}
 }
 
 func setCheckoutPrivateCache(w http.ResponseWriter) {

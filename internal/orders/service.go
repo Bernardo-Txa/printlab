@@ -12,6 +12,8 @@ type Repository interface {
 	Review(ctx context.Context, tokenHash []byte, now time.Time, params ReviewParams) (ReviewPage, error)
 	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error)
 	ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID string) (ConfirmResult, error)
+	ListForCustomer(ctx context.Context, customerAuthUserID string) ([]AccountOrder, error)
+	LatestCustomerSnapshot(ctx context.Context, customerAuthUserID string) (CustomerSnapshot, bool, error)
 	Get(ctx context.Context, orderID string) (OrderPage, error)
 	Track(ctx context.Context, trackingID string) (TrackingPage, error)
 }
@@ -95,20 +97,22 @@ func (s *Service) confirm(ctx context.Context, tokenHash []byte, expectedFingerp
 	return result, nil
 }
 func (s *Service) ListForCustomer(ctx context.Context, id string) ([]AccountOrder, error) {
-	if r, ok := s.repository.(interface {
-		ListForCustomer(context.Context, string) ([]AccountOrder, error)
-	}); ok {
-		return r.ListForCustomer(ctx, id)
+	if s == nil || s.repository == nil {
+		return nil, ErrUnavailable
 	}
-	return nil, ErrUnavailable
+	if id == "" {
+		return []AccountOrder{}, nil
+	}
+	return s.repository.ListForCustomer(ctx, id)
 }
 func (s *Service) LatestCustomerSnapshot(ctx context.Context, id string) (CustomerSnapshot, bool, error) {
-	if r, ok := s.repository.(interface {
-		LatestCustomerSnapshot(context.Context, string) (CustomerSnapshot, bool, error)
-	}); ok {
-		return r.LatestCustomerSnapshot(ctx, id)
+	if s == nil || s.repository == nil {
+		return CustomerSnapshot{}, false, ErrUnavailable
 	}
-	return CustomerSnapshot{}, false, ErrUnavailable
+	if id == "" {
+		return CustomerSnapshot{}, false, nil
+	}
+	return s.repository.LatestCustomerSnapshot(ctx, id)
 }
 
 func (s *Service) Get(ctx context.Context, orderID string) (OrderPage, error) {

@@ -81,6 +81,7 @@ type CheckoutForm struct {
 	Values CheckoutInput
 	Errors FieldErrors
 	Saved  bool
+	Found  bool
 }
 
 func (f CheckoutForm) HasErrors() bool {

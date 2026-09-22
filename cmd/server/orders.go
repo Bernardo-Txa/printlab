@@ -17,27 +17,11 @@ import (
 type orderReviewService interface {
 	Review(ctx context.Context, tokenHash []byte, stale bool) (ordersdomain.ReviewPage, error)
 	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string) (ordersdomain.ConfirmResult, error)
+	ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint string, customerAuthUserID string) (ordersdomain.ConfirmResult, error)
+	ListForCustomer(ctx context.Context, customerAuthUserID string) ([]ordersdomain.AccountOrder, error)
+	LatestCustomerSnapshot(ctx context.Context, customerAuthUserID string) (ordersdomain.CustomerSnapshot, bool, error)
 	Get(ctx context.Context, orderID string) (ordersdomain.OrderPage, error)
 	Track(ctx context.Context, trackingID string) (ordersdomain.TrackingPage, error)
-}
-
-type accountOrdersAdapter struct{ service orderReviewService }
-
-func (a accountOrdersAdapter) ListForCustomer(ctx context.Context, id string) ([]ordersdomain.AccountOrder, error) {
-	if s, ok := a.service.(interface {
-		ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
-	}); ok {
-		return s.ListForCustomer(ctx, id)
-	}
-	return nil, ordersdomain.ErrUnavailable
-}
-func (a accountOrdersAdapter) LatestCustomerSnapshot(ctx context.Context, id string) (ordersdomain.CustomerSnapshot, bool, error) {
-	if s, ok := a.service.(interface {
-		LatestCustomerSnapshot(context.Context, string) (ordersdomain.CustomerSnapshot, bool, error)
-	}); ok {
-		return s.LatestCustomerSnapshot(ctx, id)
-	}
-	return ordersdomain.CustomerSnapshot{}, false, ordersdomain.ErrUnavailable
 }
 
 func checkoutReviewPageHandler(service orderReviewService, cookies *cartdomain.CookieManager) http.HandlerFunc {
@@ -90,19 +74,11 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 		}
 
 		fingerprint := strings.TrimSpace(r.PostFormValue("review_fingerprint"))
-		var result ordersdomain.ConfirmResult
-		var err error
-		if customerService, ok := service.(interface {
-			ConfirmForCustomer(context.Context, []byte, string, string) (ordersdomain.ConfirmResult, error)
-		}); ok {
-			id := ""
-			if profile, profileOK := customerauth.ProfileFromContext(r.Context()); profileOK {
-				id = profile.ID
-			}
-			result, err = customerService.ConfirmForCustomer(r.Context(), tokenHash, fingerprint, id)
-		} else {
-			result, err = service.Confirm(r.Context(), tokenHash, fingerprint)
+		id := ""
+		if profile, profileOK := customerauth.ProfileFromContext(r.Context()); profileOK {
+			id = profile.ID
 		}
+		result, err := service.ConfirmForCustomer(r.Context(), tokenHash, fingerprint, id)
 		if err != nil {
 			if orderCreationOperationalFailure(err) {
 				logOperationalEvent(r.Context(), operationalLogLevelError, "order_creation_failed", "reason=confirmation_failed")

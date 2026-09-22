@@ -2,13 +2,18 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
+	"github.com/Bernardo-Txa/printlab/internal/customers"
+	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 )
 
 func TestSignupValidCreatesSupabaseUser(t *testing.T) {
@@ -261,6 +266,147 @@ func TestAccountRendersAuthenticatedUser(t *testing.T) {
 	}
 }
 
+func TestAccountGetLoadsCustomerProfile(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	profiles := &fakeAccountProfileService{profile: accountSavedProfile(), found: true}
+	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{OrderNumber: 1001, StatusLabel: "Aguardando pagamento", TotalBRL: "R$ 99,90", TrackingURL: "/acompanhar/abc"}}}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, ordersService, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Perfil Salvo", `value="27988887777"`, "Pedido #1001", `data-checkout-mask="phone"`, `data-checkout-mask="cpf"`, `data-checkout-mask="cep"`, `data-cep-lookup-endpoint="/api/cep"`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected account page to contain %q", expected)
+		}
+	}
+	if profiles.getID != accountTestAuthProfile().ID {
+		t.Fatalf("expected profile lookup by auth id, got %q", profiles.getID)
+	}
+}
+
+func TestAccountGetFallbackLatestOrderUsesAuthUserID(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	profiles := &fakeAccountProfileService{}
+	ordersService := &fakeOrderReviewService{snapshotFound: true, snapshot: ordersdomain.CustomerSnapshot{
+		FullName: "Pedido Recente", Phone: "+5527999999999", CPF: "52998224725", PostalCode: "29100000", Street: "Rua Pedido", Number: "45", District: "Centro", City: "Vila Velha", State: "ES", CountryCode: customers.CountryCodeBR,
+	}}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, ordersService, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	if ordersService.lastSnapshotCustomerID != accountTestAuthProfile().ID {
+		t.Fatalf("expected latest order lookup by auth id, got %q", ordersService.lastSnapshotCustomerID)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Pedido Recente") || strings.Contains(body, "cliente@example.com") && strings.Contains(body, "customer_email") {
+		t.Fatal("expected snapshot fallback without email ownership lookup")
+	}
+}
+
+func TestAccountWithoutProfileOrOrderUsesSupabaseNameAndEmail(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{`value="Cliente Auth"`, `value="cliente@example.com"`, `readonly`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected auth fallback to contain %q", expected)
+		}
+	}
+}
+
+func TestAccountPostValidSavesProfile(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	profiles := &fakeAccountProfileService{}
+	req := accountFormRequest(validCheckoutForm())
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountSaveHandler(auth, &fakeOrderReviewService{}, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta?salvo=1" {
+		t.Fatalf("expected saved redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if !profiles.saveCalled || profiles.saved.AuthUserID != accountTestAuthProfile().ID || profiles.saved.FullName != "Joao Silva" {
+		t.Fatalf("expected saved profile from form and auth id, got %#v", profiles.saved)
+	}
+}
+
+func TestAccountPostUsesSessionEmailNotBrowserEmail(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	profiles := &fakeAccountProfileService{}
+	form := validCheckoutForm()
+	form.Set("email", "email-invalido-do-browser")
+	req := accountFormRequest(form)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountSaveHandler(auth, &fakeOrderReviewService{}, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected redirect, got %d", rec.Code)
+	}
+	if profiles.saved.FullName == "" || profiles.saved.AuthUserID != accountTestAuthProfile().ID {
+		t.Fatalf("expected profile saved, got %#v", profiles.saved)
+	}
+}
+
+func TestAccountPostInvalidShowsErrorsAndPreservesOrders(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	ordersService := &fakeOrderReviewService{accountOrders: []ordersdomain.AccountOrder{{OrderNumber: 1002, StatusLabel: "Pago", TotalBRL: "R$ 10,00", TrackingURL: "/acompanhar/def"}}}
+	profiles := &fakeAccountProfileService{}
+	form := validCheckoutForm()
+	form.Set("cpf", "123")
+	req := accountFormRequest(form)
+	req.Header.Set("Origin", "https://printlab.test")
+	rec := httptest.NewRecorder()
+
+	accountSaveHandler(auth, ordersService, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Informe um CPF valido.", "Pedido #1002", `value="Joao Silva"`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected invalid account page to contain %q", expected)
+		}
+	}
+	if profiles.saveCalled {
+		t.Fatal("expected invalid profile not to be saved")
+	}
+}
+
+func TestAccountSavedQueryShowsSuccessMessage(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/conta?salvo=1", nil)
+	rec := httptest.NewRecorder()
+
+	accountHandler(auth, &fakeOrderReviewService{}, &fakeAccountProfileService{}, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Dados atualizados com sucesso.") {
+		t.Fatal("expected account success message")
+	}
+}
+
 func TestNewPasswordRequiresRecoverySession(t *testing.T) {
 	service := &fakeCustomerAuthService{available: true, resolveErr: customerauth.ErrUnauthenticated}
 	handler := newCustomerAuthTestHandler(service)
@@ -309,6 +455,74 @@ func TestGuestCheckoutStillWorksWithoutCustomerSession(t *testing.T) {
 func newCustomerAuthTestHandler(service customerAuthService) http.Handler {
 	return newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, service, "https://printlab.test", "https://supabase.test")
 }
+
+func accountFormRequest(values url.Values) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/conta", strings.NewReader(values.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req
+}
+
+func accountTestAuthProfile() customerauth.Profile {
+	return customerauth.Profile{ID: "11111111-1111-1111-1111-111111111111", Name: "Cliente Auth", Email: "cliente@example.com"}
+}
+
+func accountSavedProfile() customerprofile.Profile {
+	return customerprofile.Profile{AuthUserID: accountTestAuthProfile().ID, FullName: "Perfil Salvo", Phone: "27988887777", CPF: "52998224725", PostalCode: "29100000", Street: "Rua Perfil", Number: "123", District: "Centro", City: "Vila Velha", State: "ES", CountryCode: customers.CountryCodeBR}
+}
+
+type fakeAccountProfileService struct {
+	profile customerprofile.Profile
+	found   bool
+	getErr  error
+	saveErr error
+
+	getID      string
+	saveCalled bool
+	saved      customerprofile.Profile
+}
+
+func (s *fakeAccountProfileService) Get(_ context.Context, id string) (customerprofile.Profile, bool, error) {
+	s.getID = id
+	if s.getErr != nil {
+		return customerprofile.Profile{}, false, s.getErr
+	}
+	return s.profile, s.found, nil
+}
+
+func (s *fakeAccountProfileService) Save(_ context.Context, profile customerprofile.Profile) error {
+	s.saveCalled = true
+	s.saved = profile
+	return s.saveErr
+}
+
+func TestAccountProfileForDisplayLogsProfileErrors(t *testing.T) {
+	profile := accountTestAuthProfile()
+	got := accountProfileForDisplay(requestIDContext(context.Background(), "test-request-id"), profile, nil, &fakeAccountProfileService{getErr: errors.New("db down")})
+	if got.FullName != profile.Name || got.AuthUserID != profile.ID {
+		t.Fatalf("expected auth fallback after profile error, got %#v", got)
+	}
+}
+
+func TestAccountPostOriginProtection(t *testing.T) {
+	auth := &fakeCustomerAuthService{available: true, profile: accountTestAuthProfile()}
+	profiles := &fakeAccountProfileService{}
+	req := accountFormRequest(validCheckoutForm())
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+
+	accountSaveHandler(auth, &fakeOrderReviewService{}, profiles, "https://printlab.test").ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden, got %d", rec.Code)
+	}
+	if profiles.saveCalled {
+		t.Fatal("expected rejected origin not to save profile")
+	}
+}
+
+var _ accountProfileService = (*fakeAccountProfileService)(nil)
+
+var _ = time.Time{}
 
 type fakeCustomerAuthService struct {
 	available bool

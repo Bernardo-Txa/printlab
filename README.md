@@ -218,7 +218,7 @@ Configuracao local ou de hosting para runtime:
 
 O cookie anonimo do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
 
-A autenticação pública de cliente usa Supabase Auth em `/cadastro`, `/login`, `/recuperar-senha`, `/auth/callback`, `/auth/session`, `/conta` e `POST /logout`. O backend não cria tabela de cliente nesta fase; ele apenas transporta os tokens de sessão emitidos pelo Supabase em cookies HttpOnly para SSR. Compra como visitante continua disponível.
+A autenticação pública de cliente usa Supabase Auth em `/cadastro`, `/login`, `/recuperar-senha`, `/auth/callback`, `/auth/session`, `/conta` e `POST /logout`. O backend transporta os tokens de sessão emitidos pelo Supabase em cookies HttpOnly para SSR e usa `customer_profiles` somente para dados de contato/endereco do cliente autenticado, vinculados pelo UUID do Supabase Auth. Compra como visitante continua disponível.
 
 Instalacao local do tooling:
 

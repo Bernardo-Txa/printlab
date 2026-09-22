@@ -186,3 +186,7 @@ Aplicar antes do backend atualizado. A versao antiga do upsert nao e compativel 
 `20260920234746_add_pickup_delivery_method.sql` adiciona `delivery_method` em `cart_shipping_selections` e `order_shipping_details`, permitindo `shipping` e `pickup`. A migration transforma as constraints de frete em regras condicionais: envio continua exigindo caixa, provedor, servico e pacote positivo; retirada exige caixa nula, provider/servico vazios, frete zero e pacote zerado. Dados historicos existentes recebem default `shipping`.
 
 Aplicar antes do backend atualizado para permitir selecoes `pickup`. A versao antiga do codigo continua compatível com o default `shipping` enquanto nao houver linhas de retirada. Rollback destrutivo removeria a modalidade e pedidos de retirada perderiam a classificacao explicita; o caminho preferido e corrigir adiante mantendo a coluna.
+
+## Fase 18.3.1 — Perfil de cliente
+
+`20260921133000_create_customer_profiles.sql` cria `public.customer_profiles` para salvar contato e endereco de clientes autenticados pelo UUID do Supabase Auth. A tabela tem RLS habilitado, nao referencia `auth.users` e nao faz associacao por e-mail. O backend usa esta tabela em `/conta` e como fallback de `/checkout/dados`; quando ausente, pode reutilizar snapshots de pedidos somente por `orders.customer_auth_user_id`.

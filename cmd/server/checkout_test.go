@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,8 +14,11 @@ import (
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
+	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 )
 
 func TestCheckoutDetailsGetWithoutCartRedirectsToCart(t *testing.T) {
@@ -100,6 +105,191 @@ func TestCheckoutDetailsPostValidRedirects(t *testing.T) {
 	}
 	if service.lastInput.CPF != "529.982.247-25" || service.lastInput.CountryCode != customers.CountryCodeBR {
 		t.Fatalf("expected submitted customer fields, got %#v", service.lastInput)
+	}
+}
+
+func TestCheckoutDetailsGetKeepsExistingCartDataBeforeProfile(t *testing.T) {
+	page := checkoutPageFixture()
+	page.Form.Values = validCheckoutInputForHandler(func(input *customers.CheckoutInput) {
+		input.FullName = "Carrinho Atual"
+	})
+	page.Form.Found = true
+	service := &fakeCheckoutDetailsService{page: page}
+	profiles := &fakeAccountProfileService{profile: customerprofile.Profile{FullName: "Perfil Cliente"}, found: true}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/dados", nil)
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	checkoutDetailsPageHandler(service, cookies, profiles, &fakeOrderReviewService{}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Carrinho Atual") || strings.Contains(body, "Perfil Cliente") {
+		t.Fatal("expected existing cart data to have priority over profile")
+	}
+	if profiles.getID != "" {
+		t.Fatalf("expected profile not to be loaded when cart has details, got %q", profiles.getID)
+	}
+}
+
+func TestCheckoutDetailsGetUsesCustomerProfileFallback(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: checkoutPageFixture()}
+	profiles := &fakeAccountProfileService{profile: accountSavedProfile(), found: true}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/dados", nil)
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	checkoutDetailsPageHandler(service, cookies, profiles, &fakeOrderReviewService{}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Perfil Salvo") || !strings.Contains(body, `value="cliente@example.com"`) {
+		t.Fatal("expected checkout fallback from customer profile and auth email")
+	}
+}
+
+func TestCheckoutDetailsGetUsesLatestOrderFallback(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: checkoutPageFixture()}
+	ordersService := &fakeOrderReviewService{snapshotFound: true, snapshot: ordersdomain.CustomerSnapshot{
+		FullName: "Pedido Checkout", Phone: "+5527999999999", CPF: "52998224725", PostalCode: "29100000", Street: "Rua Pedido", Number: "8", District: "Centro", City: "Vila Velha", State: "ES", CountryCode: customers.CountryCodeBR,
+	}}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/dados", nil)
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	checkoutDetailsPageHandler(service, cookies, &fakeAccountProfileService{}, ordersService).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	if ordersService.lastSnapshotCustomerID != accountTestAuthProfile().ID {
+		t.Fatalf("expected latest order lookup by auth id, got %q", ordersService.lastSnapshotCustomerID)
+	}
+	if !strings.Contains(rec.Body.String(), "Pedido Checkout") {
+		t.Fatal("expected checkout fallback from latest order")
+	}
+}
+
+func TestCheckoutDetailsGetUsesAuthNameEmailFallback(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: checkoutPageFixture()}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/dados", nil)
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	checkoutDetailsPageHandler(service, cookies, &fakeAccountProfileService{}, &fakeOrderReviewService{}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{`value="Cliente Auth"`, `value="cliente@example.com"`} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected auth fallback to contain %q", expected)
+		}
+	}
+}
+
+func TestCheckoutDetailsGuestRemainsUnchanged(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: checkoutPageFixture()}
+	profiles := &fakeAccountProfileService{profile: accountSavedProfile(), found: true}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/dados", nil)
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	checkoutDetailsPageHandler(service, cookies, profiles, &fakeOrderReviewService{}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	if profiles.getID != "" || strings.Contains(rec.Body.String(), "Perfil Salvo") {
+		t.Fatal("expected guest checkout not to use customer profile")
+	}
+}
+
+func TestCheckoutDetailsPostAuthenticatedUpdatesProfile(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: customers.CheckoutPage{Cart: checkoutPageFixture().Cart, Form: customers.CheckoutForm{Values: validCheckoutInputForHandler(nil)}}}
+	profiles := &fakeAccountProfileService{}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := checkoutFormRequest(validCheckoutForm())
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	saveCheckoutDetailsHandler(service, cookies, "https://printlab.test", profiles).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected redirect, got %d", rec.Code)
+	}
+	if !profiles.saveCalled || profiles.saved.AuthUserID != accountTestAuthProfile().ID || profiles.saved.FullName != "Joao Silva" {
+		t.Fatalf("expected authenticated checkout to sync profile, got %#v", profiles.saved)
+	}
+}
+
+func TestCheckoutDetailsPostGuestDoesNotUpdateProfile(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: customers.CheckoutPage{Cart: checkoutPageFixture().Cart, Form: customers.CheckoutForm{Values: validCheckoutInputForHandler(nil)}}}
+	profiles := &fakeAccountProfileService{}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := checkoutFormRequest(validCheckoutForm())
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	saveCheckoutDetailsHandler(service, cookies, "https://printlab.test", profiles).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("expected redirect, got %d", rec.Code)
+	}
+	if profiles.saveCalled {
+		t.Fatal("expected guest checkout not to sync profile")
+	}
+}
+
+func TestCheckoutDetailsPostProfileSyncErrorLogsSafeEventAndRedirects(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: customers.CheckoutPage{Cart: checkoutPageFixture().Cart, Form: customers.CheckoutForm{Values: validCheckoutInputForHandler(nil)}}}
+	profiles := &fakeAccountProfileService{saveErr: errors.New("db failed for Joao Silva cliente@example.com 52998224725 Rua Um")}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := checkoutFormRequest(validCheckoutForm())
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(requestIDContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()), "0123456789abcdef"))
+	rec := httptest.NewRecorder()
+	var logs bytes.Buffer
+	oldWriter := log.Writer()
+	oldFlags := log.Flags()
+	log.SetOutput(&logs)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(oldWriter)
+		log.SetFlags(oldFlags)
+	})
+
+	saveCheckoutDetailsHandler(service, cookies, "https://printlab.test", profiles).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkout/frete" {
+		t.Fatalf("expected checkout to continue, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	logText := logs.String()
+	if !strings.Contains(logText, "event=customer_profile_sync_failed") || !strings.Contains(logText, "request_id=0123456789abcdef") {
+		t.Fatalf("expected safe sync failure event, got %q", logText)
+	}
+	for _, leaked := range []string{"Joao", "cliente@example.com", "52998224725", "Rua Um"} {
+		if strings.Contains(logText, leaked) {
+			t.Fatalf("expected profile sync log not to leak %q", leaked)
+		}
 	}
 }
 

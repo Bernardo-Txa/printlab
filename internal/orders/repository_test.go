@@ -12,9 +12,9 @@ func TestRepositoryConfirmUsesTransactionLockAndCleanup(t *testing.T) {
 		t.Fatalf("expected repository source to be readable, got %v", err)
 	}
 
-	confirmSource, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) Confirm")
+	confirmSource, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) confirm")
 	if !ok {
-		t.Fatal("expected Confirm to exist")
+		t.Fatal("expected confirm to exist")
 	}
 
 	for _, expected := range []string{

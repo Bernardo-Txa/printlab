@@ -1163,6 +1163,41 @@ RLS:
 - RLS habilitado.
 - Nenhuma policy publica criada.
 
+## Tabela `public.customer_profiles`
+
+Perfil de contato e endereco salvo para clientes autenticados. A identidade oficial continua no Supabase Auth; esta tabela guarda apenas dados reutilizados em `/conta` e no preenchimento automatico do checkout.
+
+Campos:
+
+| Coluna | Tipo | Nulo | Default | Observacao |
+| --- | --- | --- | --- | --- |
+| `auth_user_id` | `uuid` | nao | - | UUID do usuario Supabase Auth autenticado. |
+| `full_name` | `text` | nao | - | Nome completo normalizado pelas validacoes de checkout. |
+| `phone` | `text` | nao | - | Telefone normalizado. |
+| `cpf` | `text` | nao | - | CPF normalizado para 11 digitos. |
+| `postal_code` | `text` | nao | - | CEP normalizado para 8 digitos. |
+| `street` | `text` | nao | - | Logradouro. |
+| `number` | `text` | nao | - | Numero. |
+| `complement` | `text` | sim | - | Complemento opcional. |
+| `district` | `text` | nao | - | Bairro. |
+| `city` | `text` | nao | - | Cidade. |
+| `state` | `text` | nao | - | UF. |
+| `country_code` | `text` | nao | `'BR'` | Pais suportado no checkout atual. |
+| `created_at` | `timestamptz` | nao | `now()` | Criacao do registro. |
+| `updated_at` | `timestamptz` | nao | `now()` | Atualizado em upsert pelo backend. |
+
+Semantica:
+
+- O backend sempre associa o perfil pelo UUID da sessao Supabase Auth; e-mail enviado pelo navegador nao participa de ownership.
+- `GET /conta` e `GET /checkout/dados` podem usar o pedido mais recente como fallback somente por `orders.customer_auth_user_id`.
+- `GET` nao cria nem atualiza `customer_profiles`; escrita ocorre em `POST /conta` e como sincronizacao opcional apos salvar dados de checkout autenticado.
+- Nao ha FK para `auth.users` para manter baixo acoplamento com o schema interno do Supabase Auth.
+
+RLS:
+
+- RLS habilitado.
+- Nenhuma policy publica criada.
+
 ## Entidades candidatas
 
 - `customers`: identidade permanente de clientes somente se houver login ou conta futura.

@@ -212,32 +212,13 @@ func accountHandler(service customerAuthService, ordersService accountOrdersServ
 		if !ok {
 			return
 		}
-		customerOrders, err := ordersService.ListForCustomer(r.Context(), profile.ID)
-		if err != nil {
-			logCustomerAuthError(r.Context(), "customer_orders_load_failed", err)
-			customerOrders = nil
-		}
-		stored, found, profileErr := profiles.Get(r.Context(), profile.ID)
-		if profileErr != nil {
-			logCustomerAuthError(r.Context(), "customer_profile_load_failed", profileErr)
-			stored = customerprofile.Profile{AuthUserID: profile.ID}
-			found = false
-		}
-		if !found {
-			if snapshot, snapshotFound, snapshotErr := ordersService.LatestCustomerSnapshot(r.Context(), profile.ID); snapshotErr == nil && snapshotFound {
-				stored = customerprofile.Profile{AuthUserID: profile.ID, FullName: snapshot.FullName, Phone: snapshot.Phone, CPF: snapshot.CPF, PostalCode: snapshot.PostalCode, Street: snapshot.Street, Number: snapshot.Number, Complement: snapshot.Complement, District: snapshot.District, City: snapshot.City, State: snapshot.State, CountryCode: snapshot.CountryCode}
-				found = true
-			}
-		}
-		if !found {
-			stored.FullName = profile.Name
-			stored.AuthUserID = profile.ID
-		}
-		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile, customerOrders, stored))
+		customerOrders := accountOrdersForProfile(r.Context(), ordersService, profile.ID)
+		stored := accountProfileForDisplay(r.Context(), profile, ordersService, profiles)
+		renderHTML(w, r, http.StatusOK, templates.AccountPage(templates.AccountPageView{Profile: profile, Orders: customerOrders, Saved: stored, Success: r.URL.Query().Get("salvo") == "1"}))
 	}
 }
 
-func accountSaveHandler(service customerAuthService, profiles accountProfileService, siteURL string) http.HandlerFunc {
+func accountSaveHandler(service customerAuthService, ordersService accountOrdersService, profiles accountProfileService, siteURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setCustomerAuthPrivateHeaders(w)
 		profile, ok := requireCustomerSession(w, r, service)
@@ -255,7 +236,8 @@ func accountSaveHandler(service customerAuthService, profiles accountProfileServ
 		input := customers.CheckoutInput{FullName: r.PostFormValue("full_name"), Email: profile.Email, Phone: r.PostFormValue("phone"), CPF: r.PostFormValue("cpf"), PostalCode: r.PostFormValue("postal_code"), Street: r.PostFormValue("street"), Number: r.PostFormValue("number"), Complement: r.PostFormValue("complement"), District: r.PostFormValue("district"), City: r.PostFormValue("city"), State: r.PostFormValue("state"), CountryCode: "BR"}
 		_, values, errs := customers.NormalizeCheckoutInput(input)
 		if errs.Any() {
-			renderHTML(w, r, 400, templates.AccountPage(profile, nil, customerprofile.FromCheckout(profile.ID, values)))
+			customerOrders := accountOrdersForProfile(r.Context(), ordersService, profile.ID)
+			renderHTML(w, r, 400, templates.AccountPage(templates.AccountPageView{Profile: profile, Orders: customerOrders, Saved: customerprofile.FromCheckout(profile.ID, values), Errors: errs}))
 			return
 		}
 		if err := profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, values)); err != nil {
@@ -264,6 +246,48 @@ func accountSaveHandler(service customerAuthService, profiles accountProfileServ
 		}
 		http.Redirect(w, r, "/conta?salvo=1", 303)
 	}
+}
+
+func accountOrdersForProfile(ctx context.Context, ordersService accountOrdersService, profileID string) []ordersdomain.AccountOrder {
+	if ordersService == nil {
+		return nil
+	}
+	customerOrders, err := ordersService.ListForCustomer(ctx, profileID)
+	if err != nil {
+		logCustomerAuthError(ctx, "customer_orders_load_failed", err)
+		return nil
+	}
+	return customerOrders
+}
+
+func accountProfileForDisplay(ctx context.Context, profile customerauth.Profile, ordersService accountOrdersService, profiles accountProfileService) customerprofile.Profile {
+	stored := customerprofile.Profile{AuthUserID: profile.ID}
+	if profiles != nil {
+		saved, found, err := profiles.Get(ctx, profile.ID)
+		if err != nil {
+			logCustomerAuthError(ctx, "customer_profile_load_failed", err)
+		} else if found {
+			return saved
+		}
+	}
+	if snapshot, found := latestCustomerSnapshotForProfile(ctx, ordersService, profile.ID); found {
+		return customerprofile.Profile{AuthUserID: profile.ID, FullName: snapshot.FullName, Phone: snapshot.Phone, CPF: snapshot.CPF, PostalCode: snapshot.PostalCode, Street: snapshot.Street, Number: snapshot.Number, Complement: snapshot.Complement, District: snapshot.District, City: snapshot.City, State: snapshot.State, CountryCode: snapshot.CountryCode}
+	}
+	stored.FullName = profile.Name
+	stored.CountryCode = customers.CountryCodeBR
+	return stored
+}
+
+func latestCustomerSnapshotForProfile(ctx context.Context, ordersService accountOrdersService, profileID string) (ordersdomain.CustomerSnapshot, bool) {
+	if ordersService == nil || profileID == "" {
+		return ordersdomain.CustomerSnapshot{}, false
+	}
+	snapshot, found, err := ordersService.LatestCustomerSnapshot(ctx, profileID)
+	if err != nil {
+		logCustomerAuthError(ctx, "customer_order_snapshot_load_failed", err)
+		return ordersdomain.CustomerSnapshot{}, false
+	}
+	return snapshot, found
 }
 
 func authCallbackHandler(service customerAuthService) http.HandlerFunc {

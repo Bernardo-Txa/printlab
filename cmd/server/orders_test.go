@@ -1198,20 +1198,30 @@ type fakeOrderReviewService struct {
 	confirmResult ordersdomain.ConfirmResult
 	orderPage     ordersdomain.OrderPage
 	trackingPage  ordersdomain.TrackingPage
+	accountOrders []ordersdomain.AccountOrder
+	snapshot      ordersdomain.CustomerSnapshot
 	reviewErr     error
 	confirmErr    error
+	listErr       error
+	snapshotErr   error
 	getErr        error
 	trackErr      error
+	snapshotFound bool
 
-	reviewCalls  int
-	confirmCalls int
-	getCalls     int
-	trackCalls   int
+	reviewCalls   int
+	confirmCalls  int
+	listCalls     int
+	snapshotCalls int
+	getCalls      int
+	trackCalls    int
 
-	lastStale       bool
-	lastFingerprint string
-	lastOrderID     string
-	lastTrackingID  string
+	lastStale              bool
+	lastFingerprint        string
+	lastCustomerID         string
+	lastListCustomerID     string
+	lastSnapshotCustomerID string
+	lastOrderID            string
+	lastTrackingID         string
 }
 
 func (s *fakeOrderReviewService) Review(_ context.Context, _ []byte, stale bool) (ordersdomain.ReviewPage, error) {
@@ -1232,6 +1242,35 @@ func (s *fakeOrderReviewService) Confirm(_ context.Context, _ []byte, expectedFi
 	}
 
 	return s.confirmResult, nil
+}
+
+func (s *fakeOrderReviewService) ConfirmForCustomer(_ context.Context, _ []byte, expectedFingerprint string, customerAuthUserID string) (ordersdomain.ConfirmResult, error) {
+	s.confirmCalls++
+	s.lastFingerprint = expectedFingerprint
+	s.lastCustomerID = customerAuthUserID
+	if s.confirmErr != nil {
+		return s.confirmResult, s.confirmErr
+	}
+
+	return s.confirmResult, nil
+}
+
+func (s *fakeOrderReviewService) ListForCustomer(_ context.Context, customerAuthUserID string) ([]ordersdomain.AccountOrder, error) {
+	s.listCalls++
+	s.lastListCustomerID = customerAuthUserID
+	if s.listErr != nil {
+		return nil, s.listErr
+	}
+	return append([]ordersdomain.AccountOrder(nil), s.accountOrders...), nil
+}
+
+func (s *fakeOrderReviewService) LatestCustomerSnapshot(_ context.Context, customerAuthUserID string) (ordersdomain.CustomerSnapshot, bool, error) {
+	s.snapshotCalls++
+	s.lastSnapshotCustomerID = customerAuthUserID
+	if s.snapshotErr != nil {
+		return ordersdomain.CustomerSnapshot{}, false, s.snapshotErr
+	}
+	return s.snapshot, s.snapshotFound, nil
 }
 
 func (s *fakeOrderReviewService) Get(_ context.Context, orderID string) (ordersdomain.OrderPage, error) {
