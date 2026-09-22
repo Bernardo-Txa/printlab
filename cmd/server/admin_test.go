@@ -419,6 +419,45 @@ func TestAdminOrderDetailPickupUsesRetiradaActions(t *testing.T) {
 	}
 }
 
+func TestAdminOrderDetailPickupEventHistoryUsesRetirada(t *testing.T) {
+	detail := admindomain.OrderDetail{
+		ID:               "11111111-1111-1111-1111-111111111111",
+		OrderNumber:      1001,
+		OrderStatus:      admindomain.OrderStatusPaid,
+		ProductionStatus: admindomain.ProductionStatusCompleted,
+		ShippingStatus:   admindomain.ShippingStatusShipped,
+		Shipping:         admindomain.OrderShipping{DeliveryMethod: "pickup", PriceBRL: "R$ 0,00"},
+		Events: []admindomain.OrderEvent{{
+			EventType:  admindomain.EventTypeShippingStatusChanged,
+			FromStatus: admindomain.ShippingStatusPreparing,
+			ToStatus:   admindomain.ShippingStatusShipped,
+			CreatedAt:  time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC),
+		}},
+	}
+	admindomain.PrepareOrderDetail(&detail)
+	service := &fakeAdminPanelService{available: true, order: detail}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/pedidos/"+detail.ID, nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Retirada", "Preparando retirada", "Pronto para retirada"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected pickup event history to contain %q", expected)
+		}
+	}
+	for _, forbidden := range []string{"Preparando envio", "Enviado"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected pickup event history not to contain %q", forbidden)
+		}
+	}
+}
+
 func TestAdminProductionStatusValidatesOriginAndUsesSessionActor(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")

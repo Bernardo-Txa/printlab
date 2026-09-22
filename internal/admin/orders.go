@@ -156,6 +156,7 @@ func PrepareOrderDetail(detail *OrderDetail) {
 		ProductionStatus: detail.ProductionStatus,
 		ShippingStatus:   detail.ShippingStatus,
 	}, detail.Shipping.DeliveryMethod)
+	PrepareOrderEvents(detail.Events, detail.Shipping.DeliveryMethod)
 }
 
 func ProductionActions(snapshot OrderStatusSnapshot) []OrderAction {
@@ -322,11 +323,29 @@ func PaymentStatusLabel(status string) string {
 	}
 }
 
+func PrepareOrderEvents(events []OrderEvent, deliveryMethod string) {
+	for i := range events {
+		events[i].EventTypeLabel = EventTypeLabelForDelivery(events[i].EventType, deliveryMethod)
+		events[i].FromStatusLabel = EventStatusLabelForDelivery(events[i].EventType, events[i].FromStatus, deliveryMethod)
+		events[i].ToStatusLabel = EventStatusLabelForDelivery(events[i].EventType, events[i].ToStatus, deliveryMethod)
+		if events[i].CreatedAtLabel == "" {
+			events[i].CreatedAtLabel = FormatOrderDate(events[i].CreatedAt)
+		}
+	}
+}
+
 func EventTypeLabel(eventType string) string {
+	return EventTypeLabelForDelivery(eventType, shipping.DeliveryMethodShipping)
+}
+
+func EventTypeLabelForDelivery(eventType string, deliveryMethod string) string {
 	switch eventType {
 	case EventTypeProductionStatusChanged:
 		return "Produção"
 	case EventTypeShippingStatusChanged:
+		if deliveryMethod == shipping.DeliveryMethodPickup {
+			return "Retirada"
+		}
 		return "Envio"
 	default:
 		return "Operação"
@@ -334,11 +353,15 @@ func EventTypeLabel(eventType string) string {
 }
 
 func EventStatusLabel(eventType string, status string) string {
+	return EventStatusLabelForDelivery(eventType, status, shipping.DeliveryMethodShipping)
+}
+
+func EventStatusLabelForDelivery(eventType string, status string, deliveryMethod string) string {
 	switch eventType {
 	case EventTypeProductionStatusChanged:
 		return ProductionStatusLabel(OrderStatusPaid, status)
 	case EventTypeShippingStatusChanged:
-		return ShippingStatusLabel(OrderStatusPaid, ProductionStatusCompleted, status)
+		return ShippingStatusLabelForDelivery(OrderStatusPaid, ProductionStatusCompleted, status, deliveryMethod)
 	default:
 		return status
 	}

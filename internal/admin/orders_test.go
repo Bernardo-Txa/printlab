@@ -222,6 +222,25 @@ func TestPickupFulfillmentLabelsAndActions(t *testing.T) {
 	}
 }
 
+func TestOrderEventLabelsFollowDeliveryMethod(t *testing.T) {
+	shippingEvents := []OrderEvent{{EventType: EventTypeShippingStatusChanged, FromStatus: ShippingStatusPreparing, ToStatus: ShippingStatusShipped}}
+	PrepareOrderEvents(shippingEvents, "shipping")
+	if shippingEvents[0].EventTypeLabel != "Envio" || shippingEvents[0].FromStatusLabel != "Preparando envio" || shippingEvents[0].ToStatusLabel != "Enviado" {
+		t.Fatalf("expected shipping event labels, got %#v", shippingEvents[0])
+	}
+
+	pickupEvents := []OrderEvent{{EventType: EventTypeShippingStatusChanged, FromStatus: ShippingStatusPreparing, ToStatus: ShippingStatusShipped}}
+	PrepareOrderEvents(pickupEvents, "pickup")
+	if pickupEvents[0].EventTypeLabel != "Retirada" || pickupEvents[0].FromStatusLabel != "Preparando retirada" || pickupEvents[0].ToStatusLabel != "Pronto para retirada" {
+		t.Fatalf("expected pickup event labels, got %#v", pickupEvents[0])
+	}
+	for _, forbidden := range []string{"Preparando envio", "Enviado"} {
+		if pickupEvents[0].FromStatusLabel == forbidden || pickupEvents[0].ToStatusLabel == forbidden {
+			t.Fatalf("expected pickup event not to use %q", forbidden)
+		}
+	}
+}
+
 func TestPrepareOrderListPageAppliesLabelsAndPagination(t *testing.T) {
 	items := make([]OrderListItem, 0, OrderPageSize+1)
 	for i := 0; i < OrderPageSize+1; i++ {
