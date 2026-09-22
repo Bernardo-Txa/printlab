@@ -207,3 +207,4 @@ RLS continua util como camada complementar futura, mas regras financeiras nunca 
 - Aplicar seed automaticamente no workflow de migrations.
 - Rodar `supabase db push`, DDL automatico ou migration runner no startup da aplicacao Go.
 - Logar connection string, senha ou `DATABASE_URL`.
+Pedidos possuem `customer_auth_user_id` nullable e índice parcial por usuário/data para a listagem server-side de “Meus pedidos”. O valor vem exclusivamente da sessão resolvida pelo backend.

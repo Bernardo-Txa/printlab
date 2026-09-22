@@ -214,7 +214,7 @@ func newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db *database.D
 	mux.HandleFunc("POST /recuperar-senha/nova", newPasswordHandler(customerAuth))
 	mux.HandleFunc("GET /auth/callback", authCallbackHandler(customerAuth))
 	mux.HandleFunc("POST /auth/session", authSessionHandler(customerAuth))
-	mux.HandleFunc("GET /conta", accountHandler(customerAuth))
+	mux.HandleFunc("GET /conta", accountHandler(customerAuth, orderReview))
 	mux.HandleFunc("POST /logout", logoutHandler(customerAuth))
 	mux.HandleFunc("GET /logout", methodNotAllowedHandler(http.MethodPost))
 	mux.HandleFunc("GET /carrinho", cartPageHandler(shoppingCart, cartCookies))

@@ -142,6 +142,15 @@ type ConfirmResult struct {
 	ExpireCookie bool
 }
 
+type AccountOrder struct {
+	OrderNumber int64
+	CreatedAt   time.Time
+	Status      string
+	StatusLabel string
+	TotalBRL    string
+	TrackingURL string
+}
+
 type OrderPage struct {
 	ID                  string
 	PublicTrackingID    string

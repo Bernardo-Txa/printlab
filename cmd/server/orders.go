@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 	paymentsdomain "github.com/Bernardo-Txa/printlab/internal/payments"
 	"github.com/Bernardo-Txa/printlab/web/templates"
@@ -69,7 +70,20 @@ func confirmOrderHandler(service orderReviewService, cookies *cartdomain.CookieM
 			return
 		}
 
-		result, err := service.Confirm(r.Context(), tokenHash, strings.TrimSpace(r.PostFormValue("review_fingerprint")))
+		fingerprint := strings.TrimSpace(r.PostFormValue("review_fingerprint"))
+		var result ordersdomain.ConfirmResult
+		var err error
+		if customerService, ok := service.(interface {
+			ConfirmForCustomer(context.Context, []byte, string, string) (ordersdomain.ConfirmResult, error)
+		}); ok {
+			id := ""
+			if profile, profileOK := customerauth.ProfileFromContext(r.Context()); profileOK {
+				id = profile.ID
+			}
+			result, err = customerService.ConfirmForCustomer(r.Context(), tokenHash, fingerprint, id)
+		} else {
+			result, err = service.Confirm(r.Context(), tokenHash, fingerprint)
+		}
 		if err != nil {
 			if orderCreationOperationalFailure(err) {
 				logOperationalEvent(r.Context(), operationalLogLevelError, "order_creation_failed", "reason=confirmation_failed")

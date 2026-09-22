@@ -41,7 +41,11 @@ func (r *PostgresRepository) Review(ctx context.Context, tokenHash []byte, now t
 	return r.reviewForCart(ctx, r.pool, cartID, now, params)
 }
 
-func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error) {
+func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, ids ...string) (ConfirmResult, error) {
+	customerAuthUserID := ""
+	if len(ids) > 0 {
+		customerAuthUserID = ids[0]
+	}
 	if r == nil || r.pool == nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
@@ -84,7 +88,7 @@ func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expe
 		return ConfirmResult{Page: page}, ErrStaleReview
 	}
 
-	orderID, orderNumber, status, err := r.insertOrder(ctx, tx, cart.ID, page)
+	orderID, orderNumber, status, err := r.insertOrder(ctx, tx, cart.ID, page, customerAuthUserID)
 	if err != nil {
 		if existing, found, lookupErr := r.existingOrderForCart(ctx, tx, cart.ID); lookupErr == nil && found {
 			return ConfirmResult{
@@ -190,6 +194,31 @@ func (r *PostgresRepository) Get(ctx context.Context, orderID string) (OrderPage
 	page.Shipping = shippingDetails
 
 	return page, nil
+}
+
+func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]AccountOrder, error) {
+	rows, err := r.pool.Query(ctx, `select order_number, created_at, status, total_cents, public_tracking_id::text from public.orders where customer_auth_user_id=$1::uuid order by created_at desc`, id)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	defer rows.Close()
+	result := []AccountOrder{}
+	for rows.Next() {
+		var o AccountOrder
+		var total int64
+		var tracking string
+		if err := rows.Scan(&o.OrderNumber, &o.CreatedAt, &o.Status, &total, &tracking); err != nil {
+			return nil, ErrUnavailable
+		}
+		o.StatusLabel = StatusLabel(o.Status)
+		o.TotalBRL = products.FormatBRL(total)
+		o.TrackingURL = TrackingPath(tracking)
+		result = append(result, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, ErrUnavailable
+	}
+	return result, nil
 }
 
 func (r *PostgresRepository) Track(ctx context.Context, trackingID string) (TrackingPage, error) {
@@ -818,28 +847,28 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 	return selection, box, inputHash, nil
 }
 
-func (r *PostgresRepository) insertOrder(ctx context.Context, q queryer, cartID string, page ReviewPage) (string, int64, string, error) {
+func (r *PostgresRepository) insertOrder(ctx context.Context, q queryer, cartID string, page ReviewPage, ids ...string) (string, int64, string, error) {
+	customerAuthUserID := ""
+	if len(ids) > 0 {
+		customerAuthUserID = ids[0]
+	}
 	var orderID string
 	var orderNumber int64
 	var status string
 	err := q.QueryRow(ctx, `
 		insert into public.orders (
 			source_cart_id,
+			customer_auth_user_id,
 			status,
 			currency,
 			products_subtotal_cents,
 			shipping_price_cents,
 			total_cents
 		) values (
-			$1::uuid,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6
+			$1::uuid, nullif($2, '')::uuid, $3, $4, $5, $6, $7
 		)
 		returning id::text, order_number, status
-	`, cartID, StatusPendingPayment, CurrencyBRL, page.ProductsSubtotalCents, page.ShippingPriceCents, page.TotalCents).Scan(&orderID, &orderNumber, &status)
+	`, cartID, customerAuthUserID, StatusPendingPayment, CurrencyBRL, page.ProductsSubtotalCents, page.ShippingPriceCents, page.TotalCents).Scan(&orderID, &orderNumber, &status)
 	if err != nil {
 		return "", 0, "", err
 	}

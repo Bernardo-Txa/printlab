@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
 	"github.com/Bernardo-Txa/printlab/web/templates"
 )
 
@@ -193,14 +194,26 @@ func newPasswordHandler(service customerAuthService) http.HandlerFunc {
 	}
 }
 
-func accountHandler(service customerAuthService) http.HandlerFunc {
+func accountHandler(service customerAuthService, ordersService interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		setCustomerAuthPrivateHeaders(w)
 		profile, ok := requireCustomerSession(w, r, service)
 		if !ok {
 			return
 		}
-		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile))
+		listing, ok := ordersService.(interface {
+			ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
+		})
+		if !ok {
+			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
+			return
+		}
+		customerOrders, err := listing.ListForCustomer(r.Context(), profile.ID)
+		if err != nil {
+			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
+			return
+		}
+		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile, customerOrders))
 	}
 }
 

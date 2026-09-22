@@ -10,7 +10,7 @@ import (
 
 type Repository interface {
 	Review(ctx context.Context, tokenHash []byte, now time.Time, params ReviewParams) (ReviewPage, error)
-	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error)
+	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID ...string) (ConfirmResult, error)
 	Get(ctx context.Context, orderID string) (OrderPage, error)
 	Track(ctx context.Context, trackingID string) (TrackingPage, error)
 }
@@ -67,6 +67,12 @@ func (s *Service) Review(ctx context.Context, tokenHash []byte, stale bool) (Rev
 }
 
 func (s *Service) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string) (ConfirmResult, error) {
+	return s.confirm(ctx, tokenHash, expectedFingerprint, "")
+}
+func (s *Service) ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint, id string) (ConfirmResult, error) {
+	return s.confirm(ctx, tokenHash, expectedFingerprint, id)
+}
+func (s *Service) confirm(ctx context.Context, tokenHash []byte, expectedFingerprint, id string) (ConfirmResult, error) {
 	if s == nil || s.repository == nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
@@ -74,12 +80,20 @@ func (s *Service) Confirm(ctx context.Context, tokenHash []byte, expectedFingerp
 		return ConfirmResult{}, ErrCartRequired
 	}
 
-	result, err := s.repository.Confirm(ctx, tokenHash, expectedFingerprint, s.now(), s.params)
+	result, err := s.repository.Confirm(ctx, tokenHash, expectedFingerprint, s.now(), s.params, id)
 	if err != nil {
 		return result, normalizeCartError(err)
 	}
 
 	return result, nil
+}
+func (s *Service) ListForCustomer(ctx context.Context, id string) ([]AccountOrder, error) {
+	if r, ok := s.repository.(interface {
+		ListForCustomer(context.Context, string) ([]AccountOrder, error)
+	}); ok {
+		return r.ListForCustomer(ctx, id)
+	}
+	return nil, ErrUnavailable
 }
 
 func (s *Service) Get(ctx context.Context, orderID string) (OrderPage, error) {

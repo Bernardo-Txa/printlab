@@ -1,7 +1,9 @@
 package templates
 
 import (
+	"fmt"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/orders"
 	"github.com/Bernardo-Txa/printlab/web/components"
 )
 
@@ -126,14 +128,24 @@ templ NewPasswordPage(form customerauth.NewPasswordForm) {
 	}
 }
 
-templ AccountPage(profile customerauth.Profile) {
+templ AccountPage(profile customerauth.Profile, customerOrders []orders.AccountOrder) {
 	@components.PrivateNoIndexLayout("Minha conta | PrintLab", "Área inicial da sua conta PrintLab.") {
 		<section class="section-block">
 			@components.Container() {
 				<div class="section-heading">
 					<p class="brand-kicker">Conta PrintLab</p>
 					<h1>Minha conta</h1>
-					<p>Esta é a área inicial da sua conta. Histórico de pedidos, endereços e preferências serão adicionados em fases futuras.</p>
+					<p>Área segura para consultar seus dados e pedidos.</p>
+				</div>
+				<div class="admin-panel account-panel">
+					<h2>Meus pedidos</h2>
+					if len(customerOrders) == 0 {
+						<p>Você ainda não tem pedidos associados a esta conta.</p>
+					} else {
+						for _, order := range customerOrders {
+							<p><strong>Pedido #{ fmt.Sprint(order.OrderNumber) }</strong> · { order.StatusLabel } · { order.TotalBRL } · <a href={ templ.URL(order.TrackingURL) }>Acompanhar pedido</a></p>
+						}
+					}
 				</div>
 				<div class="admin-panel account-panel">
 					<h2>Conta ativa</h2>
