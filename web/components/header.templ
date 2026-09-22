@@ -3,33 +3,62 @@ package components
 import "github.com/Bernardo-Txa/printlab/internal/customerauth"
 
 templ Header() {
-	<header class="site-header border-b border-border bg-surface/95">
+	<header class="site-header">
 		@Container() {
-			<div class="site-header-inner flex flex-col items-start justify-between gap-3 py-3 sm:min-h-20 sm:flex-row sm:items-center">
-				<a class="brand-link focus-ring" href="/" aria-label="PrintLab - início">
-					<img class="brand-header-logo" src="/static/images/branding/logo-printlab-small-v1.webp" width="256" height="192" alt=""/>
-				</a>
-				<nav aria-label="Navegação principal">
-					<ul class="site-nav flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted sm:justify-end sm:gap-x-6">
-						<li><a class="nav-link" href="/#inicio">Início</a></li>
-						<li><a class="nav-link" href="/produtos">Produtos</a></li>
-						<li><a class="nav-link" href="/#como-funciona">Como funciona</a></li>
-						<li><a class="nav-link" href="/#lab">Sobre</a></li>
-						<li><a class="nav-link" href="/#contato">Contato</a></li>
-						<li><a class="nav-link nav-link-cart" href="/carrinho">Carrinho</a></li>
+			<div class="site-header-inner">
+				<div class="site-header-brand-row">
+					<a class="brand-link focus-ring" href="/" aria-label="PrintLab - início">
+						<img class="brand-header-logo" src="/static/images/branding/logo-printlab-small-v1.webp" width="256" height="192" alt=""/>
+					</a>
+					<div class="site-header-actions" aria-label="Ações do usuário">
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
-							<li><a class="nav-link" href="/conta">Minha conta</a></li>
-							<li>
-								<form class="nav-logout-form" method="post" action="/logout">
-									<button class="nav-link nav-link-button" type="submit">Sair</button>
-								</form>
-							</li>
+							<a class="nav-link site-header-account" href="/conta" aria-label="Minha conta">
+								@accountIcon()
+								<span>Minha conta</span>
+							</a>
 						} else {
-							<li><a class="nav-link" href="/login">Entrar</a></li>
+							<a class="nav-link site-header-account" href="/login" aria-label="Entrar">
+								@accountIcon()
+								<span>Entrar</span>
+							</a>
 						}
-					</ul>
-				</nav>
+						<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label="Carrinho">
+							@cartIcon()
+							<span>Carrinho</span>
+						</a>
+						if _, ok := customerauth.ProfileFromContext(ctx); ok {
+							<form class="nav-logout-form" method="post" action="/logout">
+								<button class="nav-link nav-link-button" type="submit">Sair</button>
+							</form>
+						}
+					</div>
+				</div>
+				<div class="site-header-nav-row">
+					<nav class="site-primary-nav" aria-label="Navegação principal">
+						<ul class="site-nav">
+							<li><a class="nav-link" href="/#inicio">Início</a></li>
+							<li><a class="nav-link" href="/produtos">Produtos</a></li>
+							<li><a class="nav-link" href="/#como-funciona">Como funciona</a></li>
+							<li><a class="nav-link" href="/#lab">Sobre</a></li>
+							<li><a class="nav-link" href="/#contato">Contato</a></li>
+						</ul>
+					</nav>
+				</div>
 			</div>
 		}
 	</header>
+}
+
+templ accountIcon() {
+	<svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+		<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M4.75 20a7.25 7.25 0 0 1 14.5 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
+}
+
+templ cartIcon() {
+	<svg class="site-header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+		<path d="M6.2 6.5h14l-1.35 7.1a2.2 2.2 0 0 1-2.16 1.8H9.1a2.2 2.2 0 0 1-2.16-1.79L5.5 4.9H3.75" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M9.25 20.1h.01M17 20.1h.01" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
 }

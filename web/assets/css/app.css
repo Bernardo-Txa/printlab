@@ -117,22 +117,35 @@
   }
 
   .nav-link {
-    @apply relative rounded-control px-2 py-2 text-muted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+    @apply relative inline-flex min-h-11 items-center gap-2 rounded-control px-3 py-2 text-sm font-semibold underline-offset-4 outline-none;
+    color: rgb(255 255 255 / 0.82);
     transition:
       color var(--motion-fast) var(--motion-ease),
       background-color var(--motion-fast) var(--motion-ease),
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
       transform var(--motion-fast) var(--motion-ease);
   }
 
   .nav-link::after {
     content: "";
-    @apply absolute inset-x-2 bottom-1 h-0.5 origin-left scale-x-0 rounded-full bg-highlight-teal;
+    @apply absolute inset-x-3 bottom-1 h-0.5 origin-left scale-x-0 rounded-full;
+    background: linear-gradient(90deg, var(--color-highlight-teal), var(--color-highlight-blue));
     transition: transform var(--motion-normal) var(--motion-ease);
   }
 
   .nav-link:hover {
-    @apply bg-surface-muted;
+    color: #ffffff;
+    background: rgb(255 255 255 / 0.08);
     transform: translateY(-1px);
+  }
+
+  .nav-link:focus-visible {
+    color: #ffffff;
+    background: rgb(255 255 255 / 0.1);
+    box-shadow: 0 0 0 3px rgb(16 197 183 / 0.34);
+    outline: 2px solid var(--color-highlight-teal);
+    outline-offset: 3px;
   }
 
   .nav-link:hover::after,
@@ -142,34 +155,148 @@
 
   .site-header {
     @apply sticky top-0 z-40;
-    box-shadow: 0 8px 28px -26px rgb(7 28 54 / 0.55);
-    backdrop-filter: blur(10px);
+    background:
+      radial-gradient(circle at 12% 0%, rgb(17 135 244 / 0.2), transparent 34%),
+      linear-gradient(135deg, #071c36 0%, #000f20 68%, #071c36 100%);
+    border-bottom: 1px solid rgb(148 233 223 / 0.24);
+    box-shadow: 0 18px 42px -32px rgb(0 15 32 / 0.92);
+    backdrop-filter: blur(12px);
   }
 
   .site-header-inner {
-    min-height: 4.75rem;
+    @apply flex flex-col gap-2 py-2;
+  }
+
+  .site-header-brand-row {
+    @apply flex items-center justify-between gap-3;
+    min-height: 3.75rem;
+  }
+
+  .site-header-nav-row {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .site-primary-nav {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(16 197 183 / 0.5) transparent;
+  }
+
+  .site-primary-nav::-webkit-scrollbar {
+    height: 0.25rem;
+  }
+
+  .site-primary-nav::-webkit-scrollbar-thumb {
+    background: rgb(16 197 183 / 0.45);
+    border-radius: 999px;
   }
 
   .site-nav {
+    @apply flex items-center gap-1;
     max-width: 100%;
+    width: max-content;
+  }
+
+  .site-header-actions {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
+  .site-header-account,
+  .site-header-cart {
+    border: 1px solid rgb(255 255 255 / 0.14);
+    background: rgb(255 255 255 / 0.08);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .site-header-account:hover,
+  .site-header-cart:hover {
+    border-color: rgb(16 197 183 / 0.58);
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .site-header-icon {
+    @apply size-4 shrink-0;
   }
 
   .nav-link-cart {
-    @apply border border-border bg-surface px-3;
-  }
-
-  .nav-link-cart:hover {
-    @apply border-primary;
+    position: relative;
+    overflow: hidden;
   }
 
   .nav-link-button {
     @apply border-0 bg-transparent font-medium;
+    color: rgb(255 255 255 / 0.64);
     font: inherit;
     cursor: pointer;
   }
 
+  .nav-link-button:hover,
+  .nav-link-button:focus-visible {
+    color: #ffffff;
+  }
+
   .nav-logout-form {
-    @apply m-0;
+    @apply m-0 shrink-0;
+  }
+
+
+  @media (max-width: 480px) {
+    .site-header-account span,
+    .site-header-cart span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .site-header-account,
+    .site-header-cart {
+      width: 2.75rem;
+      justify-content: center;
+      padding-inline: 0.75rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .site-header-inner {
+      @apply flex-row items-center justify-between gap-4 py-2;
+      min-height: 4.5rem;
+    }
+
+    .site-header-brand-row {
+      display: contents;
+      min-height: 0;
+    }
+
+    .brand-link {
+      order: 1;
+    }
+
+    .site-header-nav-row {
+      @apply flex-1 justify-center;
+      min-width: 0;
+      order: 2;
+    }
+
+    .site-header-actions {
+      order: 3;
+    }
+
+    .site-primary-nav {
+      overflow-x: visible;
+    }
+
+    .site-nav {
+      width: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
   }
 
   .auth-secondary-link {
@@ -190,16 +317,27 @@
   }
 
   .brand-link {
-    @apply flex min-w-0 items-center tracking-normal text-foreground outline-none;
-    transition: transform var(--motion-normal) var(--motion-spring);
+    @apply flex min-w-0 items-center rounded-control tracking-normal text-foreground outline-none;
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      transform var(--motion-normal) var(--motion-spring);
   }
 
   .brand-link:hover {
+    background: rgb(255 255 255 / 0.06);
     transform: translateY(-1px) rotate(-0.5deg);
   }
 
+  .brand-link:focus-visible {
+    box-shadow: 0 0 0 3px rgb(16 197 183 / 0.34);
+    outline: 2px solid var(--color-highlight-teal);
+    outline-offset: 4px;
+  }
+
   .brand-header-logo {
-    @apply h-16 w-24 shrink-0 object-contain sm:h-[4.5rem] sm:w-28;
+    @apply h-14 w-24 shrink-0 object-contain sm:h-16 sm:w-28;
+    filter: drop-shadow(0 8px 18px rgb(0 15 32 / 0.32));
     transition: transform var(--motion-normal) var(--motion-spring);
   }
 
@@ -1992,8 +2130,9 @@
   .nav-link.is-active,
   .nav-link[aria-current="page"],
   .nav-link[aria-current="location"] {
-    @apply text-foreground;
-    background: color-mix(in oklab, var(--color-surface-muted) 70%, transparent);
+    color: #ffffff;
+    background: rgb(16 197 183 / 0.16);
+    box-shadow: inset 0 0 0 1px rgb(16 197 183 / 0.34);
   }
 
   .nav-link.is-active::after,
@@ -2275,7 +2414,13 @@
       background-color var(--motion-fast) var(--motion-ease);
   }
 
+  footer .nav-link {
+    color: var(--color-muted);
+    background: transparent;
+  }
+
   footer .nav-link:hover {
+    color: var(--color-foreground);
     transform: translateY(-1px);
   }
 

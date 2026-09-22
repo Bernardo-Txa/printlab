@@ -59,7 +59,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"hero-grid\"><div class=\"hero-copy max-w-3xl\"><p class=\"brand-kicker\">Laboratorio de impressao 3D</p><h1 class=\"hero-title\"><span>Imprimimos <span class=\"text-highlight-blue\">ideias.</span></span> <span>Experimentamos <span class=\"text-highlight-pink\">possibilidades.</span></span> <span>Criamos em <span class=\"text-highlight-teal\">3D.</span></span></h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80\">Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"hero-grid\"><div class=\"hero-copy max-w-3xl\"><p class=\"brand-kicker\">Laboratório de impressão 3D</p><h1 class=\"hero-title\"><span>Imprimimos <span class=\"text-highlight-blue\">ideias.</span></span> <span>Experimentamos <span class=\"text-highlight-pink\">possibilidades.</span></span> <span>Criamos em <span class=\"text-highlight-teal\">3D.</span></span></h1><p class=\"mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80\">Precisão, cor e criatividade para transformar conceitos em objetos físicos com uma linguagem própria de fabricação digital.</p><div class=\"mt-8 flex flex-col gap-3 sm:flex-row\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -79,7 +79,7 @@ func Home() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"hero-logo-shell\"><img class=\"hero-logo-image\" src=\"/static/images/branding/logo-printlab-hero-v1.webp\" width=\"640\" height=\"480\" alt=\"Logo da PrintLab com impressora 3D e frasco de laboratorio\" fetchpriority=\"high\" decoding=\"async\"></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"hero-logo-shell\"><img class=\"hero-logo-image\" src=\"/static/images/branding/logo-printlab-hero-v1.webp\" width=\"640\" height=\"480\" alt=\"Logo da PrintLab com impressora 3D e frasco de laboratório\" fetchpriority=\"high\" decoding=\"async\"></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -113,7 +113,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"section-heading\"><p class=\"brand-kicker\">DNA PrintLab</p><h2 class=\"mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Uma marca feita de tecnica, teste e imaginacao.</h2></div><div class=\"dna-grid\"><div class=\"dna-card dna-card-blue\"><span class=\"dna-card-mark dna-card-mark-blue\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Impressao</span><p>Camadas, formas e detalhes tratados como parte do projeto.</p></div><div class=\"dna-card dna-card-teal\"><span class=\"dna-card-mark dna-card-mark-teal\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Experimento</span><p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p></div><div class=\"dna-card dna-card-pink\"><span class=\"dna-card-mark dna-card-mark-pink\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Precisao</span><p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p></div><div class=\"dna-card dna-card-yellow\"><span class=\"dna-card-mark dna-card-mark-yellow\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Criação</span><p>Cor, material e desenho abrem espaco para projetos mais autorais.</p></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"section-heading\"><p class=\"brand-kicker\">DNA PrintLab</p><h2 class=\"mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Uma marca feita de técnica, teste e imaginação.</h2></div><div class=\"dna-grid\"><div class=\"dna-card dna-card-blue\"><span class=\"dna-card-mark dna-card-mark-blue\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Impressão</span><p>Camadas, formas e detalhes tratados como parte do projeto.</p></div><div class=\"dna-card dna-card-teal\"><span class=\"dna-card-mark dna-card-mark-teal\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Experimento</span><p>Ideias passam por tentativa, ajuste e descoberta até ganhar forma.</p></div><div class=\"dna-card dna-card-pink\"><span class=\"dna-card-mark dna-card-mark-pink\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Precisão</span><p>Escolhas técnicas ajudam cada objeto a nascer com propósito.</p></div><div class=\"dna-card dna-card-yellow\"><span class=\"dna-card-mark dna-card-mark-yellow\" aria-hidden=\"true\"></span> <span class=\"dna-word\">Criação</span><p>Cor, material e desenho abrem espaço para projetos mais autorais.</p></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -139,7 +139,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<ol class=\"process-flow\"><li class=\"process-step\"><span class=\"step-number\">01</span><div><h3>Você traz a ideia</h3><p>Um objeto, uma peça, um presente ou uma solução que precisa sair do papel.</p></div></li><li class=\"process-step\"><span class=\"step-number\">02</span><div><h3>Nós definimos a solução</h3><p>O projeto ganha critérios de forma, acabamento e viabilidade antes da produção.</p></div></li><li class=\"process-step\"><span class=\"step-number\">03</span><div><h3>A impressao ganha forma</h3><p>Camada por camada, a ideia se aproxima do mundo físico.</p></div></li></ol>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<ol class=\"process-flow\"><li class=\"process-step\"><span class=\"step-number\">01</span><div><h3>Você traz a ideia</h3><p>Um objeto, uma peça, um presente ou uma solução que precisa sair do papel.</p></div></li><li class=\"process-step\"><span class=\"step-number\">02</span><div><h3>Nós definimos a solução</h3><p>O projeto ganha critérios de forma, acabamento e viabilidade antes da produção.</p></div></li><li class=\"process-step\"><span class=\"step-number\">03</span><div><h3>A impressão ganha forma</h3><p>Camada por camada, a ideia se aproxima do mundo físico.</p></div></li></ol>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -165,7 +165,7 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catálogo futuro</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que você vai poder levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentacao.</p><div class=\"mt-8\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"catalog-layout\"><div><p class=\"brand-kicker\">Catálogo futuro</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl\">Experimentos que você vai poder levar para casa.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg\">A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentação.</p><div class=\"mt-8\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -259,7 +259,20 @@ func Home() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Tem uma ideia? Vamos experimentar.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">O canal oficial de atendimento será definido em breve. Enquanto isso, este espaço aproxima a marca de quem quer tirar uma ideia do papel.</p></div><div class=\"cta-badge\">Falar com a PrintLab</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"cta-layout\"><div><p class=\"brand-kicker\">Contato</p><h2 class=\"mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl\">Tem uma ideia? Vamos criar juntos.</h2><p class=\"mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg\">Fale com a PrintLab pelo WhatsApp para tirar dúvidas, pedir um orçamento ou conversar sobre uma peça personalizada.</p></div><a class=\"cta-badge focus-ring\" href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 templ.SafeURL
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(components.WhatsAppGeneralURL()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/home.templ`, Line: 152, Col: 86}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" target=\"_blank\" rel=\"noopener noreferrer\">Falar com a PrintLab no WhatsApp</a></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -269,13 +282,13 @@ func Home() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = components.Layout("PrintLab | Impressao 3D", "Impressao 3D feita para transformar ideias em objetos.", "/").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Layout("PrintLab | Impressão 3D", "Impressão 3D feita para transformar ideias em objetos.", "/").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

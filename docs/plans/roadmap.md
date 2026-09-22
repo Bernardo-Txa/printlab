@@ -55,7 +55,7 @@ Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 plan
 | Fase 19 — Experiencia e acabamento comercial | Em execucao |
 | Fase 19.1 — Revisao textual completa | Concluida |
 | Fase 19.2 — Motion e experiencia premium | Implementada; validacao visual final integrada a Fase 19.3 |
-| Fase 19.3 — Polimento visual, consistencia de marca e UX comercial | Planejada |
+| Fase 19.3 — Polimento visual, consistencia de marca e UX comercial | Em execucao |
 | Fase 19.4 — Performance e regressao para producao | Planejada |
 | Fase 20 — Preparacao final para producao | Planejada |
 | Fase 20.1 — Auditoria | Planejada |
@@ -822,9 +822,9 @@ Status: implementada; validacao visual final integrada a Fase 19.3.
 
 ### Fase 19.3 — Polimento visual, consistencia de marca e UX comercial
 
-Status: planejada.
+Status: em execucao.
 
-Plano: [019-3-polimento-visual-ux-comercial.md](019-3-polimento-visual-ux-comercial.md).
+Plano ativo: [019-3-polimento-visual-ux-comercial.md](active/019-3-polimento-visual-ux-comercial.md).
 
 - Levar a personalidade criativa, colorida, tecnologica, profissional e amigavel da Home para as paginas internas sem redesign gratuito.
 - Revisar header/navigation, WhatsApp e CTAs comerciais, consistencia visual global, Minha Conta, checkout, carrinho quando necessario, textos visiveis, tipografia, espacamento, estados, mobile, acessibilidade, footer e areas institucionais.

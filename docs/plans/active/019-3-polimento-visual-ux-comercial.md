@@ -1,6 +1,6 @@
 # Fase 19.3 — Polimento visual e UX comercial
 
-Status: Planejada
+Status: Em execução
 
 ## Objetivo
 
@@ -519,3 +519,11 @@ Fase 19.4 — Performance e regressão para produção.
 - Nenhuma migration é necessária por motivo puramente visual.
 - `templ generate`, testes e build deverão passar na implementação.
 - Validação manual do responsável será necessária antes de declarar concluída.
+
+## Status de implementação
+
+- 19.3.1 — Header, navegação e identidade global: Implementada; aguardando validação manual.
+- 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
+- 19.3.6 — Revisão textual pt-BR: Em andamento; este pacote corrigiu somente as strings visíveis das páginas/componentes tocados.
+
+A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

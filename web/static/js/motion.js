@@ -4,7 +4,7 @@
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function initActiveNavigation() {
-    var links = Array.prototype.slice.call(document.querySelectorAll(".site-nav .nav-link"));
+    var links = Array.prototype.slice.call(document.querySelectorAll(".site-nav .nav-link, .site-header-actions .nav-link"));
     if (links.length === 0) {
       return;
     }
@@ -23,6 +23,8 @@
       } else if (path.indexOf("/produtos") === 0 && href === "/produtos") {
         active = true;
       } else if (path.indexOf("/carrinho") === 0 && href === "/carrinho") {
+        active = true;
+      } else if (path.indexOf("/conta") === 0 && href === "/conta") {
         active = true;
       }
 

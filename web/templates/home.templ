@@ -3,19 +3,19 @@ package templates
 import "github.com/Bernardo-Txa/printlab/web/components"
 
 templ Home() {
-	@components.Layout("PrintLab | Impressao 3D", "Impressao 3D feita para transformar ideias em objetos.", "/") {
+	@components.Layout("PrintLab | Impressão 3D", "Impressão 3D feita para transformar ideias em objetos.", "/") {
 		<section id="inicio" class="hero-section">
 			@components.Container() {
 				<div class="hero-grid">
 					<div class="hero-copy max-w-3xl">
-						<p class="brand-kicker">Laboratorio de impressao 3D</p>
+						<p class="brand-kicker">Laboratório de impressão 3D</p>
 						<h1 class="hero-title">
 							<span>Imprimimos <span class="text-highlight-blue">ideias.</span></span>
 							<span>Experimentamos <span class="text-highlight-pink">possibilidades.</span></span>
 							<span>Criamos em <span class="text-highlight-teal">3D.</span></span>
 						</h1>
 						<p class="mt-6 max-w-2xl text-pretty text-lg leading-8 text-primary-foreground/80">
-							Precisao, cor e criatividade para transformar conceitos em objetos fisicos com uma linguagem propria de fabricacao digital.
+							Precisão, cor e criatividade para transformar conceitos em objetos físicos com uma linguagem própria de fabricação digital.
 						</p>
 						<div class="mt-8 flex flex-col gap-3 sm:flex-row">
 							@components.LinkButton("/produtos", "Ver produtos")
@@ -29,7 +29,7 @@ templ Home() {
 						<span class="hero-geometry hero-geometry-ring" aria-hidden="true"></span>
 						@components.MoleculeGraphic("molecule-mark hero-molecule")
 						<div class="hero-logo-shell">
-							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-hero-v1.webp" width="640" height="480" alt="Logo da PrintLab com impressora 3D e frasco de laboratorio" fetchpriority="high" decoding="async"/>
+							<img class="hero-logo-image" src="/static/images/branding/logo-printlab-hero-v1.webp" width="640" height="480" alt="Logo da PrintLab com impressora 3D e frasco de laboratório" fetchpriority="high" decoding="async"/>
 						</div>
 						@components.LayerStackGraphic()
 					</div>
@@ -40,12 +40,12 @@ templ Home() {
 			@components.Container() {
 				<div class="section-heading">
 					<p class="brand-kicker">DNA PrintLab</p>
-					<h2 class="mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl">Uma marca feita de tecnica, teste e imaginacao.</h2>
+					<h2 class="mt-5 max-w-4xl text-balance text-4xl font-semibold text-foreground sm:text-5xl">Uma marca feita de técnica, teste e imaginação.</h2>
 				</div>
 				<div class="dna-grid">
 					<div class="dna-card dna-card-blue">
 						<span class="dna-card-mark dna-card-mark-blue" aria-hidden="true"></span>
-						<span class="dna-word">Impressao</span>
+						<span class="dna-word">Impressão</span>
 						<p>Camadas, formas e detalhes tratados como parte do projeto.</p>
 					</div>
 					<div class="dna-card dna-card-teal">
@@ -55,13 +55,13 @@ templ Home() {
 					</div>
 					<div class="dna-card dna-card-pink">
 						<span class="dna-card-mark dna-card-mark-pink" aria-hidden="true"></span>
-						<span class="dna-word">Precisao</span>
-						<p>Escolhas tecnicas ajudam cada objeto a nascer com proposito.</p>
+						<span class="dna-word">Precisão</span>
+						<p>Escolhas técnicas ajudam cada objeto a nascer com propósito.</p>
 					</div>
 					<div class="dna-card dna-card-yellow">
 						<span class="dna-card-mark dna-card-mark-yellow" aria-hidden="true"></span>
 						<span class="dna-word">Criação</span>
-						<p>Cor, material e desenho abrem espaco para projetos mais autorais.</p>
+						<p>Cor, material e desenho abrem espaço para projetos mais autorais.</p>
 					</div>
 				</div>
 			}
@@ -85,7 +85,7 @@ templ Home() {
 				<li class="process-step">
 					<span class="step-number">03</span>
 					<div>
-						<h3>A impressao ganha forma</h3>
+						<h3>A impressão ganha forma</h3>
 						<p>Camada por camada, a ideia se aproxima do mundo físico.</p>
 					</div>
 				</li>
@@ -98,7 +98,7 @@ templ Home() {
 						<p class="brand-kicker">Catálogo futuro</p>
 						<h2 class="mt-5 text-balance text-4xl font-semibold text-primary-foreground sm:text-5xl">Experimentos que você vai poder levar para casa.</h2>
 						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-primary-foreground/80 sm:text-lg">
-							A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentacao.
+							A vitrine agora tem uma base real para receber os primeiros objetos da PrintLab quando estiverem prontos para apresentação.
 						</p>
 						<div class="mt-8">
 							@components.LinkButton("/produtos", "Abrir catálogo")
@@ -144,14 +144,14 @@ templ Home() {
 				<div class="cta-layout">
 					<div>
 						<p class="brand-kicker">Contato</p>
-						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Tem uma ideia? Vamos experimentar.</h2>
+						<h2 class="mt-5 text-balance text-4xl font-semibold text-foreground sm:text-5xl">Tem uma ideia? Vamos criar juntos.</h2>
 						<p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg">
-							O canal oficial de atendimento será definido em breve. Enquanto isso, este espaço aproxima a marca de quem quer tirar uma ideia do papel.
+							Fale com a PrintLab pelo WhatsApp para tirar dúvidas, pedir um orçamento ou conversar sobre uma peça personalizada.
 						</p>
 					</div>
-					<div class="cta-badge">
-						Falar com a PrintLab
-					</div>
+					<a class="cta-badge focus-ring" href={ templ.URL(components.WhatsAppGeneralURL()) } target="_blank" rel="noopener noreferrer">
+						Falar com a PrintLab no WhatsApp
+					</a>
 				</div>
 			}
 		</section>

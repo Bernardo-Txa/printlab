@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Bernardo-Txa/printlab/internal/products"
+	"github.com/Bernardo-Txa/printlab/web/components"
 )
 
 func TestCatalogEmptyReturnsOK(t *testing.T) {
@@ -21,8 +22,15 @@ func TestCatalogEmptyReturnsOK(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	if !strings.Contains(rec.Body.String(), "Os primeiros experimentos estão quase prontos.") {
+	body := rec.Body.String()
+	if !strings.Contains(body, "Os primeiros experimentos estão quase prontos.") {
 		t.Fatal("expected empty catalog state")
+	}
+	if !strings.Contains(body, "precisão") {
+		t.Fatal("expected catalog hero copy with pt-BR accent")
+	}
+	if !strings.Contains(body, components.WhatsAppCatalogURL()) || strings.Contains(body, `class="cta-badge focus-ring" href="/#contato"`) {
+		t.Fatal("expected catalog contact CTA to point directly to WhatsApp")
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bernardo-Txa/printlab/internal/config"
 	"github.com/Bernardo-Txa/printlab/internal/database"
+	"github.com/Bernardo-Txa/printlab/web/components"
 )
 
 func TestHomeHandler(t *testing.T) {
@@ -55,6 +56,18 @@ func TestHomeHandler(t *testing.T) {
 
 	if !strings.Contains(body, "Imprimimos") || !strings.Contains(body, "Por que Lab?") {
 		t.Fatal("expected response to include the brand experience sections")
+	}
+
+	if !strings.Contains(body, components.WhatsAppGeneralURL()) || !strings.Contains(body, "Falar com a PrintLab no WhatsApp") {
+		t.Fatal("expected homepage contact CTA to point to official WhatsApp")
+	}
+	if strings.Contains(body, "O canal oficial de atendimento será definido em breve") {
+		t.Fatal("expected homepage not to contain obsolete contact copy")
+	}
+	for _, expected := range []string{"PrintLab | Impressão 3D", "Laboratório de impressão 3D", "Precisão", "objetos físicos", "linguagem própria", "fabricação digital", "técnica", "imaginação", "propósito", "espaço", "apresentação", "frasco de laboratório"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected homepage copy to contain %q", expected)
+		}
 	}
 }
 
