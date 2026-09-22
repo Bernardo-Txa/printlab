@@ -99,7 +99,11 @@ templ AdminOrders(page admindomain.OrderListPage) {
 										<div class="admin-status-grid" aria-label="Status do pedido">
 											<p><span>Pagamento</span><strong>{ order.OrderStatusLabel }</strong></p>
 											<p><span>Produção</span><strong>{ order.ProductionStatusLabel }</strong></p>
+											if order.DeliveryMethod == "pickup" {
+											<p><span>Retirada</span><strong>{ order.ShippingStatusLabel }</strong></p>
+										} else {
 											<p><span>Envio</span><strong>{ order.ShippingStatusLabel }</strong></p>
+										}
 										</div>
 										<div class="admin-order-meta">
 											<span>{ strconv.Itoa(order.ItemCount) } itens</span>
@@ -155,7 +159,11 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 						<div class="admin-status-grid admin-status-grid-wide" aria-label="Status do pedido">
 							<p><span>Pagamento</span><strong>{ detail.OrderStatusLabel }</strong></p>
 							<p><span>Produção</span><strong>{ detail.ProductionStatusLabel }</strong></p>
-							<p><span>Envio</span><strong>{ detail.ShippingStatusLabel }</strong></p>
+							if detail.Shipping.DeliveryMethod == "pickup" {
+								<p><span>Retirada</span><strong>{ detail.ShippingStatusLabel }</strong></p>
+							} else {
+								<p><span>Envio</span><strong>{ detail.ShippingStatusLabel }</strong></p>
+							}
 							<p><span>Total</span><strong>{ detail.TotalBRL }</strong></p>
 						</div>
 						<section class="admin-panel" aria-labelledby="admin-order-actions">
@@ -175,9 +183,17 @@ templ AdminOrderDetail(detail admindomain.OrderDetail, successMessage string, er
 									}
 								</div>
 								<div>
-									<h3>Envio</h3>
+									if detail.Shipping.DeliveryMethod == "pickup" {
+										<h3>Retirada</h3>
+									} else {
+										<h3>Envio</h3>
+									}
 									if len(detail.ShippingActions) == 0 {
-										<p>Nenhuma ação de envio disponível.</p>
+										if detail.Shipping.DeliveryMethod == "pickup" {
+											<p>Nenhuma ação de retirada disponível.</p>
+										} else {
+											<p>Nenhuma ação de envio disponível.</p>
+										}
 									} else {
 										for _, action := range detail.ShippingActions {
 											<form method="post" action={ "/admin/pedidos/" + detail.ID + "/envio" }>

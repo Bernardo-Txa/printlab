@@ -386,6 +386,39 @@ func TestAdminOrderDetailRendersPrivateDataAndActions(t *testing.T) {
 	}
 }
 
+func TestAdminOrderDetailPickupUsesRetiradaActions(t *testing.T) {
+	detail := admindomain.OrderDetail{
+		ID:               "11111111-1111-1111-1111-111111111111",
+		OrderNumber:      1001,
+		OrderStatus:      admindomain.OrderStatusPaid,
+		ProductionStatus: admindomain.ProductionStatusCompleted,
+		ShippingStatus:   admindomain.ShippingStatusWaiting,
+		Shipping:         admindomain.OrderShipping{DeliveryMethod: "pickup", PriceBRL: "R$ 0,00"},
+	}
+	admindomain.PrepareOrderDetail(&detail)
+	service := &fakeAdminPanelService{available: true, order: detail}
+	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")
+	req := httptest.NewRequest(http.MethodGet, "/admin/pedidos/"+detail.ID, nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"Retirada", "Aguardando retirada", "Preparar retirada"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected pickup admin detail to contain %q", expected)
+		}
+	}
+	for _, forbidden := range []string{"Preparar envio", "Marcar como enviado"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("expected pickup admin detail not to contain %q", forbidden)
+		}
+	}
+}
+
 func TestAdminProductionStatusValidatesOriginAndUsesSessionActor(t *testing.T) {
 	service := &fakeAdminPanelService{available: true}
 	handler := newTestHandlerWithAdmin(t, service, "https://printlab.test")

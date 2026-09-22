@@ -289,6 +289,10 @@ Implementado nesta subfase:
 - stepper usa marcadores circulares com label separado e estado textual apenas para leitor de tela;
 - revisão alinha headers, métricas de produto e link `Editar endereço` para a etapa Entrega;
 - pagamento separa status visualmente e mantém card InfinitePay com ícone pequeno;
+- indicador teal duplicado dos cards de entrega foi removido;
+- pickup usa linguagem operacional de retirada no Admin e no acompanhamento;
+- tracking de pickup mostra etapa Retirada em vez de Envio;
+- badge de status do pagamento foi escopado para manter formato compacto.
 - etapa Revisão com blocos de Produtos, Dados pessoais, Endereço de entrega e Entrega, links discretos de edição e CTA Confirmar pedido;
 - etapa Pagamento com status do pedido, card de InfinitePay por POST e ação secundária de acompanhamento;
 - resumo lateral com sticky offset compatível com header sticky, destaque de total e leitura mobile;

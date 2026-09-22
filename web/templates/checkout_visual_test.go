@@ -2,6 +2,7 @@ package templates
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -21,6 +22,20 @@ func renderTemplate(t *testing.T, component templ.Component) string {
 		t.Fatal(err)
 	}
 	return html.String()
+}
+
+func TestCheckoutCSSRemovesDuplicateShippingIndicatorAndScopesStatusBadge(t *testing.T) {
+	source, err := os.ReadFile("../assets/css/app.css")
+	if err != nil {
+		t.Fatalf("expected CSS source to be readable, got %v", err)
+	}
+	css := string(source)
+	if strings.Contains(css, ".shipping-option:has(input:checked)::after") {
+		t.Fatal("expected duplicate teal shipping indicator pseudo-element to be removed")
+	}
+	if !strings.Contains(css, ".order-status-panel .order-status-badge") || !strings.Contains(css, "width: fit-content") {
+		t.Fatal("expected status badge styles to be scoped under order status panel")
+	}
 }
 
 func TestCheckoutStepperStructureAndAccessibleState(t *testing.T) {

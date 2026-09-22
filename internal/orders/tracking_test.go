@@ -3,6 +3,8 @@ package orders
 import (
 	"testing"
 	"time"
+
+	"github.com/Bernardo-Txa/printlab/internal/shipping"
 )
 
 func TestTrackingPageStatusLabels(t *testing.T) {
@@ -109,6 +111,43 @@ func TestTrackingPageStatusLabels(t *testing.T) {
 				t.Fatalf("expected three tracking steps, got %d", len(page.Steps))
 			}
 		})
+	}
+}
+
+func TestTrackingPickupUsesRetiradaStep(t *testing.T) {
+	page := TrackingPageFromRecord(TrackingRecord{
+		OrderNumber:      1004,
+		Status:           StatusPaid,
+		CreatedAt:        time.Date(2026, 9, 12, 14, 30, 0, 0, time.UTC),
+		ProductionStatus: ProductionStatusCompleted,
+		ShippingStatus:   ShippingStatusShipped,
+		DeliveryMethod:   shipping.DeliveryMethodPickup,
+	})
+	if page.ShippingStatusLabel != "Pronto para retirada" {
+		t.Fatalf("expected pickup shipping label, got %q", page.ShippingStatusLabel)
+	}
+	if len(page.Steps) != 3 {
+		t.Fatalf("expected three tracking steps, got %d", len(page.Steps))
+	}
+	if page.Steps[2].Title != "Retirada" {
+		t.Fatalf("expected pickup tracking step Retirada, got %#v", page.Steps[2])
+	}
+	if page.Steps[2].Title == "Envio" || page.Steps[2].Description == "Acompanhamento básico da etapa de envio." {
+		t.Fatalf("expected pickup tracking not to use envio copy, got %#v", page.Steps[2])
+	}
+}
+
+func TestTrackingShippingKeepsEnvioStep(t *testing.T) {
+	page := TrackingPageFromRecord(TrackingRecord{
+		OrderNumber:      1004,
+		Status:           StatusPaid,
+		CreatedAt:        time.Date(2026, 9, 12, 14, 30, 0, 0, time.UTC),
+		ProductionStatus: ProductionStatusCompleted,
+		ShippingStatus:   ShippingStatusShipped,
+		DeliveryMethod:   shipping.DeliveryMethodShipping,
+	})
+	if page.Steps[2].Title != "Envio" || page.ShippingStatusLabel != "Enviado" {
+		t.Fatalf("expected shipping tracking to keep envio, page=%#v", page)
 	}
 }
 

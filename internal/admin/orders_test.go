@@ -189,6 +189,39 @@ func TestValidateShippingTransitionRequiresCompletedProductionAndAdjacentProgres
 	}
 }
 
+func TestPickupFulfillmentLabelsAndActions(t *testing.T) {
+	snapshot := OrderStatusSnapshot{OrderStatus: OrderStatusPaid, ProductionStatus: ProductionStatusCompleted, ShippingStatus: ShippingStatusWaiting}
+	if got := ShippingStatusLabelForDelivery(snapshot.OrderStatus, snapshot.ProductionStatus, snapshot.ShippingStatus, "pickup"); got != "Aguardando retirada" {
+		t.Fatalf("expected pickup waiting label, got %q", got)
+	}
+	if got := ShippingStatusLabelForDelivery(snapshot.OrderStatus, snapshot.ProductionStatus, ShippingStatusPreparing, "pickup"); got != "Preparando retirada" {
+		t.Fatalf("expected pickup preparing label, got %q", got)
+	}
+	if got := ShippingStatusLabelForDelivery(snapshot.OrderStatus, snapshot.ProductionStatus, ShippingStatusShipped, "pickup"); got != "Pronto para retirada" {
+		t.Fatalf("expected pickup ready label, got %q", got)
+	}
+	if got := ShippingStatusLabelForDelivery(snapshot.OrderStatus, snapshot.ProductionStatus, ShippingStatusDelivered, "pickup"); got != "Retirado" {
+		t.Fatalf("expected pickup delivered label, got %q", got)
+	}
+
+	actions := ShippingActionsForDelivery(snapshot, "pickup")
+	if len(actions) != 1 || actions[0].Label != "Preparar retirada" {
+		t.Fatalf("expected pickup prepare action, got %#v", actions)
+	}
+	for _, forbidden := range []string{"Preparar envio", "Marcar como enviado"} {
+		for _, action := range actions {
+			if action.Label == forbidden {
+				t.Fatalf("expected pickup not to offer %q", forbidden)
+			}
+		}
+	}
+
+	shippingActions := ShippingActions(snapshot)
+	if len(shippingActions) != 1 || shippingActions[0].Label != "Preparar envio" {
+		t.Fatalf("expected shipping action to remain unchanged, got %#v", shippingActions)
+	}
+}
+
 func TestPrepareOrderListPageAppliesLabelsAndPagination(t *testing.T) {
 	items := make([]OrderListItem, 0, OrderPageSize+1)
 	for i := 0; i < OrderPageSize+1; i++ {

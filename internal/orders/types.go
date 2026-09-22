@@ -207,6 +207,7 @@ type TrackingRecord struct {
 	CreatedAt        time.Time
 	ProductionStatus string
 	ShippingStatus   string
+	DeliveryMethod   string
 	ServiceName      string
 	CarrierName      string
 }

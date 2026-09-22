@@ -262,6 +262,7 @@ func (r *PostgresRepository) Track(ctx context.Context, trackingID string) (Trac
 			o.created_at,
 			fulfillment.production_status,
 			fulfillment.shipping_status,
+			shipping.delivery_method,
 			shipping.service_name,
 			shipping.carrier_name
 		from public.orders o
@@ -276,6 +277,7 @@ func (r *PostgresRepository) Track(ctx context.Context, trackingID string) (Trac
 		&record.CreatedAt,
 		&record.ProductionStatus,
 		&record.ShippingStatus,
+		&record.DeliveryMethod,
 		&record.ServiceName,
 		&carrierName,
 	)

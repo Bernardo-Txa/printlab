@@ -2657,12 +2657,6 @@
       0 18px 44px -36px rgb(7 28 54 / 0.5);
   }
 
-  .shipping-option:has(input:checked)::after {
-    content: "";
-    @apply absolute right-4 top-4 size-2 rounded-full bg-highlight-teal;
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-highlight-teal) 18%, transparent);
-  }
-
   .shipping-option {
     position: relative;
   }
@@ -3485,8 +3479,12 @@
     display: block;
   }
 
-  .order-status-badge {
-    @apply inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary;
+  .order-status-panel .order-status-badge {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 9999px;
+    @apply border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary;
+    line-height: 1.25;
   }
 
   .payment-card {

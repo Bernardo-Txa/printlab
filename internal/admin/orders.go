@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Bernardo-Txa/printlab/internal/products"
+	"github.com/Bernardo-Txa/printlab/internal/shipping"
 )
 
 const (
@@ -123,7 +124,7 @@ func PrepareOrderListItem(item *OrderListItem) {
 	item.OrderNumberLabel = OrderNumberLabel(item.OrderNumber)
 	item.OrderStatusLabel = OrderStatusLabel(item.OrderStatus)
 	item.ProductionStatusLabel = ProductionStatusLabel(item.OrderStatus, item.ProductionStatus)
-	item.ShippingStatusLabel = ShippingStatusLabel(item.OrderStatus, item.ProductionStatus, item.ShippingStatus)
+	item.ShippingStatusLabel = ShippingStatusLabelForDelivery(item.OrderStatus, item.ProductionStatus, item.ShippingStatus, item.DeliveryMethod)
 	item.CreatedAtLabel = FormatOrderDate(item.CreatedAt)
 	item.TotalBRL = products.FormatBRL(item.TotalCents)
 	item.DetailURL = "/admin/pedidos/" + strings.ToLower(item.ID)
@@ -137,7 +138,7 @@ func PrepareOrderDetail(detail *OrderDetail) {
 	detail.OrderNumberLabel = OrderNumberLabel(detail.OrderNumber)
 	detail.OrderStatusLabel = OrderStatusLabel(detail.OrderStatus)
 	detail.ProductionStatusLabel = ProductionStatusLabel(detail.OrderStatus, detail.ProductionStatus)
-	detail.ShippingStatusLabel = ShippingStatusLabel(detail.OrderStatus, detail.ProductionStatus, detail.ShippingStatus)
+	detail.ShippingStatusLabel = ShippingStatusLabelForDelivery(detail.OrderStatus, detail.ProductionStatus, detail.ShippingStatus, detail.Shipping.DeliveryMethod)
 	detail.CreatedAtLabel = FormatOrderDate(detail.CreatedAt)
 	detail.ProductsSubtotalBRL = products.FormatBRL(detail.ProductsSubtotalCents)
 	detail.ShippingPriceBRL = products.FormatBRL(detail.ShippingPriceCents)
@@ -150,11 +151,11 @@ func PrepareOrderDetail(detail *OrderDetail) {
 		ProductionStatus: detail.ProductionStatus,
 		ShippingStatus:   detail.ShippingStatus,
 	})
-	detail.ShippingActions = ShippingActions(OrderStatusSnapshot{
+	detail.ShippingActions = ShippingActionsForDelivery(OrderStatusSnapshot{
 		OrderStatus:      detail.OrderStatus,
 		ProductionStatus: detail.ProductionStatus,
 		ShippingStatus:   detail.ShippingStatus,
-	})
+	}, detail.Shipping.DeliveryMethod)
 }
 
 func ProductionActions(snapshot OrderStatusSnapshot) []OrderAction {
@@ -173,16 +174,30 @@ func ProductionActions(snapshot OrderStatusSnapshot) []OrderAction {
 }
 
 func ShippingActions(snapshot OrderStatusSnapshot) []OrderAction {
+	return ShippingActionsForDelivery(snapshot, shipping.DeliveryMethodShipping)
+}
+
+func ShippingActionsForDelivery(snapshot OrderStatusSnapshot, deliveryMethod string) []OrderAction {
 	if snapshot.OrderStatus != OrderStatusPaid || snapshot.ProductionStatus != ProductionStatusCompleted {
 		return nil
 	}
+	pickup := deliveryMethod == shipping.DeliveryMethodPickup
 
 	switch snapshot.ShippingStatus {
 	case ShippingStatusWaiting:
+		if pickup {
+			return []OrderAction{{Status: ShippingStatusPreparing, Label: "Preparar retirada"}}
+		}
 		return []OrderAction{{Status: ShippingStatusPreparing, Label: "Preparar envio"}}
 	case ShippingStatusPreparing:
+		if pickup {
+			return []OrderAction{{Status: ShippingStatusShipped, Label: "Marcar como pronto para retirada"}}
+		}
 		return []OrderAction{{Status: ShippingStatusShipped, Label: "Marcar como enviado"}}
 	case ShippingStatusShipped:
+		if pickup {
+			return []OrderAction{{Status: ShippingStatusDelivered, Label: "Marcar como retirado"}}
+		}
 		return []OrderAction{{Status: ShippingStatusDelivered, Label: "Marcar como entregue"}}
 	default:
 		return nil
@@ -255,12 +270,26 @@ func ProductionStatusLabel(orderStatus string, productionStatus string) string {
 }
 
 func ShippingStatusLabel(orderStatus string, productionStatus string, shippingStatus string) string {
+	return ShippingStatusLabelForDelivery(orderStatus, productionStatus, shippingStatus, shipping.DeliveryMethodShipping)
+}
+
+func ShippingStatusLabelForDelivery(orderStatus string, productionStatus string, shippingStatus string, deliveryMethod string) string {
+	pickup := deliveryMethod == shipping.DeliveryMethodPickup
 	switch shippingStatus {
 	case ShippingStatusPreparing:
+		if pickup {
+			return "Preparando retirada"
+		}
 		return "Preparando envio"
 	case ShippingStatusShipped:
+		if pickup {
+			return "Pronto para retirada"
+		}
 		return "Enviado"
 	case ShippingStatusDelivered:
+		if pickup {
+			return "Retirado"
+		}
 		return "Entregue"
 	}
 
@@ -273,6 +302,9 @@ func ShippingStatusLabel(orderStatus string, productionStatus string, shippingSt
 	case ProductionStatusInProduction:
 		return "Aguardando conclusão"
 	case ProductionStatusCompleted:
+		if pickup {
+			return "Aguardando retirada"
+		}
 		return "Aguardando envio"
 	default:
 		return "Status indisponível"

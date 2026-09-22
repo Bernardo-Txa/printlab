@@ -106,6 +106,7 @@ type OrderStatusSnapshot struct {
 	OrderStatus      string
 	ProductionStatus string
 	ShippingStatus   string
+	DeliveryMethod   string
 }
 
 type OrderListFilter struct {
@@ -142,6 +143,7 @@ type OrderListItem struct {
 	ProductionStatusLabel string
 	ShippingStatus        string
 	ShippingStatusLabel   string
+	DeliveryMethod        string
 	CreatedAt             time.Time
 	CreatedAtLabel        string
 	TotalCents            int64
@@ -163,6 +165,7 @@ type OrderDetail struct {
 	ProductionStatusLabel string
 	ShippingStatus        string
 	ShippingStatusLabel   string
+	DeliveryMethod        string
 	CreatedAt             time.Time
 	CreatedAtLabel        string
 	ProductsSubtotalCents int64

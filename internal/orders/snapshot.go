@@ -232,7 +232,7 @@ func TrackingPageFromRecord(record TrackingRecord) TrackingPage {
 		ProductionStatus:      record.ProductionStatus,
 		ProductionStatusLabel: productionTrackingLabel(record.Status, record.ProductionStatus),
 		ShippingStatus:        record.ShippingStatus,
-		ShippingStatusLabel:   shippingTrackingLabel(record.Status, record.ProductionStatus, record.ShippingStatus),
+		ShippingStatusLabel:   shippingTrackingLabel(record.Status, record.ProductionStatus, record.ShippingStatus, record.DeliveryMethod),
 		ShippingServiceLabel:  shippingServiceLabel(record.CarrierName, record.ServiceName),
 	}
 	page.Steps = []TrackingStep{
@@ -246,11 +246,7 @@ func TrackingPageFromRecord(record TrackingRecord) TrackingPage {
 			StatusLabel: page.ProductionStatusLabel,
 			Description: "Status operacional resumido do preparo do pedido.",
 		},
-		{
-			Title:       "Envio",
-			StatusLabel: page.ShippingStatusLabel,
-			Description: "Acompanhamento básico da etapa de envio.",
-		},
+		trackingShippingStep(page.ShippingStatusLabel, record.DeliveryMethod),
 	}
 
 	return page
@@ -314,13 +310,23 @@ func productionTrackingLabel(paymentStatus string, productionStatus string) stri
 	return "Status indisponível"
 }
 
-func shippingTrackingLabel(paymentStatus string, productionStatus string, shippingStatus string) string {
+func shippingTrackingLabel(paymentStatus string, productionStatus string, shippingStatus string, deliveryMethod string) string {
+	pickup := deliveryMethod == shipping.DeliveryMethodPickup
 	switch shippingStatus {
 	case ShippingStatusPreparing:
+		if pickup {
+			return "Preparando retirada"
+		}
 		return "Preparando envio"
 	case ShippingStatusShipped:
+		if pickup {
+			return "Pronto para retirada"
+		}
 		return "Enviado"
 	case ShippingStatusDelivered:
+		if pickup {
+			return "Retirado"
+		}
 		return "Entregue"
 	}
 
@@ -334,10 +340,28 @@ func shippingTrackingLabel(paymentStatus string, productionStatus string, shippi
 	case ProductionStatusInProduction:
 		return "Aguardando conclusão da produção"
 	case ProductionStatusCompleted:
+		if pickup {
+			return "Aguardando retirada"
+		}
 		return "Aguardando preparação do envio"
 	}
 
 	return "Status indisponível"
+}
+
+func trackingShippingStep(statusLabel string, deliveryMethod string) TrackingStep {
+	if deliveryMethod == shipping.DeliveryMethodPickup {
+		return TrackingStep{
+			Title:       "Retirada",
+			StatusLabel: statusLabel,
+			Description: "Seu pedido ficará disponível para retirada após a preparação.",
+		}
+	}
+	return TrackingStep{
+		Title:       "Envio",
+		StatusLabel: statusLabel,
+		Description: "Acompanhamento básico da etapa de envio.",
+	}
 }
 
 func shippingServiceLabel(carrierName string, serviceName string) string {

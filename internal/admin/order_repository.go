@@ -31,11 +31,14 @@ func (r *PostgresRepository) ListOrders(ctx context.Context, filter OrderListFil
 			o.created_at,
 			fulfillment.production_status,
 			fulfillment.shipping_status,
+			shipping.delivery_method,
 			count(items.id)::integer,
 			coalesce(sum(items.quantity), 0)::integer
 		from public.orders o
 		join public.order_fulfillment fulfillment
 			on fulfillment.order_id = o.id
+		join public.order_shipping_details shipping
+			on shipping.order_id = o.id
 		left join public.order_items items
 			on items.order_id = o.id
 		`+orderListWhereSQL(filter.Status)+`
@@ -46,7 +49,8 @@ func (r *PostgresRepository) ListOrders(ctx context.Context, filter OrderListFil
 			o.total_cents,
 			o.created_at,
 			fulfillment.production_status,
-			fulfillment.shipping_status
+			fulfillment.shipping_status,
+			shipping.delivery_method
 		`+orderListSortSQL(filter.Status)+`
 		limit $1
 		offset $2
@@ -67,6 +71,7 @@ func (r *PostgresRepository) ListOrders(ctx context.Context, filter OrderListFil
 			&item.CreatedAt,
 			&item.ProductionStatus,
 			&item.ShippingStatus,
+			&item.DeliveryMethod,
 			&item.ItemCount,
 			&item.UnitCount,
 		); err != nil {
