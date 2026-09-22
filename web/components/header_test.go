@@ -81,8 +81,8 @@ func TestFooterKeepsReadableLinksAndHeaderColorsScoped(t *testing.T) {
 	if strings.Contains(cssText, "\n  .nav-link:focus-visible {") {
 		t.Fatal("expected dark header focus styles not to apply globally")
 	}
-	if !strings.Contains(cssText, ".site-header .nav-link-cart::before") {
-		t.Fatal("expected cart indicator to remain scoped to the header")
+	if !strings.Contains(cssText, ".site-header .nav-link-cart::before") || !strings.Contains(cssText, "bg-highlight-blue") {
+		t.Fatal("expected cart indicator to remain a scoped blue dot")
 	}
 }
 

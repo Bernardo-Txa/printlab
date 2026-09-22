@@ -2158,19 +2158,9 @@
   .site-header .nav-link-cart::before {
     content: "";
     @apply absolute right-1 top-1 size-2 rounded-full bg-highlight-blue;
-    opacity: 0;
-    transform: scale(0.4);
-    transition:
-      opacity var(--motion-fast) var(--motion-ease),
-      transform var(--motion-fast) var(--motion-spring);
-  }
-
-  .site-header .nav-link-cart:hover::before,
-  .site-header .nav-link-cart:focus-visible::before,
-  .site-header .nav-link-cart.is-active::before,
-  .site-header .nav-link-cart[aria-current="page"]::before {
     opacity: 1;
     transform: scale(1);
+    box-shadow: 0 0 0 2px #071c36;
   }
 
   .btn-base {
