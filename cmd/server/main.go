@@ -298,7 +298,8 @@ func newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db *database.D
 	mux.HandleFunc("POST /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
-	return securityMiddleware(customerSessionMiddleware(mux, customerAuth), siteURL, supabaseURL)
+	handler := cartCountMiddleware(shoppingCart, cartCookies, customerSessionMiddleware(mux, customerAuth))
+	return securityMiddleware(handler, siteURL, supabaseURL)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

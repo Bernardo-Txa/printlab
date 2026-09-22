@@ -59,6 +59,7 @@ func TestRepositoryIgnoresConvertedCarts(t *testing.T) {
 
 	for _, marker := range []string{
 		"func (r *PostgresRepository) FindActiveCart",
+		"func (r *PostgresRepository) UnitCount",
 		"func (r *PostgresRepository) CreateCart",
 		"func (r *PostgresRepository) RenewCart",
 		"func (r *PostgresRepository) AddItem",
@@ -71,6 +72,28 @@ func TestRepositoryIgnoresConvertedCarts(t *testing.T) {
 		}
 		if !strings.Contains(query, "converted_at is null") {
 			t.Fatalf("expected %s to ignore converted carts", marker)
+		}
+	}
+}
+
+func TestRepositoryUnitCountUsesOnlyActiveCartQuantitySum(t *testing.T) {
+	source, err := os.ReadFile("repository.go")
+	if err != nil {
+		t.Fatalf("expected repository source to be readable, got %v", err)
+	}
+	query, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) UnitCount")
+	if !ok {
+		t.Fatal("expected UnitCount to exist")
+	}
+	for _, expected := range []string{
+		"sum(ci.quantity)",
+		"c.token_hash = $1",
+		"c.expires_at > $2",
+		"c.converted_at is null",
+		"left join public.cart_items",
+	} {
+		if !strings.Contains(query, expected) {
+			t.Fatalf("expected UnitCount query to contain %q", expected)
 		}
 	}
 }

@@ -43,6 +43,100 @@ func TestViewReturnsEmptyForExpiredCart(t *testing.T) {
 	}
 }
 
+func TestUnitCountReturnsZeroForEmptyCart(t *testing.T) {
+	repository := newFakeRepository()
+	repository.cartsByHash[string(testHash(1))] = Cart{ID: "cart-empty", ExpiresAt: fixedNow().Add(time.Hour)}
+	service := NewService(repository, WithClock(fixedClock()))
+
+	count, err := service.UnitCount(context.Background(), testHash(1))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected empty cart count 0, got %d", count)
+	}
+}
+
+func TestUnitCountSumsItemQuantities(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []StoredItem
+		want  int
+	}{
+		{name: "one unit", items: []StoredItem{{Quantity: 1}}, want: 1},
+		{name: "single line five units", items: []StoredItem{{Quantity: 5}}, want: 5},
+		{name: "multiple lines", items: []StoredItem{{Quantity: 2}, {Quantity: 3}}, want: 5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repository := newFakeRepository()
+			repository.cartsByHash[string(testHash(1))] = Cart{ID: "cart-count", ExpiresAt: fixedNow().Add(time.Hour)}
+			repository.itemsByCart["cart-count"] = tt.items
+			service := NewService(repository, WithClock(fixedClock()))
+
+			count, err := service.UnitCount(context.Background(), testHash(1))
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if count != tt.want {
+				t.Fatalf("expected count %d, got %d", tt.want, count)
+			}
+		})
+	}
+}
+
+func TestUnitCountReturnsZeroForExpiredConvertedOrMissingCart(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(*fakeRepository)
+	}{
+		{name: "expired", setup: func(r *fakeRepository) {
+			r.cartsByHash[string(testHash(1))] = Cart{ID: "cart-expired", ExpiresAt: fixedNow().Add(-time.Minute)}
+			r.itemsByCart["cart-expired"] = []StoredItem{{Quantity: 5}}
+		}},
+		{name: "converted", setup: func(r *fakeRepository) {
+			r.cartsByHash[string(testHash(1))] = Cart{ID: "cart-converted", ExpiresAt: fixedNow().Add(time.Hour)}
+			r.convertedByHash[string(testHash(1))] = true
+			r.itemsByCart["cart-converted"] = []StoredItem{{Quantity: 5}}
+		}},
+		{name: "missing", setup: func(*fakeRepository) {}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repository := newFakeRepository()
+			tt.setup(repository)
+			service := NewService(repository, WithClock(fixedClock()))
+
+			count, err := service.UnitCount(context.Background(), testHash(1))
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if count != 0 {
+				t.Fatalf("expected count 0, got %d", count)
+			}
+		})
+	}
+}
+
+func TestUnitCountValidatesTokenAndReturnsRepositoryErrorsSafely(t *testing.T) {
+	repository := newFakeRepository()
+	service := NewService(repository, WithClock(fixedClock()))
+	if _, err := service.UnitCount(context.Background(), []byte("short")); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected invalid token error, got %v", err)
+	}
+	if repository.unitCountCalls != 0 {
+		t.Fatal("expected invalid hash not to reach repository")
+	}
+
+	repository.cartsByHash[string(testHash(1))] = Cart{ID: "cart-error", ExpiresAt: fixedNow().Add(time.Hour)}
+	repository.unitCountErr = errors.New("repository unavailable")
+	if _, err := service.UnitCount(context.Background(), testHash(1)); err == nil {
+		t.Fatal("expected repository error")
+	}
+}
+
 func TestAddCreatesCartOnFirstValidAdd(t *testing.T) {
 	repository := newFakeRepository()
 	repository.products["produto-real"] = ProductForAdd{
@@ -438,6 +532,7 @@ type fakeRepository struct {
 	cartsByHash     map[string]Cart
 	products        map[string]ProductForAdd
 	itemsByCart     map[string][]StoredItem
+	convertedByHash map[string]bool
 	quantitiesByKey map[string]int
 	itemCartIDs     map[string]string
 	itemQuantities  map[string]int
@@ -446,6 +541,8 @@ type fakeRepository struct {
 	addCalls           int
 	listItemsCalls     int
 	lastAddedVariantID *string
+	unitCountErr       error
+	unitCountCalls     int
 }
 
 func newFakeRepository() *fakeRepository {
@@ -453,6 +550,7 @@ func newFakeRepository() *fakeRepository {
 		cartsByHash:     map[string]Cart{},
 		products:        map[string]ProductForAdd{},
 		itemsByCart:     map[string][]StoredItem{},
+		convertedByHash: map[string]bool{},
 		quantitiesByKey: map[string]int{},
 		itemCartIDs:     map[string]string{},
 		itemQuantities:  map[string]int{},
@@ -466,6 +564,22 @@ func (r *fakeRepository) FindActiveCart(_ context.Context, tokenHash []byte, now
 	}
 
 	return activeCart, nil
+}
+
+func (r *fakeRepository) UnitCount(_ context.Context, tokenHash []byte, now time.Time) (int, error) {
+	r.unitCountCalls++
+	if r.unitCountErr != nil {
+		return 0, r.unitCountErr
+	}
+	activeCart, ok := r.cartsByHash[string(tokenHash)]
+	if !ok || !activeCart.ExpiresAt.After(now) || r.convertedByHash[string(tokenHash)] {
+		return 0, nil
+	}
+	total := 0
+	for _, item := range r.itemsByCart[activeCart.ID] {
+		total += item.Quantity
+	}
+	return total, nil
 }
 
 func (r *fakeRepository) CreateCart(_ context.Context, tokenHash []byte, expiresAt time.Time) (Cart, error) {

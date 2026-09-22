@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
 )
 
@@ -36,6 +37,36 @@ func TestHeaderRendersBrandNavigationAndGuestActions(t *testing.T) {
 		if strings.Contains(html, forbidden) {
 			t.Fatalf("expected header not to render fake search or cart badge %q, got %s", forbidden, html)
 		}
+	}
+}
+
+func TestHeaderRendersRealCartCountFromContext(t *testing.T) {
+	ctx := cart.WithUnitCount(context.Background(), 5)
+	html := renderHeaderWithContext(t, ctx)
+
+	for _, expected := range []string{
+		`aria-label="Carrinho, 5 unidades"`,
+		`class="site-header-cart-count"`,
+		`>5</span>`,
+	} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected counted cart header to contain %q, got %s", expected, html)
+		}
+	}
+}
+
+func TestHeaderCapsVisualCartCountButKeepsRealAriaCount(t *testing.T) {
+	ctx := cart.WithUnitCount(context.Background(), 125)
+	html := renderHeaderWithContext(t, ctx)
+	if !strings.Contains(html, `aria-label="Carrinho, 125 unidades"`) || !strings.Contains(html, `>99+</span>`) {
+		t.Fatalf("expected visual 99+ and real aria count, got %s", html)
+	}
+}
+
+func TestHeaderOmitsCartBadgeWhenEmpty(t *testing.T) {
+	html := renderComponent(t, Header())
+	if strings.Contains(html, `site-header-cart-count`) || strings.Contains(html, `Carrinho, 0`) {
+		t.Fatalf("expected empty cart not to render a badge, got %s", html)
 	}
 }
 
@@ -81,8 +112,11 @@ func TestFooterKeepsReadableLinksAndHeaderColorsScoped(t *testing.T) {
 	if strings.Contains(cssText, "\n  .nav-link:focus-visible {") {
 		t.Fatal("expected dark header focus styles not to apply globally")
 	}
-	if !strings.Contains(cssText, ".site-header .nav-link-cart::before") || !strings.Contains(cssText, "bg-highlight-blue") {
-		t.Fatal("expected cart indicator to remain a scoped blue dot")
+	if strings.Contains(cssText, ".site-header .nav-link-cart::before") {
+		t.Fatal("expected cart indicator not to be invented by pseudo-element CSS")
+	}
+	if !strings.Contains(cssText, ".site-header-cart-count") || !strings.Contains(cssText, "bg-highlight-blue") {
+		t.Fatal("expected cart count badge to remain a scoped blue header element")
 	}
 }
 

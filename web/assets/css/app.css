@@ -227,7 +227,12 @@
 
   .nav-link-cart {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .site-header-cart-count {
+    @apply absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-highlight-blue px-1 text-[0.65rem] font-bold leading-none text-white shadow-sm;
+    border: 2px solid #071c36;
   }
 
   .nav-link-button {
@@ -251,8 +256,8 @@
 
 
   @media (max-width: 480px) {
-    .site-header-account span,
-    .site-header-cart span {
+    .site-header-account .sr-only,
+    .site-header-cart .sr-only {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -2148,19 +2153,6 @@
   .site-header .nav-link[aria-current="page"]::after,
   .site-header .nav-link[aria-current="location"]::after {
     transform: scaleX(1);
-  }
-
-  .nav-link-cart {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .site-header .nav-link-cart::before {
-    content: "";
-    @apply absolute right-1 top-1 size-2 rounded-full bg-highlight-blue;
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0 2px #071c36;
   }
 
   .btn-base {

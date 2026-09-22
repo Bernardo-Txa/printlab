@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	FindActiveCart(ctx context.Context, tokenHash []byte, now time.Time) (Cart, error)
+	UnitCount(ctx context.Context, tokenHash []byte, now time.Time) (int, error)
 	CreateCart(ctx context.Context, tokenHash []byte, expiresAt time.Time) (Cart, error)
 	RenewCart(ctx context.Context, cartID string, expiresAt time.Time) (Cart, error)
 	ProductForAddBySlug(ctx context.Context, slug string) (ProductForAdd, error)
@@ -70,6 +71,24 @@ func (s *Service) View(ctx context.Context, tokenHash []byte) (CartView, error) 
 		return CartView{}, ErrUnavailable
 	}
 	return view, nil
+}
+
+func (s *Service) UnitCount(ctx context.Context, tokenHash []byte) (int, error) {
+	if s == nil || s.repository == nil {
+		return 0, ErrUnavailable
+	}
+	if !validHash(tokenHash) {
+		return 0, ErrInvalidToken
+	}
+
+	count, err := s.repository.UnitCount(ctx, tokenHash, s.now())
+	if err != nil {
+		return 0, err
+	}
+	if count < 0 {
+		return 0, nil
+	}
+	return count, nil
 }
 
 func (s *Service) Add(ctx context.Context, tokenHash []byte, input AddItemInput) (Cart, error) {

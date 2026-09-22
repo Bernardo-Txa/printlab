@@ -45,6 +45,30 @@ func (r *PostgresRepository) FindActiveCart(ctx context.Context, tokenHash []byt
 	return activeCart, nil
 }
 
+func (r *PostgresRepository) UnitCount(ctx context.Context, tokenHash []byte, now time.Time) (int, error) {
+	if r == nil || r.pool == nil {
+		return 0, ErrUnavailable
+	}
+
+	var count int
+	err := r.pool.QueryRow(ctx, `
+		select coalesce(sum(ci.quantity), 0)::int
+		from public.carts c
+		left join public.cart_items ci on ci.cart_id = c.id
+		where c.token_hash = $1
+			and c.expires_at > $2
+			and c.converted_at is null
+	`, tokenHash, now).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	if count < 0 {
+		return 0, nil
+	}
+	return count, nil
+}
+
 func (r *PostgresRepository) CreateCart(ctx context.Context, tokenHash []byte, expiresAt time.Time) (Cart, error) {
 	if r == nil || r.pool == nil {
 		return Cart{}, ErrUnavailable

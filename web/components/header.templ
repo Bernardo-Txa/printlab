@@ -1,6 +1,9 @@
 package components
 
-import "github.com/Bernardo-Txa/printlab/internal/customerauth"
+import (
+	"github.com/Bernardo-Txa/printlab/internal/cart"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+)
 
 templ Header() {
 	<header class="site-header">
@@ -22,8 +25,11 @@ templ Header() {
 								<span class="sr-only">Entrar</span>
 							</a>
 						}
-						<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label="Carrinho">
+						<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label={ cartAriaLabel(cart.UnitCountFromContext(ctx)) }>
 							@cartIcon()
+							if cart.UnitCountFromContext(ctx) > 0 {
+								<span class="site-header-cart-count" aria-hidden="true">{ cartDisplayCount(cart.UnitCountFromContext(ctx)) }</span>
+							}
 							<span class="sr-only">Carrinho</span>
 						</a>
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {

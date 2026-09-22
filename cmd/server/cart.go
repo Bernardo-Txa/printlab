@@ -16,11 +16,50 @@ import (
 
 type cartService interface {
 	View(ctx context.Context, tokenHash []byte) (cartdomain.CartView, error)
+	UnitCount(ctx context.Context, tokenHash []byte) (int, error)
 	CheckoutCart(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, error)
 	Renew(ctx context.Context, cartID string) (cartdomain.Cart, error)
 	Add(ctx context.Context, tokenHash []byte, input cartdomain.AddItemInput) (cartdomain.Cart, error)
 	UpdateQuantity(ctx context.Context, tokenHash []byte, itemID string, quantity int) (*cartdomain.Cart, error)
 	RemoveItem(ctx context.Context, tokenHash []byte, itemID string) (*cartdomain.Cart, error)
+}
+
+func cartCountMiddleware(service cartService, cookies *cartdomain.CookieManager, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if next == nil {
+			return
+		}
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if skipCartCountResolution(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		count := 0
+		cookies = ensureCartCookies(cookies)
+		if token, ok := cookies.ReadToken(r); ok && service != nil {
+			if tokenHash, err := cookies.HashToken(token); err == nil {
+				count, err = service.UnitCount(r.Context(), tokenHash)
+				if err != nil {
+					count = 0
+					log.Print("cart count unavailable")
+				}
+			}
+		}
+		next.ServeHTTP(w, r.WithContext(cartdomain.WithUnitCount(r.Context(), count)))
+	})
+}
+
+func skipCartCountResolution(path string) bool {
+	for _, prefix := range []string{"/static/", "/api/", "/webhooks/", "/admin"} {
+		if path == prefix || strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return path == "/health" || path == "/ready" || path == "/robots.txt" || path == "/sitemap.xml"
 }
 
 func cartPageHandler(service cartService, cookies *cartdomain.CookieManager) http.HandlerFunc {

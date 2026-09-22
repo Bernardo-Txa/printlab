@@ -32,6 +32,141 @@ func TestCartPageWithoutCookieReturnsEmptyState(t *testing.T) {
 	}
 }
 
+func TestCartHeaderCountMiddlewareSkipsMissingOrInvalidCookie(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(*http.Request)
+	}{
+		{name: "missing cookie", setup: func(*http.Request) {}},
+		{name: "invalid cookie", setup: func(req *http.Request) {
+			req.AddCookie(&http.Cookie{Name: cartdomain.CookieName, Value: "invalid"})
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := &fakeCartService{unitCount: 5}
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			tt.setup(req)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithCart(t, service, nil, "").ServeHTTP(rec, req)
+
+			if service.unitCalls != 0 {
+				t.Fatalf("expected UnitCount not to be called, got %d", service.unitCalls)
+			}
+			if strings.Contains(rec.Body.String(), "site-header-cart-count") {
+				t.Fatalf("expected no cart badge, got %s", rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestCartHeaderCountMiddlewareRendersRealQuantityBadge(t *testing.T) {
+	tests := []struct {
+		count int
+		aria  string
+		badge string
+	}{
+		{count: 1, aria: `aria-label="Carrinho, 1 unidade"`, badge: `>1</span>`},
+		{count: 5, aria: `aria-label="Carrinho, 5 unidades"`, badge: `>5</span>`},
+		{count: 15, aria: `aria-label="Carrinho, 15 unidades"`, badge: `>15</span>`},
+		{count: 125, aria: `aria-label="Carrinho, 125 unidades"`, badge: `>99+</span>`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.aria, func(t *testing.T) {
+			service := &fakeCartService{unitCount: tt.count}
+			cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			addValidCartCookie(t, cookies, req)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithCart(t, service, cookies, "").ServeHTTP(rec, req)
+
+			body := rec.Body.String()
+			if service.unitCalls != 1 {
+				t.Fatalf("expected one UnitCount call, got %d", service.unitCalls)
+			}
+			for _, expected := range []string{tt.aria, `class="site-header-cart-count"`, tt.badge} {
+				if !strings.Contains(body, expected) {
+					t.Fatalf("expected header to contain %q, got %s", expected, body)
+				}
+			}
+		})
+	}
+}
+
+func TestCartHeaderCountMiddlewareOmitsBadgeForZeroAndErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		service *fakeCartService
+	}{
+		{name: "zero", service: &fakeCartService{unitCount: 0}},
+		{name: "error", service: &fakeCartService{unitErr: errors.New("database token secret failure")}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			addValidCartCookie(t, cookies, req)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithCart(t, tt.service, cookies, "").ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("expected page to render, got %d", rec.Code)
+			}
+			if tt.service.unitCalls != 1 {
+				t.Fatalf("expected one UnitCount call, got %d", tt.service.unitCalls)
+			}
+			body := rec.Body.String()
+			if strings.Contains(body, "site-header-cart-count") || strings.Contains(body, "database token secret") {
+				t.Fatalf("expected no badge and no internal error details, got %s", body)
+			}
+		})
+	}
+}
+
+func TestCartHeaderCountMiddlewareSkipsStaticAdminAndOperationalRoutes(t *testing.T) {
+	for _, path := range []string{"/static/css/app.css", "/api/cep/01001000", "/admin", "/webhooks/infinitepay", "/health", "/ready", "/robots.txt", "/sitemap.xml"} {
+		t.Run(path, func(t *testing.T) {
+			service := &fakeCartService{unitCount: 5}
+			cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			addValidCartCookie(t, cookies, req)
+			rec := httptest.NewRecorder()
+
+			newTestHandlerWithCart(t, service, cookies, "").ServeHTTP(rec, req)
+
+			if service.unitCalls != 0 {
+				t.Fatalf("expected UnitCount not to be called for %s, got %d", path, service.unitCalls)
+			}
+		})
+	}
+}
+
+func TestCartHeaderCountMiddlewareSkipsMutations(t *testing.T) {
+	service := &fakeCartService{unitCount: 5, cart: cartdomain.Cart{ID: "cart-1", ExpiresAt: time.Now().Add(cartdomain.TTL)}}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := cartFormRequest("/carrinho/adicionar", url.Values{
+		"product_slug": {"produto-real"},
+		"quantity":     {"1"},
+	})
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	rec := httptest.NewRecorder()
+
+	newTestHandlerWithCart(t, service, cookies, "").ServeHTTP(rec, req)
+
+	if service.unitCalls != 0 {
+		t.Fatalf("expected UnitCount not to be called for mutation, got %d", service.unitCalls)
+	}
+	if service.addCalls != 1 {
+		t.Fatalf("expected mutation to continue, got %d add calls", service.addCalls)
+	}
+}
+
 func TestCartAddValidItemRedirectsAndSetsCookie(t *testing.T) {
 	service := &fakeCartService{cart: cartdomain.Cart{ID: "cart-1", ExpiresAt: time.Now().Add(cartdomain.TTL)}}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{Random: bytes.NewReader(make([]byte, cartdomain.TokenByteLength))})
@@ -350,6 +485,9 @@ type fakeCartService struct {
 	view        cartdomain.CartView
 	cart        cartdomain.Cart
 	cartPointer *cartdomain.Cart
+	unitCount   int
+	unitErr     error
+	unitCalls   int
 
 	viewErr   error
 	addErr    error
@@ -371,6 +509,11 @@ func (s *fakeCartService) View(_ context.Context, _ []byte) (cartdomain.CartView
 	}
 
 	return s.view, nil
+}
+
+func (s *fakeCartService) UnitCount(_ context.Context, _ []byte) (int, error) {
+	s.unitCalls++
+	return s.unitCount, s.unitErr
 }
 
 func (s *fakeCartService) CheckoutCart(_ context.Context, _ []byte) (cartdomain.Cart, cartdomain.CartView, error) {
