@@ -11,6 +11,10 @@ import (
 type Repository interface {
 	Get(ctx context.Context, cartID string) (CheckoutDetails, bool, error)
 	Save(ctx context.Context, cartID string, details CheckoutDetails) error
+	GetCustomer(ctx context.Context, cartID string) (CustomerDetails, bool, error)
+	SaveCustomer(ctx context.Context, cartID string, customer CustomerDetails) error
+	GetAddress(ctx context.Context, cartID string) (ShippingAddress, bool, error)
+	SaveAddress(ctx context.Context, cartID string, address ShippingAddress) error
 }
 
 type CartService interface {
@@ -46,7 +50,11 @@ func (s *Service) Page(ctx context.Context, tokenHash []byte, saved bool) (Check
 		return CheckoutPage{}, err
 	}
 
-	details, found, err := s.repository.Get(ctx, activeCart.ID)
+	customer, customerFound, err := s.repository.GetCustomer(ctx, activeCart.ID)
+	if err != nil {
+		return CheckoutPage{}, ErrUnavailable
+	}
+	address, addressFound, err := s.repository.GetAddress(ctx, activeCart.ID)
 	if err != nil {
 		return CheckoutPage{}, ErrUnavailable
 	}
@@ -55,10 +63,13 @@ func (s *Service) Page(ctx context.Context, tokenHash []byte, saved bool) (Check
 		Values: CheckoutInput{CountryCode: CountryCodeBR},
 		Saved:  saved,
 	}
-	if found {
-		form.Values = InputFromDetails(details)
+	if customerFound {
+		form.Values = InputFromDetails(CheckoutDetails{Customer: customer, Address: address})
 		form.Saved = saved
 		form.Found = true
+		if !addressFound {
+			form.Values.CountryCode = CountryCodeBR
+		}
 	}
 
 	return CheckoutPage{Cart: cartView, Form: form}, nil
@@ -70,7 +81,7 @@ func (s *Service) Save(ctx context.Context, tokenHash []byte, input CheckoutInpu
 		return SaveResult{}, err
 	}
 
-	details, values, fieldErrors := NormalizeCheckoutInput(input)
+	customer, values, fieldErrors := NormalizeCustomerInput(input)
 	page := CheckoutPage{
 		Cart: cartView,
 		Form: CheckoutForm{
@@ -82,7 +93,7 @@ func (s *Service) Save(ctx context.Context, tokenHash []byte, input CheckoutInpu
 		return SaveResult{Page: page}, ErrInvalidDetails
 	}
 
-	if err := s.repository.Save(ctx, activeCart.ID, details); err != nil {
+	if err := s.repository.SaveCustomer(ctx, activeCart.ID, customer); err != nil {
 		return SaveResult{}, ErrUnavailable
 	}
 
@@ -91,7 +102,7 @@ func (s *Service) Save(ctx context.Context, tokenHash []byte, input CheckoutInpu
 		return SaveResult{}, ErrUnavailable
 	}
 
-	page.Form.Values = InputFromDetails(details)
+	page.Form.Values = InputFromDetails(CheckoutDetails{Customer: customer})
 	return SaveResult{Page: page, ExpiresAt: renewedCart.ExpiresAt}, nil
 }
 

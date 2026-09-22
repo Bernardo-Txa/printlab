@@ -58,7 +58,7 @@ type CheckoutOrder struct {
 	TotalCents  int64
 	Items       []CheckoutOrderItem
 	Customer    CheckoutCustomer
-	Address     CheckoutAddress
+	Address     *CheckoutAddress
 	Shipping    CheckoutShipping
 }
 
@@ -84,8 +84,9 @@ type CheckoutAddress struct {
 }
 
 type CheckoutShipping struct {
-	ServiceName string
-	PriceCents  int64
+	DeliveryMethod string
+	ServiceName    string
+	PriceCents     int64
 }
 
 type CheckoutRequest struct {
@@ -95,7 +96,7 @@ type CheckoutRequest struct {
 	OrderNSU    string
 	Items       []CheckoutItem
 	Customer    CheckoutCustomer
-	Address     CheckoutAddress
+	Address     *CheckoutAddress
 }
 
 type CheckoutItem struct {

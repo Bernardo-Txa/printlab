@@ -78,13 +78,15 @@ func (c *InfinitePayClient) CreateCheckout(ctx context.Context, request Checkout
 			Email:       request.Customer.Email,
 			PhoneNumber: request.Customer.Phone,
 		},
-		Address: infinitePayAddress{
+	}
+	if request.Address != nil {
+		body.Address = &infinitePayAddress{
 			CEP:          request.Address.PostalCode,
 			Street:       request.Address.Street,
 			Neighborhood: request.Address.Neighborhood,
 			Number:       request.Address.Number,
 			Complement:   request.Address.Complement,
-		},
+		}
 	}
 	for _, item := range request.Items {
 		body.Items = append(body.Items, infinitePayCheckoutItem{
@@ -188,7 +190,7 @@ type infinitePayCheckoutRequest struct {
 	OrderNSU    string                    `json:"order_nsu"`
 	Items       []infinitePayCheckoutItem `json:"items"`
 	Customer    infinitePayCustomer       `json:"customer"`
-	Address     infinitePayAddress        `json:"address"`
+	Address     *infinitePayAddress       `json:"address,omitempty"`
 }
 
 type infinitePayCheckoutItem struct {

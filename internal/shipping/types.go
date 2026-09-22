@@ -5,6 +5,7 @@ import (
 	"time"
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
+	"github.com/Bernardo-Txa/printlab/internal/customers"
 )
 
 const (
@@ -21,6 +22,7 @@ var (
 	ErrEmptyCart              = errors.New("shipping cart empty")
 	ErrUnavailableItems       = errors.New("shipping cart has unavailable items")
 	ErrDetailsRequired        = errors.New("shipping customer details required")
+	ErrAddressRequired        = errors.New("shipping address required")
 	ErrMissingShippingProfile = errors.New("shipping profile missing")
 	ErrNoShippingBoxes        = errors.New("shipping boxes unavailable")
 	ErrNoFittingBox           = errors.New("shipping box not found")
@@ -112,6 +114,7 @@ type CheckoutShippingPage struct {
 	PickupAvailable     bool
 	SelectedMethod      string
 	Cart                cartdomain.CartView
+	AddressForm         customers.CheckoutForm
 	Quotes              []ShippingQuote
 	ProductsSubtotalBRL string
 	ShippingPriceBRL    string

@@ -68,7 +68,32 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 								</form>
 							</section>
 						} else if page.SelectedMethod == "shipping" {
-							if page.Unavailable || len(page.Quotes) == 0 {
+							<section class="checkout-form-section" aria-labelledby="shipping-address">
+								<div class="checkout-section-header">
+									<span class="checkout-section-icon" aria-hidden="true">@checkoutAddressIcon()</span>
+									<div>
+										<h2 id="shipping-address">Endereço de entrega</h2>
+										<p>Informe o endereço para calcular as opções de entrega.</p>
+									</div>
+								</div>
+								if page.AddressForm.HasErrors() {
+									<p class="checkout-alert checkout-alert-error">Revise o endereço antes de calcular o frete.</p>
+								}
+								<form method="post" action="/checkout/frete/endereco" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
+									<input type="hidden" name="country_code" value="BR"/>
+									<div class="checkout-fields checkout-fields-address">
+										@CheckoutPostalCodeField(page.AddressForm.Values.PostalCode, page.AddressForm.Errors.Message("postal_code"))
+										@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", page.AddressForm.Values.Street, page.AddressForm.Errors.Message("street"), false)
+										@CheckoutField("number", "Número", "text", "address-line2", "", page.AddressForm.Values.Number, page.AddressForm.Errors.Message("number"), false)
+										@CheckoutField("complement", "Complemento", "text", "address-line3", "", page.AddressForm.Values.Complement, page.AddressForm.Errors.Message("complement"), true)
+										@CheckoutField("district", "Bairro", "text", "address-level3", "", page.AddressForm.Values.District, page.AddressForm.Errors.Message("district"), false)
+										@CheckoutField("city", "Cidade", "text", "address-level2", "", page.AddressForm.Values.City, page.AddressForm.Errors.Message("city"), false)
+										@CheckoutField("state", "UF", "text", "address-level1", "", page.AddressForm.Values.State, page.AddressForm.Errors.Message("state"), false)
+									</div>
+									<div class="checkout-form-actions"><button class="btn-base btn-secondary" type="submit">Salvar endereço e calcular frete</button></div>
+								</form>
+							</section>
+							if page.AddressForm.Found && page.AddressForm.Errors == nil && (page.Unavailable || len(page.Quotes) == 0) {
 								<section class="checkout-form-section shipping-unavailable-card" aria-labelledby="shipping-unavailable">
 									<div class="checkout-section-header">
 										<span class="checkout-section-icon" aria-hidden="true">@checkoutDeliveryIcon()</span>
@@ -79,7 +104,7 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 									</div>
 									<a class="btn-base btn-secondary" href="/checkout/dados">Revisar dados de entrega</a>
 								</section>
-							} else {
+							} else if page.AddressForm.Found {
 								<form method="post" action="/checkout/frete">
 									<input type="hidden" name="delivery_method" value="shipping"/>
 									<section class="checkout-form-section" aria-labelledby="shipping-options">

@@ -460,6 +460,9 @@ func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
 	if len(page.Quotes) != 2 {
 		t.Fatalf("expected two final quotes, got %#v", page.Quotes)
 	}
+	if !page.AddressForm.Found || page.AddressForm.Values.PostalCode != "20020050" {
+		t.Fatalf("expected quoted page to keep saved address form state, got %#v", page.AddressForm)
+	}
 	if page.Quotes[0].ServiceCode != "1" || page.Quotes[0].PriceCents != 1890 || page.Quotes[0].PriceBRL != "R$ 18,90" {
 		t.Fatalf("expected final PAC quote, got %#v", page.Quotes[0])
 	}
@@ -893,6 +896,50 @@ func (r *fakeShippingCustomerRepository) Get(_ context.Context, _ string) (custo
 	}
 
 	return r.details, r.found, nil
+}
+
+func (r *fakeShippingCustomerRepository) Save(_ context.Context, _ string, details customers.CheckoutDetails) error {
+	r.details = details
+	r.found = true
+	return r.err
+}
+
+func (r *fakeShippingCustomerRepository) GetCustomer(_ context.Context, _ string) (customers.CustomerDetails, bool, error) {
+	if r.err != nil {
+		return customers.CustomerDetails{}, false, r.err
+	}
+	if !r.found {
+		return customers.CustomerDetails{}, false, nil
+	}
+	return r.details.Customer, true, nil
+}
+
+func (r *fakeShippingCustomerRepository) SaveCustomer(_ context.Context, _ string, customer customers.CustomerDetails) error {
+	if r.err != nil {
+		return r.err
+	}
+	r.details.Customer = customer
+	r.found = true
+	return nil
+}
+
+func (r *fakeShippingCustomerRepository) GetAddress(_ context.Context, _ string) (customers.ShippingAddress, bool, error) {
+	if r.err != nil {
+		return customers.ShippingAddress{}, false, r.err
+	}
+	if !r.found || r.details.Address.PostalCode == "" {
+		return customers.ShippingAddress{}, false, nil
+	}
+	return r.details.Address, true, nil
+}
+
+func (r *fakeShippingCustomerRepository) SaveAddress(_ context.Context, _ string, address customers.ShippingAddress) error {
+	if r.err != nil {
+		return r.err
+	}
+	r.details.Address = address
+	r.found = true
+	return nil
 }
 
 type fakeShippingCalculator struct {

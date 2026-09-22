@@ -16,7 +16,7 @@ import (
 type reviewFingerprint struct {
 	Items                 []reviewFingerprintItem   `json:"items"`
 	Customer              reviewFingerprintCustomer `json:"customer"`
-	Address               reviewFingerprintAddress  `json:"address"`
+	Address               *reviewFingerprintAddress `json:"address,omitempty"`
 	Shipping              reviewFingerprintShipping `json:"shipping"`
 	ProductsSubtotalCents int64                     `json:"products_subtotal_cents"`
 	ShippingPriceCents    int64                     `json:"shipping_price_cents"`
@@ -76,7 +76,9 @@ func finalizeReviewPage(page ReviewPage, inputHash []byte) (ReviewPage, error) {
 	page.ShippingPriceBRL = products.FormatBRL(page.ShippingPriceCents)
 	page.TotalBRL = products.FormatBRL(page.TotalCents)
 	page.Customer.MaskedCPF = MaskCPF(page.Customer.CPF)
-	page.Address = prepareAddress(page.Address)
+	if page.HasAddress {
+		page.Address = prepareAddress(page.Address)
+	}
 	page.Shipping.PriceBRL = products.FormatBRL(page.Shipping.PriceCents)
 	page.Shipping.DeliveryTime = shipping.DeliveryTimeLabel(page.Shipping.DeliveryTimeDays)
 
@@ -112,16 +114,7 @@ func buildReviewFingerprint(page ReviewPage, inputHash []byte) (string, error) {
 			Phone:    page.Customer.Phone,
 			CPF:      page.Customer.CPF,
 		},
-		Address: reviewFingerprintAddress{
-			PostalCode:  page.Address.PostalCode,
-			Street:      page.Address.Street,
-			Number:      page.Address.Number,
-			Complement:  page.Address.Complement,
-			District:    page.Address.District,
-			City:        page.Address.City,
-			State:       page.Address.State,
-			CountryCode: page.Address.CountryCode,
-		},
+
 		Shipping: reviewFingerprintShipping{
 			DeliveryMethod:   page.Shipping.DeliveryMethod,
 			Provider:         page.Shipping.Provider,
@@ -140,6 +133,19 @@ func buildReviewFingerprint(page ReviewPage, inputHash []byte) (string, error) {
 		ProductsSubtotalCents: page.ProductsSubtotalCents,
 		ShippingPriceCents:    page.ShippingPriceCents,
 		TotalCents:            page.TotalCents,
+	}
+
+	if page.HasAddress {
+		payload.Address = &reviewFingerprintAddress{
+			PostalCode:  page.Address.PostalCode,
+			Street:      page.Address.Street,
+			Number:      page.Address.Number,
+			Complement:  page.Address.Complement,
+			District:    page.Address.District,
+			City:        page.Address.City,
+			State:       page.Address.State,
+			CountryCode: page.Address.CountryCode,
+		}
 	}
 
 	for _, item := range page.Items {

@@ -17,7 +17,7 @@ func TestRepositorySaveUsesTransactionAndUpsert(t *testing.T) {
 		t.Fatalf("expected repository source to be readable, got %v", err)
 	}
 
-	saveSource, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) Save")
+	saveSource, ok := repositoryFunctionSource(string(source), "func (r *PostgresRepository) Save(ctx")
 	if !ok {
 		t.Fatal("expected Save to exist")
 	}

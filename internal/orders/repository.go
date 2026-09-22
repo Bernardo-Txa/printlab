@@ -106,8 +106,10 @@ func (r *PostgresRepository) confirm(ctx context.Context, tokenHash []byte, expe
 	if err := r.insertOrderCustomer(ctx, tx, orderID, page.Customer); err != nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
-	if err := r.insertOrderAddress(ctx, tx, orderID, page.Address); err != nil {
-		return ConfirmResult{}, ErrUnavailable
+	if page.HasAddress {
+		if err := r.insertOrderAddress(ctx, tx, orderID, page.Address); err != nil {
+			return ConfirmResult{}, ErrUnavailable
+		}
 	}
 	if err := r.insertOrderShipping(ctx, tx, orderID, page.Shipping); err != nil {
 		return ConfirmResult{}, ErrUnavailable
@@ -385,6 +387,9 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 	}
 
 	if shippingDetails.DeliveryMethod != shipping.DeliveryMethodPickup {
+		if !details.HasAddress {
+			return ReviewPage{}, ErrDetailsRequired
+		}
 		currentHash, err := shipping.BuildCartInputHash(params.OriginPostalCode, details.Address.PostalCode, params.ServiceCodes, shippingItems, box)
 		if err != nil {
 			if errors.Is(err, shipping.ErrAmountOverflow) {
@@ -402,6 +407,7 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 		Items:                 items,
 		Customer:              details.Customer,
 		Address:               details.Address,
+		HasAddress:            details.HasAddress,
 		Shipping:              shippingDetails,
 		ShippingPriceCents:    shippingDetails.PriceCents,
 		ProductsSubtotalCents: 0,
@@ -702,13 +708,15 @@ func (r *PostgresRepository) cartFilaments(ctx context.Context, q queryer, cartI
 }
 
 type checkoutSnapshot struct {
-	Customer ReviewCustomer
-	Address  ReviewAddress
+	Customer   ReviewCustomer
+	Address    ReviewAddress
+	HasAddress bool
 }
 
 func (r *PostgresRepository) checkoutDetails(ctx context.Context, q queryer, cartID string) (checkoutSnapshot, error) {
 	var details checkoutSnapshot
 	var complement pgtype.Text
+	var postalCode, street, number, district, city, state, countryCode pgtype.Text
 	err := q.QueryRow(ctx, `
 		select
 			customer.full_name,
@@ -724,7 +732,7 @@ func (r *PostgresRepository) checkoutDetails(ctx context.Context, q queryer, car
 			address.state,
 			address.country_code
 		from public.cart_customer_details customer
-		join public.cart_shipping_addresses address
+		left join public.cart_shipping_addresses address
 			on address.cart_id = customer.cart_id
 		where customer.cart_id = $1::uuid
 	`, cartID).Scan(
@@ -732,26 +740,34 @@ func (r *PostgresRepository) checkoutDetails(ctx context.Context, q queryer, car
 		&details.Customer.Email,
 		&details.Customer.Phone,
 		&details.Customer.CPF,
-		&details.Address.PostalCode,
-		&details.Address.Street,
-		&details.Address.Number,
+		&postalCode,
+		&street,
+		&number,
 		&complement,
-		&details.Address.District,
-		&details.Address.City,
-		&details.Address.State,
-		&details.Address.CountryCode,
+		&district,
+		&city,
+		&state,
+		&countryCode,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return checkoutSnapshot{}, ErrDetailsRequired
 		}
-
 		return checkoutSnapshot{}, ErrUnavailable
+	}
+	if postalCode.Valid {
+		details.HasAddress = true
+		details.Address.PostalCode = postalCode.String
+		details.Address.Street = street.String
+		details.Address.Number = number.String
+		details.Address.District = district.String
+		details.Address.City = city.String
+		details.Address.State = state.String
+		details.Address.CountryCode = countryCode.String
 	}
 	if complement.Valid {
 		details.Address.Complement = complement.String
 	}
-
 	return details, nil
 }
 

@@ -33,8 +33,26 @@ func TestBuildCheckoutRequestUsesOrderSnapshotAndUnitPrices(t *testing.T) {
 	if request.Customer.Name != "Joao Silva" || request.Customer.Email != "joao@example.com" || request.Customer.Phone != "+5527999999999" {
 		t.Fatalf("expected customer snapshot, got %#v", request.Customer)
 	}
+	if request.Address == nil {
+		t.Fatal("expected shipping checkout request to include address")
+	}
 	if request.Address.PostalCode != "29100000" || request.Address.Street != "Rua Um" || request.Address.Neighborhood != "Centro" || request.Address.Number != "12A" || request.Address.Complement != "Apto 302" {
 		t.Fatalf("expected documented address fields, got %#v", request.Address)
+	}
+}
+
+func TestBuildCheckoutRequestOmitsAddressForPickup(t *testing.T) {
+	order := checkoutOrderFixture()
+	order.Address = nil
+	order.Shipping = CheckoutShipping{DeliveryMethod: "pickup", ServiceName: "Retirada no local", PriceCents: 0}
+	order.TotalCents = 5970
+
+	request, err := BuildCheckoutRequest(order, "printlab", "https://printlab.example/pagamento/retorno", "https://printlab.example/webhooks/infinitepay")
+	if err != nil {
+		t.Fatalf("expected checkout request, got %v", err)
+	}
+	if request.Address != nil {
+		t.Fatalf("expected pickup checkout request to omit address, got %#v", request.Address)
 	}
 }
 
@@ -484,7 +502,7 @@ func checkoutOrderFixture() CheckoutOrder {
 			Email: "joao@example.com",
 			Phone: "+5527999999999",
 		},
-		Address: CheckoutAddress{
+		Address: &CheckoutAddress{
 			PostalCode:   "29100000",
 			Street:       "Rua Um",
 			Number:       "12A",

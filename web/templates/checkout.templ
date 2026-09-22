@@ -15,7 +15,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 					<p class="brand-kicker">Checkout seguro</p>
 					<p class="checkout-step-eyebrow">Etapa 1 de 4</p>
 					<h1>Seus dados</h1>
-					<p>Preencha as informações para contato e entrega. Elas serão usadas somente para preparar este pedido.</p>
+					<p>Preencha seus dados de contato. O endereço será informado na próxima etapa, conforme a modalidade de entrega.</p>
 				</div>
 				@CheckoutStepper(1, false)
 				if page.Form.Saved {
@@ -25,7 +25,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
 				}
 				<div class="checkout-layout">
-					<form class="checkout-form" method="post" action="/checkout/dados" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
+					<form class="checkout-form" method="post" action="/checkout/dados" data-checkout-form="true">
 						<input type="hidden" name="country_code" value="BR"/>
 						<section class="checkout-form-section" aria-labelledby="checkout-contact">
 							<div class="checkout-section-header">
@@ -40,24 +40,6 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 								@CheckoutField("email", "E-mail", "email", "email", "", page.Form.Values.Email, page.Form.Errors.Message("email"), false)
 								@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), "", false, "phone", "15")
 								@CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", page.Form.Values.CPF, page.Form.Errors.Message("cpf"), "Necessário para a documentação do envio.", false, "cpf", "14")
-							</div>
-						</section>
-						<section class="checkout-form-section" aria-labelledby="checkout-shipping">
-							<div class="checkout-section-header">
-								<span class="checkout-section-icon" aria-hidden="true">@checkoutAddressIcon()</span>
-								<div>
-									<h2 id="checkout-shipping">Endereço de entrega</h2>
-									<p>Informe o destino para calcular entrega ou avançar para retirada.</p>
-								</div>
-							</div>
-							<div class="checkout-fields checkout-fields-address">
-								@CheckoutPostalCodeField(page.Form.Values.PostalCode, page.Form.Errors.Message("postal_code"))
-								@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", page.Form.Values.Street, page.Form.Errors.Message("street"), false)
-								@CheckoutField("number", "Número", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false)
-								@CheckoutField("complement", "Complemento", "text", "address-line3", "", page.Form.Values.Complement, page.Form.Errors.Message("complement"), true)
-								@CheckoutField("district", "Bairro", "text", "address-level3", "", page.Form.Values.District, page.Form.Errors.Message("district"), false)
-								@CheckoutField("city", "Cidade", "text", "address-level2", "", page.Form.Values.City, page.Form.Errors.Message("city"), false)
-								@CheckoutField("state", "UF", "text", "address-level1", "", page.Form.Values.State, page.Form.Errors.Message("state"), false)
 							</div>
 						</section>
 						<div class="checkout-form-actions">

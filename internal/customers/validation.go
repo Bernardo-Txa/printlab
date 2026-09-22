@@ -6,6 +6,123 @@ import (
 	"unicode"
 )
 
+func NormalizeCustomerInput(input CheckoutInput) (CustomerDetails, CheckoutInput, FieldErrors) {
+	values := sanitizeInput(input)
+	errorsByField := FieldErrors{}
+
+	fullName, err := normalizeRequiredText(values.FullName, MaxFullNameLength)
+	if err != nil {
+		errorsByField["full_name"] = "Informe seu nome."
+	} else {
+		values.FullName = fullName
+	}
+
+	email, err := NormalizeEmail(values.Email)
+	if err != nil {
+		errorsByField["email"] = "Informe um e-mail valido."
+	} else {
+		values.Email = email
+	}
+
+	phone, err := NormalizePhone(values.Phone)
+	if err != nil {
+		errorsByField["phone"] = "Informe um telefone brasileiro valido."
+	} else {
+		values.Phone = phone
+	}
+
+	cpf, err := NormalizeCPF(values.CPF)
+	if err != nil {
+		errorsByField["cpf"] = "Informe um CPF valido."
+	} else {
+		values.CPF = cpf
+	}
+
+	values.PostalCode = ""
+	values.Street = ""
+	values.Number = ""
+	values.Complement = ""
+	values.District = ""
+	values.City = ""
+	values.State = ""
+	values.CountryCode = CountryCodeBR
+
+	if errorsByField.Any() {
+		return CustomerDetails{}, values, errorsByField
+	}
+
+	return CustomerDetails{FullName: fullName, Email: email, Phone: phone, CPF: cpf}, values, nil
+}
+
+func NormalizeShippingAddressInput(input CheckoutInput) (ShippingAddress, CheckoutInput, FieldErrors) {
+	values := sanitizeInput(input)
+	errorsByField := FieldErrors{}
+
+	postalCode, err := NormalizePostalCode(values.PostalCode)
+	if err != nil {
+		errorsByField["postal_code"] = "Informe um CEP valido."
+	} else {
+		values.PostalCode = postalCode
+	}
+
+	street, err := normalizeRequiredText(values.Street, MaxStreetLength)
+	if err != nil {
+		errorsByField["street"] = "Informe o logradouro."
+	} else {
+		values.Street = street
+	}
+
+	number, err := normalizeRequiredText(values.Number, MaxNumberLength)
+	if err != nil {
+		errorsByField["number"] = "Informe o número."
+	} else {
+		values.Number = number
+	}
+
+	complement := normalizeOptionalText(values.Complement, MaxComplementLength)
+	if values.Complement != "" && complement == nil {
+		errorsByField["complement"] = "Revise o complemento."
+	} else if complement != nil {
+		values.Complement = *complement
+	} else {
+		values.Complement = ""
+	}
+
+	district, err := normalizeRequiredText(values.District, MaxDistrictLength)
+	if err != nil {
+		errorsByField["district"] = "Informe o bairro."
+	} else {
+		values.District = district
+	}
+
+	city, err := normalizeRequiredText(values.City, MaxCityLength)
+	if err != nil {
+		errorsByField["city"] = "Informe a cidade."
+	} else {
+		values.City = city
+	}
+
+	state, err := NormalizeState(values.State)
+	if err != nil {
+		errorsByField["state"] = "Informe uma UF brasileira valida."
+	} else {
+		values.State = state
+	}
+
+	countryCode, err := NormalizeCountryCode(values.CountryCode)
+	if err != nil {
+		errorsByField["country_code"] = "País indisponível nesta etapa."
+	} else {
+		values.CountryCode = countryCode
+	}
+
+	if errorsByField.Any() {
+		return ShippingAddress{}, values, errorsByField
+	}
+
+	return ShippingAddress{PostalCode: postalCode, Street: street, Number: number, Complement: complement, District: district, City: city, State: state, CountryCode: countryCode}, values, nil
+}
+
 func NormalizeCheckoutInput(input CheckoutInput) (CheckoutDetails, CheckoutInput, FieldErrors) {
 	values := sanitizeInput(input)
 	errorsByField := FieldErrors{}

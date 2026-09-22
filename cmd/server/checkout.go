@@ -78,8 +78,23 @@ func saveCheckoutDetailsHandler(service checkoutDetailsService, cookies *cartdom
 
 		ensureCartCookies(cookies).SetCookie(w, token, result.ExpiresAt)
 		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok && profiles != nil {
-			if err := profiles.Save(r.Context(), customerprofile.FromCheckout(profile.ID, result.Page.Form.Values)); err != nil {
-				logCustomerAuthError(r.Context(), "customer_profile_sync_failed", err)
+			saved, found, err := profiles.Get(r.Context(), profile.ID)
+			if err != nil {
+				logCustomerAuthError(r.Context(), "customer_profile_load_failed", err)
+			} else {
+				if !found {
+					saved = customerprofile.Profile{AuthUserID: profile.ID, CountryCode: customers.CountryCodeBR}
+				}
+				saved.AuthUserID = profile.ID
+				saved.FullName = result.Page.Form.Values.FullName
+				saved.Phone = result.Page.Form.Values.Phone
+				saved.CPF = result.Page.Form.Values.CPF
+				if saved.CountryCode == "" {
+					saved.CountryCode = customers.CountryCodeBR
+				}
+				if err := profiles.Save(r.Context(), saved); err != nil {
+					logCustomerAuthError(r.Context(), "customer_profile_sync_failed", err)
+				}
 			}
 		}
 		http.Redirect(w, r, "/checkout/frete", http.StatusSeeOther)

@@ -24,6 +24,9 @@ type CartService interface {
 
 type CustomerRepository interface {
 	Get(ctx context.Context, cartID string) (customers.CheckoutDetails, bool, error)
+	GetCustomer(ctx context.Context, cartID string) (customers.CustomerDetails, bool, error)
+	GetAddress(ctx context.Context, cartID string) (customers.ShippingAddress, bool, error)
+	SaveAddress(ctx context.Context, cartID string, address customers.ShippingAddress) error
 }
 
 type Calculator interface {
@@ -91,16 +94,21 @@ func (s *Service) Page(ctx context.Context, tokenHash []byte, selected bool) (Ch
 // DeliveryPage renders the method choice. It only quotes shipping when the
 // customer explicitly chooses shipping or already has a saved shipping choice.
 func (s *Service) DeliveryPage(ctx context.Context, tokenHash []byte, method string) (CheckoutShippingPage, error) {
-	if method == DeliveryMethodShipping {
-		return s.Page(ctx, tokenHash, false)
-	}
-	if method != "" && method != DeliveryMethodPickup {
+	if method != "" && method != DeliveryMethodShipping && method != DeliveryMethodPickup {
 		return CheckoutShippingPage{}, ErrInvalidDeliveryMethod
 	}
 	activeCart, view, _, err := s.readyCustomer(ctx, tokenHash)
-	page := CheckoutShippingPage{Cart: view, ProductsSubtotalBRL: view.SubtotalBRL, PickupAvailable: true, SelectedMethod: method}
+	page := CheckoutShippingPage{Cart: view, ProductsSubtotalBRL: view.SubtotalBRL, PickupAvailable: true, SelectedMethod: method, AddressForm: customers.CheckoutForm{Values: customers.CheckoutInput{CountryCode: customers.CountryCodeBR}}}
 	if err != nil {
 		return page, err
+	}
+	address, addressFound, err := s.customers.GetAddress(ctx, activeCart.ID)
+	if err != nil {
+		return page, ErrUnavailable
+	}
+	if addressFound {
+		page.AddressForm.Values = customers.InputFromDetails(customers.CheckoutDetails{Address: address})
+		page.AddressForm.Found = true
 	}
 	selection, found, err := s.repository.GetSelection(ctx, activeCart.ID)
 	if err != nil {
@@ -110,12 +118,35 @@ func (s *Service) DeliveryPage(ctx context.Context, tokenHash []byte, method str
 		page.SelectedMethod = selection.DeliveryMethod
 	}
 	if page.SelectedMethod == DeliveryMethodShipping {
+		if !addressFound {
+			return page, nil
+		}
 		return s.Page(ctx, tokenHash, found)
 	}
 	if page.SelectedMethod == DeliveryMethodPickup {
 		page.ShippingPriceBRL = FormatBRL(0)
 		page.PartialTotalBRL = view.SubtotalBRL
 	}
+	return page, nil
+}
+
+func (s *Service) SaveAddress(ctx context.Context, tokenHash []byte, input customers.CheckoutInput) (CheckoutShippingPage, error) {
+	activeCart, view, _, err := s.readyCustomer(ctx, tokenHash)
+	page := CheckoutShippingPage{Cart: view, ProductsSubtotalBRL: view.SubtotalBRL, PickupAvailable: true, SelectedMethod: DeliveryMethodShipping}
+	if err != nil {
+		return page, err
+	}
+	address, values, fieldErrors := customers.NormalizeShippingAddressInput(input)
+	page.AddressForm = customers.CheckoutForm{Values: values, Errors: fieldErrors}
+	if fieldErrors.Any() {
+		return page, ErrAddressRequired
+	}
+	if err := s.customers.SaveAddress(ctx, activeCart.ID, address); err != nil {
+		return page, ErrUnavailable
+	}
+	page.AddressForm.Values = customers.InputFromDetails(customers.CheckoutDetails{Address: address})
+	page.AddressForm.Found = true
+	page.AddressForm.Saved = true
 	return page, nil
 }
 
@@ -211,6 +242,10 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	activeCart, cartView, details, items, err := s.readyCheckout(ctx, tokenHash)
 	page := CheckoutShippingPage{
 		Cart: cartView, ProductsSubtotalBRL: cartView.SubtotalBRL, PickupAvailable: true, SelectedMethod: DeliveryMethodShipping,
+		AddressForm: customers.CheckoutForm{
+			Found:  true,
+			Values: customers.InputFromDetails(customers.CheckoutDetails{Address: details.Address}),
+		},
 	}
 	if err != nil {
 		return PreparedQuote{}, page, err
@@ -370,7 +405,7 @@ func (s *Service) readyCustomer(ctx context.Context, tokenHash []byte) (cartdoma
 		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrUnavailableItems
 	}
 
-	details, found, err := s.customers.Get(ctx, activeCart.ID)
+	customer, found, err := s.customers.GetCustomer(ctx, activeCart.ID)
 	if err != nil {
 		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrUnavailable
 	}
@@ -378,14 +413,22 @@ func (s *Service) readyCustomer(ctx context.Context, tokenHash []byte) (cartdoma
 		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, ErrDetailsRequired
 	}
 
-	return activeCart, cartView, details, nil
+	return activeCart, cartView, customers.CheckoutDetails{Customer: customer}, nil
 }
 
 func (s *Service) readyCheckout(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, customers.CheckoutDetails, []CartItem, error) {
-	activeCart, cartView, details, err := s.readyCustomer(ctx, tokenHash)
+	activeCart, cartView, customer, err := s.readyCustomer(ctx, tokenHash)
 	if err != nil {
-		return activeCart, cartView, details, nil, err
+		return activeCart, cartView, customer, nil, err
 	}
+	address, found, err := s.customers.GetAddress(ctx, activeCart.ID)
+	if err != nil {
+		return cartdomain.Cart{}, cartView, customers.CheckoutDetails{}, nil, ErrUnavailable
+	}
+	if !found {
+		return activeCart, cartView, customer, nil, ErrAddressRequired
+	}
+	details := customers.CheckoutDetails{Customer: customer.Customer, Address: address}
 
 	items, err := s.repository.ListCartItems(ctx, activeCart.ID)
 	if err != nil {

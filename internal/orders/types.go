@@ -46,6 +46,7 @@ type ReviewPage struct {
 	Items                  []ReviewItem
 	Customer               ReviewCustomer
 	Address                ReviewAddress
+	HasAddress             bool
 	Shipping               ReviewShipping
 	ProductsSubtotalCents  int64
 	ProductsSubtotalBRL    string

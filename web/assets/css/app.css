@@ -3239,3 +3239,77 @@
     @apply mt-4 w-full;
   }
 }
+
+@layer components {
+  .checkout-ui-icon {
+    display: block;
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    max-width: 1.25rem;
+    max-height: 1.25rem;
+  }
+
+  .checkout-stepper {
+    @apply relative flex items-start gap-0 overflow-x-auto border-0 bg-transparent p-0 shadow-none sm:overflow-visible;
+  }
+
+  .checkout-stepper::before {
+    @apply absolute left-4 right-4 top-4 hidden h-px bg-border sm:block;
+    content: "";
+  }
+
+  .checkout-step {
+    @apply relative z-10 min-w-[5.75rem] flex-1 flex-col justify-start gap-2 rounded-none border-0 bg-transparent px-2 py-0 text-center shadow-none sm:min-w-0;
+  }
+
+  .checkout-step:hover {
+    transform: none;
+  }
+
+  .checkout-step-marker {
+    @apply size-8 border-border bg-surface text-xs shadow-sm;
+  }
+
+  .checkout-step-done,
+  .checkout-step-active,
+  .checkout-step-future {
+    @apply bg-transparent shadow-none;
+  }
+
+  .checkout-step-done .checkout-step-marker {
+    @apply border-highlight-teal bg-highlight-teal text-secondary;
+  }
+
+  .checkout-step-active .checkout-step-marker {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .checkout-step-future .checkout-step-marker {
+    @apply bg-surface-muted text-muted;
+  }
+
+  .checkout-step-label {
+    @apply block text-xs font-semibold leading-4 text-foreground sm:text-sm;
+  }
+
+  .checkout-section-icon,
+  .shipping-option-icon,
+  .payment-card-icon {
+    overflow: hidden;
+  }
+
+  .checkout-section-icon svg,
+  .shipping-option-icon svg,
+  .payment-card-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    max-width: 1.25rem;
+    max-height: 1.25rem;
+    flex: none;
+  }
+
+  .payment-card {
+    @apply items-start;
+  }
+}

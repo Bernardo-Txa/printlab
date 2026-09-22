@@ -285,7 +285,7 @@ func CheckoutReview(page ordersdomain.ReviewPage) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if page.Shipping.DeliveryMethod != "pickup" {
+				if page.HasAddress {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<section class=\"checkout-form-section\" aria-labelledby=\"review-address\"><div class=\"review-section-header\"><span class=\"checkout-section-icon\" aria-hidden=\"true\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

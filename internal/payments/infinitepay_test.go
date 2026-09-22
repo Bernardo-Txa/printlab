@@ -50,7 +50,7 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 			Email: "joao@example.com",
 			Phone: "+5527999999999",
 		},
-		Address: CheckoutAddress{
+		Address: &CheckoutAddress{
 			PostalCode:   "29100000",
 			Street:       "Rua Um",
 			Neighborhood: "Centro",
@@ -102,6 +102,38 @@ func TestInfinitePayCreateCheckoutSendsExpectedPayload(t *testing.T) {
 	}
 	if _, ok := address["state"]; ok {
 		t.Fatal("expected address payload not to include state")
+	}
+}
+
+func TestInfinitePayCreateCheckoutOmitsAddressWhenUnavailable(t *testing.T) {
+	var payload map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("expected JSON payload, got %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"url":"https://checkout.infinitepay.com.br/checkout-slug"}`))
+	}))
+	defer server.Close()
+
+	client := NewInfinitePayClient(
+		WithInfinitePayBaseURL(server.URL),
+		WithInfinitePayHTTPClient(server.Client()),
+	)
+
+	_, err := client.CreateCheckout(context.Background(), CheckoutRequest{
+		Handle:      "printlab",
+		RedirectURL: "https://printlab.example/pagamento/retorno",
+		WebhookURL:  "https://printlab.example/webhooks/infinitepay",
+		OrderNSU:    "22222222-2222-2222-2222-222222222222",
+		Items:       []CheckoutItem{{Quantity: 1, PriceCents: 1990, Description: "Produto Real"}},
+		Customer:    CheckoutCustomer{Name: "Joao Silva", Email: "joao@example.com"},
+	})
+	if err != nil {
+		t.Fatalf("expected checkout URL, got %v", err)
+	}
+	if _, ok := payload["address"]; ok {
+		t.Fatalf("expected pickup checkout payload to omit address, got %#v", payload["address"])
 	}
 }
 

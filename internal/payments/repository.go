@@ -187,6 +187,7 @@ func (r *PostgresRepository) MarkPaid(ctx context.Context, orderNSU string, paym
 func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.Tx, orderID string, customerAuthUserID string) (CheckoutOrder, error) {
 	var order CheckoutOrder
 	var complement pgtype.Text
+	var postalCode, street, number, neighborhood pgtype.Text
 	query := `
 		select
 			o.id::text,
@@ -194,6 +195,7 @@ func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.
 			o.status,
 			o.total_cents,
 			o.shipping_price_cents,
+			shipping.delivery_method,
 			shipping.service_name,
 			customer.full_name,
 			customer.email,
@@ -206,7 +208,7 @@ func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.
 		from public.orders o
 		join public.order_customer_details customer
 			on customer.order_id = o.id
-		join public.order_shipping_addresses address
+		left join public.order_shipping_addresses address
 			on address.order_id = o.id
 		join public.order_shipping_details shipping
 			on shipping.order_id = o.id
@@ -224,15 +226,16 @@ func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.
 		&order.Status,
 		&order.TotalCents,
 		&order.Shipping.PriceCents,
+		&order.Shipping.DeliveryMethod,
 		&order.Shipping.ServiceName,
 		&order.Customer.Name,
 		&order.Customer.Email,
 		&order.Customer.Phone,
-		&order.Address.PostalCode,
-		&order.Address.Street,
-		&order.Address.Number,
+		&postalCode,
+		&street,
+		&number,
 		&complement,
-		&order.Address.Neighborhood,
+		&neighborhood,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -240,8 +243,12 @@ func (r *PostgresRepository) checkoutOrderForUpdate(ctx context.Context, tx pgx.
 		}
 		return CheckoutOrder{}, ErrUnavailable
 	}
-	if complement.Valid {
-		order.Address.Complement = complement.String
+	if postalCode.Valid {
+		address := CheckoutAddress{PostalCode: postalCode.String, Street: street.String, Number: number.String, Neighborhood: neighborhood.String}
+		if complement.Valid {
+			address.Complement = complement.String
+		}
+		order.Address = &address
 	}
 	orderNSU, ok := CanonicalOrderNSU(order.ID)
 	if !ok {

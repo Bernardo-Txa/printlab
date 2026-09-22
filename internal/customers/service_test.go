@@ -82,8 +82,8 @@ func TestSaveValidDetailsNormalizesPersistsAndRenewsCart(t *testing.T) {
 	if repository.lastDetails.Customer.Phone != "+5527999999999" || repository.lastDetails.Customer.CPF != "52998224725" {
 		t.Fatalf("expected normalized Brazilian identifiers, got %#v", repository.lastDetails.Customer)
 	}
-	if repository.lastDetails.Address.PostalCode != "29100000" || repository.lastDetails.Address.State != "ES" {
-		t.Fatalf("expected normalized address, got %#v", repository.lastDetails.Address)
+	if repository.lastDetails.Address.PostalCode != "" || repository.lastDetails.Address.State != "" {
+		t.Fatalf("expected checkout details step to persist only customer contact, got address %#v", repository.lastDetails.Address)
 	}
 	if cartService.renewCalls != 1 || cartService.lastRenewCartID != "cart-1" {
 		t.Fatalf("expected cart renewal, got calls=%d cart=%q", cartService.renewCalls, cartService.lastRenewCartID)
@@ -110,8 +110,11 @@ func TestSaveInvalidDetailsReturnsFieldErrorsWithoutPersistence(t *testing.T) {
 	if !errors.Is(err, ErrInvalidDetails) {
 		t.Fatalf("expected ErrInvalidDetails, got %v", err)
 	}
-	if result.Page.Form.Errors.Message("cpf") == "" || result.Page.Form.Errors.Message("postal_code") == "" {
-		t.Fatalf("expected field errors for CPF and postal code, got %#v", result.Page.Form.Errors)
+	if result.Page.Form.Errors.Message("cpf") == "" {
+		t.Fatalf("expected field error for CPF, got %#v", result.Page.Form.Errors)
+	}
+	if result.Page.Form.Errors.Message("postal_code") != "" {
+		t.Fatalf("expected checkout details step to ignore address errors, got %#v", result.Page.Form.Errors)
 	}
 	if repository.saveCalls != 0 {
 		t.Fatal("expected invalid details not to persist")
@@ -204,6 +207,30 @@ func (r *fakeCustomerRepository) Save(_ context.Context, cartID string, details 
 	r.lastCartID = cartID
 	r.lastDetails = details
 	return nil
+}
+
+func (r *fakeCustomerRepository) GetCustomer(ctx context.Context, cartID string) (CustomerDetails, bool, error) {
+	details, found, err := r.Get(ctx, cartID)
+	if err != nil || !found {
+		return CustomerDetails{}, found, err
+	}
+	return details.Customer, true, nil
+}
+
+func (r *fakeCustomerRepository) SaveCustomer(ctx context.Context, cartID string, customer CustomerDetails) error {
+	return r.Save(ctx, cartID, CheckoutDetails{Customer: customer})
+}
+
+func (r *fakeCustomerRepository) GetAddress(ctx context.Context, cartID string) (ShippingAddress, bool, error) {
+	details, found, err := r.Get(ctx, cartID)
+	if err != nil || !found || details.Address.PostalCode == "" {
+		return ShippingAddress{}, false, err
+	}
+	return details.Address, true, nil
+}
+
+func (r *fakeCustomerRepository) SaveAddress(ctx context.Context, cartID string, address ShippingAddress) error {
+	return r.Save(ctx, cartID, CheckoutDetails{Address: address})
 }
 
 type fakeCustomerCart struct {

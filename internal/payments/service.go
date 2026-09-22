@@ -210,13 +210,15 @@ func BuildCheckoutRequest(order CheckoutOrder, handle string, redirectURL string
 			Email: strings.TrimSpace(order.Customer.Email),
 			Phone: strings.TrimSpace(order.Customer.Phone),
 		},
-		Address: CheckoutAddress{
+	}
+	if order.Address != nil {
+		request.Address = &CheckoutAddress{
 			PostalCode:   strings.TrimSpace(order.Address.PostalCode),
 			Street:       strings.TrimSpace(order.Address.Street),
 			Number:       strings.TrimSpace(order.Address.Number),
 			Complement:   strings.TrimSpace(order.Address.Complement),
 			Neighborhood: strings.TrimSpace(order.Address.Neighborhood),
-		},
+		}
 	}
 
 	var expectedTotal int64

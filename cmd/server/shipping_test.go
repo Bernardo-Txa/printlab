@@ -10,6 +10,9 @@ import (
 
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/customerprofile"
+	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	"github.com/Bernardo-Txa/printlab/internal/shipping"
 )
@@ -144,6 +147,80 @@ func TestCheckoutShippingGetOffersPickupWithoutShippingQuote(t *testing.T) {
 	}
 }
 
+func TestCheckoutShippingGetPrefillsProfileAddressWithoutQuoting(t *testing.T) {
+	page := checkoutShippingPageFixture()
+	page.AddressForm = customers.CheckoutForm{Values: customers.CheckoutInput{CountryCode: customers.CountryCodeBR}}
+	page.Quotes = nil
+	service := &fakeCheckoutShippingService{page: page}
+	profiles := &fakeAccountProfileService{profile: customerprofile.Profile{
+		AuthUserID:  accountTestAuthProfile().ID,
+		FullName:    "Cliente Auth",
+		PostalCode:  "29100000",
+		Street:      "Rua Perfil",
+		Number:      "25",
+		District:    "Centro",
+		City:        "Vila Velha",
+		State:       "ES",
+		CountryCode: customers.CountryCodeBR,
+	}, found: true}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := httptest.NewRequest(http.MethodGet, "/checkout/frete?delivery_method=shipping", nil)
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	checkoutShippingPageHandler(service, cookies, profiles).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Rua Perfil") || strings.Contains(body, "PAC") {
+		t.Fatalf("expected profile address prefill without quote options, body=%s", body)
+	}
+	if profiles.getID != accountTestAuthProfile().ID {
+		t.Fatalf("expected profile lookup by auth user id, got %q", profiles.getID)
+	}
+}
+
+func TestCheckoutShippingPostAddressSyncsAuthenticatedProfile(t *testing.T) {
+	page := checkoutShippingPageFixture()
+	page.AddressForm.Values = customers.CheckoutInput{
+		PostalCode:  "29100000",
+		Street:      "Rua Nova",
+		Number:      "90",
+		District:    "Centro",
+		City:        "Vila Velha",
+		State:       "ES",
+		CountryCode: customers.CountryCodeBR,
+	}
+	service := &fakeCheckoutShippingService{page: page}
+	profiles := &fakeAccountProfileService{profile: customerprofile.Profile{AuthUserID: accountTestAuthProfile().ID, FullName: "Joao Silva", Phone: "+5527999999999", CPF: "52998224725", CountryCode: customers.CountryCodeBR}, found: true}
+	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
+	req := checkoutShippingAddressFormRequest(url.Values{
+		"postal_code":  {"29100-000"},
+		"street":       {"Rua Nova"},
+		"number":       {"90"},
+		"district":     {"Centro"},
+		"city":         {"Vila Velha"},
+		"state":        {"ES"},
+		"country_code": {customers.CountryCodeBR},
+	})
+	req.Header.Set("Origin", "https://printlab.test")
+	addValidCartCookie(t, cookies, req)
+	req = req.WithContext(customerauth.WithProfile(req.Context(), accountTestAuthProfile()))
+	rec := httptest.NewRecorder()
+
+	saveShippingAddressHandler(service, cookies, "https://printlab.test", profiles).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkout/frete?delivery_method=shipping" {
+		t.Fatalf("expected address redirect, got %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if !profiles.saveCalled || profiles.saved.Street != "Rua Nova" || profiles.saved.FullName != "Joao Silva" {
+		t.Fatalf("expected authenticated shipping address to sync profile, got %#v", profiles.saved)
+	}
+}
+
 func TestCheckoutShippingPostPickupRedirectsToReview(t *testing.T) {
 	service := &fakeCheckoutShippingService{selectResult: shipping.SelectResult{Page: shipping.CheckoutShippingPage{Selected: true, SelectedMethod: shipping.DeliveryMethodPickup}}}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
@@ -239,6 +316,13 @@ func checkoutShippingFormRequest(values url.Values) *http.Request {
 	return req
 }
 
+func checkoutShippingAddressFormRequest(values url.Values) *http.Request {
+	body := strings.NewReader(values.Encode())
+	req := httptest.NewRequest(http.MethodPost, "https://printlab.test/checkout/frete/endereco", body)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req
+}
+
 func checkoutShippingPageFixture() shipping.CheckoutShippingPage {
 	return shipping.CheckoutShippingPage{
 		Cart: cartdomain.CartView{
@@ -258,6 +342,18 @@ func checkoutShippingPageFixture() shipping.CheckoutShippingPage {
 		},
 		ProductsSubtotalBRL: "R$ 79,80",
 		SelectedMethod:      shipping.DeliveryMethodShipping,
+		AddressForm: customers.CheckoutForm{
+			Found: true,
+			Values: customers.CheckoutInput{
+				PostalCode:  "29100000",
+				Street:      "Rua Um",
+				Number:      "12",
+				District:    "Centro",
+				City:        "Vila Velha",
+				State:       "ES",
+				CountryCode: customers.CountryCodeBR,
+			},
+		},
 		Quotes: []shipping.ShippingQuote{
 			{
 				Provider:     shipping.ProviderSuperFrete,
@@ -295,9 +391,11 @@ type fakeCheckoutShippingService struct {
 	pageCalls   int
 	selectCalls int
 
-	lastSelected    bool
-	lastServiceCode string
-	lastMethod      string
+	lastSelected     bool
+	lastServiceCode  string
+	lastMethod       string
+	lastAddressInput customers.CheckoutInput
+	saveAddressCalls int
 }
 
 func (s *fakeCheckoutShippingService) DeliveryPage(_ context.Context, _ []byte, method string) (shipping.CheckoutShippingPage, error) {
@@ -320,6 +418,15 @@ func (s *fakeCheckoutShippingService) SelectDelivery(_ context.Context, _ []byte
 	}
 
 	return s.selectResult, nil
+}
+
+func (s *fakeCheckoutShippingService) SaveAddress(_ context.Context, _ []byte, input customers.CheckoutInput) (shipping.CheckoutShippingPage, error) {
+	s.saveAddressCalls++
+	s.lastAddressInput = input
+	if s.pageErr != nil {
+		return s.page, s.pageErr
+	}
+	return s.page, nil
 }
 
 var _ checkoutShippingService = (*fakeCheckoutShippingService)(nil)

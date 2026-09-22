@@ -245,7 +245,7 @@ Implementado nesta subfase:
 
 ## 19.3.5 — Carrinho e checkout
 
-Status: implementada; aguardando validação visual manual.
+Status: Correções de UX/fluxo implementadas; aguardando nova validação manual.
 
 O carrinho atual é visualmente satisfatório.
 
@@ -279,8 +279,11 @@ Revisar o stepper:
 Implementado nesta subfase:
 
 - stepper reutilizável com estados concluída, atual e futura, `aria-current="step"` e nomenclatura Dados, Entrega, Revisão e Pagamento;
-- etapa Dados com cards de Dados pessoais e Endereço de entrega, grids próprios, ícones outline, máscaras e ViaCEP preservados;
-- etapa Entrega com cards acessíveis para receber em casa, retirada no local e cotações SuperFrete, mantendo GET/POST e `delivery_method`;
+- etapa Dados coleta apenas dados de contato, sem exigir endereço;
+- etapa Entrega permite escolher receber em casa ou retirar no local antes de solicitar endereço;
+- endereço de entrega fica em `POST /checkout/frete/endereco`, com máscaras e ViaCEP preservados;
+- pickup não exige endereço nem chama SuperFrete;
+- cotações SuperFrete aparecem somente após endereço salvo para entrega;
 - etapa Revisão com blocos de Produtos, Dados pessoais, Endereço de entrega e Entrega, links discretos de edição e CTA Confirmar pedido;
 - etapa Pagamento com status do pedido, card de InfinitePay por POST e ação secundária de acompanhamento;
 - resumo lateral com sticky offset compatível com header sticky, destaque de total e leitura mobile;
@@ -553,7 +556,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.1 — Header, navegação e identidade global: Implementada; aguardando validação manual.
 - 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
 - 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
-- 19.3.5 — Carrinho e checkout: Implementada; aguardando validação visual manual.
+- 19.3.5 — Carrinho e checkout: Correções de UX/fluxo implementadas; aguardando nova validação manual.
 - 19.3.6 — Revisão textual pt-BR: Planejada; não iniciada neste pacote.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

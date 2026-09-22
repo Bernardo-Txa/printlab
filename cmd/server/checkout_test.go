@@ -58,27 +58,23 @@ func TestCheckoutDetailsGetWithCartReturnsOK(t *testing.T) {
 	if !strings.Contains(body, "Seus dados") || !strings.Contains(body, "Resumo do carrinho") {
 		t.Fatal("expected checkout details form and cart summary")
 	}
-	if !strings.Contains(body, "Preencha as informações para contato e entrega") {
-		t.Fatal("expected privacy copy")
+	if !strings.Contains(body, "Preencha seus dados de contato") {
+		t.Fatal("expected contact copy")
 	}
 	assertCheckoutStepper(t, body, 1)
 	for _, expected := range []string{
 		`data-checkout-form="true"`,
-		`data-cep-lookup-endpoint="/api/cep"`,
 		`data-checkout-mask="cpf"`,
 		`data-checkout-mask="phone"`,
-		`data-checkout-mask="cep"`,
-		`data-cep-status="true"`,
 		`/static/js/checkout.js`,
 		"Dados pessoais",
-		"Endereço de entrega",
 		"Continuar para entrega",
 	} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected checkout UX enhancement marker %q", expected)
 		}
 	}
-	for _, forbiddenField := range []string{`name="unit_price"`, `name="subtotal"`, `name="total"`, `name="product_name"`} {
+	for _, forbiddenField := range []string{`name="unit_price"`, `name="subtotal"`, `name="total"`, `name="product_name"`, `name="postal_code"`, `data-checkout-mask="cep"`, `data-cep-status="true"`, "Endereço de entrega"} {
 		if strings.Contains(body, forbiddenField) {
 			t.Fatalf("expected checkout form not to include authoritative field %s", forbiddenField)
 		}
@@ -332,19 +328,8 @@ func TestCheckoutDetailsPostInvalidCPFRerendersForm(t *testing.T) {
 	}
 }
 
-func TestCheckoutDetailsPostInvalidAddressRerendersForm(t *testing.T) {
-	service := &fakeCheckoutDetailsService{
-		saveErr: customers.ErrInvalidDetails,
-		savePage: customers.CheckoutPage{
-			Cart: checkoutPageFixture().Cart,
-			Form: customers.CheckoutForm{
-				Values: validCheckoutInputForHandler(func(input *customers.CheckoutInput) {
-					input.PostalCode = "2910A000"
-				}),
-				Errors: customers.FieldErrors{"postal_code": "Informe um CEP valido."},
-			},
-		},
-	}
+func TestCheckoutDetailsPostDoesNotValidateAddressOnContactStep(t *testing.T) {
+	service := &fakeCheckoutDetailsService{page: checkoutPageFixture()}
 	cookies := cartdomain.NewCookieManager(cartdomain.CookieOptions{})
 	form := validCheckoutForm()
 	form.Set("postal_code", "2910A000")
@@ -355,11 +340,8 @@ func TestCheckoutDetailsPostInvalidAddressRerendersForm(t *testing.T) {
 
 	newTestHandlerWithCheckout(t, service, cookies, "").ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
-	}
-	if !strings.Contains(rec.Body.String(), "Informe um CEP valido.") {
-		t.Fatal("expected address validation error")
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkout/frete" {
+		t.Fatalf("expected invalid address to be ignored on contact step, got %d %q", rec.Code, rec.Header().Get("Location"))
 	}
 }
 
