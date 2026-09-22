@@ -150,6 +150,7 @@ type AccountOrder struct {
 	TotalBRL    string
 	TrackingURL string
 }
+type CustomerSnapshot struct{ FullName, Phone, CPF, PostalCode, Street, Number, Complement, District, City, State, CountryCode string }
 
 type OrderPage struct {
 	ID                  string

@@ -10,7 +10,8 @@ import (
 
 type Repository interface {
 	Review(ctx context.Context, tokenHash []byte, now time.Time, params ReviewParams) (ReviewPage, error)
-	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID ...string) (ConfirmResult, error)
+	Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error)
+	ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID string) (ConfirmResult, error)
 	Get(ctx context.Context, orderID string) (OrderPage, error)
 	Track(ctx context.Context, trackingID string) (TrackingPage, error)
 }
@@ -80,7 +81,13 @@ func (s *Service) confirm(ctx context.Context, tokenHash []byte, expectedFingerp
 		return ConfirmResult{}, ErrCartRequired
 	}
 
-	result, err := s.repository.Confirm(ctx, tokenHash, expectedFingerprint, s.now(), s.params, id)
+	var result ConfirmResult
+	var err error
+	if id == "" {
+		result, err = s.repository.Confirm(ctx, tokenHash, expectedFingerprint, s.now(), s.params)
+	} else {
+		result, err = s.repository.ConfirmForCustomer(ctx, tokenHash, expectedFingerprint, s.now(), s.params, id)
+	}
 	if err != nil {
 		return result, normalizeCartError(err)
 	}
@@ -94,6 +101,14 @@ func (s *Service) ListForCustomer(ctx context.Context, id string) ([]AccountOrde
 		return r.ListForCustomer(ctx, id)
 	}
 	return nil, ErrUnavailable
+}
+func (s *Service) LatestCustomerSnapshot(ctx context.Context, id string) (CustomerSnapshot, bool, error) {
+	if r, ok := s.repository.(interface {
+		LatestCustomerSnapshot(context.Context, string) (CustomerSnapshot, bool, error)
+	}); ok {
+		return r.LatestCustomerSnapshot(ctx, id)
+	}
+	return CustomerSnapshot{}, false, ErrUnavailable
 }
 
 func (s *Service) Get(ctx context.Context, orderID string) (OrderPage, error) {

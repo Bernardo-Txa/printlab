@@ -40,8 +40,10 @@ func checkoutDetailsPageHandler(service checkoutDetailsService, cookies *cartdom
 			return
 		}
 		if profile, ok := customerauth.ProfileFromContext(r.Context()); ok {
-			if saved, found, _ := profiles.Get(r.Context(), profile.ID); found && page.Form.Values.FullName == "" {
+			if saved, found, profileErr := profiles.Get(r.Context(), profile.ID); profileErr == nil && found && page.Form.Values.FullName == "" {
 				page.Form.Values = saved.CheckoutInput(profile.Email)
+			} else if page.Form.Values.FullName == "" {
+				page.Form.Values.FullName, page.Form.Values.Email = profile.Name, profile.Email
 			}
 		}
 

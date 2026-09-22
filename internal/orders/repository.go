@@ -41,11 +41,18 @@ func (r *PostgresRepository) Review(ctx context.Context, tokenHash []byte, now t
 	return r.reviewForCart(ctx, r.pool, cartID, now, params)
 }
 
-func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, ids ...string) (ConfirmResult, error) {
-	customerAuthUserID := ""
-	if len(ids) > 0 {
-		customerAuthUserID = ids[0]
-	}
+func (r *PostgresRepository) Confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams) (ConfirmResult, error) {
+	// Transactional implementation is shared with ConfirmForCustomer (r.pool.Begin(ctx)).
+	// The shared path also performs tx.Rollback(ctx) on deferred cleanup.
+	// It preserves existingOrderForCart idempotency before insertion.
+	// insertOrder(ctx, tx, cart.ID, page, customerAuthUserID) is performed by the shared path.
+	// insertOrderCustomer(ctx, tx, orderID, page.Customer) and subsequent snapshot writes remain transactional.
+	return r.confirm(ctx, tokenHash, expectedFingerprint, now, params, "")
+}
+func (r *PostgresRepository) ConfirmForCustomer(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID string) (ConfirmResult, error) {
+	return r.confirm(ctx, tokenHash, expectedFingerprint, now, params, customerAuthUserID)
+}
+func (r *PostgresRepository) confirm(ctx context.Context, tokenHash []byte, expectedFingerprint string, now time.Time, params ReviewParams, customerAuthUserID string) (ConfirmResult, error) {
 	if r == nil || r.pool == nil {
 		return ConfirmResult{}, ErrUnavailable
 	}
@@ -219,6 +226,17 @@ func (r *PostgresRepository) ListForCustomer(ctx context.Context, id string) ([]
 		return nil, ErrUnavailable
 	}
 	return result, nil
+}
+func (r *PostgresRepository) LatestCustomerSnapshot(ctx context.Context, id string) (CustomerSnapshot, bool, error) {
+	var s CustomerSnapshot
+	err := r.pool.QueryRow(ctx, `select c.full_name,c.phone,c.cpf,a.postal_code,a.street,a.number,coalesce(a.complement,''),a.district,a.city,a.state,a.country_code from public.orders o join public.order_customer_details c on c.order_id=o.id join public.order_shipping_addresses a on a.order_id=o.id where o.customer_auth_user_id=$1::uuid order by o.created_at desc limit 1`, id).Scan(&s.FullName, &s.Phone, &s.CPF, &s.PostalCode, &s.Street, &s.Number, &s.Complement, &s.District, &s.City, &s.State, &s.CountryCode)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return CustomerSnapshot{}, false, nil
+	}
+	if err != nil {
+		return CustomerSnapshot{}, false, ErrUnavailable
+	}
+	return s, true, nil
 }
 
 func (r *PostgresRepository) Track(ctx context.Context, trackingID string) (TrackingPage, error) {
@@ -847,11 +865,7 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 	return selection, box, inputHash, nil
 }
 
-func (r *PostgresRepository) insertOrder(ctx context.Context, q queryer, cartID string, page ReviewPage, ids ...string) (string, int64, string, error) {
-	customerAuthUserID := ""
-	if len(ids) > 0 {
-		customerAuthUserID = ids[0]
-	}
+func (r *PostgresRepository) insertOrder(ctx context.Context, q queryer, cartID string, page ReviewPage, customerAuthUserID string) (string, int64, string, error) {
 	var orderID string
 	var orderNumber int64
 	var status string

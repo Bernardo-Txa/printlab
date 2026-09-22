@@ -198,6 +198,7 @@ func newPasswordHandler(service customerAuthService) http.HandlerFunc {
 
 type accountOrdersService interface {
 	ListForCustomer(context.Context, string) ([]ordersdomain.AccountOrder, error)
+	LatestCustomerSnapshot(context.Context, string) (ordersdomain.CustomerSnapshot, bool, error)
 }
 type accountProfileService interface {
 	Get(context.Context, string) (customerprofile.Profile, bool, error)
@@ -213,10 +214,25 @@ func accountHandler(service customerAuthService, ordersService accountOrdersServ
 		}
 		customerOrders, err := ordersService.ListForCustomer(r.Context(), profile.ID)
 		if err != nil {
-			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
-			return
+			logCustomerAuthError(r.Context(), "customer_orders_load_failed", err)
+			customerOrders = nil
 		}
-		stored, _, _ := profiles.Get(r.Context(), profile.ID)
+		stored, found, profileErr := profiles.Get(r.Context(), profile.ID)
+		if profileErr != nil {
+			logCustomerAuthError(r.Context(), "customer_profile_load_failed", profileErr)
+			stored = customerprofile.Profile{AuthUserID: profile.ID}
+			found = false
+		}
+		if !found {
+			if snapshot, snapshotFound, snapshotErr := ordersService.LatestCustomerSnapshot(r.Context(), profile.ID); snapshotErr == nil && snapshotFound {
+				stored = customerprofile.Profile{AuthUserID: profile.ID, FullName: snapshot.FullName, Phone: snapshot.Phone, CPF: snapshot.CPF, PostalCode: snapshot.PostalCode, Street: snapshot.Street, Number: snapshot.Number, Complement: snapshot.Complement, District: snapshot.District, City: snapshot.City, State: snapshot.State, CountryCode: snapshot.CountryCode}
+				found = true
+			}
+		}
+		if !found {
+			stored.FullName = profile.Name
+			stored.AuthUserID = profile.ID
+		}
 		renderHTML(w, r, http.StatusOK, templates.AccountPage(profile, customerOrders, stored))
 	}
 }
@@ -236,7 +252,7 @@ func accountSaveHandler(service customerAuthService, profiles accountProfileServ
 			http.Error(w, "invalid profile", 400)
 			return
 		}
-		input := customers.CheckoutInput{FullName: r.PostFormValue("full_name"), Phone: r.PostFormValue("phone"), CPF: r.PostFormValue("cpf"), PostalCode: r.PostFormValue("postal_code"), Street: r.PostFormValue("street"), Number: r.PostFormValue("number"), Complement: r.PostFormValue("complement"), District: r.PostFormValue("district"), City: r.PostFormValue("city"), State: r.PostFormValue("state"), CountryCode: "BR"}
+		input := customers.CheckoutInput{FullName: r.PostFormValue("full_name"), Email: profile.Email, Phone: r.PostFormValue("phone"), CPF: r.PostFormValue("cpf"), PostalCode: r.PostFormValue("postal_code"), Street: r.PostFormValue("street"), Number: r.PostFormValue("number"), Complement: r.PostFormValue("complement"), District: r.PostFormValue("district"), City: r.PostFormValue("city"), State: r.PostFormValue("state"), CountryCode: "BR"}
 		_, values, errs := customers.NormalizeCheckoutInput(input)
 		if errs.Any() {
 			renderHTML(w, r, 400, templates.AccountPage(profile, nil, customerprofile.FromCheckout(profile.ID, values)))

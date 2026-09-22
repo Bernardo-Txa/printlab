@@ -31,6 +31,14 @@ func (a accountOrdersAdapter) ListForCustomer(ctx context.Context, id string) ([
 	}
 	return nil, ordersdomain.ErrUnavailable
 }
+func (a accountOrdersAdapter) LatestCustomerSnapshot(ctx context.Context, id string) (ordersdomain.CustomerSnapshot, bool, error) {
+	if s, ok := a.service.(interface {
+		LatestCustomerSnapshot(context.Context, string) (ordersdomain.CustomerSnapshot, bool, error)
+	}); ok {
+		return s.LatestCustomerSnapshot(ctx, id)
+	}
+	return ordersdomain.CustomerSnapshot{}, false, ordersdomain.ErrUnavailable
+}
 
 func checkoutReviewPageHandler(service orderReviewService, cookies *cartdomain.CookieManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
