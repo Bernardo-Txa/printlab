@@ -23,14 +23,16 @@ func TestHeaderRendersBrandNavigationAndGuestActions(t *testing.T) {
 		`href="/#contato">Contato`,
 		`href="/carrinho"`,
 		`href="/login"`,
-		`Entrar`,
-		`Carrinho`,
+		`aria-label="Entrar"`,
+		`aria-label="Carrinho"`,
+		`class="sr-only">Entrar`,
+		`class="sr-only">Carrinho`,
 	} {
 		if !strings.Contains(html, expected) {
 			t.Fatalf("expected guest header to contain %q, got %s", expected, html)
 		}
 	}
-	for _, forbidden := range []string{`<input`, `type="search"`, `site-header-cart-badge`, `>0</`} {
+	for _, forbidden := range []string{`<input`, `type="search"`, `site-header-cart-badge`, `>0</`, `badge-count`} {
 		if strings.Contains(html, forbidden) {
 			t.Fatalf("expected header not to render fake search or cart badge %q, got %s", forbidden, html)
 		}
@@ -47,6 +49,9 @@ func TestHeaderRendersAuthenticatedActionsAndPostLogout(t *testing.T) {
 		`method="post" action="/logout"`,
 		`type="submit">Sair`,
 		`href="/carrinho"`,
+		`aria-label="Minha conta"`,
+		`aria-label="Carrinho"`,
+		`class="sr-only">Minha conta`,
 	} {
 		if !strings.Contains(html, expected) {
 			t.Fatalf("expected authenticated header to contain %q, got %s", expected, html)
@@ -75,6 +80,9 @@ func TestFooterKeepsReadableLinksAndHeaderColorsScoped(t *testing.T) {
 	}
 	if strings.Contains(cssText, "\n  .nav-link:focus-visible {") {
 		t.Fatal("expected dark header focus styles not to apply globally")
+	}
+	if !strings.Contains(cssText, ".site-header .nav-link-cart::before") {
+		t.Fatal("expected cart indicator to remain scoped to the header")
 	}
 }
 

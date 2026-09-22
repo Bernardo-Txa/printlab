@@ -14,17 +14,17 @@ templ Header() {
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
 							<a class="nav-link site-header-account" href="/conta" aria-label="Minha conta">
 								@accountIcon()
-								<span>Minha conta</span>
+								<span class="sr-only">Minha conta</span>
 							</a>
 						} else {
 							<a class="nav-link site-header-account" href="/login" aria-label="Entrar">
 								@accountIcon()
-								<span>Entrar</span>
+								<span class="sr-only">Entrar</span>
 							</a>
 						}
 						<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label="Carrinho">
 							@cartIcon()
-							<span>Carrinho</span>
+							<span class="sr-only">Carrinho</span>
 						</a>
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
 							<form class="nav-logout-form" method="post" action="/logout">

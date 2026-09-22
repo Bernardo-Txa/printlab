@@ -207,19 +207,22 @@
 
   .site-header-account,
   .site-header-cart {
-    border: 1px solid rgb(255 255 255 / 0.14);
-    background: rgb(255 255 255 / 0.08);
+    @apply size-11 justify-center rounded-full p-0;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    background: rgb(255 255 255 / 0.07);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
 
   .site-header-account:hover,
   .site-header-cart:hover {
-    border-color: rgb(16 197 183 / 0.58);
-    background: rgb(255 255 255 / 0.12);
+    border-color: rgb(17 135 244 / 0.72);
+    background: rgb(17 135 244 / 0.16);
   }
 
   .site-header-icon {
-    @apply size-4 shrink-0;
+    @apply size-5 shrink-0;
+    color: rgb(255 255 255 / 0.94);
+    stroke-width: 1.7;
   }
 
   .nav-link-cart {
@@ -265,7 +268,7 @@
     .site-header-cart {
       width: 2.75rem;
       justify-content: center;
-      padding-inline: 0.75rem;
+      padding-inline: 0;
     }
   }
 
@@ -2152,9 +2155,9 @@
     overflow: hidden;
   }
 
-  .nav-link-cart::before {
+  .site-header .nav-link-cart::before {
     content: "";
-    @apply absolute right-2 top-2 size-1.5 rounded-full bg-highlight-teal;
+    @apply absolute right-1 top-1 size-2 rounded-full bg-highlight-blue;
     opacity: 0;
     transform: scale(0.4);
     transition:
