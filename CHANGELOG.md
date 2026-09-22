@@ -16,7 +16,9 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
-- Fase 18.4: retomada autenticada de pagamento pendente em `/conta`, com `POST /conta/pedidos/{id}/pagar`, autorizacao por `orders.customer_auth_user_id`, reuso de `internal/payments`, checkout convidado preservado e sem nova migration.
+- Planejamento da Fase 19.3 substituido por polimento visual, consistencia de marca e UX comercial; Fase 19.4 registrada para performance e regressao de producao apos congelamento visual.
+
+- Fase 18.4 concluida e validada em producao: retomada autenticada de pagamento pendente em `/conta`, com `POST /conta/pedidos/{id}/pagar`, autorizacao por `orders.customer_auth_user_id`, reuso de `internal/payments`, checkout convidado preservado e sem nova migration.
 
 - Fase 18.2: autenticação pública de clientes com Supabase Auth, incluindo cadastro, confirmação de e-mail, login, logout, recuperação de senha, callback seguro, `/conta` inicial e header autenticado, sem migration e sem exigir conta no checkout convidado.
 

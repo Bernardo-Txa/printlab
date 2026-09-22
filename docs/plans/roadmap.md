@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 19 em execucao. Fase 20 planejada.
+Status: Fases 0 a 18.4 concluidas e validadas. Fase 19 em execucao. Fase 20 planejada.
 
 ## Status das fases
 
@@ -46,16 +46,17 @@ Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 19 em execucao. Fase 20 
 | Fase 17.3.1 — Separacao de cor comercial e producao | Concluida; validada em producao |
 | Fase 17.3.2 — Cores comerciais na pagina do produto | Concluida; validada em producao |
 | Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Concluida; validada em producao |
-| Fase 18 — Conta do cliente e comunicacao transacional | Em execucao |
-| Fase 18.1 — E-mail transacional PrintLab | Implementada; SMTP externo configurado e validado |
-| Fase 18.2 — Autenticacao do cliente | Implementada no codigo; validada manualmente em producao |
-| Fase 18.2.1 — Refinamento visual da autenticacao | Implementada no codigo; aguardando validacao manual |
-| Fase 18.3 — Minha conta / Meus pedidos | Planejada |
-| Fase 18.4 — Pagamentos pendentes e retomada | Planejada |
+| Fase 18 — Conta do cliente e comunicacao transacional | Concluida; validada em producao ate 18.4 |
+| Fase 18.1 — E-mail transacional PrintLab | Concluida; SMTP externo configurado e validado |
+| Fase 18.2 — Autenticacao do cliente | Concluida; validada em producao |
+| Fase 18.2.1 — Refinamento visual da autenticacao | Concluida; validada em producao |
+| Fase 18.3 — Minha conta / Meus pedidos | Concluida; validada em producao |
+| Fase 18.4 — Pagamentos pendentes e retomada | Concluida; validada em producao |
 | Fase 19 — Experiencia e acabamento comercial | Em execucao |
 | Fase 19.1 — Revisao textual completa | Concluida |
-| Fase 19.2 — Motion e experiencia premium | Implementada; aguardando validacao manual |
-| Fase 19.3 — Regressao de UX/performance | Planejada |
+| Fase 19.2 — Motion e experiencia premium | Concluida |
+| Fase 19.3 — Polimento visual, consistencia de marca e UX comercial | Planejada |
+| Fase 19.4 — Performance e regressao para producao | Planejada |
 | Fase 20 — Preparacao final para producao | Planejada |
 | Fase 20.1 — Auditoria | Planejada |
 | Fase 20.2 — Correcao de bloqueadores | Planejada |
@@ -761,7 +762,7 @@ Dependencias: Fase 16.
 
 ## Fase 18 — Conta do cliente e comunicacao transacional
 
-Objetivo: oferecer conta opcional e comunicacao transacional sem remover o checkout convidado. A fase esta em execucao; 18.1 tem fundacao de codigo implementada e depende de configuracao externa de SMTP/entregabilidade.
+Objetivo: oferecer conta opcional, comunicacao transacional, perfil persistente, Minha Conta e retomada autenticada de pagamentos sem remover o checkout convidado. A fase esta concluida e validada em producao ate a Fase 18.4.
 
 ### Fase 18.1 — E-mail transacional PrintLab
 
@@ -791,7 +792,7 @@ Status: concluida e validada em producao.
 
 ### Fase 18.4 — Pagamentos pendentes e retomada
 
-Status: implementada; aguardando validacao manual em producao.
+Status: concluida e validada em producao.
 
 - Preservar `pending_payment` internamente: o pedido anterior ao checkout InfinitePay congela snapshots e suporta `payment_check` e webhook idempotente.
 - Oferecer retomada em `/conta` somente para pedido do cliente autenticado, autorizado por `orders.customer_auth_user_id`.
@@ -802,25 +803,87 @@ Dependencias: Fase 17.
 
 ## Fase 19 — Experiencia e acabamento comercial
 
-Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. A fase permanece em execucao; 19.3 continua planejada.
+Objetivo: dar acabamento profissional ao site apos estabilizar produto e conta. A fase permanece em execucao: 19.1 e 19.2 ja foram executadas, 19.3 fica planejada para polimento visual/comercial e 19.4 para performance apos congelamento visual.
 
 ### Fase 19.1 — Revisao textual completa
+
+Status: concluida.
 
 - Auditar textos visiveis, mensagens, estados, acessibilidade, SEO e e-mails para pt-BR profissional.
 - Corrigir somente texto apresentado; nao alterar slugs, identificadores, colunas, constantes, eventos ou APIs por acentuacao.
 
 ### Fase 19.2 — Motion e experiencia premium
 
+Status: concluida.
+
 - Adicionar interacoes proprias da PrintLab que sejam sutis, mobile-first, acessiveis, compatíveis com SSR e respeitem `prefers-reduced-motion`.
 - Nao transformar o site em SPA nem bloquear checkout.
 - Implementada com sistema de movimento CSS, reveal progressivo sem dependencia de conteudo em JavaScript, microinteracoes em componentes principais e composição decorativa interna da marca.
 
-### Fase 19.3 — Regressao de UX/performance
+### Fase 19.3 — Polimento visual, consistencia de marca e UX comercial
 
-- Revalidar mobile, desktop, teclado, foco, contraste, reduced motion, Lighthouse, CLS, LCP, TBT, SEO, checkout, Admin e conta do cliente.
-- Preservar os ganhos da Fase 16.
+Status: planejada.
 
-Dependencias: Fase 18.
+Plano: [019-3-polimento-visual-ux-comercial.md](019-3-polimento-visual-ux-comercial.md).
+
+- Levar a personalidade criativa, colorida, tecnologica, profissional e amigavel da Home para as paginas internas sem redesign gratuito.
+- Revisar header/navigation, WhatsApp e CTAs comerciais, consistencia visual global, Minha Conta, checkout, carrinho quando necessario, textos visiveis, tipografia, espacamento, estados, mobile, acessibilidade, footer e areas institucionais.
+- Preservar regras de negocio, checkout convidado, cliente autenticado, SuperFrete, pickup, InfinitePay, Admin, seguranca, ownership e `payment_check`.
+- Nao criar migration nem iniciar otimizacao prematura de performance por motivo visual.
+
+### Fase 19.4 — Performance e regressao para producao
+
+Status: planejada.
+
+Objetivo: depois de congelar visualmente a Fase 19.3, medir e otimizar a aplicacao para producao sem desfazer os ganhos anteriores da Fase 16.
+
+Escopo previsto:
+
+- baseline de producao pos-19.3;
+- Lighthouse mobile e desktop;
+- LCP;
+- CLS;
+- INP quando disponivel;
+- TBT em ambiente Lighthouse;
+- FCP;
+- TTFB;
+- requests;
+- bytes transferidos;
+- imagens;
+- CSS;
+- JavaScript;
+- cache;
+- fontes;
+- queries/latencia backend quando houver evidencia;
+- comportamento mobile;
+- acessibilidade;
+- SEO;
+- reduced motion;
+- regressoes funcionais.
+
+Rotas prioritarias:
+
+- `/`;
+- `/produtos`;
+- detalhe de produto real;
+- `/carrinho`;
+- checkout;
+- `/conta`;
+- pedido;
+- acompanhamento.
+
+Admin deve receber regressao funcional/performance razoavel, mas nao precisa perseguir a mesma pontuacao Lighthouse das paginas publicas.
+
+Principio:
+
+- Nao otimizar baseado em suposicao.
+- Medir primeiro.
+- Corrigir gargalos reais.
+- Nao perseguir Lighthouse 100 se isso exigir sacrificar UX, seguranca ou funcionalidade.
+- Preservar os ganhos registrados nas Fases 16.1 e 16.2.
+- Executar performance depois do acabamento visual porque a 19.3 pode mudar CSS, DOM, imagens e comportamento do header/checkout.
+
+Dependencias: Fase 18 concluida; Fase 19.4 depende da Fase 19.3 visualmente congelada.
 
 ## Fase 20 — Preparacao final para producao
 

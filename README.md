@@ -59,14 +59,14 @@ IMPLEMENTADO:
 - Fase 14.2 — MFA TOTP obrigatorio no Admin validado em producao. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
 - Fase 18.2 — Autenticação de clientes com Supabase Auth: cadastro, confirmação de e-mail, login, logout, recuperação de senha e `/conta` inicial, mantendo Admin e checkout convidado separados.
-- Fase 18.4 — Retomada autenticada de pagamentos pendentes pela conta, reutilizando o fluxo InfinitePay server-side e preservando checkout convidado.
+- Fase 18.4 — Retomada autenticada de pagamentos pendentes pela conta concluida e validada em producao, reutilizando o fluxo InfinitePay server-side e preservando checkout convidado.
 - Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 - Fase 16 — SEO e Performance concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, acessibilidade e Lighthouse 100 nas paginas publicas validadas.
 - Fase 17.1, Fase 17.2 e Fase 17.3 concluidas e validadas em producao; retirada no local tambem validada em producao.
 
 PLANEJADO:
 
-- Fase 17 permanece em execucao para a proxima etapa planejada; Fases 18 a 20 permanecem planejadas.
+- Fase 19.3 permanece planejada para polimento visual, consistencia de marca e UX comercial; Fase 19.4 permanece planejada para performance e regressao apos congelamento visual; Fase 20 permanece planejada.
 - HTMX quando houver interacao real que justifique sua presenca.
 - Custos estimados derivados, estoque fisico de filamento e operacao interna de producao.
 
