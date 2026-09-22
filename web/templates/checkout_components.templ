@@ -1,0 +1,132 @@
+package templates
+
+import "strconv"
+
+type checkoutStepView struct {
+	Number  int
+	Label   string
+	Href    string
+	State   string
+	Current bool
+}
+
+templ CheckoutStepper(current int, paymentReviewLink bool) {
+	<nav class="checkout-stepper" aria-label="Etapas do checkout">
+		for _, step := range checkoutSteps(current, paymentReviewLink) {
+			if step.Href != "" {
+				if step.Current {
+					<a class={ "checkout-step checkout-step-" + step.State } href={ step.Href } aria-current="step">
+						@checkoutStepInner(step)
+					</a>
+				} else {
+					<a class={ "checkout-step checkout-step-" + step.State } href={ step.Href }>
+						@checkoutStepInner(step)
+					</a>
+				}
+			} else {
+				if step.Current {
+					<span class={ "checkout-step checkout-step-" + step.State } aria-current="step">
+						@checkoutStepInner(step)
+					</span>
+				} else {
+					<span class={ "checkout-step checkout-step-" + step.State }>
+						@checkoutStepInner(step)
+					</span>
+				}
+			}
+		}
+	</nav>
+}
+
+templ checkoutStepInner(step checkoutStepView) {
+	<span class="checkout-step-marker" aria-hidden="true">
+		if step.State == "done" {
+			<svg viewBox="0 0 24 24" focusable="false"><path d="m6 12.5 4 4L18 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+		} else {
+			{ strconv.Itoa(step.Number) }
+		}
+	</span>
+	<span class="checkout-step-copy">
+		<span class="checkout-step-label">{ step.Label }</span>
+		if step.State == "done" {
+			<span class="checkout-step-state">Concluída</span>
+		} else if step.State == "active" {
+			<span class="checkout-step-state">Etapa atual</span>
+		} else {
+			<span class="checkout-step-state">Próxima etapa</span>
+		}
+	</span>
+}
+
+func checkoutSteps(current int, paymentReviewLink bool) []checkoutStepView {
+	steps := []checkoutStepView{
+		{Number: 1, Label: "Dados", Href: "/checkout/dados"},
+		{Number: 2, Label: "Entrega", Href: "/checkout/frete"},
+		{Number: 3, Label: "Revisão", Href: "/checkout/revisao"},
+		{Number: 4, Label: "Pagamento"},
+	}
+	for i := range steps {
+		stepNumber := steps[i].Number
+		switch {
+		case stepNumber < current:
+			steps[i].State = "done"
+		case stepNumber == current:
+			steps[i].State = "active"
+			steps[i].Current = true
+		default:
+			steps[i].State = "future"
+			steps[i].Href = ""
+		}
+	}
+	if current <= 1 {
+		steps[0].Href = ""
+	}
+	if current >= 4 && !paymentReviewLink {
+		steps[2].Href = ""
+	}
+	return steps
+}
+
+templ checkoutProfileIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
+}
+
+templ checkoutAddressIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M5.25 10.7 12 5l6.75 5.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M7.2 9.7V19h9.6V9.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M10 19v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+	</svg>
+}
+
+templ checkoutDeliveryIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M3.5 7.5h10v9h-10z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M13.5 10h3.2l3 3.3v3.2h-6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M6.5 18.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17 18.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z" fill="none" stroke="currentColor" stroke-width="1.7"></path>
+	</svg>
+}
+
+templ checkoutPickupIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+		<path d="M12 13.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z" fill="none" stroke="currentColor" stroke-width="1.7"></path>
+	</svg>
+}
+
+templ checkoutReviewIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.5l-2.5-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2.5 1.4V6A1.5 1.5 0 0 1 7 4.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+		<path d="M8.5 9h7M8.5 12h7M8.5 15h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+	</svg>
+}
+
+templ checkoutLockIcon() {
+	<svg viewBox="0 0 24 24" focusable="false">
+		<path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+		<path d="M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+	</svg>
+}

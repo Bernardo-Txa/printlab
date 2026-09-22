@@ -13,16 +13,12 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 		<section class="checkout-section">
 			@components.Container() {
 				<div class="checkout-heading">
-					<p class="brand-kicker">Checkout</p>
-					<h1>Etapa 3 - Revisão</h1>
-					<p>Confira os dados da compra antes de confirmar. O pagamento será disponibilizado na próxima etapa.</p>
+					<p class="brand-kicker">Checkout seguro</p>
+					<p class="checkout-step-eyebrow">Etapa 3 de 4</p>
+					<h1>Revise seu pedido</h1>
+					<p>Confira produtos, dados e entrega antes de criar o pedido. O pagamento será feito na próxima etapa.</p>
 				</div>
-				<div class="checkout-stepper" aria-label="Etapas do checkout">
-					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
-					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
-					<span class="checkout-step checkout-step-active">3 Revisão</span>
-					<span class="checkout-step">4 Pagamento</span>
-				</div>
+				@CheckoutStepper(3, false)
 				if page.Message != "" {
 					<p class="checkout-alert checkout-alert-error">{ page.Message }</p>
 				}
@@ -31,7 +27,11 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 						<input type="hidden" name="review_fingerprint" value={ page.Fingerprint }/>
 						<section class="checkout-form-section" aria-labelledby="review-products">
 							<div class="review-section-header">
-								<h2 id="review-products">Produtos</h2>
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutReviewIcon()</span>
+								<div>
+									<h2 id="review-products">Produtos</h2>
+									<p>Itens que serão congelados no pedido.</p>
+								</div>
 							</div>
 							<div class="review-items">
 								for _, item := range page.Items {
@@ -47,7 +47,7 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 										</div>
 										<div class="review-item-values">
 											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
-											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
+											<p><span>Unitário</span><strong>{ item.UnitPriceBRL }</strong></p>
 											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
 										</div>
 									</article>
@@ -56,7 +56,11 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 						</section>
 						<section class="checkout-form-section" aria-labelledby="review-customer">
 							<div class="review-section-header">
-								<h2 id="review-customer">Dados</h2>
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutProfileIcon()</span>
+								<div>
+									<h2 id="review-customer">Dados pessoais</h2>
+									<p>Informações de contato do pedido.</p>
+								</div>
 								<a href="/checkout/dados">Editar dados</a>
 							</div>
 							<div class="review-detail-grid">
@@ -69,7 +73,11 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 						if page.Shipping.DeliveryMethod != "pickup" {
 							<section class="checkout-form-section" aria-labelledby="review-address">
 								<div class="review-section-header">
-									<h2 id="review-address">Entrega</h2>
+									<span class="checkout-section-icon" aria-hidden="true">@checkoutAddressIcon()</span>
+									<div>
+										<h2 id="review-address">Endereço de entrega</h2>
+										<p>Destino usado para a cotação selecionada.</p>
+									</div>
 									<a href="/checkout/dados">Editar dados</a>
 								</div>
 								<div class="review-address">
@@ -81,14 +89,18 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 						}
 						<section class="checkout-form-section" aria-labelledby="review-shipping">
 							<div class="review-section-header">
-								<h2 id="review-shipping">Frete</h2>
-								<a href="/checkout/frete">Alterar frete</a>
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutDeliveryIcon()</span>
+								<div>
+									<h2 id="review-shipping">Entrega</h2>
+									<p>Modalidade escolhida para este pedido.</p>
+								</div>
+								<a href="/checkout/frete">Alterar entrega</a>
 							</div>
 							<div class="review-detail-grid">
 								if page.Shipping.DeliveryMethod == "pickup" {
 									<p><span>Entrega</span><strong>Retirada no local</strong></p>
 									<p><span>Frete</span><strong>Grátis</strong></p>
-									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+									<p class="review-detail-note">Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
 								} else {
 									<p><span>Serviço</span><strong>{ page.Shipping.ServiceName }</strong></p>
 									if page.Shipping.CarrierName != "" {
@@ -99,9 +111,10 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 								}
 							</div>
 						</section>
-						<div class="checkout-form-actions">
+						<div class="checkout-form-actions checkout-review-actions">
+							<div class="checkout-action-copy">O pagamento será feito na próxima etapa.</div>
 							<button class="btn-base btn-primary" type="submit">Confirmar pedido</button>
-							<a class="btn-base btn-secondary" href="/checkout/frete">Voltar ao frete</a>
+							<a class="btn-base btn-secondary" href="/checkout/frete">Voltar à entrega</a>
 						</div>
 					</form>
 					<aside class="checkout-summary" aria-label="Resumo do pedido">
@@ -123,23 +136,17 @@ templ CheckoutReview(page ordersdomain.ReviewPage) {
 								</div>
 							}
 						</div>
+						<div class="checkout-summary-total"><span>Produtos</span><strong>{ page.ProductsSubtotalBRL }</strong></div>
 						<div class="checkout-summary-total">
-							<span>Produtos</span>
-							<strong>{ page.ProductsSubtotalBRL }</strong>
-						</div>
-						<div class="checkout-summary-total">
-							<span>Frete</span>
+							<span>Entrega</span>
 							if page.Shipping.DeliveryMethod == "pickup" {
 								<strong>Grátis</strong>
 							} else {
 								<strong>{ page.ShippingPriceBRL }</strong>
 							}
 						</div>
-						<div class="checkout-summary-total checkout-summary-grand-total">
-							<span>Total</span>
-							<strong>{ page.TotalBRL }</strong>
-						</div>
-						<p>O pedido será criado com status aguardando pagamento.</p>
+						<div class="checkout-summary-total checkout-summary-grand-total"><span>Total</span><strong>{ page.TotalBRL }</strong></div>
+						<p>Após confirmar, você seguirá para o pagamento.</p>
 					</aside>
 				</div>
 			}
@@ -151,25 +158,32 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 	@components.Layout("Pedido criado | PrintLab", "Pedido criado na PrintLab.", "") {
 		<section class="checkout-section">
 			@components.Container() {
-				<div class="checkout-heading">
-					<p class="brand-kicker">Pedido criado</p>
-					<h1>Pedido { page.OrderNumberLabel }</h1>
-					<p>Finalize o pagamento no ambiente seguro da InfinitePay.</p>
+				<div class="checkout-heading checkout-payment-heading">
+					<p class="brand-kicker">Checkout seguro</p>
+					<p class="checkout-step-eyebrow">Etapa 4 de 4</p>
+					if payment.ShowConfirmed {
+						<h1>Pagamento confirmado.</h1>
+						<p>Seu pedido { page.OrderNumberLabel } está pago e pronto para seguir o fluxo da PrintLab.</p>
+					} else {
+						<h1>Pedido criado. Falta só o pagamento.</h1>
+						<p>Finalize no ambiente seguro da InfinitePay para confirmar o pedido { page.OrderNumberLabel }.</p>
+					}
 				</div>
-				<div class="checkout-stepper" aria-label="Etapas do checkout">
-					<a class="checkout-step checkout-step-done" href="/checkout/dados">1 Dados</a>
-					<a class="checkout-step checkout-step-done" href="/checkout/frete">2 Frete</a>
-					<span class="checkout-step checkout-step-done">3 Revisão</span>
-					<span class="checkout-step checkout-step-active">4 Pagamento</span>
-				</div>
+				@CheckoutStepper(4, false)
 				<div class="order-status-panel">
-					<span>Status</span>
-					<strong>{ page.StatusLabel }</strong>
+					<div><span>Pedido</span><strong>Pedido { page.OrderNumberLabel }</strong></div>
+					<div><span>Status</span><strong>{ page.StatusLabel }</strong></div>
 				</div>
 				<div class="checkout-layout">
 					<div class="checkout-form">
 						<section class="checkout-form-section" aria-labelledby="order-items">
-							<h2 id="order-items">Itens do pedido</h2>
+							<div class="review-section-header">
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutReviewIcon()</span>
+								<div>
+									<h2 id="order-items">Itens do pedido</h2>
+									<p>Resumo congelado no momento da criação.</p>
+								</div>
+							</div>
 							<div class="review-items">
 								for _, item := range page.Items {
 									<article class="review-item">
@@ -184,7 +198,7 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 										</div>
 										<div class="review-item-values">
 											<p><span>Quantidade</span><strong>{ strconv.Itoa(item.Quantity) }</strong></p>
-											<p><span>Unitario</span><strong>{ item.UnitPriceBRL }</strong></p>
+											<p><span>Unitário</span><strong>{ item.UnitPriceBRL }</strong></p>
 											<p><span>Subtotal</span><strong>{ item.LineTotalBRL }</strong></p>
 										</div>
 									</article>
@@ -192,12 +206,18 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 							</div>
 						</section>
 						<section class="checkout-form-section" aria-labelledby="order-shipping">
-							<h2 id="order-shipping">Frete</h2>
+							<div class="review-section-header">
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutDeliveryIcon()</span>
+								<div>
+									<h2 id="order-shipping">Entrega</h2>
+									<p>Modalidade registrada no pedido.</p>
+								</div>
+							</div>
 							<div class="review-detail-grid">
 								if page.Shipping.DeliveryMethod == "pickup" {
 									<p><span>Entrega</span><strong>Retirada no local</strong></p>
 									<p><span>Frete</span><strong>Grátis</strong></p>
-									<p>Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
+									<p class="review-detail-note">Após a confirmação do pedido, entraremos em contato para combinar o horário da retirada.</p>
 								} else {
 									<p><span>Serviço</span><strong>{ page.Shipping.ServiceName }</strong></p>
 									if page.Shipping.CarrierName != "" {
@@ -210,22 +230,16 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 					</div>
 					<aside class="checkout-summary" aria-label="Resumo do pedido">
 						<h2>Resumo</h2>
+						<div class="checkout-summary-total"><span>Produtos</span><strong>{ page.ProductsSubtotalBRL }</strong></div>
 						<div class="checkout-summary-total">
-							<span>Produtos</span>
-							<strong>{ page.ProductsSubtotalBRL }</strong>
-						</div>
-						<div class="checkout-summary-total">
-							<span>Frete</span>
+							<span>Entrega</span>
 							if page.Shipping.DeliveryMethod == "pickup" {
 								<strong>Grátis</strong>
 							} else {
 								<strong>{ page.ShippingPriceBRL }</strong>
 							}
 						</div>
-						<div class="checkout-summary-total checkout-summary-grand-total">
-							<span>Total</span>
-							<strong>{ page.TotalBRL }</strong>
-						</div>
+						<div class="checkout-summary-total checkout-summary-grand-total"><span>Total</span><strong>{ page.TotalBRL }</strong></div>
 						if payment.ShowConfirmed {
 							<p class="checkout-alert checkout-alert-success">{ payment.Message }</p>
 						} else {
@@ -236,15 +250,20 @@ templ OrderConfirmation(page ordersdomain.OrderPage, payment paymentsdomain.Orde
 								<p class="checkout-alert checkout-alert-error">{ payment.UnavailableMessage }</p>
 							}
 							if payment.CanPay {
-								<form method="post" action={ "/pedido/" + page.ID + "/pagar" }>
-									<button class="btn-base btn-primary" type="submit">Pagar agora</button>
-								</form>
+								<div class="payment-card">
+									<span class="payment-card-icon" aria-hidden="true">@checkoutLockIcon()</span>
+									<div>
+										<strong>Pagamento seguro InfinitePay</strong>
+										<p>Você será direcionado para finalizar o pagamento. A PrintLab não armazena dados do cartão.</p>
+									</div>
+								</div>
+								<form method="post" action={ "/pedido/" + page.ID + "/pagar" }><button class="btn-base btn-primary" type="submit">Pagar agora</button></form>
 							}
 						}
 						if page.TrackingURL != "" {
 							<a class="btn-base btn-secondary" href={ page.TrackingURL }>Acompanhar pedido</a>
 						}
-						<p>Use este número apenas como referência humana. O link do pedido usa o identificador seguro.</p>
+						<p>Use o número do pedido como referência humana.</p>
 					</aside>
 				</div>
 			}

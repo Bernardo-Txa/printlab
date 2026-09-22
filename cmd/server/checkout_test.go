@@ -55,12 +55,13 @@ func TestCheckoutDetailsGetWithCartReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, "Etapa 1 - Seus dados") || !strings.Contains(body, "Resumo do carrinho") {
+	if !strings.Contains(body, "Seus dados") || !strings.Contains(body, "Resumo do carrinho") {
 		t.Fatal("expected checkout details form and cart summary")
 	}
-	if !strings.Contains(body, "Usamos estes dados somente para preparar sua compra") {
+	if !strings.Contains(body, "Preencha as informações para contato e entrega") {
 		t.Fatal("expected privacy copy")
 	}
+	assertCheckoutStepper(t, body, 1)
 	for _, expected := range []string{
 		`data-checkout-form="true"`,
 		`data-cep-lookup-endpoint="/api/cep"`,
@@ -69,6 +70,9 @@ func TestCheckoutDetailsGetWithCartReturnsOK(t *testing.T) {
 		`data-checkout-mask="cep"`,
 		`data-cep-status="true"`,
 		`/static/js/checkout.js`,
+		"Dados pessoais",
+		"Endereço de entrega",
+		"Continuar para entrega",
 	} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected checkout UX enhancement marker %q", expected)
@@ -508,3 +512,39 @@ func (s *fakeCheckoutDetailsService) Save(_ context.Context, _ []byte, input cus
 }
 
 var _ checkoutDetailsService = (*fakeCheckoutDetailsService)(nil)
+
+func assertCheckoutStepper(t *testing.T, body string, current int) {
+	t.Helper()
+	for _, label := range []string{"Dados", "Entrega", "Revisão", "Pagamento"} {
+		if !strings.Contains(body, label) {
+			t.Fatalf("expected checkout stepper label %q", label)
+		}
+	}
+	if !strings.Contains(body, `aria-current="step"`) || !strings.Contains(body, "Etapa atual") {
+		t.Fatal("expected active checkout step with aria-current")
+	}
+	switch current {
+	case 1:
+		if strings.Contains(body, `href="/checkout/frete"`) || strings.Contains(body, `href="/checkout/revisao"`) {
+			t.Fatal("expected future steps on details page not to be links")
+		}
+	case 2:
+		if !strings.Contains(body, `href="/checkout/dados"`) || !strings.Contains(body, "Concluída") {
+			t.Fatal("expected details step to be a completed link on delivery page")
+		}
+		if strings.Contains(body, `href="/checkout/revisao"`) {
+			t.Fatal("expected review future step not to be a link on delivery page")
+		}
+	case 3:
+		if !strings.Contains(body, `href="/checkout/dados"`) || !strings.Contains(body, `href="/checkout/frete"`) {
+			t.Fatal("expected completed details and delivery steps to remain links on review page")
+		}
+	case 4:
+		if !strings.Contains(body, `href="/checkout/dados"`) || !strings.Contains(body, `href="/checkout/frete"`) {
+			t.Fatal("expected completed details and delivery steps to remain links on payment page")
+		}
+		if strings.Contains(body, `href="/checkout/revisao"`) {
+			t.Fatal("expected completed review step not to link after order creation")
+		}
+	}
+}

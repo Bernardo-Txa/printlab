@@ -107,7 +107,8 @@ func TestCheckoutShippingGetWithValidQuoteReturnsOK(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Etapa 2 - Entrega", "PAC", "R$ 18,90", "5 dias uteis"} {
+	assertCheckoutStepper(t, body, 2)
+	for _, expected := range []string{"Como você quer receber?", "Modalidade de entrega", "Receber em casa", "Retirar no local", "PAC", "R$ 18,90", "5 dias uteis", "Continuar para revisão"} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected shipping page to contain %q", expected)
 		}
@@ -136,7 +137,9 @@ func TestCheckoutShippingGetOffersPickupWithoutShippingQuote(t *testing.T) {
 	if service.lastMethod != "" {
 		t.Fatalf("expected no delivery method before choice, got %q", service.lastMethod)
 	}
-	if !strings.Contains(rec.Body.String(), "Retirar no local") {
+	body := rec.Body.String()
+	assertCheckoutStepper(t, body, 2)
+	if !strings.Contains(body, "Retirar no local") || !strings.Contains(body, "Grátis") {
 		t.Fatal("expected pickup option")
 	}
 }

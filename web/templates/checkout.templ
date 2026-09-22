@@ -12,28 +12,30 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 		<section class="checkout-section">
 			@components.Container() {
 				<div class="checkout-heading">
-					<p class="brand-kicker">Checkout</p>
-					<h1>Etapa 1 - Seus dados</h1>
-					<p>Usamos estes dados somente para preparar sua compra, entrega e contato relacionado ao pedido.</p>
+					<p class="brand-kicker">Checkout seguro</p>
+					<p class="checkout-step-eyebrow">Etapa 1 de 4</p>
+					<h1>Seus dados</h1>
+					<p>Preencha as informações para contato e entrega. Elas serão usadas somente para preparar este pedido.</p>
 				</div>
-				<div class="checkout-stepper" aria-label="Etapas do checkout">
-					<span class="checkout-step checkout-step-active">1 Dados</span>
-					<span class="checkout-step">2 Frete</span>
-					<span class="checkout-step">3 Revisão</span>
-					<span class="checkout-step">4 Pagamento</span>
-				</div>
+				@CheckoutStepper(1, false)
 				if page.Form.Saved {
-					<p class="checkout-alert checkout-alert-success">Dados salvos. O frete será escolhido na próxima etapa.</p>
+					<p class="checkout-alert checkout-alert-success">Dados salvos. Escolha a entrega na próxima etapa.</p>
 				}
 				if page.Form.HasErrors() {
-					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
+					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
 				}
 				<div class="checkout-layout">
 					<form class="checkout-form" method="post" action="/checkout/dados" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
 						<input type="hidden" name="country_code" value="BR"/>
 						<section class="checkout-form-section" aria-labelledby="checkout-contact">
-							<h2 id="checkout-contact">Contato</h2>
-							<div class="checkout-fields">
+							<div class="checkout-section-header">
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutProfileIcon()</span>
+								<div>
+									<h2 id="checkout-contact">Dados pessoais</h2>
+									<p>Contato e identificação para acompanhar sua compra.</p>
+								</div>
+							</div>
+							<div class="checkout-fields checkout-fields-personal">
 								@CheckoutField("full_name", "Nome completo", "text", "name", "", page.Form.Values.FullName, page.Form.Errors.Message("full_name"), false)
 								@CheckoutField("email", "E-mail", "email", "email", "", page.Form.Values.Email, page.Form.Errors.Message("email"), false)
 								@CheckoutMaskedField("phone", "Telefone/WhatsApp", "tel", "tel", "tel", page.Form.Values.Phone, page.Form.Errors.Message("phone"), "", false, "phone", "15")
@@ -41,8 +43,14 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 							</div>
 						</section>
 						<section class="checkout-form-section" aria-labelledby="checkout-shipping">
-							<h2 id="checkout-shipping">Entrega</h2>
-							<div class="checkout-fields">
+							<div class="checkout-section-header">
+								<span class="checkout-section-icon" aria-hidden="true">@checkoutAddressIcon()</span>
+								<div>
+									<h2 id="checkout-shipping">Endereço de entrega</h2>
+									<p>Informe o destino para calcular entrega ou avançar para retirada.</p>
+								</div>
+							</div>
+							<div class="checkout-fields checkout-fields-address">
 								@CheckoutPostalCodeField(page.Form.Values.PostalCode, page.Form.Errors.Message("postal_code"))
 								@CheckoutField("street", "Rua/logradouro", "text", "street-address", "", page.Form.Values.Street, page.Form.Errors.Message("street"), false)
 								@CheckoutField("number", "Número", "text", "address-line2", "", page.Form.Values.Number, page.Form.Errors.Message("number"), false)
@@ -53,7 +61,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 							</div>
 						</section>
 						<div class="checkout-form-actions">
-							<button class="btn-base btn-primary" type="submit">Salvar dados</button>
+							<button class="btn-base btn-primary" type="submit">Continuar para entrega</button>
 							<a class="btn-base btn-secondary" href="/carrinho">Voltar ao carrinho</a>
 						</div>
 					</form>
@@ -78,7 +86,7 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 								}
 							}
 						</div>
-						<div class="checkout-summary-total">
+						<div class="checkout-summary-total checkout-summary-grand-total">
 							<span>Total atual dos produtos</span>
 							<strong>{ page.Cart.SubtotalBRL }</strong>
 						</div>

@@ -160,7 +160,7 @@ Preservar diferenças funcionais entre catálogo, checkout, conta e Admin.
 
 ## 19.3.4 — Minha Conta
 
-Status: implementada; aguardando validação visual manual.
+Status: validada visualmente em produção pelo responsável.
 
 A área `/conta` precisa de revisão visual completa.
 
@@ -245,6 +245,8 @@ Implementado nesta subfase:
 
 ## 19.3.5 — Carrinho e checkout
 
+Status: implementada; aguardando validação visual manual.
+
 O carrinho atual é visualmente satisfatório.
 
 Preservar os elementos que já funcionam bem.
@@ -273,6 +275,17 @@ Revisar o stepper:
 2. Frete
 3. Revisão
 4. Pagamento
+
+Implementado nesta subfase:
+
+- stepper reutilizável com estados concluída, atual e futura, `aria-current="step"` e nomenclatura Dados, Entrega, Revisão e Pagamento;
+- etapa Dados com cards de Dados pessoais e Endereço de entrega, grids próprios, ícones outline, máscaras e ViaCEP preservados;
+- etapa Entrega com cards acessíveis para receber em casa, retirada no local e cotações SuperFrete, mantendo GET/POST e `delivery_method`;
+- etapa Revisão com blocos de Produtos, Dados pessoais, Endereço de entrega e Entrega, links discretos de edição e CTA Confirmar pedido;
+- etapa Pagamento com status do pedido, card de InfinitePay por POST e ação secundária de acompanhamento;
+- resumo lateral com sticky offset compatível com header sticky, destaque de total e leitura mobile;
+- ajustes de mobile, foco e contraste sem redesenhar `/carrinho`;
+- testes de stepper, formulários, radios, revisão, pagamento por POST e não exposição de campos autoritativos.
 
 Estados desejados:
 
@@ -539,6 +552,8 @@ Fase 19.4 — Performance e regressão para produção.
 
 - 19.3.1 — Header, navegação e identidade global: Implementada; aguardando validação manual.
 - 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
-- 19.3.6 — Revisão textual pt-BR: Em andamento; este pacote corrigiu somente as strings visíveis das páginas/componentes tocados.
+- 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
+- 19.3.5 — Carrinho e checkout: Implementada; aguardando validação visual manual.
+- 19.3.6 — Revisão textual pt-BR: Planejada; não iniciada neste pacote.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

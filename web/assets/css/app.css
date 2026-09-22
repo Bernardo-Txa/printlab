@@ -2895,3 +2895,347 @@
     transform: scale(1);
   }
 }
+
+@layer components {
+  .checkout-heading {
+    @apply relative max-w-3xl rounded-section border border-primary/10 bg-surface/80 p-5 shadow-soft sm:p-6;
+    background:
+      radial-gradient(circle at 12% 0, rgb(17 135 244 / 0.13), transparent 34%),
+      linear-gradient(135deg, rgb(255 255 255 / 0.96), rgb(238 246 251 / 0.72));
+  }
+
+  .checkout-heading .brand-kicker {
+    @apply bg-highlight-teal/10 text-secondary shadow-none;
+  }
+
+  .checkout-step-eyebrow {
+    @apply mt-4 text-sm font-semibold text-primary;
+  }
+
+  .checkout-heading h1 {
+    @apply mt-3 text-4xl sm:text-5xl;
+  }
+
+  .checkout-heading p:not(.brand-kicker):not(.checkout-step-eyebrow) {
+    @apply mt-4;
+  }
+
+  .checkout-stepper {
+    @apply mt-6 flex gap-3 overflow-x-auto rounded-section border border-border bg-surface/80 p-3 shadow-soft sm:grid sm:grid-cols-4 sm:overflow-visible;
+    scrollbar-width: thin;
+  }
+
+  .checkout-step {
+    @apply min-w-[9.5rem] flex-1 justify-start gap-3 rounded-card px-3 py-3 text-left sm:min-w-0;
+  }
+
+  .checkout-step-marker {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted;
+  }
+
+  .checkout-step-marker svg {
+    @apply size-5;
+  }
+
+  .checkout-step-copy {
+    @apply flex min-w-0 flex-col gap-0.5;
+  }
+
+  .checkout-step-label {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .checkout-step-state {
+    @apply text-xs font-semibold text-muted;
+  }
+
+  .checkout-step-done {
+    @apply border-highlight-teal/35 bg-highlight-teal/10 text-foreground;
+  }
+
+  .checkout-step-done .checkout-step-marker {
+    @apply border-highlight-teal bg-highlight-teal text-secondary;
+  }
+
+  .checkout-step-active {
+    @apply border-primary bg-primary/10 text-foreground shadow-soft;
+  }
+
+  .checkout-step-active .checkout-step-marker {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .checkout-step-future {
+    @apply bg-surface-muted/55;
+  }
+
+  .checkout-step-future .checkout-step-label,
+  .checkout-step-future .checkout-step-state {
+    @apply text-muted;
+  }
+
+  .checkout-layout {
+    @apply lg:grid-cols-[minmax(0,1fr)_21rem];
+  }
+
+  .checkout-form-section {
+    @apply border-primary/10 bg-surface p-5 sm:p-6;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(238 246 251 / 0.42)),
+      var(--color-surface);
+  }
+
+  .checkout-section-header,
+  .review-section-header {
+    @apply flex items-start gap-3;
+  }
+
+  .review-section-header {
+    @apply flex-wrap sm:flex-nowrap;
+  }
+
+  .checkout-section-icon {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-full border border-highlight-teal/25 bg-highlight-teal/10 text-primary;
+  }
+
+  .checkout-section-icon svg,
+  .shipping-option-icon svg,
+  .payment-card-icon svg {
+    @apply size-5;
+  }
+
+  .checkout-section-header h2,
+  .review-section-header h2 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .checkout-section-header p,
+  .review-section-header p {
+    @apply mt-1 text-sm leading-6 text-muted;
+  }
+
+  .review-section-header > a {
+    @apply ml-14 rounded-control px-3 py-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:ml-auto;
+  }
+
+  .checkout-fields-personal,
+  .checkout-fields-address {
+    @apply sm:grid-cols-2;
+  }
+
+  .checkout-fields-personal .checkout-field:nth-child(1),
+  .checkout-fields-personal .checkout-field:nth-child(2) {
+    @apply sm:col-span-2;
+  }
+
+  .checkout-fields-address {
+    @apply md:grid-cols-6;
+  }
+
+  .checkout-fields-address .checkout-field:nth-child(1),
+  .checkout-fields-address .checkout-field:nth-child(3) {
+    @apply md:col-span-2;
+  }
+
+  .checkout-fields-address .checkout-field:nth-child(2),
+  .checkout-fields-address .checkout-field:nth-child(4) {
+    @apply md:col-span-4;
+  }
+
+  .checkout-fields-address .checkout-field:nth-child(5) {
+    @apply md:col-span-2;
+  }
+
+  .checkout-fields-address .checkout-field:nth-child(6) {
+    @apply md:col-span-3;
+  }
+
+  .checkout-fields-address .checkout-field:nth-child(7) {
+    @apply md:col-span-1;
+  }
+
+  .checkout-field input {
+    @apply min-h-12 bg-white/85 shadow-sm;
+  }
+
+  .checkout-field input:hover {
+    @apply border-primary/35 bg-white;
+  }
+
+  .checkout-field input:focus-visible {
+    @apply border-primary bg-white;
+    box-shadow: 0 0 0 3px rgb(16 197 183 / 0.18);
+  }
+
+  .checkout-form-actions {
+    @apply rounded-card border border-border bg-surface/80 p-3 sm:items-center;
+  }
+
+  .checkout-review-actions {
+    @apply sm:grid sm:grid-cols-[1fr_auto_auto];
+  }
+
+  .checkout-action-copy {
+    @apply text-sm leading-6 text-muted;
+  }
+
+  .shipping-options {
+    @apply gap-4;
+  }
+
+  .shipping-option {
+    @apply border-primary/10 bg-white/80 p-4;
+  }
+
+  .shipping-method-card {
+    @apply sm:grid-cols-[auto_auto_1fr_auto];
+  }
+
+  .shipping-quote-card {
+    @apply sm:grid-cols-[auto_1fr_auto_auto];
+  }
+
+  .shipping-option-icon {
+    @apply hidden size-10 items-center justify-center rounded-full bg-surface-muted text-primary sm:flex;
+  }
+
+  .shipping-option-copy,
+  .shipping-option-deadline,
+  .shipping-option-price {
+    @apply flex min-w-0 flex-col gap-1;
+  }
+
+  .shipping-option-price strong {
+    @apply text-primary;
+  }
+
+  .shipping-option-deadline small,
+  .shipping-option-price small {
+    @apply text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .shipping-option:has(input:checked) {
+    @apply border-primary bg-primary/5;
+  }
+
+  .shipping-option:has(input:checked) .shipping-option-icon {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .pickup-callout,
+  .shipping-unavailable-card {
+    @apply border-highlight-teal/25 bg-highlight-teal/5;
+  }
+
+  .pickup-price {
+    @apply mt-5 flex items-center justify-between rounded-card border border-highlight-teal/30 bg-white/80 px-4 py-3;
+  }
+
+  .pickup-price span {
+    @apply text-sm font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .pickup-price strong {
+    @apply text-2xl font-semibold text-primary;
+  }
+
+  .review-items {
+    @apply mt-5 grid gap-4;
+  }
+
+  .review-item {
+    @apply grid gap-4 rounded-card border border-border bg-white/80 p-4 sm:grid-cols-[1fr_auto] sm:items-center;
+  }
+
+  .review-item-main h3 {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .review-item-main p {
+    @apply mt-1 text-sm leading-5 text-muted;
+  }
+
+  .review-item-values {
+    @apply grid grid-cols-3 gap-2 sm:min-w-80;
+  }
+
+  .review-item-values p,
+  .review-detail-grid p {
+    @apply rounded-control bg-surface-muted/70 px-3 py-2;
+  }
+
+  .review-item-values span,
+  .review-detail-grid span {
+    @apply block text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .review-item-values strong,
+  .review-detail-grid strong {
+    @apply block text-sm font-semibold text-foreground;
+  }
+
+  .review-detail-grid {
+    @apply mt-5 grid gap-3 sm:grid-cols-2;
+  }
+
+  .review-detail-note {
+    @apply sm:col-span-2;
+  }
+
+  .review-address {
+    @apply mt-5 rounded-card border border-border bg-white/80 p-4 text-sm leading-6 text-foreground;
+  }
+
+  .checkout-summary {
+    @apply border-primary/10 bg-surface/95 lg:top-28;
+  }
+
+  .checkout-summary-total {
+    @apply mt-4;
+  }
+
+  .checkout-summary-grand-total {
+    @apply rounded-card border border-primary/20 bg-primary/5 p-4;
+  }
+
+  .checkout-summary-grand-total strong {
+    @apply text-3xl;
+  }
+
+  .order-status-panel {
+    @apply mt-6 grid gap-3 rounded-section border border-primary/15 bg-surface p-4 shadow-soft sm:grid-cols-2;
+  }
+
+  .order-status-panel div {
+    @apply rounded-card bg-surface-muted/70 px-4 py-3;
+  }
+
+  .order-status-panel span {
+    @apply block text-xs font-semibold uppercase tracking-normal text-muted;
+  }
+
+  .order-status-panel strong {
+    @apply block text-xl font-semibold text-foreground;
+  }
+
+  .payment-card {
+    @apply mt-5 flex gap-3 rounded-card border border-primary/20 bg-primary/5 p-4;
+  }
+
+  .payment-card-icon {
+    @apply flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground;
+  }
+
+  .payment-card strong {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .payment-card p {
+    @apply mt-1 text-sm leading-6 text-muted;
+  }
+
+  .payment-card + form .btn-base,
+  .checkout-summary > .btn-base {
+    @apply mt-4 w-full;
+  }
+}

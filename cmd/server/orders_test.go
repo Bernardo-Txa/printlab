@@ -90,8 +90,9 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
+	assertCheckoutStepper(t, body, 3)
 	for _, expected := range []string{
-		"Etapa 3 - Revisão",
+		"Revise seu pedido",
 		"Produto Real",
 		"Padrao",
 		"R$ 79,80",
@@ -102,10 +103,16 @@ func TestCheckoutReviewGetWithValidStateReturnsOK(t *testing.T) {
 		`href="/checkout/dados"`,
 		`href="/checkout/frete"`,
 		`name="review_fingerprint"`,
+		"Unitário",
+		"Alterar entrega",
+		"O pagamento será feito na próxima etapa.",
 	} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected review page to contain %q", expected)
 		}
+	}
+	if strings.Contains(body, "Unitario") {
+		t.Fatal("expected accented Unitário copy")
 	}
 	for _, forbidden := range []string{`name="unit_price"`, `name="shipping_price"`, `name="subtotal"`, `name="total"`} {
 		if strings.Contains(body, forbidden) {
@@ -266,7 +273,8 @@ func TestOrderPageWithValidOrderReturnsOK(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagar agora", "ambiente seguro da InfinitePay", "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70", `href="/acompanhar/` + trackingID + `"`} {
+	assertCheckoutStepper(t, body, 4)
+	for _, expected := range []string{"Pedido #1001", "Aguardando pagamento", "Pagar agora", "ambiente seguro da InfinitePay", "Pagamento seguro InfinitePay", `method="post" action="/pedido/` + orderID + `/pagar"`, "Produto Real", "Padrao", "Quantidade", "2", "PAC", "R$ 98,70", `href="/acompanhar/` + trackingID + `"`} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected order page to contain %q", expected)
 		}
