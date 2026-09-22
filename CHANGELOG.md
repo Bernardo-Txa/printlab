@@ -12,6 +12,8 @@ Este arquivo segue a ideia de [Keep a Changelog](https://keepachangelog.com/), c
 
 ### Added
 
+- Fase 18.2: autenticação pública de clientes com Supabase Auth, incluindo cadastro, confirmação de e-mail, login, logout, recuperação de senha, callback seguro, `/conta` inicial e header autenticado, sem migration e sem exigir conta no checkout convidado.
+
 - Fase 18.1: fundação de e-mail transacional em `internal/email`, com templates HTML/texto para autenticação futura e comunicação de pedidos, documentação de Custom SMTP Supabase/iCloud+ e testes sem envio SMTP real. Configuração externa e validação de entregabilidade permanecem pendentes.
 
 - Fase 19.2: sistema de movimento da PrintLab finalizado com navegação ativa, feedback de botões/envio, parallax mínimo no hero desktop, microinterações em cards, variantes, swatches, quantidade, carrinho, frete/retirada, checkout e Admin, reveal progressivo agrupado, performance sem bibliotecas novas e suporte reforçado a `prefers-reduced-motion`.

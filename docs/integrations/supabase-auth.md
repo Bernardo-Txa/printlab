@@ -1,12 +1,15 @@
 # Supabase Auth
 
-Status: senha e sessao propria implementadas na 13.1; MFA TOTP obrigatorio implementado na 14.2 e validado em producao. Fase 14.1 validada em producao pelo responsavel.
+Status: Admin com senha, MFA TOTP e sessao propria validado em producao; autenticacao publica de clientes implementada no codigo na Fase 18.2 e aguardando validacao manual em producao.
 
 ## Escopo
 
-A PrintLab usa Supabase Auth para senha e segundo fator TOTP do unico administrador autorizado por UUID.
+A PrintLab usa Supabase Auth para dois fluxos separados:
 
-Rotas implementadas:
+- Admin: senha, MFA TOTP, AAL2, allowlist de UUID e sessao propria PrintLab em `/admin`;
+- Cliente: cadastro, login, confirmacao de e-mail, recuperacao de senha e sessao oficial do Supabase Auth para `/conta`.
+
+Rotas administrativas implementadas:
 
 - `GET /admin/login`
 - `POST /admin/login`
@@ -18,13 +21,32 @@ Rotas implementadas:
 - `GET /admin`
 - `POST /admin/logout`
 
-Nao existem signup, cadastro de administrador, login social, lembrar de mim ou recuperacao de senha pela aplicacao.
+Nao existem signup administrativo, cadastro de administrador, login social administrativo, lembrar de mim ou recuperacao administrativa pela aplicacao.
 
-## Evolucao planejada para cliente
+## Autenticacao de cliente
 
-Esta secao nao descreve funcionalidade implementada. A Fase 18 planeja um fluxo separado de cliente por Supabase Auth passwordless/Magic Link, com conta opcional e checkout convidado preservado. Usuario autenticado como cliente nunca sera tratado como Admin nem recebera acesso a `/admin`.
+Rotas publicas implementadas na Fase 18.2:
 
-A Fase 18.1 criou a fundacao de templates transacionais em `internal/email`, mas o SMTP real ainda nao esta ativo. O SMTP transacional inicial planejado usa iCloud+ Custom Email Domain e `acesso@printlab3d.com.br` como remetente PrintLab para autenticacao e conta, integrado futuramente ao Custom SMTP do Supabase Auth por `smtp.mail.me.com:587`. A senha especifica de app da Apple sera configurada somente como secret no provider apropriado, nunca em codigo, documentacao, frontend, GitHub ou logs. DNS, SPF, DKIM, DMARC, From/Reply-To e entregabilidade ainda nao foram configurados nem validados. Detalhes e checklist ficam em [E-mail transacional PrintLab](transactional-email.md).
+- `GET /cadastro`
+- `POST /cadastro`
+- `GET /login`
+- `POST /login`
+- `POST /logout`
+- `GET /recuperar-senha`
+- `POST /recuperar-senha`
+- `GET /recuperar-senha/nova`
+- `POST /recuperar-senha/nova`
+- `GET /auth/callback`
+- `POST /auth/session`
+- `GET /conta`
+
+O cliente usa e-mail e senha no Supabase Auth. Cadastro exige confirmacao de e-mail pelo fluxo oficial do Supabase. Recuperacao de senha tambem usa o fluxo oficial, sem token proprio da PrintLab. `/auth/callback` recebe o retorno do Supabase; um script estatico coleta os tokens enviados no fragmento da URL e chama `/auth/session`, que grava cookies HttpOnly com os tokens de sessao emitidos pelo Supabase.
+
+A PrintLab nao cria tabela de cliente, nao cria hash de senha, nao cria token proprio, nao persiste access token/refresh token no banco e nao associa pedidos a conta nesta fase. Os cookies de cliente apenas transportam a sessao oficial do Supabase para SSR e sao limpos no logout.
+
+Usuario autenticado como cliente nunca sera tratado como Admin nem recebera acesso a `/admin`. O checkout convidado continua funcionando normalmente.
+
+A Fase 18.1 criou a fundacao de templates transacionais em `internal/email`. O SMTP externo da conta `acesso@printlab3d.com.br` foi configurado e validado fora do repositorio; credenciais permanecem somente no provedor apropriado e nunca em codigo, documentacao, frontend, GitHub ou logs. Templates customizados do Supabase Dashboard devem ser documentados como ativos somente depois de configurados manualmente. Detalhes e checklist ficam em [E-mail transacional PrintLab](transactional-email.md).
 
 ## Configuracao
 
@@ -33,12 +55,15 @@ Variaveis:
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `ADMIN_SUPABASE_USER_ID`
+- `SITE_URL`
 
 `SUPABASE_PUBLISHABLE_KEY` identifica a aplicacao perante o Supabase. Ela nao e credencial administrativa e nao substitui autorizacao.
 
 `ADMIN_SUPABASE_USER_ID` e o UUID do usuario criado manualmente no Dashboard Supabase em Authentication -> Users. A PrintLab autoriza acesso comparando esse UUID com `user.id` retornado pelo Auth.
 
-Se a configuracao estiver ausente ou incompleta, a loja publica continua iniciando e `/admin/login` mostra indisponibilidade segura.
+Se `SUPABASE_URL` ou `SUPABASE_PUBLISHABLE_KEY` estiverem ausentes, as rotas de cliente mostram indisponibilidade segura e a loja publica continua iniciando. Se `ADMIN_SUPABASE_USER_ID` estiver ausente, somente o Admin fica indisponivel.
+
+Para cliente, `SITE_URL` define redirects absolutos de confirmacao e recuperacao. Em producao, a URL canonica e `https://www.printlab3d.com.br`; ambientes locais podem usar a origem da propria requisicao quando `SITE_URL` nao estiver configurada.
 
 ## Fluxo
 

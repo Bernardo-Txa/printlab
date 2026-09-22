@@ -1,10 +1,10 @@
 # E-mail transacional PrintLab
 
-Status: fundação de código implementada na Fase 18.1; envio real e Custom SMTP ainda dependem de configuração externa e validação manual.
+Status: fundação de código implementada na Fase 18.1; SMTP externo configurado e validado fora do repositório para uso pelo Supabase Auth.
 
 ## Objetivo
 
-A PrintLab usará e-mails transacionais com identidade própria para autenticação futura de clientes e comunicação de pedidos. Esta fase prepara templates e documentação; ela não envia e-mail SMTP real durante testes, não altera checkout, não cria login de cliente e não muda Supabase Auth em produção.
+A PrintLab usará e-mails transacionais com identidade própria para autenticação futura de clientes e comunicação de pedidos. A Fase 18.1 preparou templates e documentação; testes automatizados não enviam SMTP real. A Fase 18.2 passou a usar Supabase Auth para cadastro, login e recuperação de clientes, sem alterar checkout, SuperFrete ou InfinitePay.
 
 Remetente planejado:
 
@@ -25,14 +25,12 @@ Nenhuma senha SMTP, token, API key ou segredo deve ser versionado, documentado e
 
 ## Estado atual de autenticação
 
-Supabase Auth está implementado somente para o Admin:
+Supabase Auth está implementado para dois fluxos separados:
 
-- `POST /admin/login` autentica e-mail/senha no Supabase Auth;
-- a PrintLab autoriza somente por `ADMIN_SUPABASE_USER_ID`, nunca por e-mail;
-- MFA TOTP é obrigatório para criar a sessão administrativa própria;
-- não há signup, login de cliente, Magic Link de cliente, Minha Conta ou recuperação pública de acesso implementados.
+- Admin: `POST /admin/login` autentica e-mail/senha no Supabase Auth, autoriza por `ADMIN_SUPABASE_USER_ID` e exige MFA TOTP antes de criar a sessão administrativa própria;
+- Cliente: `/cadastro`, `/login`, `/recuperar-senha`, `/auth/callback`, `/auth/session`, `/conta` e `/logout` usam Supabase Auth com e-mail/senha, confirmação de e-mail e recuperação oficial.
 
-A Fase 18.1 não altera esse comportamento. Os templates de autenticação criados agora são fundação para fases futuras.
+Checkout convidado permanece disponível e não exige conta.
 
 ## Configuração externa necessária
 
@@ -44,21 +42,21 @@ Checklist antes de habilitar envio real:
 - [ ] SPF configurado;
 - [ ] DKIM configurado;
 - [ ] DMARC configurado;
-- [ ] Custom SMTP configurado no Supabase Auth;
-- [ ] SMTP host definido no Supabase;
-- [ ] SMTP port definido no Supabase;
-- [ ] SMTP username definido no Supabase;
-- [ ] SMTP password definido como secret externo, nunca no Git;
-- [ ] sender name `PrintLab` configurado;
-- [ ] sender email `acesso@printlab3d.com.br` configurado;
+- [x] Custom SMTP configurado no Supabase Auth;
+- [x] SMTP host definido no Supabase;
+- [x] SMTP port definido no Supabase;
+- [x] SMTP username definido no Supabase;
+- [x] SMTP password definido como secret externo, nunca no Git;
+- [x] sender name `PrintLab` configurado;
+- [x] sender email `acesso@printlab3d.com.br` configurado;
 - [ ] reply-to configurado;
 - [ ] URLs de redirect do Supabase Auth revisadas para o domínio real;
-- [ ] e-mail de teste recebido;
+- [x] e-mail de teste recebido;
 - [ ] Gmail validado;
 - [ ] Outlook validado;
 - [ ] iCloud Mail validado.
 
-Não afirmar que SMTP, DNS ou entregabilidade estão funcionando até que esses itens sejam concluídos e registrados.
+Não registrar credenciais ou evidências sensíveis. Templates customizados no Dashboard do Supabase só devem ser marcados como ativos quando forem configurados manualmente e validados.
 
 ## Templates preparados no código
 
@@ -156,7 +154,6 @@ Não há envio SMTP em `go test`.
 
 - configurar domínio e caixa no iCloud+;
 - configurar DNS;
-- configurar Custom SMTP no Supabase Auth;
 - revisar templates habilitados no Dashboard Supabase antes de ativar Auth de cliente;
-- validar recebimento real em Gmail, Outlook e iCloud Mail;
+- validar recebimento real em todos os clientes alvo que ainda não tiverem sido conferidos;
 - registrar evidências sem expor credenciais, tokens, PII ou links sensíveis.

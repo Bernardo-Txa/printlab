@@ -1,6 +1,6 @@
 # ADR-0019 — Conta opcional de cliente
 
-Status: Proposta
+Status: Aceita
 
 Data: 2026-09-17
 
@@ -10,7 +10,7 @@ O checkout implementado e anonimo para reduzir atrito. Uma conta so agrega valor
 
 ## Decisao
 
-Planejar na Fase 18 uma conta opcional de cliente com Supabase Auth passwordless/Magic Link. Checkout convidado e acompanhamento publico seguro permanecerao disponiveis.
+Implementar na Fase 18 uma conta opcional de cliente com Supabase Auth separado do Admin. A Fase 18.2 adotou e-mail/senha com confirmação de e-mail e recuperação oficial do Supabase, preservando checkout convidado e acompanhamento publico seguro.
 
 Autenticacao de cliente sera conceitualmente e tecnicamente separada da autenticacao administrativa. Um cliente autenticado nao recebe acesso a `/admin`; autorizacao administrativa continua dependente de senha, TOTP, AAL2, allowlist de UUID e sessao propria PrintLab.
 
@@ -24,7 +24,7 @@ Pedidos serao associados e autorizados server-side. Eventual reivindicacao de pe
 ## Consequencias
 
 - O modelo futuro precisara de associacao segura entre identidade de cliente e pedido.
-- Nenhum signup, Magic Link ou tabela de cliente e criado por esta ADR.
+- A Fase 18.2 cria signup/login/recuperação usando Supabase Auth, sem tabela de cliente e sem associação de pedidos nesta etapa.
 
 ## Referencias
 

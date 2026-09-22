@@ -8,6 +8,8 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/Bernardo-Txa/printlab/internal/customerauth"
+
 func Header() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -45,7 +47,22 @@ func Header() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"site-header-inner flex flex-col items-start justify-between gap-3 py-3 sm:min-h-20 sm:flex-row sm:items-center\"><a class=\"brand-link focus-ring\" href=\"/\" aria-label=\"PrintLab - início\"><img class=\"brand-header-logo\" src=\"/static/images/branding/logo-printlab-small-v1.webp\" width=\"256\" height=\"192\" alt=\"\"></a><nav aria-label=\"Navegação principal\"><ul class=\"site-nav flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted sm:justify-end sm:gap-x-6\"><li><a class=\"nav-link\" href=\"/#inicio\">Início</a></li><li><a class=\"nav-link\" href=\"/produtos\">Produtos</a></li><li><a class=\"nav-link\" href=\"/#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"/#lab\">Sobre</a></li><li><a class=\"nav-link\" href=\"/#contato\">Contato</a></li><li><a class=\"nav-link nav-link-cart\" href=\"/carrinho\">Carrinho</a></li></ul></nav></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"site-header-inner flex flex-col items-start justify-between gap-3 py-3 sm:min-h-20 sm:flex-row sm:items-center\"><a class=\"brand-link focus-ring\" href=\"/\" aria-label=\"PrintLab - início\"><img class=\"brand-header-logo\" src=\"/static/images/branding/logo-printlab-small-v1.webp\" width=\"256\" height=\"192\" alt=\"\"></a><nav aria-label=\"Navegação principal\"><ul class=\"site-nav flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted sm:justify-end sm:gap-x-6\"><li><a class=\"nav-link\" href=\"/#inicio\">Início</a></li><li><a class=\"nav-link\" href=\"/produtos\">Produtos</a></li><li><a class=\"nav-link\" href=\"/#como-funciona\">Como funciona</a></li><li><a class=\"nav-link\" href=\"/#lab\">Sobre</a></li><li><a class=\"nav-link\" href=\"/#contato\">Contato</a></li><li><a class=\"nav-link nav-link-cart\" href=\"/carrinho\">Carrinho</a></li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if _, ok := customerauth.ProfileFromContext(ctx); ok {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<li><a class=\"nav-link\" href=\"/conta\">Minha conta</a></li><li><form class=\"nav-logout-form\" method=\"post\" action=\"/logout\"><button class=\"nav-link nav-link-button\" type=\"submit\">Sair</button></form></li>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<li><a class=\"nav-link\" href=\"/login\">Entrar</a></li>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</ul></nav></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -55,7 +72,7 @@ func Header() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

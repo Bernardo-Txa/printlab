@@ -1,0 +1,190 @@
+package templates
+
+import (
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/web/components"
+)
+
+templ SignupPage(form customerauth.SignupForm) {
+	@components.PrivateNoIndexLayout("Cadastro | PrintLab", "Crie sua conta de cliente na PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Criar conta</h1>
+						<p>Use sua conta para acessar a área inicial da PrintLab. A compra como convidado continua disponível.</p>
+					</div>
+					if form.Message != "" {
+						<p class="checkout-alert checkout-alert-success">{ form.Message }</p>
+					}
+					if form.Errors.Any() {
+						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+					}
+					<form class="admin-login-form" method="post" action="/cadastro">
+						@AuthField("name", "Nome", "text", "name", form.Name, form.Errors.Message("name"), "")
+						@AuthField("email", "E-mail", "email", "email", form.Email, form.Errors.Message("email"), "")
+						@AuthField("password", "Senha", "password", "new-password", "", form.Errors.Message("password"), "")
+						@AuthField("confirm_password", "Confirmar senha", "password", "new-password", "", form.Errors.Message("confirm_password"), "")
+						<button class="btn-base btn-primary" type="submit">Criar conta</button>
+					</form>
+					<p class="auth-secondary-link">Já tem conta? <a href="/login">Entrar</a></p>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ LoginPage(form customerauth.LoginForm) {
+	@components.PrivateNoIndexLayout("Entrar | PrintLab", "Entre na sua conta de cliente PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Entrar</h1>
+					</div>
+					if form.Message != "" {
+						<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+					}
+					if form.Errors.Any() {
+						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+					}
+					<form class="admin-login-form" method="post" action="/login">
+						<input type="hidden" name="next" value={ form.Next }/>
+						@AuthField("email", "E-mail", "email", "email", form.Email, form.Errors.Message("email"), "")
+						@AuthField("password", "Senha", "password", "current-password", "", form.Errors.Message("password"), "")
+						<button class="btn-base btn-primary" type="submit">Entrar</button>
+					</form>
+					<div class="auth-secondary-actions">
+						<a href="/recuperar-senha">Esqueci minha senha</a>
+						<a href="/cadastro">Criar conta</a>
+					</div>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ RecoveryPage(form customerauth.RecoveryForm) {
+	@components.PrivateNoIndexLayout("Recuperar senha | PrintLab", "Recupere o acesso à sua conta PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Recuperar senha</h1>
+						<p>Informe seu e-mail para receber as instruções de recuperação.</p>
+					</div>
+					if form.Message != "" {
+						<p class="checkout-alert checkout-alert-success">{ form.Message }</p>
+					}
+					if form.Errors.Any() {
+						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+					}
+					<form class="admin-login-form" method="post" action="/recuperar-senha">
+						@AuthField("email", "E-mail", "email", "email", form.Email, form.Errors.Message("email"), "")
+						<button class="btn-base btn-primary" type="submit">Enviar instruções</button>
+					</form>
+					<p class="auth-secondary-link"><a href="/login">Voltar para o login</a></p>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ NewPasswordPage(form customerauth.NewPasswordForm) {
+	@components.PrivateNoIndexLayout("Nova senha | PrintLab", "Defina uma nova senha para sua conta PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Definir nova senha</h1>
+					</div>
+					if form.Message != "" {
+						<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+					}
+					if form.Errors.Any() {
+						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+					}
+					<form class="admin-login-form" method="post" action="/recuperar-senha/nova">
+						@AuthField("password", "Nova senha", "password", "new-password", "", form.Errors.Message("password"), "")
+						@AuthField("confirm_password", "Confirmar nova senha", "password", "new-password", "", form.Errors.Message("confirm_password"), "")
+						<button class="btn-base btn-primary" type="submit">Atualizar senha</button>
+					</form>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ AccountPage(profile customerauth.Profile) {
+	@components.PrivateNoIndexLayout("Minha conta | PrintLab", "Área inicial da sua conta PrintLab.") {
+		<section class="section-block">
+			@components.Container() {
+				<div class="section-heading">
+					<p class="brand-kicker">Conta PrintLab</p>
+					<h1>Minha conta</h1>
+					<p>Esta é a área inicial da sua conta. Histórico de pedidos, endereços e preferências serão adicionados em fases futuras.</p>
+				</div>
+				<div class="admin-panel account-panel">
+					<h2>Conta ativa</h2>
+					<div class="admin-field-grid">
+						if profile.Name != "" {
+							<p><span>Nome</span><strong>{ profile.Name }</strong></p>
+						}
+						<p><span>E-mail</span><strong>{ profile.Email }</strong></p>
+						<p><span>Status</span><strong>Ativa</strong></p>
+					</div>
+					<form method="post" action="/logout">
+						<button class="btn-base btn-secondary" type="submit">Sair</button>
+					</form>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ AuthCallbackPage() {
+	@components.PrivateNoIndexLayout("Confirmando acesso | PrintLab", "Confirmação segura de acesso à conta PrintLab.") {
+		<section class="admin-auth-section">
+			@components.Container() {
+				<div class="admin-auth-panel">
+					<div class="admin-auth-heading">
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Confirmando seu acesso</h1>
+						<p data-auth-callback-status="true" aria-live="polite">Aguarde enquanto finalizamos a autenticação.</p>
+					</div>
+					<noscript>
+						<p class="checkout-alert checkout-alert-error">Ative o JavaScript para concluir a confirmação de acesso.</p>
+					</noscript>
+				</div>
+			}
+		</section>
+		<script src="/static/js/auth-callback.js" defer></script>
+	}
+}
+
+templ AuthUnavailable() {
+	@components.PrivateNoIndexLayout("Conta indisponível | PrintLab", "Conta PrintLab temporariamente indisponível.") {
+		<section class="section-block">
+			@components.Container() {
+				@components.EmptyState("Conta temporariamente indisponível.", "Não foi possível acessar a autenticação agora. Tente novamente em alguns instantes.")
+			}
+		</section>
+	}
+}
+
+templ AuthField(id string, label string, inputType string, autocomplete string, value string, message string, help string) {
+	<label>
+		<span>{ label }</span>
+		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required/>
+		if help != "" {
+			<small>{ help }</small>
+		}
+		if message != "" {
+			<small class="checkout-field-error">{ message }</small>
+		}
+	</label>
+}

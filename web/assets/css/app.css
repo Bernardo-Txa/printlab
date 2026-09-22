@@ -160,6 +160,33 @@
     @apply border-primary;
   }
 
+  .nav-link-button {
+    @apply border-0 bg-transparent font-medium;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .nav-logout-form {
+    @apply m-0;
+  }
+
+  .auth-secondary-link {
+    @apply text-sm text-muted;
+  }
+
+  .auth-secondary-link a,
+  .auth-secondary-actions a {
+    @apply font-semibold text-primary underline-offset-4 hover:underline;
+  }
+
+  .auth-secondary-actions {
+    @apply flex flex-wrap gap-4 text-sm text-muted;
+  }
+
+  .account-panel {
+    @apply mt-8 max-w-3xl;
+  }
+
   .brand-link {
     @apply flex min-w-0 items-center tracking-normal text-foreground outline-none;
     transition: transform var(--motion-normal) var(--motion-spring);

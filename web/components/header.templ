@@ -1,5 +1,7 @@
 package components
 
+import "github.com/Bernardo-Txa/printlab/internal/customerauth"
+
 templ Header() {
 	<header class="site-header border-b border-border bg-surface/95">
 		@Container() {
@@ -15,6 +17,16 @@ templ Header() {
 						<li><a class="nav-link" href="/#lab">Sobre</a></li>
 						<li><a class="nav-link" href="/#contato">Contato</a></li>
 						<li><a class="nav-link nav-link-cart" href="/carrinho">Carrinho</a></li>
+						if _, ok := customerauth.ProfileFromContext(ctx); ok {
+							<li><a class="nav-link" href="/conta">Minha conta</a></li>
+							<li>
+								<form class="nav-logout-form" method="post" action="/logout">
+									<button class="nav-link nav-link-button" type="submit">Sair</button>
+								</form>
+							</li>
+						} else {
+							<li><a class="nav-link" href="/login">Entrar</a></li>
+						}
 					</ul>
 				</nav>
 			</div>

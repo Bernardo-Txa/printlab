@@ -48,7 +48,7 @@ func isNoIndexPath(path string) bool {
 		return true
 	}
 
-	for _, prefix := range []string{"/admin", "/checkout", "/carrinho", "/pedido", "/acompanhar", "/pagamento"} {
+	for _, prefix := range []string{"/admin", "/checkout", "/carrinho", "/pedido", "/acompanhar", "/pagamento", "/conta", "/login", "/cadastro", "/recuperar-senha", "/auth"} {
 		if path == prefix || strings.HasPrefix(path, prefix+"/") {
 			return true
 		}

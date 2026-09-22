@@ -58,6 +58,7 @@ IMPLEMENTADO:
 - Fase 14.1 validada em producao pelo responsavel; plano arquivado em `docs/plans/completed/014-security.md`.
 - Fase 14.2 — MFA TOTP obrigatorio no Admin validado em producao. Senha -> Supabase AAL1 -> TOTP -> AAL2 -> sessao propria PrintLab.
 - Fase 14.3 — Vercel Firewall no Hobby com mitigacoes de sistema ativas, tres Custom Rules (um rate limit de login e dois logs operacionais); Bot Protection permanece OFF.
+- Fase 18.2 — Autenticação de clientes com Supabase Auth: cadastro, confirmação de e-mail, login, logout, recuperação de senha e `/conta` inicial, mantendo Admin e checkout convidado separados.
 - Fase 15 — Testes criticos e observabilidade operacional concluida, com eventos seguros, correlacao opaca por request, runbook de incidentes e operacao pelos Runtime Logs Vercel no Hobby.
 - Fase 16 — SEO e Performance concluida e validada em producao: SEO tecnico, imagens WebP otimizadas, cache seletivo, acessibilidade e Lighthouse 100 nas paginas publicas validadas.
 - Fase 17.1, Fase 17.2 e Fase 17.3 concluidas e validadas em producao; retirada no local tambem validada em producao.
@@ -203,9 +204,9 @@ Configuracao local ou de hosting para runtime:
 - `DATABASE_URL`: secret PostgreSQL. Deve apontar para o Supabase Transaction Pooler.
 - `DB_MAX_CONNS`: opcional, default `4`.
 - `SUPABASE_URL`: opcional e nao secret, usada para montar URLs publicas de imagens do bucket `product-images`.
-- `SUPABASE_PUBLISHABLE_KEY`: opcional e nao administrativa; usada para senha e MFA do Admin no Supabase Auth, junto do bearer do usuario nas chamadas MFA.
+- `SUPABASE_PUBLISHABLE_KEY`: opcional e nao administrativa; usada para senha/MFA do Admin e autenticação pública de clientes no Supabase Auth.
 - `SUPABASE_SECRET_KEY`: secret server-side com prefixo `sb_secret_`, usada somente para signed upload/delete de imagens no Admin.
-- `ADMIN_SUPABASE_USER_ID`: opcional; UUID do unico usuario Supabase Auth autorizado a acessar `/admin`.
+- `ADMIN_SUPABASE_USER_ID`: opcional; UUID do unico usuario Supabase Auth autorizado a acessar `/admin`. Não autoriza clientes.
 - `SUPERFRETE_ENV`: `sandbox` ou `production`, obrigatoria somente quando a cotacao real estiver habilitada.
 - `SUPERFRETE_API_TOKEN`: secret da SuperFrete, nunca versionado.
 - `SUPERFRETE_ORIGIN_POSTAL_CODE`: CEP operacional de origem da PrintLab, normalizado pelo backend.
@@ -216,6 +217,8 @@ Configuracao local ou de hosting para runtime:
 `SUPABASE_SERVICE_ROLE_KEY` nao e usada pela aplicacao. A Fase 13.4 usa `SUPABASE_SECRET_KEY` server-side, nunca no HTML, JavaScript, logs ou respostas.
 
 O cookie anonimo do carrinho e marcado como `Secure` quando `APP_ENV=production`, `VERCEL_ENV=production` ou `SITE_URL` usa HTTPS.
+
+A autenticação pública de cliente usa Supabase Auth em `/cadastro`, `/login`, `/recuperar-senha`, `/auth/callback`, `/auth/session`, `/conta` e `POST /logout`. O backend não cria tabela de cliente nesta fase; ele apenas transporta os tokens de sessão emitidos pelo Supabase em cookies HttpOnly para SSR. Compra como visitante continua disponível.
 
 Instalacao local do tooling:
 

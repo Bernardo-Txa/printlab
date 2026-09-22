@@ -13,6 +13,7 @@ import (
 	admindomain "github.com/Bernardo-Txa/printlab/internal/admin"
 	cartdomain "github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/config"
+	"github.com/Bernardo-Txa/printlab/internal/customerauth"
 	"github.com/Bernardo-Txa/printlab/internal/customers"
 	"github.com/Bernardo-Txa/printlab/internal/database"
 	ordersdomain "github.com/Bernardo-Txa/printlab/internal/orders"
@@ -79,6 +80,7 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 	var orderReview orderReviewService
 	var payment paymentService
 	var adminPanel adminPanelService
+	var customerAuth customerAuthService
 	postalCodeLookup := customers.NewViaCEPClient()
 	if db != nil && db.Configured() {
 		supabaseURL := cfg.SupabaseURL
@@ -126,6 +128,21 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 			cfg.InfinitePayHandle,
 			cfg.SiteURL,
 		)
+		if cfg.SupabaseURL != "" && cfg.SupabasePublishableKey != "" {
+			authClient, err := customerauth.NewSupabaseClient(customerauth.SupabaseClientConfig{
+				SupabaseURL:    cfg.SupabaseURL,
+				PublishableKey: cfg.SupabasePublishableKey,
+			})
+			if err != nil {
+				log.Print("customer authentication unavailable")
+			} else {
+				customerAuth = customerauth.NewService(
+					authClient,
+					customerauth.NewCookieManager(customerauth.CookieOptions{Secure: secureCartCookies(cfg)}),
+					cfg.SiteURL,
+				)
+			}
+		}
 		if cfg.AdminAuthConfigured {
 			authClient, err := admindomain.NewSupabaseAuthClient(admindomain.SupabaseAuthClientConfig{
 				SupabaseURL:    cfg.SupabaseURL,
@@ -157,9 +174,9 @@ func newHandler(db *database.Database, cfg config.Config) http.Handler {
 		}
 	}
 
-	return newHandlerWithServicesAndOrdersAndSupabaseURL(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
+	return newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartdomain.NewCookieManager(cartdomain.CookieOptions{
 		Secure: secureCartCookies(cfg),
-	}), postalCodeLookup, payment, adminPanel, cfg.SiteURL, cfg.SupabaseURL)
+	}), postalCodeLookup, payment, adminPanel, customerAuth, cfg.SiteURL, cfg.SupabaseURL)
 }
 
 func newHandlerWithCatalog(db *database.Database, catalog catalogService) http.Handler {
@@ -175,6 +192,10 @@ func newHandlerWithServicesAndOrders(db *database.Database, catalog catalogServi
 }
 
 func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, adminPanel adminPanelService, siteURL string, supabaseURL string) http.Handler {
+	return newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db, catalog, shoppingCart, checkoutDetails, checkoutShipping, orderReview, cartCookies, postalCodeLookup, payment, adminPanel, nil, siteURL, supabaseURL)
+}
+
+func newHandlerWithServicesAndOrdersAndCustomerAuthAndSupabaseURL(db *database.Database, catalog catalogService, shoppingCart cartService, checkoutDetails checkoutDetailsService, checkoutShipping checkoutShippingService, orderReview orderReviewService, cartCookies *cartdomain.CookieManager, postalCodeLookup postalCodeLookupService, payment paymentService, adminPanel adminPanelService, customerAuth customerAuthService, siteURL string, supabaseURL string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
@@ -183,6 +204,19 @@ func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalo
 	mux.HandleFunc("GET /sitemap.xml", sitemapHandler(catalog, siteURL))
 	mux.HandleFunc("GET /produtos", catalogHandler(catalog))
 	mux.HandleFunc("GET /produtos/{slug}", productHandler(catalog))
+	mux.HandleFunc("GET /cadastro", signupPageHandler(customerAuth))
+	mux.HandleFunc("POST /cadastro", signupHandler(customerAuth))
+	mux.HandleFunc("GET /login", loginPageHandler(customerAuth))
+	mux.HandleFunc("POST /login", loginHandler(customerAuth))
+	mux.HandleFunc("GET /recuperar-senha", recoveryPageHandler(customerAuth))
+	mux.HandleFunc("POST /recuperar-senha", recoveryHandler(customerAuth))
+	mux.HandleFunc("GET /recuperar-senha/nova", newPasswordPageHandler(customerAuth))
+	mux.HandleFunc("POST /recuperar-senha/nova", newPasswordHandler(customerAuth))
+	mux.HandleFunc("GET /auth/callback", authCallbackHandler(customerAuth))
+	mux.HandleFunc("POST /auth/session", authSessionHandler(customerAuth))
+	mux.HandleFunc("GET /conta", accountHandler(customerAuth))
+	mux.HandleFunc("POST /logout", logoutHandler(customerAuth))
+	mux.HandleFunc("GET /logout", methodNotAllowedHandler(http.MethodPost))
 	mux.HandleFunc("GET /carrinho", cartPageHandler(shoppingCart, cartCookies))
 	mux.HandleFunc("POST /carrinho/adicionar", addCartItemHandler(shoppingCart, cartCookies, siteURL))
 	mux.HandleFunc("POST /carrinho/itens/{id}/quantidade", updateCartItemQuantityHandler(shoppingCart, cartCookies, siteURL))
@@ -259,7 +293,7 @@ func newHandlerWithServicesAndOrdersAndSupabaseURL(db *database.Database, catalo
 	mux.HandleFunc("POST /admin/{path...}", adminProtectedNotFoundHandler(adminPanel))
 	mux.Handle("GET /static/", staticFileHandler(webfiles.StaticFS()))
 
-	return securityMiddleware(mux, siteURL, supabaseURL)
+	return securityMiddleware(customerSessionMiddleware(mux, customerAuth), siteURL, supabaseURL)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

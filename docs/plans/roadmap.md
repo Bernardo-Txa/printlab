@@ -47,8 +47,8 @@ Status: Fases 0 a 17 concluidas e validadas. Fases 18 e 19 em execucao. Fase 20 
 | Fase 17.3.2 — Cores comerciais na pagina do produto | Concluida; validada em producao |
 | Fase 17.3.3 — Persistencia de cor no carrinho e pedido | Concluida; validada em producao |
 | Fase 18 — Conta do cliente e comunicacao transacional | Em execucao |
-| Fase 18.1 — E-mail transacional PrintLab | Implementada no codigo; aguardando configuracao externa e validacao manual |
-| Fase 18.2 — Autenticacao do cliente | Planejada |
+| Fase 18.1 — E-mail transacional PrintLab | Implementada; SMTP externo configurado e validado |
+| Fase 18.2 — Autenticacao do cliente | Implementada no codigo; aguardando validacao manual |
 | Fase 18.3 — Minha conta / Meus pedidos | Planejada |
 | Fase 18.4 — Pagamentos pendentes e retomada | Planejada |
 | Fase 19 — Experiencia e acabamento comercial | Em execucao |
