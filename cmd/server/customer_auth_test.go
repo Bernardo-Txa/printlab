@@ -158,7 +158,7 @@ func TestAuthSessionCallbackSetsSupabaseSession(t *testing.T) {
 	}
 }
 
-func TestAuthCodeCallbackExchangesCodeAndRedirectsToAccount(t *testing.T) {
+func TestAuthCodeCallbackExchangesCodeAndRendersSuccessCard(t *testing.T) {
 	service := &fakeCustomerAuthService{available: true}
 	handler := newCustomerAuthTestHandler(service)
 	req := httptest.NewRequest(http.MethodGet, "https://printlab.test/auth/callback?code=auth-code", nil)
@@ -166,8 +166,17 @@ func TestAuthCodeCallbackExchangesCodeAndRedirectsToAccount(t *testing.T) {
 
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/conta" {
-		t.Fatalf("expected redirect to account, got %d %q", rec.Code, rec.Header().Get("Location"))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected success page, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, expected := range []string{"E-mail confirmado!", "Ir para minha conta", "Voltar para o início"} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("expected success card to contain %q", expected)
+		}
+	}
+	if strings.Contains(body, "checkout-alert-error") {
+		t.Fatal("expected confirmation success not to look like an error")
 	}
 	if !service.callbackCodeCalled || service.callbackCode != "auth-code" {
 		t.Fatalf("expected code exchange, got %#v", service)

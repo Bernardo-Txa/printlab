@@ -45,7 +45,14 @@ templ LoginPage(form customerauth.LoginForm) {
 						<h1>Entrar</h1>
 					</div>
 					if form.Message != "" {
-						<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+						if form.Message == customerauth.MessagePasswordUpdated {
+							<div class="auth-success-message" role="status">
+								<strong>Senha atualizada com sucesso!</strong>
+								<span>Agora você já pode entrar na sua conta com a nova senha.</span>
+							</div>
+						} else {
+							<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+						}
 					}
 					if form.Errors.Any() {
 						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
@@ -148,18 +155,24 @@ templ AccountPage(profile customerauth.Profile) {
 
 templ AuthCallbackPage(message string) {
 	@components.PrivateNoIndexLayout("Confirmando acesso | PrintLab", "Confirmação segura de acesso à conta PrintLab.") {
-		<section class="admin-auth-section">
+		<section class="admin-auth-section auth-callback-section">
 			@components.Container() {
-				<div class="admin-auth-panel">
-					<div class="admin-auth-heading">
+				<div class="auth-status-card">
+					if message != "" {
+						<div class="auth-status-icon auth-status-icon-error" aria-hidden="true">!</div>
 						<p class="brand-kicker">Conta PrintLab</p>
-						<h1>Confirmando seu acesso</h1>
-						if message != "" {
-							<p class="checkout-alert checkout-alert-error" data-auth-callback-status="true" aria-live="polite">{ message }</p>
-						} else {
-							<p data-auth-callback-status="true" aria-live="polite">Aguarde enquanto finalizamos a autenticação.</p>
-						}
-					</div>
+						<h1>Não foi possível confirmar seu acesso.</h1>
+						<p data-auth-callback-status="true" aria-live="polite">{ message }</p>
+						<div class="auth-status-actions">
+							<a class="btn-base btn-primary" href="/recuperar-senha">Solicitar novo link</a>
+							<a class="btn-base btn-secondary" href="/">Voltar para o início</a>
+						</div>
+					} else {
+						<div class="auth-status-icon auth-status-icon-loading" aria-hidden="true">•</div>
+						<p class="brand-kicker">Conta PrintLab</p>
+						<h1>Confirmando seu e-mail...</h1>
+						<p data-auth-callback-status="true" aria-live="polite">Aguarde enquanto finalizamos a autenticação com segurança.</p>
+					}
 					<noscript>
 						<p class="checkout-alert checkout-alert-error">Ative o JavaScript para concluir a confirmação de acesso.</p>
 					</noscript>
@@ -167,6 +180,25 @@ templ AuthCallbackPage(message string) {
 			}
 		</section>
 		<script src="/static/js/auth-callback.js" defer></script>
+	}
+}
+
+templ AuthCallbackSuccessPage() {
+	@components.PrivateNoIndexLayout("E-mail confirmado | PrintLab", "E-mail confirmado com sucesso na PrintLab.") {
+		<section class="admin-auth-section auth-callback-section">
+			@components.Container() {
+				<div class="auth-status-card auth-status-card-success">
+					<div class="auth-status-icon auth-status-icon-success" aria-hidden="true">✓</div>
+					<p class="brand-kicker">Conta PrintLab</p>
+					<h1>E-mail confirmado!</h1>
+					<p>Seu endereço de e-mail foi confirmado com sucesso. Sua conta PrintLab está pronta para uso.</p>
+					<div class="auth-status-actions">
+						<a class="btn-base btn-primary" href="/conta">Ir para minha conta</a>
+						<a class="btn-base btn-secondary" href="/">Voltar para o início</a>
+					</div>
+				</div>
+			}
+		</section>
 	}
 }
 

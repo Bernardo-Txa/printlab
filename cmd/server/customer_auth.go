@@ -211,13 +211,24 @@ func authCallbackHandler(service customerAuthService) http.HandlerFunc {
 			renderHTML(w, r, http.StatusServiceUnavailable, templates.AuthUnavailable())
 			return
 		}
+		if r.URL.Query().Get("confirmado") == "1" {
+			if _, ok := requireCustomerSession(w, r, service); !ok {
+				return
+			}
+			renderHTML(w, r, http.StatusOK, templates.AuthCallbackSuccessPage())
+			return
+		}
 		if code := strings.TrimSpace(r.URL.Query().Get("code")); code != "" {
 			if err := service.CompleteCallbackCode(r.Context(), w, code); err != nil {
 				logCustomerAuthError(r.Context(), "customer_callback_code_failed", err)
 				renderHTML(w, r, callbackErrorStatus(err), templates.AuthCallbackPage(customerauth.MessageCallbackInvalid))
 				return
 			}
-			http.Redirect(w, r, callbackNextPath(r), http.StatusSeeOther)
+			if callbackNextPath(r) == "/recuperar-senha/nova" {
+				http.Redirect(w, r, "/recuperar-senha/nova", http.StatusSeeOther)
+				return
+			}
+			renderHTML(w, r, http.StatusOK, templates.AuthCallbackSuccessPage())
 			return
 		}
 		renderHTML(w, r, http.StatusOK, templates.AuthCallbackPage(""))
