@@ -145,22 +145,67 @@ func TestServicePageUnavailableWhenShippingProfileIsMissing(t *testing.T) {
 	}
 }
 
-func TestServicePageUnavailableWhenNoShippingBoxExists(t *testing.T) {
+func TestServicePageUsesFallbackPackageWhenNoActiveShippingBoxExists(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
-		items: shippingCartItemsFixture(),
+		items: []CartItem{{
+			ID:       "item-vila-natalina",
+			Quantity: 1,
+			ProductProfile: &ShippingProfile{
+				WeightG:    264,
+				Dimensions: DimensionsMM{Height: 135, Width: 298, Length: 334},
+			},
+		}},
 		boxes: nil,
 	}, calculator)
 
 	page, err := service.Page(context.Background(), []byte("token-hash"), false)
 	if err != nil {
-		t.Fatalf("expected unavailable page without error, got %v", err)
+		t.Fatalf("expected fallback page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Não conseguimos calcular automaticamente o frete para este carrinho." {
-		t.Fatalf("expected no-box message, got %#v", page)
+	if page.Unavailable || len(page.Quotes) != 2 {
+		t.Fatalf("expected fallback quotes, got %#v", page)
 	}
-	if len(calculator.requests) != 0 {
-		t.Fatalf("expected calculator not to be called without boxes, got %d calls", len(calculator.requests))
+	if len(calculator.requests) != 1 || calculator.requests[0].Package == nil || len(calculator.requests[0].Products) != 0 {
+		t.Fatalf("expected one package-only SuperFrete request, got %#v", calculator.requests)
+	}
+	pack := calculator.requests[0].Package
+	if pack.WeightKG != 0.45 || pack.HeightCM != 18 || pack.WidthCM != 34 || pack.LengthCM != 38 {
+		t.Fatalf("expected conservative fallback package, got %#v", pack)
+	}
+}
+
+func TestServicePageLogsFallbackWithoutActiveBoxes(t *testing.T) {
+	calculator := shippingCalculatorFixture()
+	service := shippingServiceFixture(t, &fakeShippingRepository{
+		items: []CartItem{{
+			ID:       "item-vila-natalina",
+			Quantity: 1,
+			ProductProfile: &ShippingProfile{
+				WeightG:    264,
+				Dimensions: DimensionsMM{Height: 135, Width: 298, Length: 334},
+			},
+		}},
+		boxes: nil,
+	}, calculator)
+
+	logs := captureShippingLogs(t, func() {
+		page, err := service.Page(context.Background(), []byte("token-hash"), false)
+		if err != nil || page.Unavailable {
+			t.Fatalf("expected available fallback page, unavailable=%v err=%v", page.Unavailable, err)
+		}
+	})
+	for _, want := range []string{
+		"candidate_boxes=0",
+		"shipping packaging fallback reason=no_active_boxes",
+		"shipping packaging selected source=fallback",
+	} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("expected log %q, got %q", want, logs)
+		}
+	}
+	if strings.Contains(logs, "stage=packaging reason=no_active_boxes") {
+		t.Fatalf("expected no terminal no_active_boxes unavailable log, got %q", logs)
 	}
 }
 
@@ -226,13 +271,18 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 		wantLogs    []string
 	}{
 		{
-			name: "no active boxes",
+			name: "fallback without active boxes has no valid final quotes",
 			repository: &fakeShippingRepository{
 				items: shippingCartItemsFixture(),
 				boxes: nil,
 			},
-			calculator: shippingCalculatorFixture(),
-			wantLogs:   []string{"stage=packaging reason=no_active_boxes"},
+			calculator: &fakeShippingCalculator{responses: [][]SuperFreteQuote{{}}},
+			wantLogs: []string{
+				"shipping packaging request product_lines=1 units=2 candidate_boxes=0",
+				"shipping packaging fallback reason=no_active_boxes",
+				"shipping packaging selected source=fallback",
+				"stage=final reason=final_no_valid_quotes",
+			},
 		},
 		{
 			name: "final request error",
@@ -387,6 +437,9 @@ func TestServicePageLogsSafePackagingAndFinalDiagnostics(t *testing.T) {
 		if strings.Contains(logs, forbidden) {
 			t.Fatalf("expected shipping logs not to include %q: %q", forbidden, logs)
 		}
+	}
+	if strings.Contains(logs, "shipping packaging fallback reason=") {
+		t.Fatalf("expected real box flow not to use fallback, got %q", logs)
 	}
 }
 

@@ -216,7 +216,7 @@ curl -i \
   http://localhost:8080/checkout/frete
 ```
 
-Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Sem perfil logistico, sem caixa ativa ou sem configuracao SuperFrete, a rota mostra indisponibilidade honesta. Quando ha caixas ativas mas nenhuma comporta os itens, o checkout tenta uma embalagem estimada conservadora antes de declarar indisponibilidade.
+Sem carrinho valido, a rota redireciona para `/carrinho`. Sem dados de checkout, redireciona para `/checkout/dados`. Sem perfil logistico ou sem configuracao SuperFrete, a rota mostra indisponibilidade honesta. Ausencia de caixas ativas tambem aciona fallback conservador, desde que todos os produtos tenham perfil logistico valido; o mesmo vale quando ha caixas ativas mas nenhuma comporta os itens.
 
 Depois de selecionar frete valido, o fluxo normal redireciona para `/checkout/revisao`.
 

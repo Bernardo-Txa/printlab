@@ -161,10 +161,10 @@ Quando a resposta HTTP 200 contem servico com `has_error=true`, a aplicacao igno
 Falhas de frete sao classificadas internamente por estagio e motivo seguro:
 
 - `shipping_not_configured`;
-- `no_active_boxes`;
-- `no_fitting_box`;
 - `final_request_failed`;
 - `final_no_valid_quotes`.
+
+A ausencia de caixas ativas e o caso em que caixas existem mas nenhuma comporta os itens acionam fallback conservador, desde que todos os produtos tenham perfil logistico valido. Esses caminhos usam logs de embalagem (`reason=no_active_boxes` ou `reason=no_fitting_box`) e so viram indisponibilidade se o fallback nao puder ser construido ou se a cotacao final nao retornar servico valido.
 
 O runtime emite no startup somente `superfrete configured environment=<env> services=<lista>` ou `superfrete not configured`. Esse log nao inclui token, CEP de origem nem e-mail operacional.
 

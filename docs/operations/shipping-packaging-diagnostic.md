@@ -4,15 +4,15 @@ Status: instrumentacao implementada e testada; esta revisao nao declara nova val
 
 ## Semantica atual
 
-`no_fitting_box` significa que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. Nesse caso, o checkout usa uma embalagem estimada conservadora para tentar a cotacao final sem inventar caixa real. A SuperFrete nao participa da escolha de embalagem no checkout comercial.
+`no_fitting_box` significa que ha caixas ativas, mas o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma delas. `no_active_boxes` significa que nao existe caixa ativa cadastrada. Nos dois casos, desde que todos os produtos tenham perfil logistico valido, o checkout usa uma embalagem estimada conservadora para tentar a cotacao final sem inventar caixa real. A SuperFrete nao participa da escolha de embalagem no checkout comercial.
 
 A PrintLab:
 
 - expande produtos por quantidade;
 - testa rotacoes axis-aligned;
 - tenta posicionar cuboides sem sobreposicao por pontos extremos deterministicos;
-- escolhe a menor caixa fisica real compativel;
-- se nenhuma caixa couber, monta uma embalagem estimada conservadora com margens e arredondamentos seguros;
+- escolhe a menor caixa fisica real compativel quando houver caixa ativa que comporte os itens;
+- se nao houver caixas ativas ou se nenhuma caixa couber, monta uma embalagem estimada conservadora com margens e arredondamentos seguros;
 - envia para a SuperFrete somente o `package` final com dimensoes externas e peso total.
 
 A SuperFrete retorna preco, prazo e disponibilidade de servicos. O payload `products` continua existindo no cliente HTTP apenas para compatibilidade/teste isolado da API, nao para o fluxo comercial.
@@ -25,7 +25,8 @@ O fluxo registra:
 - por linha: quantidade, peso em gramas e dimensoes em milimetros;
 - por caixa candidata: `shipping packaging candidate index=N fits=true/false internal_h_mm=... internal_w_mm=... internal_l_mm=...`;
 - pacote escolhido: `shipping packaging selected source=real_box ...` ou `shipping packaging selected source=fallback ...`;
-- quando nao ha caixa real compativel: `shipping packaging fallback reason=no_fitting_box`;
+- quando nao ha caixa ativa: `shipping packaging fallback reason=no_active_boxes`;
+- quando ha caixas, mas nenhuma comporta os itens: `shipping packaging fallback reason=no_fitting_box`;
 - antes da cotacao: `shipping quote request stage=final package_weight_g=... package_h_mm=... package_w_mm=... package_l_mm=... services=N`;
 - apos a cotacao: `shipping quote response stage=final final_valid_quotes=N`.
 

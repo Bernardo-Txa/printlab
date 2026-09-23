@@ -262,13 +262,6 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	if err != nil {
 		return PreparedQuote{}, page, ErrUnavailable
 	}
-	if len(boxes) == 0 {
-		logShippingQuoteUnavailable("packaging", "no_active_boxes", nil)
-		page.Unavailable = true
-		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
-		return PreparedQuote{}, page, nil
-	}
-
 	if s.calculator == nil || s.originCEP == "" || s.serviceList == "" {
 		logShippingQuoteUnavailable("config", "shipping_not_configured", nil)
 		page.Unavailable = true
@@ -358,7 +351,11 @@ func (s *Service) packageForQuote(items []QuoteProduct, boxes []ShippingBox) (Sh
 	if !errors.Is(err, ErrNoFittingBox) {
 		return ShippingPackage{}, err
 	}
-	log.Print("shipping packaging fallback reason=no_fitting_box")
+	fallbackReason := "no_fitting_box"
+	if len(boxes) == 0 {
+		fallbackReason = "no_active_boxes"
+	}
+	log.Printf("shipping packaging fallback reason=%s", fallbackReason)
 	fallback, err := FallbackPackageForProducts(items)
 	if err != nil {
 		return ShippingPackage{}, err
