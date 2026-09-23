@@ -115,7 +115,7 @@ templ AdminOrders(page admindomain.OrderListPage) {
 							</div>
 						}
 						if page.HasPrevious || page.HasNext {
-							<nav class="admin-pagination" aria-label="Paginacao de pedidos">
+							<nav class="admin-pagination" aria-label="Paginação de pedidos">
 								if page.HasPrevious {
 									<a class="btn-base btn-secondary" href={ admindomain.AdminOrdersURL(page.Status, page.PreviousPage) }>Anterior</a>
 								}
@@ -727,7 +727,7 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 							</div>
 							<p class="admin-muted">A opção padrão é selecionada inicialmente na loja quando houver mais de uma configuração ativa.</p>
 							@adminTextField("sort_order", "Ordem", page.Form.SortOrder, page.Errors.Get("sort_order"), "number", true)
-							@adminTextField("print_time_minutes", "Tempo de impressao em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false)
+							@adminTextField("print_time_minutes", "Tempo de impressão em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false)
 							<div class="admin-form-actions">
 								<button class="btn-base btn-primary" type="submit">{ page.SubmitLabel }</button>
 								<a class="btn-base btn-secondary" href={ page.BackURL }>Cancelar</a>

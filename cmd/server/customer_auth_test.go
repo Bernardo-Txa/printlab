@@ -524,7 +524,7 @@ func TestAccountPostInvalidShowsErrorsAndPreservesOrders(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, expected := range []string{"Informe um CPF valido.", "Pedido #1002", `value="Joao Silva"`} {
+	for _, expected := range []string{"Informe um CPF válido.", "Pedido #1002", `value="Joao Silva"`} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected invalid account page to contain %q", expected)
 		}

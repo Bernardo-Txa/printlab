@@ -1128,7 +1128,7 @@ func orderReviewPageFixture() ordersdomain.ReviewPage {
 			ServiceName:      "PAC",
 			CarrierName:      "Correios",
 			DeliveryTimeDays: &deliveryDays,
-			DeliveryTime:     "5 dias uteis",
+			DeliveryTime:     "5 dias úteis",
 			ShippingBoxName:  "Caixa Media",
 			PriceCents:       1890,
 			PriceBRL:         "R$ 18,90",

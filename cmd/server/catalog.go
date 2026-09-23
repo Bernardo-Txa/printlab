@@ -90,5 +90,5 @@ func productDescription(product products.Product) string {
 		return product.ShortDescription
 	}
 
-	return "Produto da PrintLab em impressao 3D."
+	return "Produto da PrintLab em impressão 3D."
 }

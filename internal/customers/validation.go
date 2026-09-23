@@ -19,21 +19,21 @@ func NormalizeCustomerInput(input CheckoutInput) (CustomerDetails, CheckoutInput
 
 	email, err := NormalizeEmail(values.Email)
 	if err != nil {
-		errorsByField["email"] = "Informe um e-mail valido."
+		errorsByField["email"] = "Informe um e-mail válido."
 	} else {
 		values.Email = email
 	}
 
 	phone, err := NormalizePhone(values.Phone)
 	if err != nil {
-		errorsByField["phone"] = "Informe um telefone brasileiro valido."
+		errorsByField["phone"] = "Informe um telefone brasileiro válido."
 	} else {
 		values.Phone = phone
 	}
 
 	cpf, err := NormalizeCPF(values.CPF)
 	if err != nil {
-		errorsByField["cpf"] = "Informe um CPF valido."
+		errorsByField["cpf"] = "Informe um CPF válido."
 	} else {
 		values.CPF = cpf
 	}
@@ -60,7 +60,7 @@ func NormalizeShippingAddressInput(input CheckoutInput) (ShippingAddress, Checko
 
 	postalCode, err := NormalizePostalCode(values.PostalCode)
 	if err != nil {
-		errorsByField["postal_code"] = "Informe um CEP valido."
+		errorsByField["postal_code"] = "Informe um CEP válido."
 	} else {
 		values.PostalCode = postalCode
 	}
@@ -104,7 +104,7 @@ func NormalizeShippingAddressInput(input CheckoutInput) (ShippingAddress, Checko
 
 	state, err := NormalizeState(values.State)
 	if err != nil {
-		errorsByField["state"] = "Informe uma UF brasileira valida."
+		errorsByField["state"] = "Informe uma UF brasileira válida."
 	} else {
 		values.State = state
 	}
@@ -136,28 +136,28 @@ func NormalizeCheckoutInput(input CheckoutInput) (CheckoutDetails, CheckoutInput
 
 	email, err := NormalizeEmail(values.Email)
 	if err != nil {
-		errorsByField["email"] = "Informe um e-mail valido."
+		errorsByField["email"] = "Informe um e-mail válido."
 	} else {
 		values.Email = email
 	}
 
 	phone, err := NormalizePhone(values.Phone)
 	if err != nil {
-		errorsByField["phone"] = "Informe um telefone brasileiro valido."
+		errorsByField["phone"] = "Informe um telefone brasileiro válido."
 	} else {
 		values.Phone = phone
 	}
 
 	cpf, err := NormalizeCPF(values.CPF)
 	if err != nil {
-		errorsByField["cpf"] = "Informe um CPF valido."
+		errorsByField["cpf"] = "Informe um CPF válido."
 	} else {
 		values.CPF = cpf
 	}
 
 	postalCode, err := NormalizePostalCode(values.PostalCode)
 	if err != nil {
-		errorsByField["postal_code"] = "Informe um CEP valido."
+		errorsByField["postal_code"] = "Informe um CEP válido."
 	} else {
 		values.PostalCode = postalCode
 	}
@@ -201,7 +201,7 @@ func NormalizeCheckoutInput(input CheckoutInput) (CheckoutDetails, CheckoutInput
 
 	state, err := NormalizeState(values.State)
 	if err != nil {
-		errorsByField["state"] = "Informe uma UF brasileira valida."
+		errorsByField["state"] = "Informe uma UF brasileira válida."
 	} else {
 		values.State = state
 	}

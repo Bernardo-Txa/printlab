@@ -302,7 +302,7 @@ func TestCheckoutDetailsPostInvalidCPFRerendersForm(t *testing.T) {
 				Values: validCheckoutInputForHandler(func(input *customers.CheckoutInput) {
 					input.CPF = "529.982.247-24"
 				}),
-				Errors: customers.FieldErrors{"cpf": "Informe um CPF valido."},
+				Errors: customers.FieldErrors{"cpf": "Informe um CPF válido."},
 			},
 		},
 	}
@@ -323,7 +323,7 @@ func TestCheckoutDetailsPostInvalidCPFRerendersForm(t *testing.T) {
 		t.Fatalf("expected private no-store cache control, got %q", rec.Header().Get("Cache-Control"))
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, "Informe um CPF valido.") || !strings.Contains(body, `value="Joao Silva"`) {
+	if !strings.Contains(body, "Informe um CPF válido.") || !strings.Contains(body, `value="Joao Silva"`) {
 		t.Fatal("expected validation error and safe submitted values")
 	}
 }

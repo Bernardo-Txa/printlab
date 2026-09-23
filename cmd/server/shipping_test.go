@@ -111,7 +111,7 @@ func TestCheckoutShippingGetWithValidQuoteReturnsOK(t *testing.T) {
 	}
 	body := rec.Body.String()
 	assertCheckoutStepper(t, body, 2)
-	for _, expected := range []string{"Como você quer receber?", "Modalidade de entrega", "Receber em casa", "Retirar no local", "PAC", "R$ 18,90", "5 dias uteis", "Continuar para revisão", `/static/js/checkout.js`, `data-checkout-form="true"`, `data-cep-lookup-endpoint="/api/cep"`, `data-checkout-mask="cep"`, `data-cep-status="true"`} {
+	for _, expected := range []string{"Como você quer receber?", "Modalidade de entrega", "Receber em casa", "Retirar no local", "PAC", "R$ 18,90", "5 dias úteis", "Continuar para revisão", `/static/js/checkout.js`, `data-checkout-form="true"`, `data-cep-lookup-endpoint="/api/cep"`, `data-checkout-mask="cep"`, `data-cep-status="true"`} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("expected shipping page to contain %q", expected)
 		}
@@ -362,7 +362,7 @@ func checkoutShippingPageFixture() shipping.CheckoutShippingPage {
 				CarrierName:  "Correios",
 				PriceCents:   1890,
 				PriceBRL:     "R$ 18,90",
-				DeliveryTime: "5 dias uteis",
+				DeliveryTime: "5 dias úteis",
 			},
 		},
 	}

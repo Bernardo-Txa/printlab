@@ -887,7 +887,7 @@ func validateAdminProductForm(form AdminProductForm, create bool, id string) (Ad
 	}
 	validateAutomaticSlug(errorsByField, input.Slug)
 	if form.CategoryID != "" && !ValidUUID(input.CategoryID) {
-		errorsByField.Add("category_id", "Selecione uma categoria valida.")
+		errorsByField.Add("category_id", "Selecione uma categoria válida.")
 	}
 	price, err := ParseAdminBRLCents(form.PriceBRL)
 	if err != nil {

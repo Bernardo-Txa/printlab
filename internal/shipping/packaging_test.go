@@ -237,6 +237,17 @@ func TestConversions(t *testing.T) {
 	}
 }
 
+func TestDeliveryTimeLabelUsesPtBRAccents(t *testing.T) {
+	one := 1
+	two := 2
+	if got := DeliveryTimeLabel(&one); got != "1 dia útil" {
+		t.Fatalf("expected singular accented delivery time, got %q", got)
+	}
+	if got := DeliveryTimeLabel(&two); got != "2 dias úteis" {
+		t.Fatalf("expected plural accented delivery time, got %q", got)
+	}
+}
+
 func TestTotalPackageWeight(t *testing.T) {
 	total, err := TotalPackageWeightG([]QuoteProduct{
 		{Quantity: 1, Profile: ShippingProfile{WeightG: 280, Dimensions: DimensionsMM{Height: 100, Width: 100, Length: 100}}},

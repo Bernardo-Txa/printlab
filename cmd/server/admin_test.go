@@ -351,7 +351,7 @@ func TestAdminOrderDetailRendersPrivateDataAndActions(t *testing.T) {
 		HasAddress: true,
 		Shipping: admindomain.OrderShipping{
 			ServiceName:        "PAC",
-			DeliveryTime:       "5 dias uteis",
+			DeliveryTime:       "5 dias úteis",
 			ShippingBoxName:    "Caixa P",
 			PackageWeightLabel: "500 g",
 			DimensionsLabel:    "200 x 100 x 80 mm",

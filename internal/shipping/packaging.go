@@ -507,10 +507,10 @@ func DeliveryTimeLabel(days *int) string {
 		return "Prazo indisponível"
 	}
 	if *days == 1 {
-		return "1 dia util"
+		return "1 dia útil"
 	}
 
-	return strconv.Itoa(*days) + " dias uteis"
+	return strconv.Itoa(*days) + " dias úteis"
 }
 
 func PartialTotalBRL(productsSubtotalCents int64, shippingPriceCents int64) (string, error) {

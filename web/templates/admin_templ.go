@@ -536,7 +536,7 @@ func AdminOrders(page admindomain.OrderListPage) templ.Component {
 						}
 					}
 					if page.HasPrevious || page.HasNext {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<nav class=\"admin-pagination\" aria-label=\"Paginacao de pedidos\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<nav class=\"admin-pagination\" aria-label=\"Paginação de pedidos\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -3586,7 +3586,7 @@ func AdminVariantForm(page admindomain.AdminVariantFormPage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = adminTextField("print_time_minutes", "Tempo de impressao em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = adminTextField("print_time_minutes", "Tempo de impressão em minutos", page.Form.PrintTimeMinutes, page.Errors.Get("print_time_minutes"), "number", false).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

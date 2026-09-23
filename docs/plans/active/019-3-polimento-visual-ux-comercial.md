@@ -245,7 +245,9 @@ Implementado nesta subfase:
 
 ## 19.3.5 — Carrinho e checkout
 
-Status: Correções finais implementadas; aguardando nova validação manual.
+Status: Validada manualmente em produção pelo responsável.
+
+Validação realizada após correção da escolha de caixa real, SuperFrete funcional, fallback conservador e checkout completo validado.
 
 O carrinho atual é visualmente satisfatório.
 
@@ -357,6 +359,17 @@ Foram identificados textos sem acentuação adequada, por exemplo:
 - tecnica -> técnica
 
 Procurar outros casos equivalentes.
+
+Implementado nesta subfase:
+
+- validações visíveis do checkout com acentuação pt-BR correta;
+- prazo de frete com “útil” e “úteis”;
+- fallback SEO de produto com “impressão 3D”;
+- labels visíveis do Admin revisados;
+- varredura de templates/componentes e pacotes Go com textos visíveis;
+- identificadores técnicos, rotas, anchors, slugs, query params e contratos preservados sem acento quando necessário.
+
+Status: Implementada; aguardando validação manual.
 
 Revisar:
 
@@ -565,7 +578,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.1 — Header, navegação e identidade global: Implementada; aguardando validação manual.
 - 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
 - 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
-- 19.3.5 — Carrinho e checkout: Correções finais implementadas; aguardando nova validação manual.
-- 19.3.6 — Revisão textual pt-BR: Planejada; não iniciada neste pacote.
+- 19.3.5 — Carrinho e checkout: Validada manualmente em produção pelo responsável.
+- 19.3.6 — Revisão textual pt-BR: Implementada; aguardando validação manual.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.
