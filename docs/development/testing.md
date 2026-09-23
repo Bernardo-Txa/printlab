@@ -134,4 +134,4 @@ O teste opcional de transacao de `internal/customers` usa `TEST_DATABASE_URL` pa
 
 `go test ./...` nao chama a SuperFrete real. O teste `TestSuperFreteContractCalculatorOptIn` fica ignorado por padrao e roda somente com `SUPERFRETE_CONTRACT_TEST=1` e configuracao SuperFrete completa em ambiente local autorizado. Ele usa `SUPERFRETE_ENV`, `SUPERFRETE_API_TOKEN`, `SUPERFRETE_ORIGIN_POSTAL_CODE`, `SUPERFRETE_CONTACT_EMAIL`, `SUPERFRETE_SERVICES` e, opcionalmente, `SUPERFRETE_TEST_DESTINATION_POSTAL_CODE`.
 
-O teste real valida o contrato products -> package -> cotacao final sem imprimir token, CEP ou e-mail nos logs de teste. Nunca execute esse teste com credenciais de producao sem autorizacao operacional explicita.
+O teste real principal valida cotacao direta com `package`, que representa o fluxo comercial atual, sem imprimir token, CEP ou e-mail nos logs de teste. `SUPERFRETE_PRODUCTS_CONTRACT_TEST=1` existe apenas para monitorar compatibilidade da API `products`, fora do fluxo comercial. Nunca execute testes de contrato com credenciais de producao sem autorizacao operacional explicita.

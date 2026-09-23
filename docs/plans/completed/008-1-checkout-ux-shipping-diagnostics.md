@@ -35,7 +35,7 @@ Melhorar a etapa de dados do checkout e a observabilidade segura da cotacao de f
 - [x] Navegador nao chama ViaCEP diretamente.
 - [x] Endpoint interno de CEP nao retorna IBGE, DDD, SIAFI, GIA ou regiao.
 - [x] Falha de CEP nao bloqueia preenchimento manual.
-- [x] Frete registra motivos seguros: `shipping_not_configured`, `no_active_boxes`, `planning_request_failed`, `planning_no_valid_quotes`, `planning_no_package`, `no_fitting_box`, `final_request_failed` e `final_no_valid_quotes`.
+- [x] Frete registra motivos seguros: `shipping_not_configured`, `no_active_boxes`, `no_active_boxes`, `no_fitting_box`, `final_request_failed` e `final_no_valid_quotes`.
 - [x] Logs nao registram CEP, CPF, telefone, e-mail, endereco, token, Authorization ou corpo bruto externo.
 - [x] Testes de ViaCEP usam `httptest`, sem chamada externa real.
 - [x] Na conclusao desta fase, a validacao Sandbox real da SuperFrete permanecia pendente.

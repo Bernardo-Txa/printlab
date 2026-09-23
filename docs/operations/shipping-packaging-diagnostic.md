@@ -2,60 +2,46 @@
 
 Status: instrumentacao implementada e testada; esta revisao nao declara nova validacao em producao. Sem deploy automatico por este documento.
 
-## Evidencia e limites
+## Semantica atual
 
-O incidente informado apresentou log equivalente a `shipping package planning ... quotes_with_package=2 dimension_variants=1` e `shipping quote unavailable stage=packaging reason=no_fitting_box`.
+`no_fitting_box` significa que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. A SuperFrete nao participa mais da escolha de embalagem no checkout comercial.
 
-O log resumido nao armazena CEP, carrinho, cliente ou identificadores. `quotes_with_package` conta cotacoes com `Package != nil`, nao volumes fisicos de um envio. `mapSuperFreteQuotes` conserva somente `packages[0]` de cada modalidade, e `firstReturnedPackage` escolhe o primeiro pacote mapeado. Assim, duas modalidades com dimensoes iguais geram exatamente esse log. Ele nao prova que houve dois volumes em uma modalidade. Esse comportamento foi preservado; suporte multi-volume permanece fora do fluxo atual.
+A PrintLab:
 
-Na auditoria original, a conexao Vercel consultada nao listou projetos acessiveis e nao permitiu obter o deployment do incidente. Sem dimensoes registradas ou reproducao identificada naquele momento, nao foi possivel classificar a causa como bug ou cadastro insuficiente. Os valores sinteticos dos testes nao sao medidas do incidente. Posteriormente, o fluxo de frete voltou a funcionar em producao apos a correcao operacional de embalagem confirmada pelo responsavel.
+- expande produtos por quantidade;
+- testa rotacoes axis-aligned;
+- tenta posicionar cuboides sem sobreposicao por pontos extremos deterministicos;
+- escolhe a menor caixa fisica real compativel;
+- envia para a SuperFrete somente o `package` final com dimensoes externas e peso total.
 
-Uma leitura somente das caixas ativas do projeto Supabase PrintLab encontrou, em ordem H/W/L:
-
-| Posicao na consulta | Internas (mm) | Externas (mm) | Eixos internos ordenados (mm) |
-| --- | --- | --- | --- |
-| 0 | 80 x 250 x 250 | 80 x 250 x 250 | 80, 250, 250 |
-| 1 | 100 x 200 x 200 | 100 x 200 x 200 | 100, 200, 200 |
-| 2 | 150 x 200 x 20 | 150 x 200 x 20 | 20, 150, 200 |
-
-Essa leitura retrata o cadastro no momento da investigacao; nao comprova quais registros o deployment recebeu no instante do erro. Nenhum registro foi alterado. Em particular, o valor 20 mm foi mantido sem assumir erro de digitacao.
-
-## Semantica verificada
-
-A [referencia oficial de cotacao SuperFrete](https://superfrete.readme.io/reference/cotacao-de-frete) define dimensoes em centimetros e descreve o retorno de `products` como caixa ideal para acomodar os itens. O exemplo de resposta organiza `packages` dentro de cada servico. A documentacao consultada nao especifica detalhadamente a semantica de varios volumes por modalidade ou eventual folga/ajuste dimensional aplicado ao planejamento.
-
-O sistema converte as dimensoes retornadas para milimetros, arredondando para cima; compara-as ao espaco **interno** de caixas ativas, com rotacao por ordenacao dos eixos. A cotacao final usa dimensoes **externas** da caixa escolhida e peso logistico dos itens mais embalagem. Nao foi comprovado erro de conversao, rotacao ou selecao. Nao substituir internas por externas, somar pacotes entre modalidades ou relaxar medidas.
+A SuperFrete retorna preco, prazo e disponibilidade de servicos. O payload `products` continua existindo no cliente HTTP apenas para compatibilidade/teste isolado da API, nao para o fluxo comercial.
 
 ## Instrumentacao segura
 
-O fluxo registra tambem:
+O fluxo registra:
 
-- antes do planejamento: `shipping quote request stage=planning product_lines=N units=N services=N` e linhas com quantidade, peso e dimensoes;
-- apos o planejamento: `shipping package planning valid_quotes=N quotes_with_package=N dimension_variants=N`;
-- caixas candidatas: `shipping packaging boxes candidate_boxes=N` e uma linha por caixa com indice, dimensoes internas/externas, peso de embalagem, encaixe e deficit por eixo ordenado;
-- antes da cotacao final: `shipping quote request stage=final package_weight_g=... package_h_mm=... package_w_mm=... package_l_mm=... services=N`;
-- apos a cotacao final: `shipping quote response stage=final final_valid_quotes=N`.
+- antes da selecao de caixa: `shipping packaging request product_lines=N units=N candidate_boxes=N`;
+- por linha: quantidade, peso em gramas e dimensoes em milimetros;
+- por caixa candidata: `shipping packaging candidate index=N fits=true/false internal_h_mm=... internal_w_mm=... internal_l_mm=...`;
+- caixa escolhida: `shipping packaging selected box_index=N ...`;
+- antes da cotacao: `shipping quote request stage=final package_weight_g=... package_h_mm=... package_w_mm=... package_l_mm=... services=N`;
+- apos a cotacao: `shipping quote response stage=final final_valid_quotes=N`.
 
-Somente no caminho de falha da selecao, um registro `shipping packaging diagnostic reason=no_fitting_box selection=first_returned_package data=...` contem:
+Somente no caminho de falha da selecao, um registro `shipping packaging diagnostic reason=no_fitting_box selection=real_box_packing data=...` contem:
 
-- `selected_hwl_mm`, `selected_sorted_mm`, `selected_valid`: medidas efetivamente passadas a selecao;
-- `quotes_with_package`: quantidade de cotacoes mapeadas com pacote;
-- `planning`: `quote_index` e `dimensions_hwl_mm`, um pacote mapeado por modalidade;
-- `candidate_boxes`: quantidade total de caixas consideradas;
-- `boxes`: `box_index`, `internal_hwl_mm`, `internal_sorted_mm`, validade, encaixe e `deficit_sorted_mm`;
-- contagens `planning_omitted` e `boxes_omitted`: limite de 32 entradas em cada lista para conter tamanho dos logs.
+- `product_lines` e `units`;
+- `products`: indice da linha, quantidade, peso e dimensoes H/W/L em mm;
+- `candidate_boxes`;
+- `boxes`: indice, dimensoes internas H/W/L, eixos ordenados, validade e resultado de encaixe;
+- `packing_algorithm`;
+- contagens `products_omitted` e `boxes_omitted`, com limite de 32 entradas em cada lista.
 
-Os indices sao posicionais, com base zero; caixas seguem a ordem do repository (`sort_order`, nome, ID). Nao sao IDs de carrinho/pedido ou nomes livres. Um unico registro mantem pacote e caixas juntos em requests concorrentes. Somente numeros, booleanos e chaves fixas entram no JSON; nao ha CEP, PII, credenciais, nomes, IDs persistentes, corpo bruto ou dados do cliente.
-
-`deficit_sorted_mm` corresponde ao menor, medio e maior eixo ordenado: `max(0, pacote - caixa)`. Nao corresponde necessariamente a altura/largura/comprimento original. Qualquer deficit positivo identifica um gargalo que impede encaixe, mesmo com rotacao. Dimensoes invalidas nao geram deficits.
-
-Exemplo **sintetico de teste**, nao de producao: pacote 200 x 300 x 400 mm contra internas 240 x 120 x 160 mm resulta em eixos da caixa 120/160/240 e deficits 80/140/160 mm. Nenhuma tolerancia e aplicada, e a cotacao final nao e chamada.
+Os indices sao posicionais e nao sao IDs de carrinho, pedido, produto ou caixa. Nao entram CEP, CPF, telefone, e-mail, endereco, token, nomes livres, IDs persistentes, corpo bruto da SuperFrete ou dados do cliente.
 
 ## Registro operacional
 
-1. O diagnostico detalhado permanece documentado para interpretar eventuais novas falhas `no_fitting_box`.
-2. Apos deploy, validar manualmente em producao antes de declarar o incidente encerrado.
-3. Se o erro voltar, reproduzir o carrinho afetado e consultar os logs seguros de planejamento, caixas e o registro completo `shipping packaging diagnostic`, sem compartilhar dados pessoais.
-4. Conferir `planning_omitted=0` e `boxes_omitted=0`, dimensoes selecionadas e deficits de cada caixa.
-5. Se nenhuma caixa comportar o pacote, confirmar fisicamente as medidas cadastradas e decidir operacionalmente sobre embalagens reais. Nao alterar dados para forcar sucesso.
-6. Se houver varios volumes reais dentro de uma modalidade, validar esse contrato separadamente antes de mudar o fluxo de caixa unica.
+1. Apos deploy, validar manualmente em producao antes de declarar o incidente encerrado.
+2. Se o erro voltar, reproduzir o carrinho afetado e consultar os logs seguros de embalagem e cotacao, sem compartilhar dados pessoais.
+3. Conferir `products_omitted=0` e `boxes_omitted=0`, dimensoes dos produtos e `fits` das caixas.
+4. Se nenhuma caixa comportar os itens, confirmar fisicamente as medidas cadastradas e decidir operacionalmente sobre embalagens reais. Nao alterar dados para forcar sucesso.
+5. Se houver necessidade futura de suporte multi-volume, validar esse contrato separadamente antes de mudar o fluxo de caixa unica.

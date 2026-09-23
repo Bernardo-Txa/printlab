@@ -8,24 +8,12 @@ import (
 	"time"
 )
 
-func TestSuperFreteContractCalculatorOptIn(t *testing.T) {
+func TestSuperFreteContractCalculatorPackageOptIn(t *testing.T) {
 	if os.Getenv("SUPERFRETE_CONTRACT_TEST") != "1" {
-		t.Skip("set SUPERFRETE_CONTRACT_TEST=1 to run the real SuperFrete contract test")
+		t.Skip("set SUPERFRETE_CONTRACT_TEST=1 to run the real SuperFrete package contract test")
 	}
 
-	environment := strings.TrimSpace(os.Getenv("SUPERFRETE_ENV"))
-	token := strings.TrimSpace(os.Getenv("SUPERFRETE_API_TOKEN"))
-	origin := normalizeDigitsForContractTest(os.Getenv("SUPERFRETE_ORIGIN_POSTAL_CODE"))
-	contactEmail := strings.TrimSpace(os.Getenv("SUPERFRETE_CONTACT_EMAIL"))
-	services := strings.TrimSpace(os.Getenv("SUPERFRETE_SERVICES"))
-	destination := normalizeDigitsForContractTest(os.Getenv("SUPERFRETE_TEST_DESTINATION_POSTAL_CODE"))
-	if destination == "" {
-		destination = origin
-	}
-	if environment == "" || token == "" || origin == "" || contactEmail == "" || services == "" || destination == "" {
-		t.Fatal("SuperFrete contract test requires complete SUPERFRETE_* environment")
-	}
-
+	environment, token, origin, contactEmail, services, destination := superFreteContractEnv(t)
 	client, err := NewSuperFreteClient(SuperFreteClientConfig{
 		Environment:  environment,
 		APIToken:     token,
@@ -38,7 +26,44 @@ func TestSuperFreteContractCalculatorOptIn(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	planningQuotes, err := client.Calculate(ctx, SuperFreteCalculatorRequest{
+	quotes, err := client.Calculate(ctx, SuperFreteCalculatorRequest{
+		FromPostalCode: origin,
+		ToPostalCode:   destination,
+		Services:       services,
+		Package: &SuperFretePackage{
+			WeightKG: 0.283,
+			HeightCM: 10,
+			WidthCM:  20,
+			LengthCM: 20,
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected SuperFrete package quote, got safe error %v", err)
+	}
+	if len(quotes) == 0 {
+		t.Fatal("expected at least one valid final SuperFrete quote")
+	}
+}
+
+func TestSuperFreteContractCalculatorProductsCompatibilityOptIn(t *testing.T) {
+	if os.Getenv("SUPERFRETE_PRODUCTS_CONTRACT_TEST") != "1" {
+		t.Skip("set SUPERFRETE_PRODUCTS_CONTRACT_TEST=1 to monitor the non-commercial products contract")
+	}
+
+	environment, token, origin, contactEmail, services, destination := superFreteContractEnv(t)
+	client, err := NewSuperFreteClient(SuperFreteClientConfig{
+		Environment:  environment,
+		APIToken:     token,
+		ContactEmail: contactEmail,
+	})
+	if err != nil {
+		t.Fatalf("expected SuperFrete client configuration, got %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	quotes, err := client.Calculate(ctx, SuperFreteCalculatorRequest{
 		FromPostalCode: origin,
 		ToPostalCode:   destination,
 		Services:       services,
@@ -49,28 +74,26 @@ func TestSuperFreteContractCalculatorOptIn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected SuperFrete products quote, got safe error %v", err)
 	}
-	planningPackage, ok := firstReturnedPackage(planningQuotes)
-	if !ok {
+	if _, ok := firstReturnedPackage(quotes); !ok {
 		t.Fatal("expected SuperFrete products quote to return package")
 	}
+}
 
-	finalQuotes, err := client.Calculate(ctx, SuperFreteCalculatorRequest{
-		FromPostalCode: origin,
-		ToPostalCode:   destination,
-		Services:       services,
-		Package: &SuperFretePackage{
-			WeightKG: planningPackage.WeightKG,
-			HeightCM: MillimetersToCentimeters(planningPackage.HeightMM),
-			WidthCM:  MillimetersToCentimeters(planningPackage.WidthMM),
-			LengthCM: MillimetersToCentimeters(planningPackage.LengthMM),
-		},
-	})
-	if err != nil {
-		t.Fatalf("expected SuperFrete package quote, got safe error %v", err)
+func superFreteContractEnv(t *testing.T) (environment string, token string, origin string, contactEmail string, services string, destination string) {
+	t.Helper()
+	environment = strings.TrimSpace(os.Getenv("SUPERFRETE_ENV"))
+	token = strings.TrimSpace(os.Getenv("SUPERFRETE_API_TOKEN"))
+	origin = normalizeDigitsForContractTest(os.Getenv("SUPERFRETE_ORIGIN_POSTAL_CODE"))
+	contactEmail = strings.TrimSpace(os.Getenv("SUPERFRETE_CONTACT_EMAIL"))
+	services = strings.TrimSpace(os.Getenv("SUPERFRETE_SERVICES"))
+	destination = normalizeDigitsForContractTest(os.Getenv("SUPERFRETE_TEST_DESTINATION_POSTAL_CODE"))
+	if destination == "" {
+		destination = origin
 	}
-	if len(finalQuotes) == 0 {
-		t.Fatal("expected at least one valid final SuperFrete quote")
+	if environment == "" || token == "" || origin == "" || contactEmail == "" || services == "" || destination == "" {
+		t.Fatal("SuperFrete contract test requires complete SUPERFRETE_* environment")
 	}
+	return environment, token, origin, contactEmail, services, destination
 }
 
 func normalizeDigitsForContractTest(value string) string {

@@ -339,7 +339,7 @@ Principais entregas:
 - Tabela `cart_shipping_selections` para selecao de frete por carrinho.
 - Cliente HTTP server-side da SuperFrete.
 - Configuracao por environment variables.
-- Estrategia de duas chamadas: `products` para pacote ideal e `package` com caixa real para preco final.
+- Estrategia atual: caixa fisica real selecionada pela PrintLab antes da cotacao e chamada unica `package` para preco/prazo; a estrategia historica de `products` para pacote ideal foi substituida.
 - Escolha da menor caixa real compativel por dimensoes internas e rotacao.
 - Rotas `GET /checkout/frete` e `POST /checkout/frete`.
 - Revalidacao server-side no POST.

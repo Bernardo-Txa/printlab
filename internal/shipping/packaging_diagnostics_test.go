@@ -8,16 +8,19 @@ import (
 	"testing"
 )
 
-func TestNoFittingBoxDiagnosticsAreSafeAndExplainRotation(t *testing.T) {
-	selected := SuperFreteReturnedPackage{HeightMM: 200, WidthMM: 300, LengthMM: 400}
-	// Synthetic fixture, not the unknown package dimensions from production.
-	quotes := []SuperFreteQuote{
-		{ServiceCode: "secret-token", ServiceName: "buyer@example.com", Package: &selected},
-		{ServiceCode: "2", Package: &selected},
-	}
+func TestNoFittingBoxDiagnosticsAreSafeAndExplainRealPacking(t *testing.T) {
+	items := []QuoteProduct{{
+		ID:        "private-item-id",
+		ProductID: "private-product-id",
+		Quantity:  1,
+		Profile: ShippingProfile{
+			WeightG:    183,
+			Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400},
+		},
+	}}
 	boxes := []ShippingBox{{ID: "private-id", Name: "Rua Um\nAuthorization: secret", Slug: "52998224725", Internal: DimensionsMM{Height: 240, Width: 120, Length: 160}, External: DimensionsMM{Height: 1000, Width: 1000, Length: 1000}}}
-	logs := captureShippingLogs(t, func() { logNoFittingBoxDiagnostics(quotes, selected, boxes) })
-	for _, forbidden := range []string{"private-id", "Rua Um", "Authorization", "secret", "buyer@example.com", "52998224725", "1000"} {
+	logs := captureShippingLogs(t, func() { logNoFittingBoxDiagnostics(items, boxes) })
+	for _, forbidden := range []string{"private-id", "private-item-id", "private-product-id", "Rua Um", "Authorization", "secret", "52998224725", "1000"} {
 		if strings.Contains(logs, forbidden) {
 			t.Fatalf("unexpected field in diagnostic: %q", forbidden)
 		}
@@ -30,56 +33,61 @@ func TestNoFittingBoxDiagnosticsAreSafeAndExplainRotation(t *testing.T) {
 	if err := json.Unmarshal([]byte(data[1]), &report); err != nil {
 		t.Fatal(err)
 	}
-	if report.QuotesWithPackage != 2 || report.CandidateBoxes != 1 || report.SelectedMM != [3]int{200, 300, 400} || len(report.Planning) != 2 {
+	if report.ProductLines != 1 || report.Units != 1 || report.CandidateBoxes != 1 || report.PackingAlgorithm != "deterministic_extreme_points" || len(report.Products) != 1 {
 		t.Fatalf("report=%+v", report)
 	}
+	if report.Products[0].DimensionsMM != [3]int{200, 300, 400} || report.Products[0].WeightG != 183 || report.Products[0].Quantity != 1 {
+		t.Fatalf("product=%+v", report.Products[0])
+	}
 	box := report.Boxes[0]
-	if box.InternalSortedMM != [3]int{120, 160, 240} || box.Fits || box.DeficitMM == nil || *box.DeficitMM != [3]int{80, 140, 160} {
+	if box.InternalSortedMM != [3]int{120, 160, 240} || box.Fits || !box.InternalValid {
 		t.Fatalf("box=%+v", box)
 	}
-	if boxes[0].Internal.Height != 240 || quotes[0].Package != &selected {
+	if boxes[0].Internal.Height != 240 || items[0].Profile.WeightG != 183 {
 		t.Fatal("diagnostics mutated inputs")
 	}
 }
 
 func TestNoFittingBoxDiagnosticBoundsAndInvalidDimensions(t *testing.T) {
-	quotes := make([]SuperFreteQuote, packagingDiagnosticLimit+2)
+	items := make([]QuoteProduct, packagingDiagnosticLimit+2)
 	boxes := make([]ShippingBox, packagingDiagnosticLimit+3)
-	for i := range quotes {
-		quotes[i].Package = &SuperFreteReturnedPackage{HeightMM: 1, WidthMM: 2, LengthMM: 3}
+	for i := range items {
+		items[i] = QuoteProduct{Quantity: 1, Profile: ShippingProfile{WeightG: 1, Dimensions: DimensionsMM{Height: 1, Width: 2, Length: 3}}}
 	}
-	logs := captureShippingLogs(t, func() { logNoFittingBoxDiagnostics(quotes, SuperFreteReturnedPackage{}, boxes) })
+	logs := captureShippingLogs(t, func() { logNoFittingBoxDiagnostics(items, boxes) })
 	var report packagingDiagnostic
 	if err := json.Unmarshal([]byte(strings.SplitN(logs, " data=", 2)[1]), &report); err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Planning) != 32 || len(report.Boxes) != 32 || report.PlanningOmitted != 2 || report.BoxesOmitted != 3 || report.SelectedValid {
+	if len(report.Products) != 32 || len(report.Boxes) != 32 || report.ProductsOmitted != 2 || report.BoxesOmitted != 3 || report.Units != packagingDiagnosticLimit+2 {
 		t.Fatalf("report=%+v", report)
 	}
-	if report.Boxes[0].DeficitMM != nil || report.Boxes[0].InternalValid {
-		t.Fatal("invalid dimensions must not produce deficits")
+	if report.Boxes[0].InternalValid || report.Boxes[0].Fits {
+		t.Fatal("invalid dimensions must not fit")
 	}
 }
 
 func TestPackagingFailureLogsCandidatesWithoutFinalQuote(t *testing.T) {
-	selected := &SuperFreteReturnedPackage{HeightMM: 200, WidthMM: 300, LengthMM: 400}
-	calculator := &fakeShippingCalculator{responses: [][]SuperFreteQuote{{{ServiceCode: "1", Package: selected}, {ServiceCode: "2", Package: selected}}}}
-	service := shippingServiceFixture(t, &fakeShippingRepository{items: shippingCartItemsFixture(), boxes: shippingBoxesFixture()}, calculator)
+	calculator := shippingCalculatorFixture()
+	service := shippingServiceFixture(t, &fakeShippingRepository{
+		items: []CartItem{{Quantity: 1, ProductProfile: &ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400}}}},
+		boxes: shippingBoxesFixture(),
+	}, calculator)
 	logs := captureShippingLogs(t, func() {
 		page, err := service.Page(context.Background(), []byte("private-cart-token"), false)
 		if err != nil || !page.Unavailable {
 			t.Fatalf("page unavailable=%v err=%v", page.Unavailable, err)
 		}
 	})
-	if !strings.Contains(logs, "shipping packaging diagnostic") || !strings.Contains(logs, `"quotes_with_package":2`) {
+	if !strings.Contains(logs, "shipping packaging diagnostic") || !strings.Contains(logs, `"packing_algorithm":"deterministic_extreme_points"`) {
 		t.Fatal("missing diagnosis")
 	}
-	if len(calculator.requests) != 1 {
-		t.Fatal("final quote must not be called without a fitting box")
+	if len(calculator.requests) != 0 {
+		t.Fatal("SuperFrete must not be called without a fitting real box")
 	}
 }
 
-func TestFirstReturnedPackagePreservesExistingChoice(t *testing.T) {
+func TestFirstReturnedPackagePreservesProductsClientCompatibility(t *testing.T) {
 	first := SuperFreteReturnedPackage{HeightMM: 100, WidthMM: 150, LengthMM: 200}
 	other := SuperFreteReturnedPackage{HeightMM: 200, WidthMM: 300, LengthMM: 400}
 	quotes := []SuperFreteQuote{{}, {Package: &first}, {Package: &other}}

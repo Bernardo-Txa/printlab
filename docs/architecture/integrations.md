@@ -20,7 +20,7 @@ Integracoes externas devem permitir calculo de frete, pagamentos e outros servic
 
 - SuperFrete e usado para cotacao de frete via backend Go.
 - A cotacao SuperFrete usa `POST /api/v0/calculator`, Bearer token e `User-Agent` operacional conforme documentacao oficial.
-- O backend envia `products` primeiro para obter pacote ideal e depois `package` com caixa real para cotacao final.
+- O backend seleciona a caixa fisica real e envia `package` diretamente para a SuperFrete cotar preco e prazo.
 - InfinitePay e usado para checkout hospedado, retorno e webhook, sempre com validacao server-side via `payment_check`.
 - Supabase hospedara PostgreSQL.
 - Supabase Auth autentica credenciais administrativas; a autorizacao real da PrintLab usa `ADMIN_SUPABASE_USER_ID`.

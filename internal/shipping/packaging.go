@@ -43,6 +43,29 @@ func FitsInside(packageDimensions DimensionsMM, boxDimensions DimensionsMM) bool
 	return true
 }
 
+type packingCuboid struct {
+	Height int
+	Width  int
+	Length int
+	Volume int64
+	Order  int
+}
+
+type packingPoint struct {
+	X int
+	Y int
+	Z int
+}
+
+type packingPlacement struct {
+	X      int
+	Y      int
+	Z      int
+	Height int
+	Width  int
+	Length int
+}
+
 func SelectSmallestBox(packageDimensions DimensionsMM, boxes []ShippingBox) (ShippingBox, error) {
 	if !packageDimensions.Valid() {
 		return ShippingBox{}, ErrInvalidPackage
@@ -58,29 +81,243 @@ func SelectSmallestBox(packageDimensions DimensionsMM, boxes []ShippingBox) (Shi
 		return ShippingBox{}, ErrNoFittingBox
 	}
 
-	sort.SliceStable(candidates, func(i int, j int) bool {
-		leftVolume, leftOverflow := boxVolume(candidates[i].Internal)
-		rightVolume, rightOverflow := boxVolume(candidates[j].Internal)
-		if leftOverflow != rightOverflow {
-			return !leftOverflow
-		}
-		if leftVolume != rightVolume {
-			return leftVolume < rightVolume
-		}
-		if candidates[i].PackagingWeightG != candidates[j].PackagingWeightG {
-			return candidates[i].PackagingWeightG < candidates[j].PackagingWeightG
-		}
-		if candidates[i].SortOrder != candidates[j].SortOrder {
-			return candidates[i].SortOrder < candidates[j].SortOrder
-		}
-		if candidates[i].Name != candidates[j].Name {
-			return candidates[i].Name < candidates[j].Name
-		}
+	sortShippingBoxes(candidates)
+	return candidates[0], nil
+}
 
-		return candidates[i].ID < candidates[j].ID
+func SelectShippingBoxForProducts(items []QuoteProduct, boxes []ShippingBox) (ShippingBox, error) {
+	cuboids, err := packingCuboids(items)
+	if err != nil {
+		return ShippingBox{}, err
+	}
+	if len(boxes) == 0 {
+		return ShippingBox{}, ErrNoFittingBox
+	}
+
+	candidates := append([]ShippingBox(nil), boxes...)
+	sortShippingBoxes(candidates)
+	for _, box := range candidates {
+		if fitsProductsInBox(cuboids, box.Internal) {
+			return box, nil
+		}
+	}
+
+	return ShippingBox{}, ErrNoFittingBox
+}
+
+func FitsProductsInBox(items []QuoteProduct, boxDimensions DimensionsMM) bool {
+	cuboids, err := packingCuboids(items)
+	if err != nil {
+		return false
+	}
+	return fitsProductsInBox(cuboids, boxDimensions)
+}
+
+func sortShippingBoxes(boxes []ShippingBox) {
+	sort.SliceStable(boxes, func(i int, j int) bool {
+		leftInternalVolume, leftInternalOverflow := boxVolume(boxes[i].Internal)
+		rightInternalVolume, rightInternalOverflow := boxVolume(boxes[j].Internal)
+		if leftInternalOverflow != rightInternalOverflow {
+			return !leftInternalOverflow
+		}
+		if leftInternalVolume != rightInternalVolume {
+			return leftInternalVolume < rightInternalVolume
+		}
+		if boxes[i].SortOrder != boxes[j].SortOrder {
+			return boxes[i].SortOrder < boxes[j].SortOrder
+		}
+		leftExternalVolume, leftExternalOverflow := boxVolume(boxes[i].External)
+		rightExternalVolume, rightExternalOverflow := boxVolume(boxes[j].External)
+		if leftExternalOverflow != rightExternalOverflow {
+			return !leftExternalOverflow
+		}
+		if leftExternalVolume != rightExternalVolume {
+			return leftExternalVolume < rightExternalVolume
+		}
+		if boxes[i].PackagingWeightG != boxes[j].PackagingWeightG {
+			return boxes[i].PackagingWeightG < boxes[j].PackagingWeightG
+		}
+		if boxes[i].Name != boxes[j].Name {
+			return boxes[i].Name < boxes[j].Name
+		}
+		if boxes[i].Slug != boxes[j].Slug {
+			return boxes[i].Slug < boxes[j].Slug
+		}
+		return boxes[i].ID < boxes[j].ID
+	})
+}
+
+func packingCuboids(items []QuoteProduct) ([]packingCuboid, error) {
+	var cuboids []packingCuboid
+	order := 0
+	for _, item := range items {
+		if item.Quantity <= 0 || !item.Profile.Valid() {
+			return nil, ErrMissingShippingProfile
+		}
+		volume, overflow := boxVolume(item.Profile.Dimensions)
+		if overflow {
+			return nil, ErrInvalidPackage
+		}
+		for unit := 0; unit < item.Quantity; unit++ {
+			cuboids = append(cuboids, packingCuboid{
+				Height: item.Profile.Dimensions.Height,
+				Width:  item.Profile.Dimensions.Width,
+				Length: item.Profile.Dimensions.Length,
+				Volume: volume,
+				Order:  order,
+			})
+			order++
+		}
+	}
+	if len(cuboids) == 0 {
+		return nil, ErrEmptyCart
+	}
+
+	sort.SliceStable(cuboids, func(i int, j int) bool {
+		if cuboids[i].Volume != cuboids[j].Volume {
+			return cuboids[i].Volume > cuboids[j].Volume
+		}
+		leftAxes := sortedDimensions(DimensionsMM{Height: cuboids[i].Height, Width: cuboids[i].Width, Length: cuboids[i].Length})
+		rightAxes := sortedDimensions(DimensionsMM{Height: cuboids[j].Height, Width: cuboids[j].Width, Length: cuboids[j].Length})
+		for axis := len(leftAxes) - 1; axis >= 0; axis-- {
+			if leftAxes[axis] != rightAxes[axis] {
+				return leftAxes[axis] > rightAxes[axis]
+			}
+		}
+		return cuboids[i].Order < cuboids[j].Order
 	})
 
-	return candidates[0], nil
+	return cuboids, nil
+}
+
+func fitsProductsInBox(cuboids []packingCuboid, box DimensionsMM) bool {
+	if !box.Valid() {
+		return false
+	}
+
+	placements := make([]packingPlacement, 0, len(cuboids))
+	points := []packingPoint{{}}
+	for _, cuboid := range cuboids {
+		placed := false
+		sortPackingPoints(points)
+		rotations := cuboidRotations(cuboid)
+		for _, point := range points {
+			for _, rotated := range rotations {
+				placement := packingPlacement{X: point.X, Y: point.Y, Z: point.Z, Height: rotated.Height, Width: rotated.Width, Length: rotated.Length}
+				if placementFits(placement, box, placements) {
+					placements = append(placements, placement)
+					points = append(points,
+						packingPoint{X: placement.X + placement.Length, Y: placement.Y, Z: placement.Z},
+						packingPoint{X: placement.X, Y: placement.Y + placement.Width, Z: placement.Z},
+						packingPoint{X: placement.X, Y: placement.Y, Z: placement.Z + placement.Height},
+					)
+					points = normalizePackingPoints(points, box, placements)
+					placed = true
+					break
+				}
+			}
+			if placed {
+				break
+			}
+		}
+		if !placed {
+			return false
+		}
+	}
+
+	return true
+}
+
+func cuboidRotations(c packingCuboid) []DimensionsMM {
+	values := []DimensionsMM{
+		{Height: c.Height, Width: c.Width, Length: c.Length},
+		{Height: c.Height, Width: c.Length, Length: c.Width},
+		{Height: c.Width, Width: c.Height, Length: c.Length},
+		{Height: c.Width, Width: c.Length, Length: c.Height},
+		{Height: c.Length, Width: c.Height, Length: c.Width},
+		{Height: c.Length, Width: c.Width, Length: c.Height},
+	}
+	rotations := make([]DimensionsMM, 0, len(values))
+	seen := map[DimensionsMM]bool{}
+	for _, value := range values {
+		if seen[value] {
+			continue
+		}
+		seen[value] = true
+		rotations = append(rotations, value)
+	}
+	sort.SliceStable(rotations, func(i int, j int) bool {
+		if rotations[i].Height != rotations[j].Height {
+			return rotations[i].Height < rotations[j].Height
+		}
+		if rotations[i].Width != rotations[j].Width {
+			return rotations[i].Width < rotations[j].Width
+		}
+		return rotations[i].Length < rotations[j].Length
+	})
+	return rotations
+}
+
+func placementFits(candidate packingPlacement, box DimensionsMM, placed []packingPlacement) bool {
+	if candidate.Height <= 0 || candidate.Width <= 0 || candidate.Length <= 0 {
+		return false
+	}
+	if candidate.X < 0 || candidate.Y < 0 || candidate.Z < 0 {
+		return false
+	}
+	if candidate.X+candidate.Length > box.Length || candidate.Y+candidate.Width > box.Width || candidate.Z+candidate.Height > box.Height {
+		return false
+	}
+	for _, existing := range placed {
+		if placementsOverlap(candidate, existing) {
+			return false
+		}
+	}
+	return true
+}
+
+func placementsOverlap(a packingPlacement, b packingPlacement) bool {
+	return a.X < b.X+b.Length && a.X+a.Length > b.X &&
+		a.Y < b.Y+b.Width && a.Y+a.Width > b.Y &&
+		a.Z < b.Z+b.Height && a.Z+a.Height > b.Z
+}
+
+func normalizePackingPoints(points []packingPoint, box DimensionsMM, placed []packingPlacement) []packingPoint {
+	seen := map[packingPoint]bool{}
+	filtered := make([]packingPoint, 0, len(points))
+	for _, point := range points {
+		if point.X < 0 || point.Y < 0 || point.Z < 0 || point.X >= box.Length || point.Y >= box.Width || point.Z >= box.Height {
+			continue
+		}
+		insidePlaced := false
+		for _, placement := range placed {
+			if point.X >= placement.X && point.X < placement.X+placement.Length &&
+				point.Y >= placement.Y && point.Y < placement.Y+placement.Width &&
+				point.Z >= placement.Z && point.Z < placement.Z+placement.Height {
+				insidePlaced = true
+				break
+			}
+		}
+		if insidePlaced || seen[point] {
+			continue
+		}
+		seen[point] = true
+		filtered = append(filtered, point)
+	}
+	sortPackingPoints(filtered)
+	return filtered
+}
+
+func sortPackingPoints(points []packingPoint) {
+	sort.SliceStable(points, func(i int, j int) bool {
+		if points[i].Z != points[j].Z {
+			return points[i].Z < points[j].Z
+		}
+		if points[i].Y != points[j].Y {
+			return points[i].Y < points[j].Y
+		}
+		return points[i].X < points[j].X
+	})
 }
 
 func TotalPackageWeightG(items []QuoteProduct, packagingWeightG int64) (int64, error) {

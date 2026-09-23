@@ -124,7 +124,7 @@ Carrinho recalcula precos e subtotais no backend. Entrega e selecionada no backe
 - A caixa menor compativel e escolhida por dimensoes internas considerando rotacao, nunca somente por volume.
 - Medidas internas da caixa sao usadas para encaixe; medidas externas sao enviadas a transportadora.
 - `packaging_weight_g` representa caixa/protecao/enchimento padrao e e somado ao peso dos produtos.
-- A cotacao SuperFrete acontece em duas etapas: `products` para obter pacote ideal e `package` com caixa real para obter preco final.
+- A PrintLab seleciona a caixa fisica real antes da cotacao. A cotacao SuperFrete do checkout usa uma unica chamada com `package` final para obter preco e prazo.
 - Somente a cotacao final com a caixa fisica real e apresentada ao cliente.
 - Retirada no local (`pickup`) nao chama SuperFrete, nao exige caixa, nao exige perfil logistico e persiste `shipping_price_cents = 0`.
 - Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.

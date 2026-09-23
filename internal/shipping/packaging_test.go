@@ -53,8 +53,8 @@ func TestSelectSmallestBoxDeterministicTies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected fitting box, got %v", err)
 	}
-	if box.ID != "box-b" {
-		t.Fatalf("expected tie to resolve by volume, weight, sort, name and id, got %q", box.ID)
+	if box.ID != "box-a" {
+		t.Fatalf("expected tie to resolve by volume, sort, external volume, weight, name and id, got %q", box.ID)
 	}
 }
 
@@ -67,22 +67,136 @@ func TestSelectSmallestBoxNoFittingBox(t *testing.T) {
 	}
 }
 
-func TestPlanningPackageFitsReferenceBox(t *testing.T) {
+func TestSelectSmallestBoxFitsReferenceDimensions(t *testing.T) {
 	product := DimensionsMM{Height: 100, Width: 70, Length: 70}
 	box := ShippingBox{ID: "reference", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}}
 	selected, err := SelectSmallestBox(product, []ShippingBox{box})
 	if err != nil {
-		t.Fatalf("expected 183g 100x70x70 planning package to fit 100x200x200 internal box, got %v", err)
+		t.Fatalf("expected 183g 100x70x70 dimensions to fit 100x200x200 internal box, got %v", err)
 	}
 	if selected.ID != box.ID {
 		t.Fatalf("expected reference box, got %#v", selected)
 	}
 }
 
-func TestPlanningPackageRejectsNonFittingReferenceBox(t *testing.T) {
+func TestSelectSmallestBoxRejectsNonFittingReferenceDimensions(t *testing.T) {
 	_, err := SelectSmallestBox(DimensionsMM{Height: 201, Width: 70, Length: 70}, []ShippingBox{{ID: "reference", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}}})
 	if !errors.Is(err, ErrNoFittingBox) {
 		t.Fatalf("expected non-fitting package to be rejected, got %v", err)
+	}
+}
+
+func TestSelectShippingBoxForProductsRotatesSingleUnit(t *testing.T) {
+	item := QuoteProduct{Quantity: 1, Profile: ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 100, Width: 70, Length: 70}}}
+	box := ShippingBox{ID: "reference", Internal: DimensionsMM{Height: 80, Width: 250, Length: 250}}
+	selected, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{box})
+	if err != nil {
+		t.Fatalf("expected rotated 100x70x70 item to fit 80x250x250 box, got %v", err)
+	}
+	if selected.ID != box.ID {
+		t.Fatalf("expected reference box, got %#v", selected)
+	}
+}
+
+func TestSelectShippingBoxForProductsRejectsRotatedOversizedUnit(t *testing.T) {
+	item := QuoteProduct{Quantity: 1, Profile: ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 100, Width: 70, Length: 70}}}
+	_, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{{ID: "too-low", Internal: DimensionsMM{Height: 60, Width: 250, Length: 250}}})
+	if !errors.Is(err, ErrNoFittingBox) {
+		t.Fatalf("expected box with every axis below 70mm to be rejected, got %v", err)
+	}
+}
+
+func TestSelectShippingBoxForProductsChoosesSmallestCompatibleRealBox(t *testing.T) {
+	item := QuoteProduct{Quantity: 1, Profile: ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 100, Width: 70, Length: 70}}}
+	selected, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{
+		{ID: "tall", Internal: DimensionsMM{Height: 80, Width: 250, Length: 250}, External: DimensionsMM{Height: 80, Width: 250, Length: 250}, SortOrder: 1},
+		{ID: "compact", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}, External: DimensionsMM{Height: 100, Width: 200, Length: 200}, SortOrder: 1},
+		{ID: "large", Internal: DimensionsMM{Height: 300, Width: 300, Length: 300}, External: DimensionsMM{Height: 300, Width: 300, Length: 300}, SortOrder: 1},
+	})
+	if err != nil {
+		t.Fatalf("expected compatible box, got %v", err)
+	}
+	if selected.ID != "compact" {
+		t.Fatalf("expected smallest compatible internal volume, got %q", selected.ID)
+	}
+}
+
+func TestSelectShippingBoxForProductsDoesNotMergeQuantitiesIntoOneDimension(t *testing.T) {
+	item := QuoteProduct{Quantity: 2, Profile: ShippingProfile{WeightG: 100, Dimensions: DimensionsMM{Height: 100, Width: 100, Length: 100}}}
+	selected, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{{ID: "two-slots", Internal: DimensionsMM{Height: 100, Width: 100, Length: 200}}})
+	if err != nil {
+		t.Fatalf("expected two units to be packed as separate cuboids, got %v", err)
+	}
+	if selected.ID != "two-slots" {
+		t.Fatalf("expected two-slot box, got %q", selected.ID)
+	}
+}
+
+func TestSelectShippingBoxForProductsPacksDifferentProductsWithoutOverlap(t *testing.T) {
+	items := []QuoteProduct{
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 100, Dimensions: DimensionsMM{Height: 100, Width: 100, Length: 100}}},
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 50, Dimensions: DimensionsMM{Height: 50, Width: 100, Length: 100}}},
+	}
+	selected, err := SelectShippingBoxForProducts(items, []ShippingBox{{ID: "stacked", Internal: DimensionsMM{Height: 150, Width: 100, Length: 100}}})
+	if err != nil {
+		t.Fatalf("expected different products to fit without overlap, got %v", err)
+	}
+	if selected.ID != "stacked" {
+		t.Fatalf("expected stacked box, got %q", selected.ID)
+	}
+}
+
+func TestSelectShippingBoxForProductsRejectsItemsThatIndividuallyFitButOverlapTogether(t *testing.T) {
+	items := []QuoteProduct{
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 100, Dimensions: DimensionsMM{Height: 100, Width: 100, Length: 100}}},
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 100, Dimensions: DimensionsMM{Height: 100, Width: 100, Length: 100}}},
+	}
+	_, err := SelectShippingBoxForProducts(items, []ShippingBox{{ID: "single-slot", Internal: DimensionsMM{Height: 100, Width: 100, Length: 100}}})
+	if !errors.Is(err, ErrNoFittingBox) {
+		t.Fatalf("expected overlapping arrangement to be rejected, got %v", err)
+	}
+}
+
+func TestSelectShippingBoxForProductsIsDeterministic(t *testing.T) {
+	items := []QuoteProduct{{Quantity: 1, Profile: ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 100, Width: 70, Length: 70}}}}
+	boxes := []ShippingBox{
+		{ID: "b", Name: "B", Slug: "b", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}, External: DimensionsMM{Height: 100, Width: 200, Length: 200}, PackagingWeightG: 120, SortOrder: 2},
+		{ID: "a", Name: "A", Slug: "a", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}, External: DimensionsMM{Height: 100, Width: 200, Length: 200}, PackagingWeightG: 120, SortOrder: 2},
+	}
+	for i := 0; i < 10; i++ {
+		selected, err := SelectShippingBoxForProducts(items, boxes)
+		if err != nil {
+			t.Fatalf("expected deterministic fit, got %v", err)
+		}
+		if selected.ID != "a" {
+			t.Fatalf("expected stable id tie-break, got %q", selected.ID)
+		}
+	}
+}
+
+func TestSelectShippingBoxForProductsHandlesLargeQuantityConservatively(t *testing.T) {
+	item := QuoteProduct{Quantity: 99, Profile: ShippingProfile{WeightG: 1, Dimensions: DimensionsMM{Height: 10, Width: 10, Length: 10}}}
+	selected, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{{ID: "grid", Internal: DimensionsMM{Height: 50, Width: 50, Length: 50}}})
+	if err != nil {
+		t.Fatalf("expected 99 small units to fit without explosive search, got %v", err)
+	}
+	if selected.ID != "grid" {
+		t.Fatalf("expected grid box, got %q", selected.ID)
+	}
+}
+
+func TestSelectShippingBoxForProductsPrintLabRealFixture(t *testing.T) {
+	item := QuoteProduct{Quantity: 1, Profile: ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 100, Width: 70, Length: 70}}}
+	selected, err := SelectShippingBoxForProducts([]QuoteProduct{item}, []ShippingBox{
+		{ID: "80x250x250", Internal: DimensionsMM{Height: 80, Width: 250, Length: 250}, External: DimensionsMM{Height: 80, Width: 250, Length: 250}},
+		{ID: "100x200x200", Internal: DimensionsMM{Height: 100, Width: 200, Length: 200}, External: DimensionsMM{Height: 100, Width: 200, Length: 200}},
+		{ID: "150x200x20", Internal: DimensionsMM{Height: 150, Width: 200, Length: 20}, External: DimensionsMM{Height: 150, Width: 200, Length: 20}},
+	})
+	if err != nil {
+		t.Fatalf("expected PrintLab real fixture to find a valid box, got %v", err)
+	}
+	if selected.ID != "100x200x200" {
+		t.Fatalf("expected smallest compatible real box, got %q", selected.ID)
 	}
 }
 

@@ -276,50 +276,17 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		return PreparedQuote{}, page, nil
 	}
 
-	logShippingQuoteRequest("planning", preparedItems, 0, DimensionsMM{}, len(s.serviceCodes))
-	planningQuotes, err := s.calculator.Calculate(ctx, SuperFreteCalculatorRequest{
-		FromPostalCode: s.originCEP,
-		ToPostalCode:   details.Address.PostalCode,
-		Services:       s.serviceList,
-		Products:       superFreteProducts(preparedItems),
-	})
-	if err != nil {
-		logShippingQuoteUnavailable("planning", "planning_request_failed", err)
-		page.Unavailable = true
-		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
-		return PreparedQuote{}, page, nil
-	}
-	if len(planningQuotes) == 0 {
-		logShippingQuoteUnavailable("planning", "planning_no_valid_quotes", nil)
-		page.Unavailable = true
-		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
-		return PreparedQuote{}, page, nil
-	}
-
-	logPlanningPackageDiagnostics(planningQuotes)
-
-	idealPackage, ok := firstReturnedPackage(planningQuotes)
-	if !ok {
-		logShippingQuoteUnavailable("planning", "planning_no_package", nil)
-		page.Unavailable = true
-		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
-		return PreparedQuote{}, page, nil
-	}
-
-	idealDimensions := DimensionsMM{
-		Height: idealPackage.HeightMM,
-		Width:  idealPackage.WidthMM,
-		Length: idealPackage.LengthMM,
-	}
-	logBoxFitDiagnostics(idealDimensions, boxes)
-	box, err := SelectSmallestBox(idealDimensions, boxes)
+	logPackagingRequest(preparedItems, boxes)
+	logPackagingCandidates(preparedItems, boxes)
+	box, err := SelectShippingBoxForProducts(preparedItems, boxes)
 	if err != nil {
 		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
-		logNoFittingBoxDiagnostics(planningQuotes, idealPackage, boxes)
+		logNoFittingBoxDiagnostics(preparedItems, boxes)
 		page.Unavailable = true
 		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
+	logPackagingSelected(box, boxes)
 
 	totalWeightG, err := TotalPackageWeightG(preparedItems, box.PackagingWeightG)
 	if err != nil {
@@ -510,63 +477,40 @@ func logShippingQuoteUnavailable(stage string, reason string, err error) {
 	log.Printf("shipping quote unavailable stage=%s reason=%s", stage, reason)
 }
 
-func logShippingQuoteRequest(stage string, items []QuoteProduct, packageWeightG int64, packageDimensions DimensionsMM, services int) {
-	if stage == "planning" {
-		units := 0
-		for _, item := range items {
-			units += item.Quantity
-		}
-		log.Printf("shipping quote request stage=planning product_lines=%d units=%d services=%d", len(items), units, services)
-		for i, item := range items {
-			log.Printf("shipping quote request stage=planning line=%d quantity=%d weight_g=%d height_mm=%d width_mm=%d length_mm=%d", i, item.Quantity, item.Profile.WeightG, item.Profile.Dimensions.Height, item.Profile.Dimensions.Width, item.Profile.Dimensions.Length)
-		}
-		return
-	}
-
-	log.Printf("shipping quote request stage=final package_weight_g=%d package_h_mm=%d package_w_mm=%d package_l_mm=%d services=%d", packageWeightG, packageDimensions.Height, packageDimensions.Width, packageDimensions.Length, services)
+func logShippingQuoteRequest(stage string, _ []QuoteProduct, packageWeightG int64, packageDimensions DimensionsMM, services int) {
+	log.Printf("shipping quote request stage=%s package_weight_g=%d package_h_mm=%d package_w_mm=%d package_l_mm=%d services=%d", stage, packageWeightG, packageDimensions.Height, packageDimensions.Width, packageDimensions.Length, services)
 }
 
-func logPlanningPackageDiagnostics(quotes []SuperFreteQuote) {
-	type packageDimensions struct {
-		height int
-		width  int
-		length int
+func logPackagingRequest(items []QuoteProduct, boxes []ShippingBox) {
+	units := 0
+	for _, item := range items {
+		units += item.Quantity
 	}
-
-	packages := 0
-	variants := map[packageDimensions]struct{}{}
-	for _, quote := range quotes {
-		if quote.Package == nil {
-			continue
-		}
-
-		packages++
-		variants[packageDimensions{
-			height: quote.Package.HeightMM,
-			width:  quote.Package.WidthMM,
-			length: quote.Package.LengthMM,
-		}] = struct{}{}
-	}
-	log.Printf("shipping package planning valid_quotes=%d quotes_with_package=%d dimension_variants=%d", len(quotes), packages, len(variants))
-	if len(variants) > 1 {
-		log.Print("shipping package planning dimensions_differ=true")
+	log.Printf("shipping packaging request product_lines=%d units=%d candidate_boxes=%d", len(items), units, len(boxes))
+	for i, item := range items {
+		log.Printf("shipping packaging line=%d quantity=%d weight_g=%d height_mm=%d width_mm=%d length_mm=%d", i, item.Quantity, item.Profile.WeightG, item.Profile.Dimensions.Height, item.Profile.Dimensions.Width, item.Profile.Dimensions.Length)
 	}
 }
 
-func logBoxFitDiagnostics(packageDimensions DimensionsMM, boxes []ShippingBox) {
-	log.Printf("shipping packaging boxes candidate_boxes=%d", len(boxes))
-	packageAxes := sortedDimensions(packageDimensions)
-	for i, box := range boxes {
-		boxAxes := sortedDimensions(box.Internal)
-		fits := FitsInside(packageDimensions, box.Internal)
-		deficit := [3]int{}
-		if packageDimensions.Valid() && box.Internal.Valid() {
-			for axis := range deficit {
-				deficit[axis] = max(0, packageAxes[axis]-boxAxes[axis])
-			}
-		}
-		log.Printf("shipping packaging box index=%d internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d external_h_mm=%d external_w_mm=%d external_l_mm=%d packaging_weight_g=%d fits=%t deficit_small_mm=%d deficit_mid_mm=%d deficit_large_mm=%d", i, box.Internal.Height, box.Internal.Width, box.Internal.Length, box.External.Height, box.External.Width, box.External.Length, box.PackagingWeightG, fits, deficit[0], deficit[1], deficit[2])
+func logPackagingCandidates(items []QuoteProduct, boxes []ShippingBox) {
+	candidates := append([]ShippingBox(nil), boxes...)
+	sortShippingBoxes(candidates)
+	for i, box := range candidates {
+		log.Printf("shipping packaging candidate index=%d fits=%t internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d", i, FitsProductsInBox(items, box.Internal), box.Internal.Height, box.Internal.Width, box.Internal.Length)
 	}
+}
+
+func logPackagingSelected(box ShippingBox, boxes []ShippingBox) {
+	index := 0
+	candidates := append([]ShippingBox(nil), boxes...)
+	sortShippingBoxes(candidates)
+	for i, candidate := range candidates {
+		if candidate.ID == box.ID {
+			index = i
+			break
+		}
+	}
+	log.Printf("shipping packaging selected box_index=%d internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d external_h_mm=%d external_w_mm=%d external_l_mm=%d packaging_weight_g=%d", index, box.Internal.Height, box.Internal.Width, box.Internal.Length, box.External.Height, box.External.Width, box.External.Length, box.PackagingWeightG)
 }
 
 func shippingQuotes(superFreteQuotes []SuperFreteQuote) []ShippingQuote {

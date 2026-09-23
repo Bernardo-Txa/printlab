@@ -88,7 +88,7 @@ func TestServiceDeliveryPageRestoresShippingSelectionWithQuotes(t *testing.T) {
 			DeliveryMethod: DeliveryMethodShipping,
 			Provider:       ProviderSuperFrete,
 			ServiceCode:    "1",
-			InputHash:      shippingInputHashFixture(t, boxes[1]),
+			InputHash:      shippingInputHashFixture(t, boxes[2]),
 			ExpiresAt:      now.Add(time.Minute),
 		},
 		selectionFound: true,
@@ -105,8 +105,8 @@ func TestServiceDeliveryPageRestoresShippingSelectionWithQuotes(t *testing.T) {
 	if page.SelectedMethod != DeliveryMethodShipping || !page.Selected || page.ShippingPriceBRL != "R$ 18,90" {
 		t.Fatalf("expected saved shipping selection with quotes, got %#v", page)
 	}
-	if len(calculator.requests) != 2 {
-		t.Fatalf("expected shipping restore to quote through SuperFrete, got %d calls", len(calculator.requests))
+	if len(calculator.requests) != 1 {
+		t.Fatalf("expected shipping restore to quote through one SuperFrete request, got %d calls", len(calculator.requests))
 	}
 }
 
@@ -180,25 +180,17 @@ func TestServicePageRejectsEmptyRepositoryItems(t *testing.T) {
 	}
 }
 
-func TestServicePageUnavailableWhenNoBoxFitsPlanningPackage(t *testing.T) {
-	calculator := &fakeShippingCalculator{
-		responses: [][]SuperFreteQuote{
-			{
-				{
-					ServiceCode: "1",
-					ServiceName: "PAC",
-					PriceCents:  999,
-					Package: &SuperFreteReturnedPackage{
-						HeightMM: 200,
-						WidthMM:  300,
-						LengthMM: 400,
-					},
-				},
-			},
-		},
-	}
+func TestServicePageUnavailableWhenNoRealBoxFitsProducts(t *testing.T) {
+	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
-		items: shippingCartItemsFixture(),
+		items: []CartItem{{
+			ID:       "item-oversized",
+			Quantity: 1,
+			ProductProfile: &ShippingProfile{
+				WeightG:    183,
+				Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400},
+			},
+		}},
 		boxes: []ShippingBox{{
 			ID:               "box-small",
 			Name:             "Caixa Pequena",
@@ -215,8 +207,8 @@ func TestServicePageUnavailableWhenNoBoxFitsPlanningPackage(t *testing.T) {
 	if !page.Unavailable || page.Message != "Não conseguimos calcular automaticamente o frete para este carrinho." {
 		t.Fatalf("expected no-fitting-box message, got %#v", page)
 	}
-	if len(calculator.requests) != 1 {
-		t.Fatalf("expected only planning request, got %d calls", len(calculator.requests))
+	if len(calculator.requests) != 0 {
+		t.Fatalf("expected no SuperFrete request when no real box fits, got %d calls", len(calculator.requests))
 	}
 }
 
@@ -239,7 +231,7 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 			wantLogs:   []string{"stage=packaging reason=no_active_boxes"},
 		},
 		{
-			name: "planning request error",
+			name: "final request error",
 			repository: &fakeShippingRepository{
 				items: shippingCartItemsFixture(),
 				boxes: shippingBoxesFixture(),
@@ -247,25 +239,19 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 			calculator: &fakeShippingCalculator{
 				errs: []error{&SuperFreteClientError{Category: "400", StatusCode: 400}},
 			},
-			wantLogs: []string{"stage=planning reason=planning_request_failed category=400 status=400"},
-		},
-		{
-			name: "planning no package",
-			repository: &fakeShippingRepository{
-				items: shippingCartItemsFixture(),
-				boxes: shippingBoxesFixture(),
-			},
-			calculator: &fakeShippingCalculator{
-				responses: [][]SuperFreteQuote{{
-					{ServiceCode: "1", ServiceName: "PAC", PriceCents: 999},
-				}},
-			},
-			wantLogs: []string{"stage=planning reason=planning_no_package"},
+			wantLogs: []string{"stage=final reason=final_request_failed category=400 status=400"},
 		},
 		{
 			name: "no fitting box",
 			repository: &fakeShippingRepository{
-				items: shippingCartItemsFixture(),
+				items: []CartItem{{
+					ID:       "item-oversized",
+					Quantity: 1,
+					ProductProfile: &ShippingProfile{
+						WeightG:    183,
+						Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400},
+					},
+				}},
 				boxes: []ShippingBox{{
 					ID:               "box-small",
 					Name:             "Caixa Pequena",
@@ -274,32 +260,22 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 					PackagingWeightG: 100,
 				}},
 			},
-			calculator: &fakeShippingCalculator{
-				responses: [][]SuperFreteQuote{{
-					{
-						ServiceCode: "1",
-						ServiceName: "PAC",
-						PriceCents:  999,
-						Package:     &SuperFreteReturnedPackage{HeightMM: 200, WidthMM: 300, LengthMM: 400},
-					},
-				}},
-			},
+			calculator: shippingCalculatorFixture(),
 			wantLogs: []string{
-				"shipping package planning valid_quotes=1 quotes_with_package=1 dimension_variants=1",
-				"shipping packaging boxes candidate_boxes=1",
-				"shipping packaging box index=0",
+				"shipping packaging request product_lines=1 units=1 candidate_boxes=1",
+				"shipping packaging candidate index=0 fits=false",
 				"stage=packaging reason=no_fitting_box",
+				"selection=real_box_packing",
 			},
 		},
 		{
-			name: "final request error",
+			name: "final timeout",
 			repository: &fakeShippingRepository{
 				items: shippingCartItemsFixture(),
 				boxes: shippingBoxesFixture(),
 			},
 			calculator: &fakeShippingCalculator{
-				responses: [][]SuperFreteQuote{planningSuperFreteQuotesFixture()},
-				errs:      []error{nil, &SuperFreteClientError{Category: "timeout"}},
+				errs: []error{&SuperFreteClientError{Category: "timeout"}},
 			},
 			wantLogs: []string{"stage=final reason=final_request_failed category=timeout"},
 		},
@@ -310,10 +286,7 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 				boxes: shippingBoxesFixture(),
 			},
 			calculator: &fakeShippingCalculator{
-				responses: [][]SuperFreteQuote{
-					planningSuperFreteQuotesFixture(),
-					{},
-				},
+				responses: [][]SuperFreteQuote{{}},
 			},
 			wantLogs: []string{"stage=final reason=final_no_valid_quotes"},
 		},
@@ -383,49 +356,7 @@ func TestServicePageLogsShippingNotConfigured(t *testing.T) {
 	}
 }
 
-func TestServicePageLogsPlanningDimensionVariants(t *testing.T) {
-	calculator := &fakeShippingCalculator{
-		responses: [][]SuperFreteQuote{
-			{
-				{
-					ServiceCode: "1",
-					ServiceName: "PAC",
-					PriceCents:  999,
-					Package:     &SuperFreteReturnedPackage{HeightMM: 120, WidthMM: 160, LengthMM: 240},
-				},
-				{
-					ServiceCode: "2",
-					ServiceName: "SEDEX",
-					PriceCents:  1299,
-					Package:     &SuperFreteReturnedPackage{HeightMM: 130, WidthMM: 170, LengthMM: 250},
-				},
-			},
-			finalSuperFreteQuotesFixture(),
-		},
-	}
-	service := shippingServiceFixture(t, &fakeShippingRepository{
-		items: shippingCartItemsFixture(),
-		boxes: shippingBoxesFixture(),
-	}, calculator)
-
-	var page CheckoutShippingPage
-	var err error
-	logs := captureShippingLogs(t, func() {
-		page, err = service.Page(context.Background(), []byte("token-hash"), false)
-	})
-
-	if err != nil {
-		t.Fatalf("expected shipping page, got %v", err)
-	}
-	if page.Unavailable {
-		t.Fatalf("expected available page, got %#v", page)
-	}
-	if !strings.Contains(logs, "shipping package planning valid_quotes=2 quotes_with_package=2 dimension_variants=2") || !strings.Contains(logs, "shipping package planning dimensions_differ=true") {
-		t.Fatalf("expected planning dimension diagnostic, got %q", logs)
-	}
-}
-
-func TestServicePageLogsSafePlanningAndFinalDiagnostics(t *testing.T) {
+func TestServicePageLogsSafePackagingAndFinalDiagnostics(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
 		items: shippingCartItemsFixture(),
@@ -436,12 +367,11 @@ func TestServicePageLogsSafePlanningAndFinalDiagnostics(t *testing.T) {
 		_, _ = service.Page(context.Background(), []byte("token-hash"), false)
 	})
 	for _, want := range []string{
-		"shipping quote request stage=planning product_lines=1 units=2 services=2",
-		"shipping quote request stage=planning line=0 quantity=2 weight_g=285 height_mm=210 width_mm=105 length_mm=90",
-		"shipping package planning valid_quotes=1 quotes_with_package=1 dimension_variants=1",
-		"shipping packaging boxes candidate_boxes=3",
-		"shipping packaging box index=0 internal_h_mm=110 internal_w_mm=150 internal_l_mm=230",
-		"shipping quote request stage=final package_weight_g=690 package_h_mm=140 package_w_mm=180 package_l_mm=260 services=2",
+		"shipping packaging request product_lines=1 units=2 candidate_boxes=3",
+		"shipping packaging line=0 quantity=2 weight_g=285 height_mm=210 width_mm=105 length_mm=90",
+		"shipping packaging candidate index=0 fits=false internal_h_mm=110 internal_w_mm=150 internal_l_mm=230",
+		"shipping packaging selected box_index=2 internal_h_mm=180 internal_w_mm=250 internal_l_mm=350",
+		"shipping quote request stage=final package_weight_g=790 package_h_mm=190 package_w_mm=260 package_l_mm=360 services=2",
 		"shipping quote response stage=final final_valid_quotes=2",
 	} {
 		if !strings.Contains(logs, want) {
@@ -455,7 +385,7 @@ func TestServicePageLogsSafePlanningAndFinalDiagnostics(t *testing.T) {
 	}
 }
 
-func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
+func TestServicePageUsesRealBoxThenSingleFinalQuote(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
 		items: shippingCartItemsFixture(),
@@ -469,23 +399,15 @@ func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
 	if page.Unavailable {
 		t.Fatalf("expected available quotes, got %#v", page)
 	}
-	if len(calculator.requests) != 2 {
-		t.Fatalf("expected planning and final requests, got %d", len(calculator.requests))
+	if len(calculator.requests) != 1 {
+		t.Fatalf("expected one final request, got %d", len(calculator.requests))
 	}
 
-	planning := calculator.requests[0]
-	if planning.Package != nil || len(planning.Products) != 1 {
-		t.Fatalf("expected planning request with products only, got %#v", planning)
-	}
-	if planning.Products[0].Quantity != 2 || planning.Products[0].WeightKG != 0.285 || planning.Products[0].HeightCM != 21 {
-		t.Fatalf("expected product profile converted to SuperFrete units, got %#v", planning.Products[0])
-	}
-
-	final := calculator.requests[1]
+	final := calculator.requests[0]
 	if len(final.Products) != 0 || final.Package == nil {
 		t.Fatalf("expected final request with package only, got %#v", final)
 	}
-	if final.Package.WeightKG != 0.69 || final.Package.HeightCM != 14 || final.Package.WidthCM != 18 || final.Package.LengthCM != 26 {
+	if final.Package.WeightKG != 0.79 || final.Package.HeightCM != 19 || final.Package.WidthCM != 26 || final.Package.LengthCM != 36 {
 		t.Fatalf("expected final package to use real external box and packaging weight, got %#v", final.Package)
 	}
 
@@ -497,9 +419,6 @@ func TestServicePageUsesPlanningPackageThenFinalRealBoxQuote(t *testing.T) {
 	}
 	if page.Quotes[0].ServiceCode != "1" || page.Quotes[0].PriceCents != 1890 || page.Quotes[0].PriceBRL != "R$ 18,90" {
 		t.Fatalf("expected final PAC quote, got %#v", page.Quotes[0])
-	}
-	if page.Quotes[0].PriceCents == 999 {
-		t.Fatal("expected planning price not to be presented to customer")
 	}
 	if page.ProductsSubtotalBRL != "R$ 79,80" || page.ShippingPriceBRL != "" || page.PartialTotalBRL != "" {
 		t.Fatalf("expected products subtotal only before selection, got %#v", page)
@@ -532,7 +451,6 @@ func TestServiceSelectRevalidatesAndPersistsCurrentQuote(t *testing.T) {
 	}
 	calculator := &fakeShippingCalculator{
 		responses: [][]SuperFreteQuote{
-			planningSuperFreteQuotesFixture(),
 			{
 				{
 					ServiceCode:      "1",
@@ -560,7 +478,7 @@ func TestServiceSelectRevalidatesAndPersistsCurrentQuote(t *testing.T) {
 	if saved.ServiceCode != "1" || saved.ServiceName != "PAC" || saved.CarrierName != "Correios" || saved.PriceCents != 2090 {
 		t.Fatalf("expected current final quote to be persisted, got %#v", saved)
 	}
-	if saved.ShippingBoxID != "box-medium" || saved.PackageWeightG != 690 || saved.PackageHeightMM != 140 || saved.PackageWidthMM != 180 || saved.PackageLengthMM != 260 {
+	if saved.ShippingBoxID != "box-large" || saved.PackageWeightG != 790 || saved.PackageHeightMM != 190 || saved.PackageWidthMM != 260 || saved.PackageLengthMM != 360 {
 		t.Fatalf("expected real package snapshot, got %#v", saved)
 	}
 	if len(saved.InputHash) != 32 {
@@ -569,8 +487,8 @@ func TestServiceSelectRevalidatesAndPersistsCurrentQuote(t *testing.T) {
 	if !saved.QuotedAt.Equal(now) || !saved.ExpiresAt.Equal(now.Add(QuoteTTL)) {
 		t.Fatalf("expected 30 minute validity, got quoted_at=%s expires_at=%s", saved.QuotedAt, saved.ExpiresAt)
 	}
-	if len(calculator.requests) != 2 || calculator.requests[1].Package == nil {
-		t.Fatalf("expected selection to re-run final package quote, got %#v", calculator.requests)
+	if len(calculator.requests) != 1 || calculator.requests[0].Package == nil {
+		t.Fatalf("expected selection to run one final package quote, got %#v", calculator.requests)
 	}
 }
 
@@ -596,7 +514,7 @@ func TestServiceSelectRejectsUnavailableServiceWithoutPersisting(t *testing.T) {
 func TestServicePageMarksOnlyValidCurrentSelection(t *testing.T) {
 	now := time.Date(2026, 9, 9, 18, 30, 0, 0, time.UTC)
 	boxes := shippingBoxesFixture()
-	currentHash := shippingInputHashFixture(t, boxes[1])
+	currentHash := shippingInputHashFixture(t, boxes[2])
 
 	tests := []struct {
 		name      string
@@ -790,21 +708,6 @@ func shippingBoxesFixture() []ShippingBox {
 	}
 }
 
-func planningSuperFreteQuotesFixture() []SuperFreteQuote {
-	return []SuperFreteQuote{
-		{
-			ServiceCode: "1",
-			ServiceName: "PAC",
-			PriceCents:  999,
-			Package: &SuperFreteReturnedPackage{
-				HeightMM: 120,
-				WidthMM:  160,
-				LengthMM: 240,
-			},
-		},
-	}
-}
-
 func finalSuperFreteQuotesFixture() []SuperFreteQuote {
 	return []SuperFreteQuote{
 		{
@@ -826,10 +729,7 @@ func finalSuperFreteQuotesFixture() []SuperFreteQuote {
 
 func shippingCalculatorFixture() *fakeShippingCalculator {
 	return &fakeShippingCalculator{
-		responses: [][]SuperFreteQuote{
-			planningSuperFreteQuotesFixture(),
-			finalSuperFreteQuotesFixture(),
-		},
+		responses: [][]SuperFreteQuote{finalSuperFreteQuotesFixture()},
 	}
 }
 

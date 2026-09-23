@@ -92,7 +92,7 @@ Nesta fase, o backend implementa:
 - Validar CPF, telefone, CEP, UF e pais no backend.
 - Salvar contato e endereco em transacao PostgreSQL.
 - Calcular frete no backend, nunca a partir de preco enviado pelo navegador.
-- Usar duas chamadas ao calculator da SuperFrete: `products` para obter pacote ideal e `package` com caixa fisica real para cotacao final.
+- Escolher a caixa fisica real no backend antes da cotacao e usar uma unica chamada ao calculator da SuperFrete com `package` final.
 - Escolher a menor caixa real ativa que comporte o pacote ideal usando dimensoes internas e rotacao.
 - Persistir selecao de frete com snapshot do pacote real, preco em centavos, validade de 30 minutos e `input_hash`.
 - Criar pedidos como snapshots imutaveis de checkout.

@@ -21,7 +21,7 @@ Implementar a primeira etapa real de frete da PrintLab:
 - RLS habilitado em tabelas de frete, sem policies publicas.
 - Dominio `internal/shipping` para perfis, caixas, conversoes, hash, service e repository.
 - Cliente SuperFrete com `net/http`, Bearer token, `User-Agent`, timeout e DTOs isolados.
-- Cotacao em duas etapas: `products` para pacote ideal e `package` com caixa real para preco final.
+- Cotacao atual usa caixa fisica real selecionada pela PrintLab antes da chamada unica `package`; a cotacao historica em duas etapas foi substituida posteriormente.
 - Rotas `GET /checkout/frete` e `POST /checkout/frete`.
 - UI SSR sem JavaScript obrigatorio, com radios HTML.
 - Revalidacao server-side no POST.

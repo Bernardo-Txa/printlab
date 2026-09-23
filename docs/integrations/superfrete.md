@@ -80,42 +80,52 @@ O `Error()` nao inclui token, corpo bruto da SuperFrete, payload de cotacao, CEP
 
 ## Estrategia de cotacao
 
-A PrintLab nao implementa bin packing 3D proprio nesta fase.
+A PrintLab e a fonte de verdade da embalagem fisica. A SuperFrete e responsavel por preco, prazo e disponibilidade dos servicos.
 
-Fluxo aprovado:
+Fluxo aprovado do checkout:
 
 ```text
 Produtos do carrinho
-  -> SuperFrete calculator com products
-  -> pacote ideal retornado pela SuperFrete
-  -> menor caixa fisica real compativel em shipping_boxes
+  -> PrintLab seleciona a menor caixa fisica real compativel
+  -> peso final = produtos + embalagem
   -> SuperFrete calculator com package real
   -> cotacao final exibida ao cliente
 ```
 
-Primeira chamada:
+Antes da chamada externa, o backend:
+
+- expande cada `QuoteProduct` por quantidade;
+- testa rotacoes axis-aligned dos cuboides;
+- usa um empacotador conservador de pontos extremos, sem sobreposicao;
+- aceita falso negativo conservador, mas nao aceita falso positivo;
+- escolhe caixas por menor volume interno compativel, com desempates deterministicos por `sort_order`, volume externo, peso da embalagem, nome, slug e ID;
+- calcula peso final em gramas com `TotalPackageWeightG`.
+
+A chamada comercial da SuperFrete:
 
 - envia `from.postal_code`;
 - envia `to.postal_code`;
 - envia `services`;
 - envia `options` com adicionais desabilitados;
-- envia `products`, um item por linha logistica do carrinho;
-- usa peso em kg e dimensoes em cm somente no DTO externo;
-- registra antes da chamada apenas totais de linhas, unidades, quantidade de servicos e, por linha, quantidade, peso em gramas e dimensoes em milimetros, sem nome, ID, CEP, carrinho ou cliente;
-- registra apos a chamada a quantidade de cotacoes validas, cotacoes com pacote e variantes dimensionais; esse contador nao representa volumes fisicos.
-
-Segunda chamada:
-
-- envia `package`;
+- envia somente `package`;
 - usa dimensoes externas da caixa fisica selecionada;
-- usa peso final em kg, calculado por peso logistico dos produtos + `packaging_weight_g`;
-- nao envia `products` simultaneamente;
-- registra antes da chamada somente peso total em gramas, dimensoes externas do pacote em milimetros e quantidade de servicos;
-- registra apos a chamada a quantidade de cotacoes finais validas.
+- usa peso final em kg;
+- nao envia `products` simultaneamente.
 
-Somente o preco da segunda chamada e apresentado ao cliente.
+O cliente HTTP ainda suporta payload `products` para compatibilidade e testes isolados de contrato da API, mas o checkout real nao usa essa etapa.
 
-A modalidade `pickup` (retirada no local) nao pertence ao fluxo SuperFrete. Ela e selecionada e persistida pelo backend com `delivery_method=pickup`, preco zero e campos de servico vazios, sem chamada de planejamento, sem chamada final, sem perfil logistico e sem caixa.
+Logs seguros do fluxo:
+
+- antes da selecao: `shipping packaging request product_lines=N units=N candidate_boxes=N`;
+- por linha logistica: quantidade, peso em gramas e dimensoes em milimetros;
+- por caixa candidata: indice, `fits`, dimensoes internas;
+- apos selecionar: `shipping packaging selected ...` com dimensoes internas/externas e peso de embalagem;
+- antes da chamada externa: `shipping quote request stage=final ...`;
+- apos a chamada externa: `shipping quote response stage=final final_valid_quotes=N`.
+
+Somente o preco da chamada com `package` real e apresentado ao cliente.
+
+A modalidade `pickup` (retirada no local) nao pertence ao fluxo SuperFrete. Ela e selecionada e persistida pelo backend com `delivery_method=pickup`, preco zero e campos de servico vazios, sem chamada externa, sem perfil logistico e sem caixa.
 
 ## Embalagem
 
@@ -150,9 +160,6 @@ Falhas de frete sao classificadas internamente por estagio e motivo seguro:
 
 - `shipping_not_configured`;
 - `no_active_boxes`;
-- `planning_request_failed`;
-- `planning_no_valid_quotes`;
-- `planning_no_package`;
 - `no_fitting_box`;
 - `final_request_failed`;
 - `final_no_valid_quotes`.
@@ -207,4 +214,4 @@ Nao criar dados ficticios em migration nem registrar secrets na documentacao. A 
 
 ## Diagnostico temporario de encaixe
 
-Falhas `no_fitting_box` registram somente dimensoes numericas em mm, contagem de cotacoes/caixas e deficits por eixo ordenado. O registro e limitado, sem PII ou identificadores persistentes. O algoritmo e o fluxo de cotacao permanecem iguais. Esta correcao reforca diagnosticos e testes; a validacao real em producao deve ser feita manualmente apos deploy. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.
+Falhas `no_fitting_box` agora significam que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. O registro e limitado, sem PII ou identificadores persistentes. Esta correcao troca o fluxo comercial para caixa real antes da cotacao; a validacao real em producao deve ser feita manualmente apos deploy. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.
