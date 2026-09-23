@@ -113,9 +113,9 @@ Quando o cliente escolhe receber em casa (`delivery_method=shipping`), o frete e
 - pelo menos uma caixa real ativa cadastrada;
 - SuperFrete configurada para cotacao real.
 
-Se nao houver carrinho valido, a rota redireciona para `/carrinho`. Se os dados ainda nao existirem, redireciona para `/checkout/dados`. Produto sem perfil logistico ou ausencia de caixa real retorna estado operacional de indisponibilidade sem estimar peso, dimensoes ou preco.
+Se nao houver carrinho valido, a rota redireciona para `/carrinho`. Se os dados ainda nao existirem, redireciona para `/checkout/dados`. Produto sem perfil logistico, ausencia de caixa ativa ou configuracao SuperFrete ausente retorna estado operacional de indisponibilidade sem inventar preco.
 
-O backend calcula frete com a PrintLab como fonte de verdade da embalagem fisica: expande os itens por quantidade, testa rotacoes e posicoes sem sobreposicao nas caixas ativas, escolhe a menor caixa real compativel, soma `packaging_weight_g` ao peso dos produtos e faz uma unica cotacao SuperFrete com `package` usando medidas externas da caixa. A SuperFrete define preco, prazo e servicos disponiveis; ela nao escolhe a caixa da PrintLab.
+O backend calcula frete com a PrintLab como fonte de verdade da embalagem fisica: expande os itens por quantidade, testa rotacoes e posicoes sem sobreposicao nas caixas ativas e escolhe a menor caixa real compativel. Quando nenhuma caixa real comporta os itens, usa uma embalagem estimada conservadora sem gravar `shipping_box_id`. Em ambos os casos, faz uma unica cotacao SuperFrete com `package` usando medidas e peso finais. A SuperFrete define preco, prazo e servicos disponiveis; ela nao escolhe a caixa da PrintLab.
 
 Quando `delivery_method=pickup`, o backend ignora a cotacao de frete, salva preco zero e campos operacionais vazios. A revisao e o pedido exibem “Retirada no local” e “Grátis”; a modalidade `shipping` continua com as validacoes e o fingerprint existentes.
 

@@ -317,7 +317,7 @@ func TestBuildInputHash(t *testing.T) {
 	assertDifferentHash(t, first, changedVariant)
 
 	changedBox := quoteFingerprintFixture()
-	changedBox.Box.ID = "box-b"
+	changedBox.Packaging.ID = "box-b"
 	assertDifferentHash(t, first, changedBox)
 }
 
@@ -374,6 +374,104 @@ func TestBuildCartInputHashMatchesSelectionFingerprint(t *testing.T) {
 	}
 }
 
+func TestFallbackPackageForProductsUsesConservativeVilaNatalinaExample(t *testing.T) {
+	pack, err := FallbackPackageForProducts([]QuoteProduct{{
+		Quantity: 1,
+		Profile:  ShippingProfile{WeightG: 264, Dimensions: DimensionsMM{Height: 135, Width: 298, Length: 334}},
+	}})
+	if err != nil {
+		t.Fatalf("expected fallback package, got %v", err)
+	}
+	if pack.PackagingSource != PackagingSourceFallback || pack.Box.ID != "" {
+		t.Fatalf("expected fallback source without real box id, got %#v", pack)
+	}
+	if pack.Dimensions != (DimensionsMM{Height: 180, Width: 340, Length: 380}) {
+		t.Fatalf("expected rounded fallback dimensions, got %#v", pack.Dimensions)
+	}
+	if pack.PackagingWeightG != 150 || pack.WeightG != 450 {
+		t.Fatalf("expected fallback weights 150/450g, got packaging=%d total=%d", pack.PackagingWeightG, pack.WeightG)
+	}
+}
+
+func TestFallbackPackageForProductsSumsUnitLength(t *testing.T) {
+	pack, err := FallbackPackageForProducts([]QuoteProduct{{
+		Quantity: 2,
+		Profile:  ShippingProfile{WeightG: 100, Dimensions: DimensionsMM{Height: 50, Width: 80, Length: 120}},
+	}})
+	if err != nil {
+		t.Fatalf("expected fallback package, got %v", err)
+	}
+	if pack.Dimensions != (DimensionsMM{Height: 90, Width: 120, Length: 300}) {
+		t.Fatalf("expected two unit lengths plus external margin rounded up, got %#v", pack.Dimensions)
+	}
+}
+
+func TestFallbackPackageForProductsHandlesMultipleProducts(t *testing.T) {
+	pack, err := FallbackPackageForProducts([]QuoteProduct{
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 80, Dimensions: DimensionsMM{Height: 30, Width: 60, Length: 90}}},
+		{Quantity: 1, Profile: ShippingProfile{WeightG: 90, Dimensions: DimensionsMM{Height: 40, Width: 70, Length: 150}}},
+	})
+	if err != nil {
+		t.Fatalf("expected fallback package, got %v", err)
+	}
+	if pack.Dimensions != (DimensionsMM{Height: 80, Width: 110, Length: 300}) {
+		t.Fatalf("expected multiple products to share max height/width and summed length, got %#v", pack.Dimensions)
+	}
+	if pack.WeightG != 350 {
+		t.Fatalf("expected total fallback weight rounded to 350g, got %d", pack.WeightG)
+	}
+}
+
+func TestFallbackPackageForProductsRoundsDimensionsUp(t *testing.T) {
+	pack, err := FallbackPackageForProducts([]QuoteProduct{{
+		Quantity: 1,
+		Profile:  ShippingProfile{WeightG: 10, Dimensions: DimensionsMM{Height: 101, Width: 142, Length: 213}},
+	}})
+	if err != nil {
+		t.Fatalf("expected fallback package, got %v", err)
+	}
+	if pack.Dimensions != (DimensionsMM{Height: 150, Width: 190, Length: 260}) {
+		t.Fatalf("expected dimensions rounded to next 10mm, got %#v", pack.Dimensions)
+	}
+}
+
+func TestFallbackPackagingWeightRules(t *testing.T) {
+	tests := []struct {
+		name           string
+		goodsWeightG   int64
+		units          int
+		wantPackagingG int64
+	}{
+		{name: "minimum 150g", goodsWeightG: 264, units: 1, wantPackagingG: 150},
+		{name: "twenty five percent wins", goodsWeightG: 1000, units: 1, wantPackagingG: 250},
+		{name: "fifty grams per unit wins", goodsWeightG: 100, units: 5, wantPackagingG: 250},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := fallbackPackagingWeightG(tt.goodsWeightG, tt.units); got != tt.wantPackagingG {
+				t.Fatalf("expected %dg packaging, got %dg", tt.wantPackagingG, got)
+			}
+		})
+	}
+}
+
+func TestQuoteFingerprintDiffersForRealBoxAndFallbackPackage(t *testing.T) {
+	realBox := quoteFingerprintFixture()
+	fallback := quoteFingerprintFixture()
+	fallback.Packaging = QuotePackageFingerprint{
+		Source:           PackagingSourceFallback,
+		ExternalHeightMM: 180,
+		ExternalWidthMM:  340,
+		ExternalLengthMM: 380,
+		PackagingWeightG: 150,
+	}
+	first, err := BuildInputHash(realBox)
+	if err != nil {
+		t.Fatalf("expected real box hash, got %v", err)
+	}
+	assertDifferentHash(t, first, fallback)
+}
+
 func quoteFingerprintFixture() QuoteFingerprint {
 	return QuoteFingerprint{
 		OriginPostalCode:      "01153000",
@@ -388,7 +486,8 @@ func quoteFingerprintFixture() QuoteFingerprint {
 			{ID: "item-a", ProductID: "product-a", VariantID: "variant-a", Quantity: 1, WeightG: 280, HeightMM: 100, WidthMM: 120, LengthMM: 200},
 			{ID: "item-b", ProductID: "product-b", Quantity: 2, WeightG: 35, HeightMM: 50, WidthMM: 60, LengthMM: 70},
 		},
-		Box: QuoteBoxFingerprint{
+		Packaging: QuotePackageFingerprint{
+			Source:           PackagingSourceRealBox,
 			ID:               "box-a",
 			ExternalHeightMM: 120,
 			ExternalWidthMM:  150,

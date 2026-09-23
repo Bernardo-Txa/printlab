@@ -392,7 +392,18 @@ func (r *PostgresRepository) reviewForCart(ctx context.Context, q queryer, cartI
 		if !details.HasAddress {
 			return ReviewPage{}, ErrDetailsRequired
 		}
-		currentHash, err := shipping.BuildCartInputHash(params.OriginPostalCode, details.Address.PostalCode, params.ServiceCodes, shippingItems, box)
+
+		packageSnapshot, err := reviewShippingPackageSnapshot(shippingItems, box)
+		if err != nil {
+			if errors.Is(err, shipping.ErrAmountOverflow) {
+				return ReviewPage{}, ErrAmountOverflow
+			}
+			return ReviewPage{}, ErrShippingChanged
+		}
+		if !reviewShippingPackageMatchesSelection(shippingDetails, packageSnapshot) {
+			return ReviewPage{}, ErrShippingChanged
+		}
+		currentHash, err := shipping.BuildCartPackageInputHash(params.OriginPostalCode, details.Address.PostalCode, params.ServiceCodes, shippingItems, packageSnapshot)
 		if err != nil {
 			if errors.Is(err, shipping.ErrAmountOverflow) {
 				return ReviewPage{}, ErrAmountOverflow
@@ -773,6 +784,52 @@ func (r *PostgresRepository) checkoutDetails(ctx context.Context, q queryer, car
 	return details, nil
 }
 
+func reviewShippingPackageMatchesSelection(details ReviewShipping, packageSnapshot shipping.ShippingPackage) bool {
+	return details.PackageWeightG == packageSnapshot.WeightG &&
+		details.PackageHeightMM == packageSnapshot.Dimensions.Height &&
+		details.PackageWidthMM == packageSnapshot.Dimensions.Width &&
+		details.PackageLengthMM == packageSnapshot.Dimensions.Length
+}
+
+func reviewShippingPackageSnapshot(items []shipping.CartItem, box shipping.ShippingBox) (shipping.ShippingPackage, error) {
+	if box.ID != "" {
+		products := quoteProductsFromCartItems(items)
+		if len(products) != len(items) {
+			return shipping.ShippingPackage{}, shipping.ErrMissingShippingProfile
+		}
+		totalWeightG, err := shipping.TotalPackageWeightG(products, box.PackagingWeightG)
+		if err != nil {
+			return shipping.ShippingPackage{}, err
+		}
+		return shipping.ShippingPackage{
+			Box:              box,
+			PackagingSource:  shipping.PackagingSourceRealBox,
+			PackagingWeightG: box.PackagingWeightG,
+			WeightG:          totalWeightG,
+			Dimensions:       box.External,
+		}, nil
+	}
+	return shipping.FallbackPackageForCartItems(items)
+}
+
+func quoteProductsFromCartItems(items []shipping.CartItem) []shipping.QuoteProduct {
+	products := make([]shipping.QuoteProduct, 0, len(items))
+	for _, item := range items {
+		profile, ok := shipping.EffectiveShippingProfile(item)
+		if !ok {
+			return nil
+		}
+		products = append(products, shipping.QuoteProduct{
+			ID:        item.ID,
+			ProductID: item.ProductID,
+			VariantID: item.VariantID,
+			Quantity:  item.Quantity,
+			Profile:   profile,
+		})
+	}
+	return products
+}
+
 func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, cartID string, now time.Time) (ReviewShipping, shipping.ShippingBox, []byte, error) {
 	var selection ReviewShipping
 	var box shipping.ShippingBox
@@ -817,7 +874,7 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 			on box.id = selection.shipping_box_id
 			and box.is_active = true
 		where selection.cart_id = $1::uuid
-			and (selection.delivery_method = 'pickup' or box.id is not null)
+			and (selection.delivery_method = 'pickup' or selection.shipping_box_id is null or box.id is not null)
 	`, cartID).Scan(
 		&selection.DeliveryMethod,
 		&selection.Provider,
@@ -884,7 +941,14 @@ func (r *PostgresRepository) shippingSelection(ctx context.Context, q queryer, c
 		value := int(deliveryTime.Int32)
 		selection.DeliveryTimeDays = &value
 	}
-	selection.ShippingBoxName = box.Name
+	if box.ID != "" {
+		selection.ShippingBoxName = box.Name
+	} else {
+		if selection.PackageWeightG <= 0 || selection.PackageHeightMM <= 0 || selection.PackageWidthMM <= 0 || selection.PackageLengthMM <= 0 {
+			return ReviewShipping{}, shipping.ShippingBox{}, nil, ErrShippingChanged
+		}
+		selection.ShippingBoxName = shipping.FallbackShippingBoxName
+	}
 	selection.QuotedAt = &quotedAt
 
 	return selection, box, inputHash, nil

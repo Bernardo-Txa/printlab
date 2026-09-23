@@ -67,8 +67,8 @@ func TestNoFittingBoxDiagnosticBoundsAndInvalidDimensions(t *testing.T) {
 	}
 }
 
-func TestPackagingFailureLogsCandidatesWithoutFinalQuote(t *testing.T) {
-	calculator := shippingCalculatorFixture()
+func TestNoFittingBoxLogsFallbackAndStillUsesFinalPackageQuote(t *testing.T) {
+	calculator := &fakeShippingCalculator{responses: [][]SuperFreteQuote{{}}}
 	service := shippingServiceFixture(t, &fakeShippingRepository{
 		items: []CartItem{{Quantity: 1, ProductProfile: &ShippingProfile{WeightG: 183, Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400}}}},
 		boxes: shippingBoxesFixture(),
@@ -79,11 +79,18 @@ func TestPackagingFailureLogsCandidatesWithoutFinalQuote(t *testing.T) {
 			t.Fatalf("page unavailable=%v err=%v", page.Unavailable, err)
 		}
 	})
-	if !strings.Contains(logs, "shipping packaging diagnostic") || !strings.Contains(logs, `"packing_algorithm":"deterministic_extreme_points"`) {
-		t.Fatal("missing diagnosis")
+	for _, want := range []string{
+		"shipping packaging fallback reason=no_fitting_box",
+		"shipping packaging selected source=fallback",
+		"shipping quote request stage=final",
+		"stage=final reason=final_no_valid_quotes",
+	} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("expected log %q, got %q", want, logs)
+		}
 	}
-	if len(calculator.requests) != 0 {
-		t.Fatal("SuperFrete must not be called without a fitting real box")
+	if len(calculator.requests) != 1 || calculator.requests[0].Package == nil || len(calculator.requests[0].Products) != 0 {
+		t.Fatalf("expected one package-only SuperFrete request, got %#v", calculator.requests)
 	}
 }
 

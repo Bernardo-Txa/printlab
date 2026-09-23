@@ -93,8 +93,8 @@ Nesta fase, o backend implementa:
 - Salvar contato e endereco em transacao PostgreSQL.
 - Calcular frete no backend, nunca a partir de preco enviado pelo navegador.
 - Escolher a caixa fisica real no backend antes da cotacao e usar uma unica chamada ao calculator da SuperFrete com `package` final.
-- Escolher a menor caixa real ativa que comporte o pacote ideal usando dimensoes internas e rotacao.
-- Persistir selecao de frete com snapshot do pacote real, preco em centavos, validade de 30 minutos e `input_hash`.
+- Escolher a menor caixa real ativa que comporte os itens usando dimensoes internas e rotacao; se nenhuma comportar, usar fallback conservador de embalagem estimada sem gravar `shipping_box_id`.
+- Persistir selecao de frete com snapshot do pacote real ou estimado, preco em centavos, validade de 30 minutos e `input_hash`.
 - Criar pedidos como snapshots imutaveis de checkout.
 - Usar `orders.source_cart_id` como defesa de idempotencia para confirmacao duplicada.
 - Usar UUID em `/pedido/{id}` e `order_number` apenas como referencia humana.
@@ -162,14 +162,11 @@ Para `shipping`, o service resolve o perfil logistico efetivo de cada linha a pa
 
 Para `pickup`, o service nao chama SuperFrete, nao lista caixas e nao exige perfil logistico. O backend persiste preco zero, `delivery_method=pickup` e campos operacionais vazios.
 
-A cotacao usa duas chamadas SuperFrete:
+A cotacao comercial usa uma chamada SuperFrete com `package`: peso em kg e dimensoes em cm convertidos a partir do pacote final calculado em gramas e milimetros. O pacote final vem da menor caixa real compativel ou da embalagem estimada conservadora de fallback quando nenhuma caixa ativa comporta os itens.
 
-1. Planejamento com `products`, usando peso em kg e dimensoes em cm convertidos a partir dos valores internos em gramas e milimetros.
-2. Cotacao final com `package`, usando peso dos produtos somado a `shipping_boxes.packaging_weight_g` e dimensoes externas da menor caixa real compativel.
+Somente essa cotacao final e apresentada ao cliente. O POST recebe `delivery_method` e, para envio, apenas `service_code`; reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
 
-Somente o resultado da segunda chamada e apresentado ao cliente. O POST recebe `delivery_method` e, para envio, apenas `service_code`; reexecuta a cotacao atual, persiste a opcao se ela ainda existir e ignora qualquer preco ou dimensao que o navegador tente enviar.
-
-Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` atual diverge por mudanca de carrinho, variante, perfil logistico, CEP, servicos ou caixa.
+Selecoes antigas sao consideradas invalidas se expiraram ou se o `input_hash` atual diverge por mudanca de carrinho, variante, perfil logistico, CEP, servicos, origem do pacote (`real_box` ou `fallback`), dimensoes ou peso de embalagem.
 
 ## Pedidos
 

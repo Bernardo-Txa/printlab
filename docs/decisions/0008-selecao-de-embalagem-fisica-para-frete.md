@@ -52,3 +52,7 @@ A segunda chamada ao calculator usa as dimensoes externas da caixa real e o peso
 - A qualidade da cotacao depende de perfis logisticos e caixas reais bem cadastrados.
 - Sem perfil logistico ou sem caixa compativel, o checkout mostra indisponibilidade em vez de inventar dados.
 - Multi-volume permanece como melhoria futura.
+
+## Nota posterior
+
+Em 2026-09-23, o fluxo comercial foi simplificado para uma unica chamada SuperFrete com `package`: a PrintLab tenta primeiro a menor caixa real compativel; quando nenhuma caixa comporta os itens, usa uma embalagem estimada conservadora, sem persistir `shipping_box_id`, para evitar indisponibilidade desnecessaria. A decisao original permanece como historico da transicao para a PrintLab como fonte de verdade da embalagem.

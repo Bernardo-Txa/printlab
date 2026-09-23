@@ -248,7 +248,7 @@ Quando existirem dados reais de desenvolvimento:
 - cadastrar pelo menos uma caixa fisica real ativa;
 - validar uma cotacao Sandbox real sem criar etiqueta/postagem.
 
-A Fase 8.1 adiciona diagnosticos seguros para diferenciar falhas de configuracao, caixas, planejamento, pacote retornado, encaixe em caixa real, chamada final e cotacoes finais vazias. Esses logs nao devem registrar CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto da SuperFrete.
+A Fase 8.1 adiciona diagnosticos seguros para diferenciar falhas de configuracao, caixas, planejamento, fallback de embalagem, chamada final e cotacoes finais vazias. Esses logs nao devem registrar CEP, CPF, telefone, e-mail, endereco, token ou corpo bruto da SuperFrete.
 
 A validacao Sandbox real da Fase 8 foi confirmada manualmente antes da Fase 9: planejamento retornou pacote, caixa pequena foi rejeitada, caixa compativel permitiu cotacao final, modalidades foram exibidas, uma modalidade foi selecionada e `cart_shipping_selections` persistiu a selecao. Nenhum secret, CEP ou dado pessoal deve ser registrado.
 

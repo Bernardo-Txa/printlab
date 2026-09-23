@@ -86,9 +86,10 @@ Fluxo aprovado do checkout:
 
 ```text
 Produtos do carrinho
-  -> PrintLab seleciona a menor caixa fisica real compativel
-  -> peso final = produtos + embalagem
-  -> SuperFrete calculator com package real
+  -> PrintLab tenta selecionar a menor caixa fisica real compativel
+  -> se nao houver encaixe, monta embalagem estimada conservadora
+  -> peso final = produtos + embalagem real ou estimada
+  -> SuperFrete calculator com package final
   -> cotacao final exibida ao cliente
 ```
 
@@ -99,7 +100,8 @@ Antes da chamada externa, o backend:
 - usa um empacotador conservador de pontos extremos, sem sobreposicao;
 - aceita falso negativo conservador, mas nao aceita falso positivo;
 - escolhe caixas por menor volume interno compativel, com desempates deterministicos por `sort_order`, volume externo, peso da embalagem, nome, slug e ID;
-- calcula peso final em gramas com `TotalPackageWeightG`.
+- quando nenhuma caixa real comporta os itens, calcula uma embalagem estimada conservadora por unidade, soma comprimentos, aplica margem externa, arredonda dimensoes para 10 mm e peso para 50 g;
+- calcula peso final em gramas com `TotalPackageWeightG` para caixa real ou com a regra conservadora de fallback.
 
 A chamada comercial da SuperFrete:
 
@@ -108,7 +110,7 @@ A chamada comercial da SuperFrete:
 - envia `services`;
 - envia `options` com adicionais desabilitados;
 - envia somente `package`;
-- usa dimensoes externas da caixa fisica selecionada;
+- usa dimensoes externas da caixa fisica selecionada ou da embalagem estimada de fallback;
 - usa peso final em kg;
 - nao envia `products` simultaneamente.
 
@@ -119,7 +121,7 @@ Logs seguros do fluxo:
 - antes da selecao: `shipping packaging request product_lines=N units=N candidate_boxes=N`;
 - por linha logistica: quantidade, peso em gramas e dimensoes em milimetros;
 - por caixa candidata: indice, `fits`, dimensoes internas;
-- apos selecionar: `shipping packaging selected ...` com dimensoes internas/externas e peso de embalagem;
+- apos selecionar: `shipping packaging selected source=real_box ...` com dimensoes internas/externas e peso de embalagem, ou `shipping packaging selected source=fallback ...` com pacote estimado;
 - antes da chamada externa: `shipping quote request stage=final ...`;
 - apos a chamada externa: `shipping quote response stage=final final_valid_quotes=N`.
 
@@ -214,4 +216,4 @@ Nao criar dados ficticios em migration nem registrar secrets na documentacao. A 
 
 ## Diagnostico temporario de encaixe
 
-Falhas `no_fitting_box` agora significam que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. O registro e limitado, sem PII ou identificadores persistentes. Esta correcao troca o fluxo comercial para caixa real antes da cotacao; a validacao real em producao deve ser feita manualmente apos deploy. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar novos diagnosticos, se o erro voltar.
+`no_fitting_box` agora aciona uma embalagem estimada conservadora quando nenhuma caixa real comporta os itens. O registro e limitado, sem PII ou identificadores persistentes. A validacao real em producao deve ser feita manualmente apos deploy. Consulte o [runbook do incidente](../operations/shipping-packaging-diagnostic.md) para interpretar diagnosticos, se o erro voltar.

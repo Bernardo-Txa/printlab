@@ -278,7 +278,7 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 
 	logPackagingRequest(preparedItems, boxes)
 	logPackagingCandidates(preparedItems, boxes)
-	box, err := SelectShippingBoxForProducts(preparedItems, boxes)
+	packageSnapshot, err := s.packageForQuote(preparedItems, boxes)
 	if err != nil {
 		logShippingQuoteUnavailable("packaging", "no_fitting_box", nil)
 		logNoFittingBoxDiagnostics(preparedItems, boxes)
@@ -286,34 +286,22 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 		page.Message = "Não conseguimos calcular automaticamente o frete para este carrinho."
 		return PreparedQuote{}, page, nil
 	}
-	logPackagingSelected(box, boxes)
 
-	totalWeightG, err := TotalPackageWeightG(preparedItems, box.PackagingWeightG)
-	if err != nil {
-		return PreparedQuote{}, page, err
-	}
-
-	inputHash, err := BuildInputHash(quoteFingerprint(s.originCEP, details.Address.PostalCode, s.serviceCodes, preparedItems, box))
+	inputHash, err := BuildInputHash(quoteFingerprint(s.originCEP, details.Address.PostalCode, s.serviceCodes, preparedItems, packageSnapshot))
 	if err != nil {
 		return PreparedQuote{}, page, ErrUnavailable
 	}
-
-	packageSnapshot := ShippingPackage{
-		Box:        box,
-		WeightG:    totalWeightG,
-		Dimensions: box.External,
-		InputHash:  inputHash,
-	}
-	logShippingQuoteRequest("final", nil, totalWeightG, box.External, len(s.serviceCodes))
+	packageSnapshot.InputHash = inputHash
+	logShippingQuoteRequest("final", nil, packageSnapshot.WeightG, packageSnapshot.Dimensions, len(s.serviceCodes))
 	finalQuotes, err := s.calculator.Calculate(ctx, SuperFreteCalculatorRequest{
 		FromPostalCode: s.originCEP,
 		ToPostalCode:   details.Address.PostalCode,
 		Services:       s.serviceList,
 		Package: &SuperFretePackage{
-			WeightKG: GramsToKilograms(totalWeightG),
-			HeightCM: MillimetersToCentimeters(box.External.Height),
-			WidthCM:  MillimetersToCentimeters(box.External.Width),
-			LengthCM: MillimetersToCentimeters(box.External.Length),
+			WeightKG: GramsToKilograms(packageSnapshot.WeightG),
+			HeightCM: MillimetersToCentimeters(packageSnapshot.Dimensions.Height),
+			WidthCM:  MillimetersToCentimeters(packageSnapshot.Dimensions.Width),
+			LengthCM: MillimetersToCentimeters(packageSnapshot.Dimensions.Length),
 		},
 	})
 	if err != nil {
@@ -355,6 +343,32 @@ func (s *Service) prepareQuotes(ctx context.Context, tokenHash []byte) (Prepared
 	page.ShippingPriceBRL, page.PartialTotalBRL = selectionSummary(cartView.SubtotalCents, page.Quotes)
 
 	return prepared, page, nil
+}
+
+func (s *Service) packageForQuote(items []QuoteProduct, boxes []ShippingBox) (ShippingPackage, error) {
+	box, err := SelectShippingBoxForProducts(items, boxes)
+	if err == nil {
+		logPackagingSelected(PackagingSourceRealBox, ShippingPackage{Box: box, PackagingSource: PackagingSourceRealBox, PackagingWeightG: box.PackagingWeightG, Dimensions: box.External}, boxes, 0)
+		totalWeightG, err := TotalPackageWeightG(items, box.PackagingWeightG)
+		if err != nil {
+			return ShippingPackage{}, err
+		}
+		return ShippingPackage{Box: box, PackagingSource: PackagingSourceRealBox, PackagingWeightG: box.PackagingWeightG, WeightG: totalWeightG, Dimensions: box.External}, nil
+	}
+	if !errors.Is(err, ErrNoFittingBox) {
+		return ShippingPackage{}, err
+	}
+	log.Print("shipping packaging fallback reason=no_fitting_box")
+	fallback, err := FallbackPackageForProducts(items)
+	if err != nil {
+		return ShippingPackage{}, err
+	}
+	units := 0
+	for _, item := range items {
+		units += item.Quantity
+	}
+	logPackagingSelected(PackagingSourceFallback, fallback, boxes, units)
+	return fallback, nil
 }
 
 func (s *Service) readyCustomer(ctx context.Context, tokenHash []byte) (cartdomain.Cart, cartdomain.CartView, customers.CheckoutDetails, error) {
@@ -500,7 +514,12 @@ func logPackagingCandidates(items []QuoteProduct, boxes []ShippingBox) {
 	}
 }
 
-func logPackagingSelected(box ShippingBox, boxes []ShippingBox) {
+func logPackagingSelected(source string, packageSnapshot ShippingPackage, boxes []ShippingBox, units int) {
+	if source == PackagingSourceFallback {
+		log.Printf("shipping packaging selected source=fallback package_weight_g=%d package_h_mm=%d package_w_mm=%d package_l_mm=%d units=%d", packageSnapshot.WeightG, packageSnapshot.Dimensions.Height, packageSnapshot.Dimensions.Width, packageSnapshot.Dimensions.Length, units)
+		return
+	}
+	box := packageSnapshot.Box
 	index := 0
 	candidates := append([]ShippingBox(nil), boxes...)
 	sortShippingBoxes(candidates)
@@ -510,7 +529,7 @@ func logPackagingSelected(box ShippingBox, boxes []ShippingBox) {
 			break
 		}
 	}
-	log.Printf("shipping packaging selected box_index=%d internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d external_h_mm=%d external_w_mm=%d external_l_mm=%d packaging_weight_g=%d", index, box.Internal.Height, box.Internal.Width, box.Internal.Length, box.External.Height, box.External.Width, box.External.Length, box.PackagingWeightG)
+	log.Printf("shipping packaging selected source=real_box box_index=%d internal_h_mm=%d internal_w_mm=%d internal_l_mm=%d external_h_mm=%d external_w_mm=%d external_l_mm=%d packaging_weight_g=%d", index, box.Internal.Height, box.Internal.Width, box.Internal.Length, box.External.Height, box.External.Width, box.External.Length, box.PackagingWeightG)
 }
 
 func shippingQuotes(superFreteQuotes []SuperFreteQuote) []ShippingQuote {
@@ -537,7 +556,7 @@ func shippingQuotes(superFreteQuotes []SuperFreteQuote) []ShippingQuote {
 	return quotes
 }
 
-func quoteFingerprint(originCEP string, destinationCEP string, services []string, items []QuoteProduct, box ShippingBox) QuoteFingerprint {
+func quoteFingerprint(originCEP string, destinationCEP string, services []string, items []QuoteProduct, packageSnapshot ShippingPackage) QuoteFingerprint {
 	fingerprint := QuoteFingerprint{
 		OriginPostalCode:      originCEP,
 		DestinationPostalCode: destinationCEP,
@@ -547,12 +566,13 @@ func quoteFingerprint(originCEP string, destinationCEP string, services []string
 			Receipt:           false,
 			UseInsuranceValue: false,
 		},
-		Box: QuoteBoxFingerprint{
-			ID:               box.ID,
-			ExternalHeightMM: box.External.Height,
-			ExternalWidthMM:  box.External.Width,
-			ExternalLengthMM: box.External.Length,
-			PackagingWeightG: box.PackagingWeightG,
+		Packaging: QuotePackageFingerprint{
+			Source:           packageSnapshot.PackagingSource,
+			ID:               packageSnapshot.Box.ID,
+			ExternalHeightMM: packageSnapshot.Dimensions.Height,
+			ExternalWidthMM:  packageSnapshot.Dimensions.Width,
+			ExternalLengthMM: packageSnapshot.Dimensions.Length,
+			PackagingWeightG: packageSnapshot.PackagingWeightG,
 		},
 	}
 	for _, item := range items {

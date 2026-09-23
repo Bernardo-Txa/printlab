@@ -125,9 +125,9 @@ Carrinho recalcula precos e subtotais no backend. Entrega e selecionada no backe
 - Medidas internas da caixa sao usadas para encaixe; medidas externas sao enviadas a transportadora.
 - `packaging_weight_g` representa caixa/protecao/enchimento padrao e e somado ao peso dos produtos.
 - A PrintLab seleciona a caixa fisica real antes da cotacao. A cotacao SuperFrete do checkout usa uma unica chamada com `package` final para obter preco e prazo.
-- Somente a cotacao final com a caixa fisica real e apresentada ao cliente.
+- Somente a cotacao final com a caixa fisica real ou a embalagem estimada conservadora e apresentada ao cliente.
 - Retirada no local (`pickup`) nao chama SuperFrete, nao exige caixa, nao exige perfil logistico e persiste `shipping_price_cents = 0`.
-- Se nenhuma caixa real comporta o pacote ideal, o sistema mostra indisponibilidade e nao divide automaticamente em varios volumes.
+- Se nenhuma caixa real comporta o pacote ideal, o sistema usa fallback conservador de embalagem em volume unico; se a SuperFrete nao retornar cotacao valida, mostra indisponibilidade e nao reduz dimensoes nem divide automaticamente em varios volumes.
 - A selecao de entrega expira em 30 minutos.
 - A selecao de envio e invalidada por `input_hash` quando carrinho, quantidade, configuracao, perfil logistico, CEP, servicos ou caixa mudam.
 - Multi-volume, etiqueta/postagem e rastreio permanecem planejados.

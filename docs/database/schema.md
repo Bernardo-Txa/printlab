@@ -579,7 +579,7 @@ Campos:
 | --- | --- | --- | --- | --- |
 | `cart_id` | `uuid` | nao | - | Chave primaria e FK 1:1 para `public.carts(id)`. |
 | `delivery_method` | `text` | nao | `'shipping'` | Modalidade explicita: `shipping` ou `pickup`. |
-| `shipping_box_id` | `uuid` | sim | - | Caixa real usada na cotacao final quando `delivery_method='shipping'`. |
+| `shipping_box_id` | `uuid` | sim | - | Caixa real usada na cotacao final quando existir caixa compativel; fica nulo em pickup e no fallback seguro de embalagem estimada. |
 | `provider` | `text` | nao | - | Provedor da cotacao; vazio para `pickup`. |
 | `service_code` | `text` | nao | - | Codigo do servico retornado pela integracao; vazio para `pickup`. |
 | `service_name` | `text` | nao | - | Nome do servico retornado pela integracao; vazio para `pickup`. |
@@ -587,9 +587,9 @@ Campos:
 | `price_cents` | `bigint` | nao | - | Preco final de frete em centavos. |
 | `delivery_time_days` | `integer` | sim | - | Prazo retornado, quando existir. |
 | `package_weight_g` | `bigint` | nao | - | Peso real cotado: produtos + embalagem. |
-| `package_height_mm` | `integer` | nao | - | Altura externa da caixa real cotada. |
-| `package_width_mm` | `integer` | nao | - | Largura externa da caixa real cotada. |
-| `package_length_mm` | `integer` | nao | - | Comprimento externo da caixa real cotada. |
+| `package_height_mm` | `integer` | nao | - | Altura externa do pacote cotado, vindo da caixa real ou da embalagem estimada de fallback. |
+| `package_width_mm` | `integer` | nao | - | Largura externa do pacote cotado, vindo da caixa real ou da embalagem estimada de fallback. |
+| `package_length_mm` | `integer` | nao | - | Comprimento externo do pacote cotado, vindo da caixa real ou da embalagem estimada de fallback. |
 | `input_hash` | `bytea` | nao | - | SHA-256 canonico dos dados que influenciam a cotacao. |
 | `quoted_at` | `timestamptz` | nao | - | Momento da cotacao persistida. |
 | `expires_at` | `timestamptz` | nao | - | Validade operacional da cotacao, inicialmente 30 minutos. |
@@ -605,7 +605,7 @@ Constraints:
 
 - `cart_shipping_selections_pkey`: chave primaria em `cart_id`.
 - `cart_shipping_selections_delivery_method_allowed`: `delivery_method in ('shipping', 'pickup')`.
-- `cart_shipping_selections_pickup_fields`: para `pickup`, exige caixa nula, provider/servico vazios, preco zero, prazo nulo e pacote zerado; para `shipping`, exige caixa, provider/servico preenchidos, preco nao negativo e pacote positivo.
+- `cart_shipping_selections_pickup_fields`: para `pickup`, exige caixa nula, provider/servico vazios, preco zero, prazo nulo e pacote zerado; para `shipping`, exige provider/servico preenchidos, preco nao negativo e pacote positivo. `shipping_box_id` pode ficar nulo somente para a embalagem estimada de fallback validada pela aplicacao.
 - `cart_shipping_selections_carrier_name_not_blank`: `carrier_name is null or btrim(carrier_name) <> ''`.
 - `cart_shipping_selections_price_cents_non_negative`: `price_cents >= 0`.
 - `cart_shipping_selections_delivery_time_days_non_negative`: `delivery_time_days is null or delivery_time_days >= 0`.
@@ -620,7 +620,7 @@ Indices:
 Semantica:
 
 - O snapshot `package_*` guarda o pacote real cotado, com dimensoes externas da caixa escolhida.
-- `input_hash` inclui CEP de origem, CEP de destino, produtos, variantes, quantidades, perfil logistico efetivo, caixa real, dimensoes externas, peso de embalagem e configuracao de servicos/opcoes.
+- `input_hash` inclui CEP de origem, CEP de destino, produtos, variantes, quantidades, perfil logistico efetivo, origem do pacote (`real_box` ou `fallback`), caixa real quando existir, dimensoes externas, peso de embalagem e configuracao de servicos/opcoes.
 - Nome, CPF, e-mail, telefone, rua e demais PII desnecessaria nao entram no hash.
 - Se o hash atual divergir ou `expires_at` estiver no passado, a selecao e ignorada.
 - Em `delivery_method='pickup'`, `price_cents` e zero, campos de transportadora/servico ficam vazios/nulos e a selecao nao depende de caixa, perfil logistico ou SuperFrete.

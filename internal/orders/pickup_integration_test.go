@@ -143,3 +143,102 @@ func TestPickupSelectionRejectsTamperedPrice(t *testing.T) {
 		t.Fatal("expected tampered pickup price to be rejected")
 	}
 }
+
+func TestFallbackShippingPackageCartToOrder(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL not set")
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+
+	suffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	var productID, cartID, orderID string
+	exec := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	id := func(sql string, args ...any) string {
+		t.Helper()
+		var value string
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&value); err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
+	t.Cleanup(func() {
+		for _, row := range []struct{ table, id string }{
+			{"orders", orderID},
+			{"carts", cartID},
+			{"products", productID},
+		} {
+			if row.id != "" {
+				if _, err := pool.Exec(context.Background(), "delete from public."+row.table+" where id = $1::uuid", row.id); err != nil {
+					t.Errorf("cleanup %s: %v", row.table, err)
+				}
+			}
+		}
+	})
+
+	tokenHash := make([]byte, 32)
+	if _, err := rand.Read(tokenHash); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	productID = id(`insert into public.products(name,slug,price_cents,is_active,shipping_weight_g,shipping_height_mm,shipping_width_mm,shipping_length_mm) values('Fallback Frete',$1,2590,true,264,135,298,334) returning id::text`, "fallback-product-"+suffix)
+	cartID = id(`insert into public.carts(token_hash,expires_at) values($1,$2) returning id::text`, tokenHash, now.Add(time.Hour))
+	exec(`insert into public.cart_items(cart_id,product_id,quantity) values($1::uuid,$2::uuid,1)`, cartID, productID)
+	exec(`insert into public.cart_customer_details(cart_id,full_name,email,phone,cpf) values($1::uuid,'Cliente Fallback','fallback-test@example.com','+5527999999999','52998224725')`, cartID)
+	exec(`insert into public.cart_shipping_addresses(cart_id,postal_code,street,number,district,city,state,country_code) values($1::uuid,'29100000','Rua Teste','1','Centro','Vila Velha','ES','BR')`, cartID)
+
+	repo := NewPostgresRepository(pool)
+	_, shippingItems, err := repo.reviewItems(ctx, pool, cartID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fallbackPackage, err := shipping.FallbackPackageForCartItems(shippingItems)
+	if err != nil {
+		t.Fatal(err)
+	}
+	params := ReviewParams{OriginPostalCode: "29100000", ServiceCodes: []string{"1"}}
+	inputHash, err := shipping.BuildCartPackageInputHash(params.OriginPostalCode, "29100000", params.ServiceCodes, shippingItems, fallbackPackage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec(`insert into public.cart_shipping_selections(cart_id,delivery_method,shipping_box_id,provider,service_code,service_name,carrier_name,price_cents,delivery_time_days,package_weight_g,package_height_mm,package_width_mm,package_length_mm,input_hash,quoted_at,expires_at) values($1::uuid,'shipping',null,'superfrete','1','PAC','Correios',1890,5,$2,$3,$4,$5,$6,$7,$8)`, cartID, fallbackPackage.WeightG, fallbackPackage.Dimensions.Height, fallbackPackage.Dimensions.Width, fallbackPackage.Dimensions.Length, inputHash, now, now.Add(shipping.QuoteTTL))
+
+	page, err := repo.Review(ctx, tokenHash, now, params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Shipping.ShippingBoxName != shipping.FallbackShippingBoxName || page.Shipping.PackageWeightG != 450 || page.Shipping.PackageHeightMM != 180 || page.Shipping.PackageWidthMM != 340 || page.Shipping.PackageLengthMM != 380 {
+		t.Fatalf("unexpected fallback review snapshot: %+v", page.Shipping)
+	}
+	result, err := repo.Confirm(ctx, tokenHash, page.Fingerprint, now, params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	orderID = result.OrderID
+
+	var boxName string
+	var weight int64
+	var height, width, length int
+	err = pool.QueryRow(ctx, `
+		select shipping_box_name, package_weight_g, package_height_mm, package_width_mm, package_length_mm
+		from public.order_shipping_details
+		where order_id = $1::uuid
+	`, orderID).Scan(&boxName, &weight, &height, &width, &length)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if boxName != shipping.FallbackShippingBoxName || weight != 450 || height != 180 || width != 340 || length != 380 {
+		t.Fatalf("unexpected fallback order snapshot: name=%q weight=%d dims=%dx%dx%d", boxName, weight, height, width, length)
+	}
+}

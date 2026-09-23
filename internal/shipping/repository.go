@@ -153,7 +153,7 @@ func (r *PostgresRepository) GetSelection(ctx context.Context, cartID string) (S
 			on box.id = selection.shipping_box_id
 			and box.is_active = true
 		where selection.cart_id = $1::uuid
-			and (selection.delivery_method = 'pickup' or box.id is not null)
+			and (selection.delivery_method = 'pickup' or selection.shipping_box_id is null or box.id is not null)
 	`, cartID).Scan(
 		&selection.CartID,
 		&selection.DeliveryMethod,

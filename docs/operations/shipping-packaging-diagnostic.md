@@ -4,7 +4,7 @@ Status: instrumentacao implementada e testada; esta revisao nao declara nova val
 
 ## Semantica atual
 
-`no_fitting_box` significa que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. A SuperFrete nao participa mais da escolha de embalagem no checkout comercial.
+`no_fitting_box` significa que o empacotador da PrintLab nao conseguiu colocar fisicamente todos os itens em nenhuma caixa ativa cadastrada. Nesse caso, o checkout usa uma embalagem estimada conservadora para tentar a cotacao final sem inventar caixa real. A SuperFrete nao participa da escolha de embalagem no checkout comercial.
 
 A PrintLab:
 
@@ -12,6 +12,7 @@ A PrintLab:
 - testa rotacoes axis-aligned;
 - tenta posicionar cuboides sem sobreposicao por pontos extremos deterministicos;
 - escolhe a menor caixa fisica real compativel;
+- se nenhuma caixa couber, monta uma embalagem estimada conservadora com margens e arredondamentos seguros;
 - envia para a SuperFrete somente o `package` final com dimensoes externas e peso total.
 
 A SuperFrete retorna preco, prazo e disponibilidade de servicos. O payload `products` continua existindo no cliente HTTP apenas para compatibilidade/teste isolado da API, nao para o fluxo comercial.
@@ -23,11 +24,12 @@ O fluxo registra:
 - antes da selecao de caixa: `shipping packaging request product_lines=N units=N candidate_boxes=N`;
 - por linha: quantidade, peso em gramas e dimensoes em milimetros;
 - por caixa candidata: `shipping packaging candidate index=N fits=true/false internal_h_mm=... internal_w_mm=... internal_l_mm=...`;
-- caixa escolhida: `shipping packaging selected box_index=N ...`;
+- pacote escolhido: `shipping packaging selected source=real_box ...` ou `shipping packaging selected source=fallback ...`;
+- quando nao ha caixa real compativel: `shipping packaging fallback reason=no_fitting_box`;
 - antes da cotacao: `shipping quote request stage=final package_weight_g=... package_h_mm=... package_w_mm=... package_l_mm=... services=N`;
 - apos a cotacao: `shipping quote response stage=final final_valid_quotes=N`.
 
-Somente no caminho de falha da selecao, um registro `shipping packaging diagnostic reason=no_fitting_box selection=real_box_packing data=...` contem:
+Quando a selecao de caixa real falha de forma nao recuperavel, um registro `shipping packaging diagnostic reason=no_fitting_box selection=real_box_packing data=...` contem:
 
 - `product_lines` e `units`;
 - `products`: indice da linha, quantidade, peso e dimensoes H/W/L em mm;

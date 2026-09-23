@@ -137,7 +137,7 @@ func TestRepositoryReviewDoesNotRequoteShipping(t *testing.T) {
 		t.Fatal("expected reviewForCart to exist")
 	}
 
-	if !strings.Contains(reviewSource, "shipping.BuildCartInputHash") {
+	if !strings.Contains(reviewSource, "shipping.BuildCartPackageInputHash") {
 		t.Fatal("expected review to validate the persisted shipping input hash")
 	}
 	if strings.Contains(strings.ToLower(reviewSource), ".calculate(") {

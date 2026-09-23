@@ -320,6 +320,119 @@ func sortPackingPoints(points []packingPoint) {
 	})
 }
 
+func BuildCartPackageInputHash(originCEP string, destinationCEP string, services []string, items []CartItem, packageSnapshot ShippingPackage) ([]byte, error) {
+	preparedItems, err := prepareQuoteProducts(items)
+	if err != nil {
+		return nil, err
+	}
+	return BuildInputHash(quoteFingerprint(originCEP, destinationCEP, services, preparedItems, packageSnapshot))
+}
+
+func FallbackPackageForCartItems(items []CartItem) (ShippingPackage, error) {
+	preparedItems, err := prepareQuoteProducts(items)
+	if err != nil {
+		return ShippingPackage{}, err
+	}
+	return FallbackPackageForProducts(preparedItems)
+}
+
+func FallbackPackageForProducts(items []QuoteProduct) (ShippingPackage, error) {
+	units, goodsWeightG, err := fallbackUnits(items)
+	if err != nil {
+		return ShippingPackage{}, err
+	}
+
+	var height, width, length int
+	for _, unit := range units {
+		if unit.Height > height {
+			height = unit.Height
+		}
+		if unit.Width > width {
+			width = unit.Width
+		}
+		if length > math.MaxInt-unit.Length {
+			return ShippingPackage{}, ErrInvalidPackage
+		}
+		length += unit.Length
+	}
+	height = ceilToMultipleInt(height+20, 10)
+	width = ceilToMultipleInt(width+20, 10)
+	length = ceilToMultipleInt(length+20, 10)
+
+	packagingWeightG := fallbackPackagingWeightG(goodsWeightG, len(units))
+	if goodsWeightG > math.MaxInt64-packagingWeightG {
+		return ShippingPackage{}, ErrAmountOverflow
+	}
+	weightG := ceilToMultipleInt64(goodsWeightG+packagingWeightG, 50)
+	return ShippingPackage{
+		PackagingSource:  PackagingSourceFallback,
+		PackagingWeightG: packagingWeightG,
+		WeightG:          weightG,
+		Dimensions:       DimensionsMM{Height: height, Width: width, Length: length},
+	}, nil
+}
+
+func fallbackUnits(items []QuoteProduct) ([]DimensionsMM, int64, error) {
+	var units []DimensionsMM
+	var goodsWeightG int64
+	for _, item := range items {
+		if item.Quantity <= 0 || !item.Profile.Valid() {
+			return nil, 0, ErrMissingShippingProfile
+		}
+		if item.Profile.WeightG > math.MaxInt64/int64(item.Quantity) {
+			return nil, 0, ErrAmountOverflow
+		}
+		lineWeight := item.Profile.WeightG * int64(item.Quantity)
+		if goodsWeightG > math.MaxInt64-lineWeight {
+			return nil, 0, ErrAmountOverflow
+		}
+		goodsWeightG += lineWeight
+		axes := sortedDimensions(item.Profile.Dimensions)
+		unit := DimensionsMM{Height: axes[0] + 20, Width: axes[1] + 20, Length: axes[2] + 20}
+		for i := 0; i < item.Quantity; i++ {
+			units = append(units, unit)
+		}
+	}
+	if len(units) == 0 {
+		return nil, 0, ErrEmptyCart
+	}
+	return units, goodsWeightG, nil
+}
+
+func fallbackPackagingWeightG(goodsWeightG int64, units int) int64 {
+	byPercent := ceilDivInt64(goodsWeightG*25, 100) // ceil 25% to whole grams.
+	byUnit := int64(50 * units)
+	weight := int64(150)
+	if byPercent > weight {
+		weight = byPercent
+	}
+	if byUnit > weight {
+		weight = byUnit
+	}
+	return ceilToMultipleInt64(weight, 50)
+}
+
+func ceilToMultipleInt(value int, multiple int) int {
+	if multiple <= 0 || value <= 0 {
+		return value
+	}
+	return ((value + multiple - 1) / multiple) * multiple
+}
+
+func ceilToMultipleInt64(value int64, multiple int64) int64 {
+	if multiple <= 0 || value <= 0 {
+		return value
+	}
+	return ((value + multiple - 1) / multiple) * multiple
+}
+
+func ceilDivInt64(value int64, divisor int64) int64 {
+	if divisor <= 0 || value <= 0 {
+		return value
+	}
+	return (value + divisor - 1) / divisor
+}
+
 func TotalPackageWeightG(items []QuoteProduct, packagingWeightG int64) (int64, error) {
 	if packagingWeightG <= 0 {
 		return 0, ErrInvalidPackage
@@ -435,12 +548,12 @@ func BuildInputHash(fingerprint QuoteFingerprint) ([]byte, error) {
 }
 
 func BuildCartInputHash(originCEP string, destinationCEP string, services []string, items []CartItem, box ShippingBox) ([]byte, error) {
-	preparedItems, err := prepareQuoteProducts(items)
-	if err != nil {
-		return nil, err
-	}
-
-	return BuildInputHash(quoteFingerprint(originCEP, destinationCEP, services, preparedItems, box))
+	return BuildCartPackageInputHash(originCEP, destinationCEP, services, items, ShippingPackage{
+		Box:              box,
+		PackagingSource:  PackagingSourceRealBox,
+		PackagingWeightG: box.PackagingWeightG,
+		Dimensions:       box.External,
+	})
 }
 
 func InputHashHex(hash []byte) string {

@@ -9,10 +9,13 @@ import (
 )
 
 const (
-	ProviderSuperFrete     = "superfrete"
-	DeliveryMethodShipping = "shipping"
-	DeliveryMethodPickup   = "pickup"
-	QuoteTTL               = 30 * time.Minute
+	ProviderSuperFrete      = "superfrete"
+	DeliveryMethodShipping  = "shipping"
+	DeliveryMethodPickup    = "pickup"
+	PackagingSourceRealBox  = "real_box"
+	PackagingSourceFallback = "fallback"
+	FallbackShippingBoxName = "Embalagem estimada (fallback)"
+	QuoteTTL                = 30 * time.Minute
 )
 
 var (
@@ -65,10 +68,12 @@ type ShippingBox struct {
 }
 
 type ShippingPackage struct {
-	Box        ShippingBox
-	WeightG    int64
-	Dimensions DimensionsMM
-	InputHash  []byte
+	Box              ShippingBox
+	PackagingSource  string
+	PackagingWeightG int64
+	WeightG          int64
+	Dimensions       DimensionsMM
+	InputHash        []byte
 }
 
 type ShippingQuote struct {
@@ -142,7 +147,7 @@ type QuoteFingerprint struct {
 	Services              []string
 	Options               QuoteOptions
 	Products              []QuoteProductFingerprint
-	Box                   QuoteBoxFingerprint
+	Packaging             QuotePackageFingerprint
 }
 
 type QuoteOptions struct {
@@ -162,7 +167,8 @@ type QuoteProductFingerprint struct {
 	LengthMM  int
 }
 
-type QuoteBoxFingerprint struct {
+type QuotePackageFingerprint struct {
+	Source           string
 	ID               string
 	ExternalHeightMM int
 	ExternalWidthMM  int

@@ -183,7 +183,9 @@ Aplicar antes do backend atualizado. A versao antiga do upsert nao e compativel 
 
 ## Retirada no local
 
-`20260920234746_add_pickup_delivery_method.sql` adiciona `delivery_method` em `cart_shipping_selections` e `order_shipping_details`, permitindo `shipping` e `pickup`. A migration transforma as constraints de frete em regras condicionais: envio continua exigindo caixa, provedor, servico e pacote positivo; retirada exige caixa nula, provider/servico vazios, frete zero e pacote zerado. Dados historicos existentes recebem default `shipping`.
+`20260920234746_add_pickup_delivery_method.sql` adiciona `delivery_method` em `cart_shipping_selections` e `order_shipping_details`, permitindo `shipping` e `pickup`. A migration transforma as constraints de frete em regras condicionais: envio exige provedor, servico e pacote positivo; retirada exige caixa nula, provider/servico vazios, frete zero e pacote zerado. Dados historicos existentes recebem default `shipping`.
+
+`20260923183000_allow_superfrete_fallback_package.sql` relaxa apenas a constraint de `cart_shipping_selections` para permitir `shipping_box_id` nulo quando o envio tem provider/servico, preco nao negativo e pacote positivo. A aplicacao usa esse caminho somente para o fallback conservador de embalagem da SuperFrete; pickup permanece com as regras anteriores.
 
 Aplicar antes do backend atualizado para permitir selecoes `pickup`. A versao antiga do codigo continua compatível com o default `shipping` enquanto nao houver linhas de retirada. Rollback destrutivo removeria a modalidade e pedidos de retirada perderiam a classificacao explicita; o caminho preferido e corrigir adiante mantendo a coluna.
 

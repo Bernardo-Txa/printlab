@@ -180,15 +180,15 @@ func TestServicePageRejectsEmptyRepositoryItems(t *testing.T) {
 	}
 }
 
-func TestServicePageUnavailableWhenNoRealBoxFitsProducts(t *testing.T) {
+func TestServicePageUsesFallbackPackageWhenNoRealBoxFitsProducts(t *testing.T) {
 	calculator := shippingCalculatorFixture()
 	service := shippingServiceFixture(t, &fakeShippingRepository{
 		items: []CartItem{{
 			ID:       "item-oversized",
 			Quantity: 1,
 			ProductProfile: &ShippingProfile{
-				WeightG:    183,
-				Dimensions: DimensionsMM{Height: 200, Width: 300, Length: 400},
+				WeightG:    264,
+				Dimensions: DimensionsMM{Height: 135, Width: 298, Length: 334},
 			},
 		}},
 		boxes: []ShippingBox{{
@@ -202,13 +202,17 @@ func TestServicePageUnavailableWhenNoRealBoxFitsProducts(t *testing.T) {
 
 	page, err := service.Page(context.Background(), []byte("token-hash"), false)
 	if err != nil {
-		t.Fatalf("expected unavailable page without error, got %v", err)
+		t.Fatalf("expected fallback page without error, got %v", err)
 	}
-	if !page.Unavailable || page.Message != "Não conseguimos calcular automaticamente o frete para este carrinho." {
-		t.Fatalf("expected no-fitting-box message, got %#v", page)
+	if page.Unavailable || len(page.Quotes) != 2 {
+		t.Fatalf("expected fallback quotes, got %#v", page)
 	}
-	if len(calculator.requests) != 0 {
-		t.Fatalf("expected no SuperFrete request when no real box fits, got %d calls", len(calculator.requests))
+	if len(calculator.requests) != 1 || calculator.requests[0].Package == nil || len(calculator.requests[0].Products) != 0 {
+		t.Fatalf("expected one package-only SuperFrete request, got %#v", calculator.requests)
+	}
+	pack := calculator.requests[0].Package
+	if pack.WeightKG != 0.45 || pack.HeightCM != 18 || pack.WidthCM != 34 || pack.LengthCM != 38 {
+		t.Fatalf("expected conservative fallback package, got %#v", pack)
 	}
 }
 
@@ -242,7 +246,7 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 			wantLogs: []string{"stage=final reason=final_request_failed category=400 status=400"},
 		},
 		{
-			name: "no fitting box",
+			name: "fallback final quotes unavailable",
 			repository: &fakeShippingRepository{
 				items: []CartItem{{
 					ID:       "item-oversized",
@@ -260,12 +264,13 @@ func TestServicePageLogsDistinctShippingDiagnostics(t *testing.T) {
 					PackagingWeightG: 100,
 				}},
 			},
-			calculator: shippingCalculatorFixture(),
+			calculator: &fakeShippingCalculator{responses: [][]SuperFreteQuote{{}}},
 			wantLogs: []string{
 				"shipping packaging request product_lines=1 units=1 candidate_boxes=1",
 				"shipping packaging candidate index=0 fits=false",
-				"stage=packaging reason=no_fitting_box",
-				"selection=real_box_packing",
+				"shipping packaging fallback reason=no_fitting_box",
+				"shipping packaging selected source=fallback",
+				"stage=final reason=final_no_valid_quotes",
 			},
 		},
 		{
@@ -370,7 +375,7 @@ func TestServicePageLogsSafePackagingAndFinalDiagnostics(t *testing.T) {
 		"shipping packaging request product_lines=1 units=2 candidate_boxes=3",
 		"shipping packaging line=0 quantity=2 weight_g=285 height_mm=210 width_mm=105 length_mm=90",
 		"shipping packaging candidate index=0 fits=false internal_h_mm=110 internal_w_mm=150 internal_l_mm=230",
-		"shipping packaging selected box_index=2 internal_h_mm=180 internal_w_mm=250 internal_l_mm=350",
+		"shipping packaging selected source=real_box box_index=2 internal_h_mm=180 internal_w_mm=250 internal_l_mm=350",
 		"shipping quote request stage=final package_weight_g=790 package_h_mm=190 package_w_mm=260 package_l_mm=360 services=2",
 		"shipping quote response stage=final final_valid_quotes=2",
 	} {
@@ -489,6 +494,45 @@ func TestServiceSelectRevalidatesAndPersistsCurrentQuote(t *testing.T) {
 	}
 	if len(calculator.requests) != 1 || calculator.requests[0].Package == nil {
 		t.Fatalf("expected selection to run one final package quote, got %#v", calculator.requests)
+	}
+}
+
+func TestServiceSelectPersistsFallbackPackageWithoutShippingBoxID(t *testing.T) {
+	repository := &fakeShippingRepository{
+		items: []CartItem{{
+			ID:       "item-vila-natalina",
+			Quantity: 1,
+			ProductProfile: &ShippingProfile{
+				WeightG:    264,
+				Dimensions: DimensionsMM{Height: 135, Width: 298, Length: 334},
+			},
+		}},
+		boxes: []ShippingBox{{
+			ID:               "box-small",
+			Name:             "Caixa Pequena",
+			Internal:         DimensionsMM{Height: 120, Width: 160, Length: 240},
+			External:         DimensionsMM{Height: 130, Width: 170, Length: 250},
+			PackagingWeightG: 100,
+		}},
+	}
+	service := shippingServiceFixture(t, repository, shippingCalculatorFixture())
+
+	_, err := service.Select(context.Background(), []byte("token-hash"), "1")
+	if err != nil {
+		t.Fatalf("expected fallback selection, got %v", err)
+	}
+	if len(repository.savedSelections) != 1 {
+		t.Fatalf("expected one saved fallback selection, got %d", len(repository.savedSelections))
+	}
+	saved := repository.savedSelections[0]
+	if saved.ShippingBoxID != "" {
+		t.Fatalf("expected fallback to persist null/empty shipping box id, got %#v", saved)
+	}
+	if saved.PackageWeightG != 450 || saved.PackageHeightMM != 180 || saved.PackageWidthMM != 340 || saved.PackageLengthMM != 380 {
+		t.Fatalf("expected fallback package snapshot, got %#v", saved)
+	}
+	if len(saved.InputHash) != 32 {
+		t.Fatalf("expected fallback hash, got %d bytes", len(saved.InputHash))
 	}
 }
 
@@ -741,7 +785,13 @@ func shippingInputHashFixture(t *testing.T, box ShippingBox) []byte {
 		"20020050",
 		[]string{"1", "2"},
 		shippingQuoteProductsFixture(),
-		box,
+		ShippingPackage{
+			Box:              box,
+			PackagingSource:  PackagingSourceRealBox,
+			PackagingWeightG: box.PackagingWeightG,
+			WeightG:          790,
+			Dimensions:       box.External,
+		},
 	))
 	if err != nil {
 		t.Fatalf("expected input hash, got %v", err)
