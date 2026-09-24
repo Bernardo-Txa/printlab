@@ -1569,7 +1569,7 @@
   }
 
   .cart-summary {
-    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-28;
     transition:
       border-color var(--motion-normal) var(--motion-ease),
       box-shadow var(--motion-normal) var(--motion-ease);
@@ -1613,46 +1613,16 @@
     @apply mt-3 w-full;
   }
 
-  .checkout-section {
-    @apply bg-background py-10 sm:py-14;
-  }
 
   .checkout-heading {
     @apply max-w-3xl;
   }
 
-  .checkout-heading h1 {
-    @apply mt-5 text-balance text-5xl font-semibold leading-none tracking-normal text-foreground sm:text-6xl;
-  }
 
   .checkout-heading p:not(.brand-kicker) {
     @apply mt-5 text-pretty text-base leading-7 text-muted sm:text-lg;
   }
 
-  .checkout-stepper {
-    @apply mt-8 grid gap-2 sm:grid-cols-4;
-  }
-
-  .checkout-step {
-    @apply flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted;
-    transition:
-      color var(--motion-fast) var(--motion-ease),
-      background-color var(--motion-fast) var(--motion-ease),
-      border-color var(--motion-fast) var(--motion-ease),
-      transform var(--motion-fast) var(--motion-spring);
-  }
-
-  a.checkout-step:hover {
-    transform: translateY(-1px);
-  }
-
-  .checkout-step-active {
-    @apply border-primary bg-primary text-primary-foreground;
-  }
-
-  .checkout-step-done {
-    @apply border-highlight-teal/40 bg-highlight-teal/10 text-foreground;
-  }
 
   .checkout-alert {
     @apply mt-5 rounded-control border px-4 py-3 text-sm font-semibold;
@@ -1775,7 +1745,7 @@
   }
 
   .checkout-summary {
-    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-6;
+    @apply rounded-card border border-border bg-surface p-5 shadow-soft lg:sticky lg:top-28;
     transition:
       border-color var(--motion-normal) var(--motion-ease),
       box-shadow var(--motion-normal) var(--motion-ease);
@@ -2665,9 +2635,6 @@
     animation: printlab-choice-pop 520ms var(--motion-spring) both;
   }
 
-  .checkout-step-active {
-    box-shadow: 0 14px 36px -28px color-mix(in oklab, var(--color-primary) 70%, black 20%);
-  }
 
   .checkout-form-section:focus-within,
   .checkout-summary:focus-within,
@@ -2907,66 +2874,13 @@
   }
 
   .checkout-heading h1 {
-    @apply mt-3 text-4xl sm:text-5xl;
+    @apply mt-3 text-balance text-4xl font-semibold leading-none tracking-normal text-foreground sm:text-5xl;
   }
 
   .checkout-heading p:not(.brand-kicker):not(.checkout-step-eyebrow) {
     @apply mt-4;
   }
 
-  .checkout-stepper {
-    @apply mt-6 flex gap-3 overflow-x-auto rounded-section border border-border bg-surface/80 p-3 shadow-soft sm:grid sm:grid-cols-4 sm:overflow-visible;
-    scrollbar-width: thin;
-  }
-
-  .checkout-step {
-    @apply min-w-[9.5rem] flex-1 justify-start gap-3 rounded-card px-3 py-3 text-left sm:min-w-0;
-  }
-
-  .checkout-step-marker {
-    @apply flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted;
-  }
-
-  .checkout-step-marker svg {
-    @apply size-5;
-  }
-
-  .checkout-step-copy {
-    @apply flex min-w-0 flex-col gap-0.5;
-  }
-
-  .checkout-step-label {
-    @apply text-sm font-semibold text-foreground;
-  }
-
-  .checkout-step-state {
-    @apply text-xs font-semibold text-muted;
-  }
-
-  .checkout-step-done {
-    @apply border-highlight-teal/35 bg-highlight-teal/10 text-foreground;
-  }
-
-  .checkout-step-done .checkout-step-marker {
-    @apply border-highlight-teal bg-highlight-teal text-secondary;
-  }
-
-  .checkout-step-active {
-    @apply border-primary bg-primary/10 text-foreground shadow-soft;
-  }
-
-  .checkout-step-active .checkout-step-marker {
-    @apply border-primary bg-primary text-primary-foreground;
-  }
-
-  .checkout-step-future {
-    @apply bg-surface-muted/55;
-  }
-
-  .checkout-step-future .checkout-step-label,
-  .checkout-step-future .checkout-step-state {
-    @apply text-muted;
-  }
 
   .checkout-layout {
     @apply lg:grid-cols-[minmax(0,1fr)_21rem];
@@ -3244,48 +3158,6 @@
     max-height: 1.25rem;
   }
 
-  .checkout-stepper {
-    @apply relative flex items-start gap-0 overflow-x-auto border-0 bg-transparent p-0 shadow-none sm:overflow-visible;
-  }
-
-  .checkout-stepper::before {
-    @apply absolute left-4 right-4 top-4 hidden h-px bg-border sm:block;
-    content: "";
-  }
-
-  .checkout-step {
-    @apply relative z-10 min-w-[5.75rem] flex-1 flex-col justify-start gap-2 rounded-none border-0 bg-transparent px-2 py-0 text-center shadow-none sm:min-w-0;
-  }
-
-  .checkout-step:hover {
-    transform: none;
-  }
-
-  .checkout-step-marker {
-    @apply size-8 border-border bg-surface text-xs shadow-sm;
-  }
-
-  .checkout-step-done,
-  .checkout-step-active,
-  .checkout-step-future {
-    @apply bg-transparent shadow-none;
-  }
-
-  .checkout-step-done .checkout-step-marker {
-    @apply border-highlight-teal bg-highlight-teal text-secondary;
-  }
-
-  .checkout-step-active .checkout-step-marker {
-    @apply border-primary bg-primary text-primary-foreground;
-  }
-
-  .checkout-step-future .checkout-step-marker {
-    @apply bg-surface-muted text-muted;
-  }
-
-  .checkout-step-label {
-    @apply block text-xs font-semibold leading-4 text-foreground sm:text-sm;
-  }
 
   .checkout-section-icon,
   .shipping-option-icon,
@@ -3310,7 +3182,7 @@
 
 @layer components {
   .checkout-section {
-    @apply pt-24 pb-10 sm:pt-28 sm:pb-14;
+    @apply bg-background pt-24 pb-10 sm:pt-28 sm:pb-14;
     scroll-margin-top: 6rem;
   }
 

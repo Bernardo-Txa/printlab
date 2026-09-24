@@ -407,31 +407,22 @@ Não renomear por acentuação:
 
 ## 19.3.7 — Tipografia e espaçamento
 
-Auditar a hierarquia tipográfica global.
+Status: Implementada; aguardando validação manual.
 
-Padronizar:
+Auditoria concluída: a hierarquia tipográfica existente é coerente e foi preservada. O `system-ui` atual permanece, sem nova fonte, dependência externa ou redesign.
 
-- H1;
-- H2;
-- H3;
-- body;
-- small/help text;
-- labels;
-- preços;
-- badges;
-- botões.
+Diferenças tipográficas por contexto continuam intencionais:
 
-Auditar também:
+- marketing e marca podem manter títulos maiores;
+- jornadas funcionais permanecem legíveis e claras;
+- Admin e autenticação seguem mais compactos.
 
-- padding de cards;
-- gaps;
-- margens entre seções;
-- largura máxima de conteúdo;
-- densidade de formulários.
+Implementado nesta subfase:
 
-Evitar mudanças de fonte sem justificativa.
-
-Priorizar consistência antes de adicionar dependência/font nova.
+- ritmo de cards e formulários auditado e preservado;
+- sticky do resumo do carrinho alinhado ao header com offset seguro;
+- CSS histórico do checkout consolidado, mantendo a aparência final aprovada do stepper e das seções;
+- texto visível remanescente do Admin corrigido para pt-BR.
 
 ## 19.3.8 — Estados da interface
 
@@ -579,6 +570,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.2 — WhatsApp e CTAs comerciais: Implementada; aguardando validação manual.
 - 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
 - 19.3.5 — Carrinho e checkout: Validada manualmente em produção pelo responsável.
-- 19.3.6 — Revisão textual pt-BR: Implementada; aguardando validação manual.
+- 19.3.6 — Revisão textual pt-BR: Validada manualmente em produção pelo responsável.
+- 19.3.7 — Tipografia e espaçamento: Implementada; aguardando validação manual.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

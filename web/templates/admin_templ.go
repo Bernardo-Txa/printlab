@@ -357,7 +357,7 @@ func AdminOrders(page admindomain.OrderListPage) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					if len(page.Orders) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"admin-empty\"><h2>Nenhum pedido neste filtro</h2><p>Quando houver pedidos nesta etapa, eles aparecerao aqui.</p></div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"admin-empty\"><h2>Nenhum pedido neste filtro</h2><p>Quando houver pedidos nesta etapa, eles aparecerão aqui.</p></div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -1862,7 +1862,7 @@ func AdminProducts(page admindomain.AdminProductListPage) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					if len(page.Products) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "<div class=\"admin-empty\"><h2>Nenhum produto encontrado</h2><p>Os produtos cadastrados aparecerao aqui.</p></div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "<div class=\"admin-empty\"><h2>Nenhum produto encontrado</h2><p>Os produtos cadastrados aparecerão aqui.</p></div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
