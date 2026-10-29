@@ -29,6 +29,9 @@ func TestCatalogEmptyReturnsOK(t *testing.T) {
 	if !strings.Contains(body, "precisão") {
 		t.Fatal("expected catalog hero copy with pt-BR accent")
 	}
+	if !strings.Contains(body, `class="nav-link is-active" href="/produtos" aria-current="page"`) {
+		t.Fatal("expected initial catalog HTML to mark Products as the current page")
+	}
 	if !strings.Contains(body, components.WhatsAppCatalogURL()) || strings.Contains(body, `class="cta-badge focus-ring" href="/#contato"`) {
 		t.Fatal("expected catalog contact CTA to point directly to WhatsApp")
 	}

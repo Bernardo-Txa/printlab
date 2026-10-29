@@ -5,13 +5,21 @@ import "context"
 type contextKey struct{}
 
 type Context struct {
-	Origin  string
-	NoIndex bool
+	Origin      string
+	NoIndex     bool
+	RequestPath string
 }
 
 func WithContext(ctx context.Context, origin string, noIndex bool) context.Context {
 	return context.WithValue(ctx, contextKey{}, Context{Origin: origin, NoIndex: noIndex})
 }
+
+func WithRequestPath(ctx context.Context, path string) context.Context {
+	v, _ := ctx.Value(contextKey{}).(Context)
+	v.RequestPath = path
+	return context.WithValue(ctx, contextKey{}, v)
+}
+
 func CanonicalURL(ctx context.Context, path string) string {
 	v, _ := ctx.Value(contextKey{}).(Context)
 	if v.Origin == "" || path == "" {
@@ -20,3 +28,7 @@ func CanonicalURL(ctx context.Context, path string) string {
 	return v.Origin + path
 }
 func NoIndex(ctx context.Context) bool { v, _ := ctx.Value(contextKey{}).(Context); return v.NoIndex }
+func RequestPath(ctx context.Context) string {
+	v, _ := ctx.Value(contextKey{}).(Context)
+	return v.RequestPath
+}

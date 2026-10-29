@@ -23,7 +23,8 @@ func securityMiddleware(next http.Handler, siteURL string, supabaseURL string) h
 			origin = canonical.Scheme + "://" + canonical.Host
 		}
 		noIndex := isNoIndexPath(r.URL.Path)
-		r = r.WithContext(seo.WithContext(requestIDContext(r.Context(), requestID), origin, noIndex))
+		ctx := seo.WithContext(requestIDContext(r.Context(), requestID), origin, noIndex)
+		r = r.WithContext(seo.WithRequestPath(ctx, r.URL.Path))
 		w.Header().Set("X-Request-ID", requestID)
 		if noIndex {
 			w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive")

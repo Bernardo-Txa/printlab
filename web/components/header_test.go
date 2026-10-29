@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/seo"
 )
 
 func TestHeaderRendersBrandNavigationAndGuestActions(t *testing.T) {
@@ -90,6 +91,65 @@ func TestHeaderRendersAuthenticatedActionsAndPostLogout(t *testing.T) {
 	}
 	if strings.Contains(html, `href="/login"`) || strings.Contains(html, `>Entrar<`) {
 		t.Fatalf("expected authenticated header not to show login action, got %s", html)
+	}
+}
+
+func TestHeaderRendersServerSideCurrentPage(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		profile  bool
+		active   string
+		inactive []string
+	}{
+		{name: "products", path: "/produtos/vaso", active: `href="/produtos" aria-current="page"`, inactive: []string{`href="/carrinho" aria-current="page"`, `href="/conta" aria-current="page"`}},
+		{name: "cart", path: "/carrinho", active: `href="/carrinho" aria-label="Carrinho" aria-current="page"`, inactive: []string{`href="/produtos" aria-current="page"`, `href="/conta" aria-current="page"`}},
+		{name: "account", path: "/conta/pedidos", profile: true, active: `href="/conta" aria-label="Minha conta" aria-current="page"`, inactive: []string{`href="/produtos" aria-current="page"`, `href="/carrinho" aria-current="page"`}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := seo.WithRequestPath(context.Background(), tt.path)
+			if tt.profile {
+				ctx = customerauth.WithProfile(ctx, customerauth.Profile{ID: "11111111-1111-1111-1111-111111111111"})
+			}
+			html := renderHeaderWithContext(t, ctx)
+			if !strings.Contains(html, tt.active) {
+				t.Fatalf("expected current page marker %q, got %s", tt.active, html)
+			}
+			if count := strings.Count(html, `aria-current="page"`); count != 1 {
+				t.Fatalf("expected exactly one current page marker, got %d in %s", count, html)
+			}
+			for _, forbidden := range tt.inactive {
+				if strings.Contains(html, forbidden) {
+					t.Fatalf("expected inactive link not to contain %q, got %s", forbidden, html)
+				}
+			}
+		})
+	}
+}
+
+func TestHeaderDoesNotMarkUnrelatedPageCurrent(t *testing.T) {
+	ctx := seo.WithRequestPath(context.Background(), "/checkout/dados")
+	html := renderHeaderWithContext(t, ctx)
+	if strings.Contains(html, `aria-current="page"`) || strings.Contains(html, `is-active`) {
+		t.Fatalf("expected unrelated page without current header item, got %s", html)
+	}
+}
+
+func TestActiveNavigationScriptPreservesServerRenderedState(t *testing.T) {
+	script, err := os.ReadFile("../static/js/motion.js")
+	if err != nil {
+		t.Fatalf("expected navigation script to be readable, got %v", err)
+	}
+	text := string(script)
+	for _, expected := range []string{`link.classList.add("is-active")`, `link.setAttribute("aria-current"`} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("expected progressive navigation enhancement %q", expected)
+		}
+	}
+	if strings.Contains(text, `removeAttribute("aria-current")`) || strings.Contains(text, `classList.remove("is-active")`) {
+		t.Fatal("expected navigation enhancement not to remove server-rendered active state")
 	}
 }
 

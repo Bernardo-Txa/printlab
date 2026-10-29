@@ -1,8 +1,11 @@
 package components
 
 import (
+	"strings"
+
 	"github.com/Bernardo-Txa/printlab/internal/cart"
 	"github.com/Bernardo-Txa/printlab/internal/customerauth"
+	"github.com/Bernardo-Txa/printlab/internal/seo"
 )
 
 templ Header() {
@@ -15,23 +18,40 @@ templ Header() {
 					</a>
 					<nav class="site-header-actions" aria-label="Ações do usuário">
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
-							<a class="nav-link site-header-account" href="/conta" aria-label="Minha conta">
-								@accountIcon()
-								<span class="sr-only">Minha conta</span>
-							</a>
+							if headerPathActive(seo.RequestPath(ctx), "/conta") {
+								<a class="nav-link site-header-account is-active" href="/conta" aria-label="Minha conta" aria-current="page">
+									@accountIcon()
+									<span class="sr-only">Minha conta</span>
+								</a>
+							} else {
+								<a class="nav-link site-header-account" href="/conta" aria-label="Minha conta">
+									@accountIcon()
+									<span class="sr-only">Minha conta</span>
+								</a>
+							}
 						} else {
 							<a class="nav-link site-header-account" href="/login" aria-label="Entrar">
 								@accountIcon()
 								<span class="sr-only">Entrar</span>
 							</a>
 						}
-						<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label={ cartAriaLabel(cart.UnitCountFromContext(ctx)) }>
-							@cartIcon()
-							if cart.UnitCountFromContext(ctx) > 0 {
-								<span class="site-header-cart-count" aria-hidden="true">{ cartDisplayCount(cart.UnitCountFromContext(ctx)) }</span>
-							}
-							<span class="sr-only">Carrinho</span>
-						</a>
+						if headerPathActive(seo.RequestPath(ctx), "/carrinho") {
+							<a class="nav-link nav-link-cart site-header-cart is-active" href="/carrinho" aria-label={ cartAriaLabel(cart.UnitCountFromContext(ctx)) } aria-current="page">
+								@cartIcon()
+								if cart.UnitCountFromContext(ctx) > 0 {
+									<span class="site-header-cart-count" aria-hidden="true">{ cartDisplayCount(cart.UnitCountFromContext(ctx)) }</span>
+								}
+								<span class="sr-only">Carrinho</span>
+							</a>
+						} else {
+							<a class="nav-link nav-link-cart site-header-cart" href="/carrinho" aria-label={ cartAriaLabel(cart.UnitCountFromContext(ctx)) }>
+								@cartIcon()
+								if cart.UnitCountFromContext(ctx) > 0 {
+									<span class="site-header-cart-count" aria-hidden="true">{ cartDisplayCount(cart.UnitCountFromContext(ctx)) }</span>
+								}
+								<span class="sr-only">Carrinho</span>
+							</a>
+						}
 						if _, ok := customerauth.ProfileFromContext(ctx); ok {
 							<form class="nav-logout-form" method="post" action="/logout">
 								<button class="nav-link nav-link-button" type="submit">Sair</button>
@@ -43,7 +63,7 @@ templ Header() {
 					<nav class="site-primary-nav" aria-label="Navegação principal">
 						<ul class="site-nav">
 							<li><a class="nav-link" href="/#inicio">Início</a></li>
-							<li><a class="nav-link" href="/produtos">Produtos</a></li>
+							<li>@headerPageLink("/produtos", "Produtos", headerPathActive(seo.RequestPath(ctx), "/produtos"))</li>
 							<li><a class="nav-link" href="/#como-funciona">Como funciona</a></li>
 							<li><a class="nav-link" href="/#lab">Sobre</a></li>
 							<li><a class="nav-link" href="/#contato">Contato</a></li>
@@ -53,6 +73,18 @@ templ Header() {
 			</div>
 		}
 	</header>
+}
+
+templ headerPageLink(href string, label string, active bool) {
+	if active {
+		<a class="nav-link is-active" href={ templ.URL(href) } aria-current="page">{ label }</a>
+	} else {
+		<a class="nav-link" href={ templ.URL(href) }>{ label }</a>
+	}
+}
+
+func headerPathActive(path string, prefix string) bool {
+	return path == prefix || strings.HasPrefix(path, prefix+"/")
 }
 
 templ accountIcon() {

@@ -45,6 +45,7 @@ A Fase 2.1 refinou a homepage para ter mais presenca de marca, com hero editoria
 - Usar HTMX futuramente para atualizacoes parciais baseadas em HTTP, apenas quando houver interacao real.
 - Manter JavaScript proprio no minimo necessario.
 - Exibir catalogo e detalhe de produto sem JavaScript obrigatorio.
+- Renderizar no servidor o estado atual da navegacao global para Produtos, Carrinho e Minha Conta; JavaScript apenas aprimora a navegacao por fragmentos da Home.
 - Exibir seletor publico de configuracao apenas quando houver duas ou mais configuracoes ativas, com links navegaveis por teclado.
 - Omitir seletor e resumo publico quando houver exatamente uma configuracao ativa; o formulario ainda envia a configuracao internamente ao carrinho.
 - Exibir carrinho com forms HTML e redirects 303, sem JavaScript obrigatorio.

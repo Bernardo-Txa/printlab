@@ -467,6 +467,7 @@ Implementado nesta subfase:
 - âncoras da Home protegidas contra sobreposição pelo header sticky;
 - IDs repetidos nos componentes de receita do Admin corrigidos com prefixos determinísticos;
 - associação acessível dos erros nos helpers administrativos preservando os nomes enviados ao backend;
+- estado ativo de Produtos, Carrinho e Minha Conta renderizado no servidor com `aria-current="page"`, sem depender de JavaScript;
 - skip link, `focus-visible`, reduced motion, SSR e progressive enhancement preservados.
 
 Validação manual pendente:
