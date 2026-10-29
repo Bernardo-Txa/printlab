@@ -20,9 +20,9 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 				@CheckoutStepper(2, false)
 				if page.Message != "" {
 					if page.Selected {
-						<p class="checkout-alert checkout-alert-success">{ page.Message }</p>
+						<p class="checkout-alert checkout-alert-success" role="status">{ page.Message }</p>
 					} else {
-						<p class="checkout-alert checkout-alert-error">{ page.Message }</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">{ page.Message }</p>
 					}
 				}
 				<div class="checkout-layout">
@@ -77,7 +77,7 @@ templ CheckoutShipping(page shipping.CheckoutShippingPage) {
 									</div>
 								</div>
 								if page.AddressForm.HasErrors() {
-									<p class="checkout-alert checkout-alert-error">Revise o endereço antes de calcular o frete.</p>
+									<p class="checkout-alert checkout-alert-error" role="alert">Revise o endereço antes de calcular o frete.</p>
 								}
 								<form method="post" action="/checkout/frete/endereco" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
 									<input type="hidden" name="country_code" value="BR"/>

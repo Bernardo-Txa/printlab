@@ -711,7 +711,7 @@
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground shadow-soft hover:bg-highlight-teal;
+    @apply bg-primary text-primary-foreground shadow-soft hover:bg-highlight-teal hover:text-secondary;
   }
 
   .btn-secondary {
@@ -720,6 +720,14 @@
 
   .section-block {
     @apply scroll-mt-20 py-14 sm:py-18;
+  }
+
+  #dna,
+  #como-funciona,
+  #produtos,
+  #lab,
+  #contato {
+    @apply scroll-mt-28;
   }
 
   .section-heading {

@@ -19,10 +19,10 @@ templ CheckoutDetails(page customers.CheckoutPage) {
 				</div>
 				@CheckoutStepper(1, false)
 				if page.Form.Saved {
-					<p class="checkout-alert checkout-alert-success">Dados salvos. Escolha a entrega na próxima etapa.</p>
+					<p class="checkout-alert checkout-alert-success" role="status">Dados salvos. Escolha a entrega na próxima etapa.</p>
 				}
 				if page.Form.HasErrors() {
-					<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+					<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de continuar.</p>
 				}
 				<div class="checkout-layout">
 					<form class="checkout-form" method="post" action="/checkout/dados" data-checkout-form="true">
@@ -93,12 +93,22 @@ templ CheckoutFieldWithHelp(id string, label string, inputType string, autocompl
 				<span>Opcional</span>
 			}
 		</label>
-		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional }/>
+		if message != "" {
+			if help != "" {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional } aria-invalid="true" aria-describedby={ id + "_help " + id + "_error" }/>
+			} else {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional } aria-invalid="true" aria-describedby={ id + "_error" }/>
+			}
+		} else if help != "" {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional } aria-describedby={ id + "_help" }/>
+		} else {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } required?={ !optional }/>
+		}
 		if help != "" {
-			<p class="checkout-field-help">{ help }</p>
+			<p id={ id + "_help" } class="checkout-field-help">{ help }</p>
 		}
 		if message != "" {
-			<p class="checkout-field-error">{ message }</p>
+			<p id={ id + "_error" } class="checkout-field-error">{ message }</p>
 		}
 	</div>
 }
@@ -111,12 +121,22 @@ templ CheckoutMaskedField(id string, label string, inputType string, autocomplet
 				<span>Opcional</span>
 			}
 		</label>
-		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional }/>
+		if message != "" {
+			if help != "" {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional } aria-invalid="true" aria-describedby={ id + "_help " + id + "_error" }/>
+			} else {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional } aria-invalid="true" aria-describedby={ id + "_error" }/>
+			}
+		} else if help != "" {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional } aria-describedby={ id + "_help" }/>
+		} else {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } inputmode={ inputMode } maxlength={ maxLength } data-checkout-mask={ mask } required?={ !optional }/>
+		}
 		if help != "" {
-			<p class="checkout-field-help">{ help }</p>
+			<p id={ id + "_help" } class="checkout-field-help">{ help }</p>
 		}
 		if message != "" {
-			<p class="checkout-field-error">{ message }</p>
+			<p id={ id + "_error" } class="checkout-field-error">{ message }</p>
 		}
 	</div>
 }
@@ -124,10 +144,14 @@ templ CheckoutMaskedField(id string, label string, inputType string, autocomplet
 templ CheckoutPostalCodeField(value string, message string) {
 	<div class="checkout-field">
 		<label for="postal_code">CEP</label>
-		<input id="postal_code" type="text" name="postal_code" value={ value } autocomplete="postal-code" inputmode="numeric" maxlength="9" data-checkout-mask="cep" data-cep-input="true" aria-describedby="postal_code_lookup_status" required/>
+		if message != "" {
+			<input id="postal_code" type="text" name="postal_code" value={ value } autocomplete="postal-code" inputmode="numeric" maxlength="9" data-checkout-mask="cep" data-cep-input="true" aria-invalid="true" aria-describedby="postal_code_lookup_status postal_code_error" required/>
+		} else {
+			<input id="postal_code" type="text" name="postal_code" value={ value } autocomplete="postal-code" inputmode="numeric" maxlength="9" data-checkout-mask="cep" data-cep-input="true" aria-describedby="postal_code_lookup_status" required/>
+		}
 		<p id="postal_code_lookup_status" class="checkout-field-help" data-cep-status="true" aria-live="polite"></p>
 		if message != "" {
-			<p class="checkout-field-error">{ message }</p>
+			<p id="postal_code_error" class="checkout-field-error">{ message }</p>
 		}
 	</div>
 }

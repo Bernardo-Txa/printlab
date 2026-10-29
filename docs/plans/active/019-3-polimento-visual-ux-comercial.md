@@ -426,7 +426,7 @@ Implementado nesta subfase:
 
 ## 19.3.8 — Estados da interface
 
-Status: Implementada; aguardando validação manual.
+Status: Validada manualmente em produção pelo responsável.
 
 Implementado nesta subfase:
 
@@ -456,6 +456,25 @@ Esses estados devem parecer parte do design PrintLab.
 Não esconder falhas importantes apenas para deixar a interface bonita.
 
 ## 19.3.9 — Mobile e acessibilidade
+
+Status: Implementada; aguardando validação manual.
+
+Implementado nesta subfase:
+
+- mobile auditado a partir de 320px sem redesign ou novo padrão de navegação;
+- erros de checkout e autenticação associados programaticamente aos respectivos campos;
+- contraste do texto no hover do botão primário corrigido;
+- âncoras da Home protegidas contra sobreposição pelo header sticky;
+- IDs repetidos nos componentes de receita do Admin corrigidos com prefixos determinísticos;
+- associação acessível dos erros nos helpers administrativos preservando os nomes enviados ao backend;
+- skip link, `focus-visible`, reduced motion, SSR e progressive enhancement preservados.
+
+Validação manual pendente:
+
+- conferir 320px, aproximadamente 390px, tablet e desktop;
+- percorrer Home e âncoras, header horizontal, catálogo, produto, carrinho, checkout completo, Minha Conta e autenticação;
+- navegar por teclado no header, produto, formulários, checkout e conta;
+- confirmar foco sempre visível, ações acessíveis, conteúdo livre do header sticky e ausência de overflow inesperado.
 
 Toda alteração da 19.3 deve ser mobile-first.
 
@@ -583,6 +602,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.5 — Carrinho e checkout: Validada manualmente em produção pelo responsável.
 - 19.3.6 — Revisão textual pt-BR: Validada manualmente em produção pelo responsável.
 - 19.3.7 — Tipografia e espaçamento: Validada manualmente em produção pelo responsável.
-- 19.3.8 — Estados da interface: Implementada; aguardando validação manual.
+- 19.3.8 — Estados da interface: Validada manualmente em produção pelo responsável.
+- 19.3.9 — Mobile e acessibilidade: Implementada; aguardando validação manual.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

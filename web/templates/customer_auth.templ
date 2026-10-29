@@ -33,10 +33,10 @@ templ SignupPage(form customerauth.SignupForm) {
 						<p>Use sua conta para acessar a área inicial da PrintLab. A compra como convidado continua disponível.</p>
 					</div>
 					if form.Message != "" {
-						<p class="checkout-alert checkout-alert-success">{ form.Message }</p>
+						<p class="checkout-alert checkout-alert-success" role="status">{ form.Message }</p>
 					}
 					if form.Errors.Any() {
-						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de continuar.</p>
 					}
 					<form class="admin-login-form" method="post" action="/cadastro">
 						@AuthField("name", "Nome", "text", "name", form.Name, form.Errors.Message("name"), "")
@@ -68,11 +68,11 @@ templ LoginPage(form customerauth.LoginForm) {
 								<span>Agora você já pode entrar na sua conta com a nova senha.</span>
 							</div>
 						} else {
-							<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+							<p class="checkout-alert checkout-alert-error" role="alert">{ form.Message }</p>
 						}
 					}
 					if form.Errors.Any() {
-						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de continuar.</p>
 					}
 					<form class="admin-login-form" method="post" action="/login">
 						<input type="hidden" name="next" value={ form.Next }/>
@@ -101,10 +101,10 @@ templ RecoveryPage(form customerauth.RecoveryForm) {
 						<p>Informe seu e-mail para receber as instruções de recuperação.</p>
 					</div>
 					if form.Message != "" {
-						<p class="checkout-alert checkout-alert-success">{ form.Message }</p>
+						<p class="checkout-alert checkout-alert-success" role="status">{ form.Message }</p>
 					}
 					if form.Errors.Any() {
-						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de continuar.</p>
 					}
 					<form class="admin-login-form" method="post" action="/recuperar-senha">
 						@AuthField("email", "E-mail", "email", "email", form.Email, form.Errors.Message("email"), "")
@@ -127,10 +127,10 @@ templ NewPasswordPage(form customerauth.NewPasswordForm) {
 						<h1>Definir nova senha</h1>
 					</div>
 					if form.Message != "" {
-						<p class="checkout-alert checkout-alert-error">{ form.Message }</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">{ form.Message }</p>
 					}
 					if form.Errors.Any() {
-						<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de continuar.</p>
+						<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de continuar.</p>
 					}
 					<form class="admin-login-form" method="post" action="/recuperar-senha/nova">
 						@AuthField("password", "Nova senha", "password", "new-password", "", form.Errors.Message("password"), "")
@@ -197,9 +197,9 @@ templ AccountPage(view AccountPageView) {
 							</div>
 							if view.Message != "" {
 								if view.MessageIsError {
-									<p class="checkout-alert checkout-alert-error">{ view.Message }</p>
+									<p class="checkout-alert checkout-alert-error" role="alert">{ view.Message }</p>
 								} else {
-									<p class="checkout-alert checkout-alert-success">{ view.Message }</p>
+									<p class="checkout-alert checkout-alert-success" role="status">{ view.Message }</p>
 								}
 							}
 							if len(view.Orders) == 0 {
@@ -246,10 +246,10 @@ templ AccountPage(view AccountPageView) {
 								<p>Essas informações ajudam a preencher seu checkout mais rápido.</p>
 							</div>
 							if view.Success {
-								<p class="checkout-alert checkout-alert-success">Dados atualizados com sucesso.</p>
+								<p class="checkout-alert checkout-alert-success" role="status">Dados atualizados com sucesso.</p>
 							}
 							if view.Errors.Any() {
-								<p class="checkout-alert checkout-alert-error">Revise os campos destacados antes de salvar.</p>
+								<p class="checkout-alert checkout-alert-error" role="alert">Revise os campos destacados antes de salvar.</p>
 							}
 							<form method="post" action="/conta" class="account-profile-form checkout-form" data-checkout-form="true" data-cep-lookup-endpoint="/api/cep">
 								<input type="hidden" name="country_code" value="BR"/>
@@ -469,12 +469,22 @@ templ AuthUnavailable() {
 templ AuthField(id string, label string, inputType string, autocomplete string, value string, message string, help string) {
 	<label>
 		<span>{ label }</span>
-		<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required/>
+		if message != "" {
+			if help != "" {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required aria-invalid="true" aria-describedby={ id + "_help " + id + "_error" }/>
+			} else {
+				<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required aria-invalid="true" aria-describedby={ id + "_error" }/>
+			}
+		} else if help != "" {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required aria-describedby={ id + "_help" }/>
+		} else {
+			<input id={ id } type={ inputType } name={ id } value={ value } autocomplete={ autocomplete } required/>
+		}
 		if help != "" {
-			<small>{ help }</small>
+			<small id={ id + "_help" }>{ help }</small>
 		}
 		if message != "" {
-			<small class="checkout-field-error">{ message }</small>
+			<small id={ id + "_error" } class="checkout-field-error">{ message }</small>
 		}
 	</label>
 }

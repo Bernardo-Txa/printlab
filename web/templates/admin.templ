@@ -743,7 +743,7 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 										for _, component := range page.Recipe {
 											<article class="admin-item">
 												<form class="admin-inline-form" method="post" action={ component.UpdateAction }>
-													@adminRecipeFields(component.MaterialID, component.ColorID, component.EstimatedWeightInput, component.Label, component.SortOrderInput, page.MaterialOptions, page.ColorOptions)
+													@adminRecipeFields("recipe-"+component.ID, component.MaterialID, component.ColorID, component.EstimatedWeightInput, component.Label, component.SortOrderInput, page.MaterialOptions, page.ColorOptions)
 													<button class="btn-base btn-secondary" type="submit">Salvar componente</button>
 												</form>
 												<form method="post" action={ component.RemoveAction }>
@@ -756,7 +756,7 @@ templ AdminVariantForm(page admindomain.AdminVariantFormPage) {
 								}
 								<form class="admin-form admin-form-compact" method="post" action={ page.Action + "/receita" }>
 									<h3>Novo componente</h3>
-									@adminRecipeFields(page.RecipeForm.MaterialID, page.RecipeForm.ColorID, page.RecipeForm.EstimatedWeight, page.RecipeForm.Label, page.RecipeForm.SortOrder, page.MaterialOptions, page.ColorOptions)
+									@adminRecipeFields("recipe-new", page.RecipeForm.MaterialID, page.RecipeForm.ColorID, page.RecipeForm.EstimatedWeight, page.RecipeForm.Label, page.RecipeForm.SortOrder, page.MaterialOptions, page.ColorOptions)
 									<button class="btn-base btn-primary" type="submit">Adicionar componente</button>
 								</form>
 							</section>
@@ -939,33 +939,70 @@ templ adminListHeader(title string, newURL string) {
 }
 
 templ adminTextField(name string, label string, value string, errorMessage string, inputType string, required bool) {
-	<label class="admin-field" for={ "admin-" + name }>
+	@adminTextFieldWithID("admin-"+name, name, label, value, errorMessage, inputType, required)
+}
+
+templ adminTextFieldWithID(fieldID string, name string, label string, value string, errorMessage string, inputType string, required bool) {
+	<label class="admin-field" for={ fieldID }>
 		<span>{ label }</span>
-		if required {
-			<input id={ "admin-" + name } type={ inputType } name={ name } value={ value } required/>
+		if errorMessage != "" {
+			if required {
+				<input id={ fieldID } type={ inputType } name={ name } value={ value } required aria-invalid="true" aria-describedby={ fieldID + "_error" }/>
+			} else {
+				<input id={ fieldID } type={ inputType } name={ name } value={ value } aria-invalid="true" aria-describedby={ fieldID + "_error" }/>
+			}
+		} else if required {
+			<input id={ fieldID } type={ inputType } name={ name } value={ value } required/>
 		} else {
-			<input id={ "admin-" + name } type={ inputType } name={ name } value={ value }/>
+			<input id={ fieldID } type={ inputType } name={ name } value={ value }/>
 		}
 		if errorMessage != "" {
-			<small class="admin-error">{ errorMessage }</small>
+			<small id={ fieldID + "_error" } class="admin-error">{ errorMessage }</small>
 		}
 	</label>
 }
 
 templ adminTextareaField(name string, label string, value string, errorMessage string) {
-	<label class="admin-field" for={ "admin-" + name }>
+	@adminTextareaFieldWithID("admin-"+name, name, label, value, errorMessage)
+}
+
+templ adminTextareaFieldWithID(fieldID string, name string, label string, value string, errorMessage string) {
+	<label class="admin-field" for={ fieldID }>
 		<span>{ label }</span>
-		<textarea id={ "admin-" + name } name={ name } rows="4">{ value }</textarea>
 		if errorMessage != "" {
-			<small class="admin-error">{ errorMessage }</small>
+			<textarea id={ fieldID } name={ name } rows="4" aria-invalid="true" aria-describedby={ fieldID + "_error" }>{ value }</textarea>
+		} else {
+			<textarea id={ fieldID } name={ name } rows="4">{ value }</textarea>
+		}
+		if errorMessage != "" {
+			<small id={ fieldID + "_error" } class="admin-error">{ errorMessage }</small>
 		}
 	</label>
 }
 
 templ adminSelectField(name string, label string, selected string, options []admindomain.AdminSelectOption, errorMessage string, emptyLabel string) {
-	<label class="admin-field" for={ "admin-" + name }>
+	@adminSelectFieldWithID("admin-"+name, name, label, selected, options, errorMessage, emptyLabel)
+}
+
+templ adminSelectFieldWithID(fieldID string, name string, label string, selected string, options []admindomain.AdminSelectOption, errorMessage string, emptyLabel string) {
+	<label class="admin-field" for={ fieldID }>
 		<span>{ label }</span>
-		<select id={ "admin-" + name } name={ name }>
+		if errorMessage != "" {
+			<select id={ fieldID } name={ name } aria-invalid="true" aria-describedby={ fieldID + "_error" }>
+				@adminSelectOptions(selected, options, emptyLabel)
+			</select>
+		} else {
+			<select id={ fieldID } name={ name }>
+				@adminSelectOptions(selected, options, emptyLabel)
+			</select>
+		}
+		if errorMessage != "" {
+			<small id={ fieldID + "_error" } class="admin-error">{ errorMessage }</small>
+		}
+	</label>
+}
+
+templ adminSelectOptions(selected string, options []admindomain.AdminSelectOption, emptyLabel string) {
 			if emptyLabel != "" {
 				if selected == "" {
 					<option value="" selected>{ emptyLabel }</option>
@@ -980,11 +1017,6 @@ templ adminSelectField(name string, label string, selected string, options []adm
 					<option value={ option.ID }>{ option.Label }</option>
 				}
 			}
-		</select>
-		if errorMessage != "" {
-			<small class="admin-error">{ errorMessage }</small>
-		}
-	</label>
 }
 
 templ adminCheckboxField(name string, label string, checked bool) {
@@ -1011,13 +1043,13 @@ templ adminShippingProfileFields(weight string, height string, width string, len
 	</fieldset>
 }
 
-templ adminRecipeFields(materialID string, colorID string, weight string, label string, sortOrder string, materials []admindomain.AdminSelectOption, colors []admindomain.AdminSelectOption) {
+templ adminRecipeFields(fieldPrefix string, materialID string, colorID string, weight string, label string, sortOrder string, materials []admindomain.AdminSelectOption, colors []admindomain.AdminSelectOption) {
 	<div class="admin-form-grid">
-		@adminSelectField("material_id", "Material", materialID, materials, "", "Selecione")
-		@adminSelectField("color_id", "Cor", colorID, colors, "", "Selecione")
-		@adminTextField("estimated_weight", "Peso em gramas", weight, "", "text", true)
-		@adminTextField("label", "Label", label, "", "text", false)
-		@adminTextField("sort_order", "Ordem", sortOrder, "", "number", true)
+		@adminSelectFieldWithID(fieldPrefix+"-material_id", "material_id", "Material", materialID, materials, "", "Selecione")
+		@adminSelectFieldWithID(fieldPrefix+"-color_id", "color_id", "Cor", colorID, colors, "", "Selecione")
+		@adminTextFieldWithID(fieldPrefix+"-estimated_weight", "estimated_weight", "Peso em gramas", weight, "", "text", true)
+		@adminTextFieldWithID(fieldPrefix+"-label", "label", "Label", label, "", "text", false)
+		@adminTextFieldWithID(fieldPrefix+"-sort_order", "sort_order", "Ordem", sortOrder, "", "number", true)
 	</div>
 }
 

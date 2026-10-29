@@ -135,3 +135,126 @@ func TestAdminImageUploadFeedbackIsAccessible(t *testing.T) {
 		t.Fatalf("expected both upload progress elements to have accessible names, got %d", count)
 	}
 }
+
+func TestCheckoutFieldAssociatesErrorWithInput(t *testing.T) {
+	html := renderTemplate(t, CheckoutField("email", "E-mail", "email", "email", "", "inválido", "E-mail inválido.", false))
+	for _, expected := range []string{`aria-invalid="true"`, `aria-describedby="email_error"`, `id="email_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected checkout field to contain %q", expected)
+		}
+	}
+}
+
+func TestCheckoutFieldAssociatesHelpAndErrorWithInput(t *testing.T) {
+	html := renderTemplate(t, CheckoutFieldWithHelp("cpf", "CPF", "text", "off", "numeric", "", "CPF inválido.", "Ajuda do CPF.", false))
+	for _, expected := range []string{`aria-describedby="cpf_help cpf_error"`, `id="cpf_help"`, `id="cpf_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected checkout field with help and error to contain %q", expected)
+		}
+	}
+}
+
+func TestCheckoutMaskedFieldAssociatesHelpAndErrorWithInput(t *testing.T) {
+	html := renderTemplate(t, CheckoutMaskedField("phone", "Telefone", "tel", "tel", "tel", "", "Telefone inválido.", "Use DDD.", false, "phone", "15"))
+	for _, expected := range []string{`aria-invalid="true"`, `aria-describedby="phone_help phone_error"`, `id="phone_help"`, `id="phone_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected masked field to contain %q", expected)
+		}
+	}
+}
+
+func TestCheckoutPostalCodeErrorPreservesLookupDescription(t *testing.T) {
+	html := renderTemplate(t, CheckoutPostalCodeField("", "CEP inválido."))
+	for _, expected := range []string{`aria-invalid="true"`, `aria-describedby="postal_code_lookup_status postal_code_error"`, `id="postal_code_lookup_status"`, `id="postal_code_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected postal code field to contain %q", expected)
+		}
+	}
+}
+
+func TestAuthFieldAssociatesErrorWithInput(t *testing.T) {
+	html := renderTemplate(t, AuthField("password", "Senha", "password", "current-password", "", "Senha inválida.", ""))
+	for _, expected := range []string{`aria-invalid="true"`, `aria-describedby="password_error"`, `id="password_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected auth field to contain %q", expected)
+		}
+	}
+}
+
+func TestFieldsWithoutErrorsDoNotRenderAriaInvalid(t *testing.T) {
+	for name, component := range map[string]templ.Component{
+		"checkout": CheckoutField("city", "Cidade", "text", "address-level2", "", "Vitória", "", false),
+		"masked":   CheckoutMaskedField("cpf", "CPF", "text", "off", "numeric", "", "", "Ajuda.", false, "cpf", "14"),
+		"postal":   CheckoutPostalCodeField("29000000", ""),
+		"auth":     AuthField("email", "E-mail", "email", "email", "", "", ""),
+	} {
+		html := renderTemplate(t, component)
+		if strings.Contains(html, `aria-invalid="true"`) {
+			t.Fatalf("expected %s field without error not to render aria-invalid", name)
+		}
+	}
+}
+
+func TestAdminRecipeFieldsUseUniqueDeterministicIDs(t *testing.T) {
+	html := renderTemplate(t, AdminVariantForm(admin.AdminVariantFormPage{
+		Title:       "Configuração",
+		Action:      "/admin/variantes/variant-1",
+		SubmitLabel: "Salvar",
+		BackURL:     "/admin/produtos/product-1",
+		Product:     admin.AdminProductHeader{ID: "product-1", Name: "Produto"},
+		Recipe: []admin.AdminRecipeComponent{
+			{ID: "component-1", SortOrderInput: "0"},
+			{ID: "component-2", SortOrderInput: "1"},
+		},
+	}))
+
+	for _, expected := range []string{
+		`id="recipe-component-1-material_id"`,
+		`id="recipe-component-2-material_id"`,
+		`id="recipe-new-material_id"`,
+		`name="material_id"`,
+	} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected Admin recipe form to contain %q", expected)
+		}
+	}
+	if strings.Contains(html, `id="admin-material_id"`) {
+		t.Fatal("expected repeated recipe fields not to use the generic material ID")
+	}
+}
+
+func TestAdminFieldErrorsAreProgrammaticallyAssociated(t *testing.T) {
+	html := renderTemplate(t, adminTextField("name", "Nome", "", "Nome obrigatório.", "text", true))
+	for _, expected := range []string{`aria-invalid="true"`, `aria-describedby="admin-name_error"`, `id="admin-name_error"`} {
+		if !strings.Contains(html, expected) {
+			t.Fatalf("expected Admin field to contain %q", expected)
+		}
+	}
+}
+
+func TestPrimaryButtonHoverUsesDarkTextOnTeal(t *testing.T) {
+	source, err := os.ReadFile("../assets/css/app.css")
+	if err != nil {
+		t.Fatalf("expected CSS source to be readable, got %v", err)
+	}
+	css := string(source)
+	if !strings.Contains(css, "hover:bg-highlight-teal hover:text-secondary") {
+		t.Fatal("expected primary button teal hover to use dark secondary text")
+	}
+}
+
+func TestHomeAnchorsHaveStickyHeaderScrollMargin(t *testing.T) {
+	source, err := os.ReadFile("../assets/css/app.css")
+	if err != nil {
+		t.Fatalf("expected CSS source to be readable, got %v", err)
+	}
+	css := string(source)
+	for _, selector := range []string{"#dna", "#como-funciona", "#produtos", "#lab", "#contato"} {
+		if !strings.Contains(css, selector) {
+			t.Fatalf("expected anchored section selector %q", selector)
+		}
+	}
+	if !strings.Contains(css, "@apply scroll-mt-28") {
+		t.Fatal("expected anchored Home sections to use a safe sticky-header scroll margin")
+	}
+}

@@ -78,14 +78,14 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 				}
 				if page.Message != "" {
 					if page.Selected {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"checkout-alert checkout-alert-success\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"checkout-alert checkout-alert-success\" role=\"status\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var4 string
 						templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(page.Message)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/shipping.templ`, Line: 23, Col: 69}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/shipping.templ`, Line: 23, Col: 83}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 						if templ_7745c5c3_Err != nil {
@@ -96,14 +96,14 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<p class=\"checkout-alert checkout-alert-error\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<p class=\"checkout-alert checkout-alert-error\" role=\"alert\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var5 string
 						templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(page.Message)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/shipping.templ`, Line: 25, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/shipping.templ`, Line: 25, Col: 80}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 						if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func CheckoutShipping(page shipping.CheckoutShippingPage) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					if page.AddressForm.HasErrors() {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<p class=\"checkout-alert checkout-alert-error\">Revise o endereço antes de calcular o frete.</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<p class=\"checkout-alert checkout-alert-error\" role=\"alert\">Revise o endereço antes de calcular o frete.</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
