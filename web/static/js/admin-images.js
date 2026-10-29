@@ -21,6 +21,21 @@
     bar.value = value || 0;
   }
 
+  function uploadButton(form) {
+    return find(form, "button[type='submit']");
+  }
+
+  function resetUploadState(form) {
+    var button = uploadButton(form);
+    delete form.dataset.uploading;
+    if (!button) {
+      return;
+    }
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.classList.remove("is-submitting");
+  }
+
   function checked(form, name) {
     var field = form.elements[name];
     return Boolean(field && field.checked);
@@ -114,6 +129,11 @@
     var fileInput = form.elements.image_file;
     var file = fileInput && fileInput.files ? fileInput.files[0] : null;
     event.preventDefault();
+
+    if (form.dataset.uploading === "true") {
+      return;
+    }
+
     setStatus(form, "", false);
     progress(form, 0, true);
 
@@ -124,6 +144,14 @@
     if (!/^(image\/jpeg|image\/png|image\/webp)$/.test(file.type)) {
       setStatus(form, "Formato de imagem não permitido.", true);
       return;
+    }
+
+    var button = uploadButton(form);
+    form.dataset.uploading = "true";
+    if (button) {
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.classList.add("is-submitting");
     }
 
     var maxSize = Number(form.dataset.maxSize || "0");
@@ -159,6 +187,7 @@
         window.location.assign(result.redirect_url || window.location.pathname + "?ok=imagem");
       })
       .catch(function () {
+        resetUploadState(form);
         progress(form, 0, true);
         setStatus(form, "Não foi possível salvar a imagem.", true);
       });
@@ -166,5 +195,12 @@
 
   document.querySelectorAll("[data-admin-image-upload]").forEach(function (form) {
     form.addEventListener("submit", submit);
+  });
+
+  window.addEventListener("pageshow", function () {
+    document.querySelectorAll("[data-admin-image-upload]").forEach(function (form) {
+      resetUploadState(form);
+      progress(form, 0, true);
+    });
   });
 })();

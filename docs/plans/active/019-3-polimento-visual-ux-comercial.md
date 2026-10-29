@@ -407,7 +407,7 @@ Não renomear por acentuação:
 
 ## 19.3.7 — Tipografia e espaçamento
 
-Status: Implementada; aguardando validação manual.
+Status: Validada manualmente em produção pelo responsável.
 
 Auditoria concluída: a hierarquia tipográfica existente é coerente e foi preservada. O `system-ui` atual permanece, sem nova fonte, dependência externa ou redesign.
 
@@ -425,6 +425,17 @@ Implementado nesta subfase:
 - texto visível remanescente do Admin corrigido para pt-BR.
 
 ## 19.3.8 — Estados da interface
+
+Status: Implementada; aguardando validação manual.
+
+Implementado nesta subfase:
+
+- duplicate-submit protegido nos formulários nativos pelo estado real do formulário;
+- estado de submitting preservado durante o ciclo real da navegação, sem timeout artificial;
+- reset dos estados de submissão via `pageshow`, inclusive após retorno por bfcache;
+- upload administrativo protegido contra autorizações, uploads e finalizações concorrentes;
+- status e progresso do upload administrativo acessíveis;
+- estados de interface já existentes preservados sem redesign.
 
 Revisar estados:
 
@@ -571,6 +582,7 @@ Fase 19.4 — Performance e regressão para produção.
 - 19.3.4 — Minha Conta: Validada visualmente em produção pelo responsável.
 - 19.3.5 — Carrinho e checkout: Validada manualmente em produção pelo responsável.
 - 19.3.6 — Revisão textual pt-BR: Validada manualmente em produção pelo responsável.
-- 19.3.7 — Tipografia e espaçamento: Implementada; aguardando validação manual.
+- 19.3.7 — Tipografia e espaçamento: Validada manualmente em produção pelo responsável.
+- 19.3.8 — Estados da interface: Implementada; aguardando validação manual.
 
 A Fase 19.3 permanece em execução. A Fase 19.4 permanece planejada e não foi iniciada neste pacote.

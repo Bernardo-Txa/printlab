@@ -579,8 +579,8 @@ templ AdminProductImages(page admindomain.AdminProductImagesPage) {
 										</label>
 									</div>
 									@adminCheckboxField("is_primary", "Usar como imagem principal", true)
-									<p class="admin-image-status" data-admin-image-status></p>
-									<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" hidden></progress>
+									<p class="admin-image-status" data-admin-image-status role="status" aria-live="polite"></p>
+									<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" aria-label="Progresso do upload da imagem" hidden></progress>
 									<div class="admin-form-actions">
 										<button class="btn-base btn-primary" type="submit">Enviar imagem</button>
 									</div>
@@ -661,8 +661,8 @@ templ AdminProductImages(page admindomain.AdminProductImagesPage) {
 															if image.IsPrimary {
 																<input type="hidden" name="is_primary" value="1"/>
 															}
-															<p class="admin-image-status" data-admin-image-status></p>
-															<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" hidden></progress>
+															<p class="admin-image-status" data-admin-image-status role="status" aria-live="polite"></p>
+															<progress class="admin-image-progress" data-admin-image-progress value="0" max="100" aria-label="Progresso do upload da imagem" hidden></progress>
 															<button class="btn-base btn-secondary" type="submit">Substituir imagem</button>
 														</form>
 													}

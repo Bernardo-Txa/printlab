@@ -113,3 +113,25 @@ func TestAdminPickupDetailDoesNotRenderEmptyAddress(t *testing.T) {
 		t.Fatal("expected pickup admin detail to render pickup delivery")
 	}
 }
+
+func TestAdminImageUploadFeedbackIsAccessible(t *testing.T) {
+	html := renderTemplate(t, AdminProductImages(admin.AdminProductImagesPage{
+		Product:           admin.AdminProductHeader{ID: "product-1", Name: "Produto"},
+		StorageConfigured: true,
+		Images: []admin.AdminProductImage{{
+			ID:                    "image-1",
+			SortOrderInput:        "0",
+			ScopeLabel:            "Produto inteiro",
+			AssociationLabel:      "Imagem geral",
+			ReplaceUploadAction:   "/admin/produtos/product-1/imagens/image-1/upload",
+			ReplaceFinalizeAction: "/admin/produtos/product-1/imagens/image-1/finalizar",
+		}},
+	}))
+
+	if count := strings.Count(html, `data-admin-image-status role="status" aria-live="polite"`); count != 2 {
+		t.Fatalf("expected both upload statuses to be accessible, got %d", count)
+	}
+	if count := strings.Count(html, `aria-label="Progresso do upload da imagem"`); count != 2 {
+		t.Fatalf("expected both upload progress elements to have accessible names, got %d", count)
+	}
+}

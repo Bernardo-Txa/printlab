@@ -37,30 +37,46 @@
 
   function initActionFeedback() {
     document.addEventListener("submit", function (event) {
-      var submitter = event.submitter;
-      if (!submitter || !submitter.classList) {
+      if (event.defaultPrevented) {
         return;
       }
 
-      if (submitter.classList.contains("btn-base") || submitter.classList.contains("cart-remove-button")) {
+      var submitter = event.submitter;
+      var form = event.target;
+      if (!form || !form.dataset) {
+        return;
+      }
+
+      if (form.dataset.submitting === "true") {
+        event.preventDefault();
+        return;
+      }
+
+      form.dataset.submitting = "true";
+      form.setAttribute("aria-busy", "true");
+      form.classList.add("is-submitting");
+
+      if (submitter && submitter.classList && (submitter.classList.contains("btn-base") || submitter.classList.contains("cart-remove-button"))) {
         submitter.classList.add("is-pressed", "is-submitting");
         submitter.setAttribute("aria-busy", "true");
+        submitter.setAttribute("aria-disabled", "true");
         window.setTimeout(function () {
           submitter.classList.remove("is-pressed");
         }, 220);
-        window.setTimeout(function () {
-          submitter.classList.remove("is-submitting");
-          submitter.removeAttribute("aria-busy");
-        }, 1400);
       }
+    });
+  }
 
-      var form = submitter && submitter.form;
-      if (form && form.classList) {
-        form.classList.add("is-submitting");
-        window.setTimeout(function () {
-          form.classList.remove("is-submitting");
-        }, 1400);
-      }
+  function resetSubmissionStates() {
+    document.querySelectorAll("form").forEach(function (form) {
+      delete form.dataset.submitting;
+      form.removeAttribute("aria-busy");
+      form.classList.remove("is-submitting");
+      form.querySelectorAll("button, input[type='submit'], input[type='image']").forEach(function (submitter) {
+        submitter.classList.remove("is-submitting", "is-pressed");
+        submitter.removeAttribute("aria-busy");
+        submitter.removeAttribute("aria-disabled");
+      });
     });
   }
 
@@ -213,8 +229,9 @@
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
-    return;
+  } else {
+    init();
   }
 
-  init();
+  window.addEventListener("pageshow", resetSubmissionStates);
 })();
